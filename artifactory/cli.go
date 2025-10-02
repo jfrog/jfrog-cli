@@ -3,27 +3,20 @@ package artifactory
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/python"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/cocoapodsconfig"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/swiftconfig"
 	"os"
-	"strconv"
 	"strings"
 
-	ioutils "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli/utils/accesstoken"
 
 	"github.com/jfrog/gofrog/version"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferinstall"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/transferplugininstall"
 
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/buildinfo"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/curl"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/dotnet"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/oc"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/permissiontarget"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/python"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/replication"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/repository"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/generic"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/permissiontarget"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transfer"
 	transferconfigcore "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferconfig"
 	transferfilescore "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferfiles"
@@ -31,11 +24,8 @@ import (
 	transferconfigmergecore "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferconfigmerge"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/usersmanagement"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
-	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
-	"github.com/jfrog/jfrog-cli-core/v2/common/build"
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
-	"github.com/jfrog/jfrog-cli-core/v2/common/progressbar"
 	"github.com/jfrog/jfrog-cli-core/v2/common/project"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
@@ -43,27 +33,8 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/buildtools"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/accesstokencreate"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/buildadddependencies"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/buildaddgit"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/buildappend"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/buildclean"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/buildcollectenv"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/builddiscard"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/builddockercreate"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/buildpromote"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/buildpublish"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/buildscan"
-	copydocs "github.com/jfrog/jfrog-cli/docs/artifactory/copy"
-	curldocs "github.com/jfrog/jfrog-cli/docs/artifactory/curl"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/delete"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/deleteprops"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/dockerpromote"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/dockerpull"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/dockerpush"
 	dotnetdocs "github.com/jfrog/jfrog-cli/docs/artifactory/dotnet"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/dotnetconfig"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/download"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/gitlfsclean"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/gocommand"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/goconfig"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/gopublish"
@@ -72,7 +43,6 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/groupaddusers"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/groupcreate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/groupdelete"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/move"
 	mvndoc "github.com/jfrog/jfrog-cli/docs/artifactory/mvn"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/mvnconfig"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/npmci"
@@ -81,31 +51,16 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/npmpublish"
 	nugetdocs "github.com/jfrog/jfrog-cli/docs/artifactory/nuget"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/nugetconfig"
-	nugettree "github.com/jfrog/jfrog-cli/docs/artifactory/nugetdepstree"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/ocstartbuild"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargetcreate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargetdelete"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargettemplate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargetupdate"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/ping"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/pipconfig"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/pipinstall"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/podmanpull"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/podmanpush"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/replicationcreate"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/replicationdelete"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/replicationtemplate"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/repocreate"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/repodelete"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/repotemplate"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/repoupdate"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/search"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/setprops"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/transferconfig"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/transferconfigmerge"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/transferfiles"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/transfersettings"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/upload"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/usercreate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/userscreate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/usersdelete"
@@ -113,9 +68,9 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/yarnconfig"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
-	buildinfocmd "github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
+	utilsForLC "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/jszwec/csvutil"
@@ -123,235 +78,14 @@ import (
 )
 
 const (
-	filesCategory    = "Files Management"
-	buildCategory    = "Build Info"
-	repoCategory     = "Repository Management"
-	replicCategory   = "Replication"
 	permCategory     = "Permission Targets"
 	userCategory     = "User Management"
 	transferCategory = "Transfer Between Artifactory Instances"
-	otherCategory    = "Other"
+	releaseBundlesV2 = "release-bundles-v2"
 )
 
 func GetCommands() []cli.Command {
 	return cliutils.GetSortedCommands(cli.CommandsByName{
-		{
-			Name:         "upload",
-			Flags:        cliutils.GetCommandFlags(cliutils.Upload),
-			Aliases:      []string{"u"},
-			Usage:        upload.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt upload", upload.GetDescription(), upload.Usage),
-			UsageText:    upload.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(upload.EnvVar...),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       uploadCmd,
-			Category:     filesCategory,
-		},
-		{
-			Name:         "download",
-			Flags:        cliutils.GetCommandFlags(cliutils.Download),
-			Aliases:      []string{"dl"},
-			Usage:        download.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt download", download.GetDescription(), download.Usage),
-			UsageText:    download.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(download.EnvVar...),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       downloadCmd,
-			Category:     filesCategory,
-		},
-		{
-			Name:         "move",
-			Flags:        cliutils.GetCommandFlags(cliutils.Move),
-			Aliases:      []string{"mv"},
-			Usage:        move.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt move", move.GetDescription(), move.Usage),
-			UsageText:    move.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(move.EnvVar),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       moveCmd,
-			Category:     filesCategory,
-		},
-		{
-			Name:         "copy",
-			Flags:        cliutils.GetCommandFlags(cliutils.Copy),
-			Aliases:      []string{"cp"},
-			Usage:        copydocs.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt copy", copydocs.GetDescription(), copydocs.Usage),
-			UsageText:    copydocs.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(copydocs.EnvVar),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       copyCmd,
-			Category:     filesCategory,
-		},
-		{
-			Name:         "delete",
-			Flags:        cliutils.GetCommandFlags(cliutils.Delete),
-			Aliases:      []string{"del"},
-			Usage:        delete.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt delete", delete.GetDescription(), delete.Usage),
-			UsageText:    delete.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(delete.EnvVar),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       deleteCmd,
-			Category:     filesCategory,
-		},
-		{
-			Name:         "search",
-			Flags:        cliutils.GetCommandFlags(cliutils.Search),
-			Aliases:      []string{"s"},
-			Usage:        search.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt search", search.GetDescription(), search.Usage),
-			UsageText:    search.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(search.EnvVar),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       searchCmd,
-			Category:     filesCategory,
-		},
-		{
-			Name:         "set-props",
-			Flags:        cliutils.GetCommandFlags(cliutils.Properties),
-			Aliases:      []string{"sp"},
-			Usage:        setprops.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt set-props", setprops.GetDescription(), setprops.Usage),
-			UsageText:    setprops.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(setprops.EnvVar),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       setPropsCmd,
-			Category:     filesCategory,
-		},
-		{
-			Name:         "delete-props",
-			Flags:        cliutils.GetCommandFlags(cliutils.Properties),
-			Aliases:      []string{"delp"},
-			Usage:        deleteprops.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt delete-props", deleteprops.GetDescription(), deleteprops.Usage),
-			UsageText:    deleteprops.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(deleteprops.EnvVar),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       deletePropsCmd,
-			Category:     filesCategory,
-		},
-		{
-			Name:         "build-publish",
-			Flags:        cliutils.GetCommandFlags(cliutils.BuildPublish),
-			Aliases:      []string{"bp"},
-			Usage:        buildpublish.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt build-publish", buildpublish.GetDescription(), buildpublish.Usage),
-			UsageText:    buildpublish.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       buildPublishCmd,
-			Category:     buildCategory,
-		},
-		{
-			Name:         "build-collect-env",
-			Aliases:      []string{"bce"},
-			Flags:        cliutils.GetCommandFlags(cliutils.BuildCollectEnv),
-			Usage:        buildcollectenv.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt build-collect-env", buildcollectenv.GetDescription(), buildcollectenv.Usage),
-			UsageText:    buildcollectenv.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       buildCollectEnvCmd,
-			Category:     buildCategory,
-		},
-		{
-			Name:         "build-append",
-			Flags:        cliutils.GetCommandFlags(cliutils.BuildAppend),
-			Aliases:      []string{"ba"},
-			Usage:        buildappend.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt build-append", buildappend.GetDescription(), buildappend.Usage),
-			UsageText:    buildappend.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       buildAppendCmd,
-			Category:     buildCategory,
-		},
-		{
-			Name:         "build-add-dependencies",
-			Flags:        cliutils.GetCommandFlags(cliutils.BuildAddDependencies),
-			Aliases:      []string{"bad"},
-			Usage:        buildadddependencies.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt build-add-dependencies", buildadddependencies.GetDescription(), buildadddependencies.Usage),
-			UsageText:    buildadddependencies.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       buildAddDependenciesCmd,
-			Category:     buildCategory,
-		},
-		{
-			Name:         "build-add-git",
-			Flags:        cliutils.GetCommandFlags(cliutils.BuildAddGit),
-			Aliases:      []string{"bag"},
-			Usage:        buildaddgit.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt build-add-git", buildaddgit.GetDescription(), buildaddgit.Usage),
-			UsageText:    buildaddgit.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       buildAddGitCmd,
-			Category:     buildCategory,
-		},
-		{
-			Name:         "build-scan",
-			Hidden:       true,
-			Flags:        cliutils.GetCommandFlags(cliutils.BuildScanLegacy),
-			Aliases:      []string{"bs"},
-			Usage:        buildscan.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt build-scan", buildscan.GetDescription(), buildscan.Usage),
-			UsageText:    buildscan.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return cliutils.RunCmdWithDeprecationWarning("build-scan", "rt", c, buildScanLegacyCmd)
-			},
-		},
-		{
-			Name:         "build-clean",
-			Aliases:      []string{"bc"},
-			Usage:        buildclean.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt build-clean", buildclean.GetDescription(), buildclean.Usage),
-			UsageText:    buildclean.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       buildCleanCmd,
-			Category:     buildCategory,
-		},
-		{
-			Name:         "build-promote",
-			Flags:        cliutils.GetCommandFlags(cliutils.BuildPromote),
-			Aliases:      []string{"bpr"},
-			Usage:        buildpromote.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt build-promote", buildpromote.GetDescription(), buildpromote.Usage),
-			UsageText:    buildpromote.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       buildPromoteCmd,
-			Category:     buildCategory,
-		},
-		{
-			Name:         "build-discard",
-			Flags:        cliutils.GetCommandFlags(cliutils.BuildDiscard),
-			Aliases:      []string{"bdi"},
-			Usage:        builddiscard.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt build-discard", builddiscard.GetDescription(), builddiscard.Usage),
-			UsageText:    builddiscard.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       buildDiscardCmd,
-			Category:     buildCategory,
-		},
-		{
-			Name:         "git-lfs-clean",
-			Flags:        cliutils.GetCommandFlags(cliutils.GitLfsClean),
-			Aliases:      []string{"glc"},
-			Usage:        gitlfsclean.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt git-lfs-clean", gitlfsclean.GetDescription(), gitlfsclean.Usage),
-			UsageText:    gitlfsclean.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       gitLfsCleanCmd,
-			Category:     otherCategory,
-		},
 		{
 			Name:         "mvn-config",
 			Hidden:       true,
@@ -407,96 +141,30 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:         "docker-promote",
-			Flags:        cliutils.GetCommandFlags(cliutils.DockerPromote),
-			Aliases:      []string{"dpr"},
-			Usage:        dockerpromote.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt docker-promote", dockerpromote.GetDescription(), dockerpromote.Usage),
-			UsageText:    dockerpromote.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       dockerPromoteCmd,
-			Category:     buildCategory,
-		},
-		{
-			Name:         "docker-push",
+			Name:         "cocoapods-config",
 			Hidden:       true,
-			Flags:        cliutils.GetCommandFlags(cliutils.ContainerPush),
-			Aliases:      []string{"dp"},
-			Usage:        dockerpush.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt docker-push", dockerpush.GetDescription(), dockerpush.Usage),
-			UsageText:    dockerpush.GetArguments(),
+			Aliases:      []string{"cocoapodsc"},
+			Flags:        cliutils.GetCommandFlags(cliutils.CocoapodsConfig),
+			Usage:        gradleconfig.GetDescription(),
+			HelpName:     corecommon.CreateUsage("rt cocoapods-config", cocoapodsconfig.GetDescription(), cocoapodsconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return containerPushCmd(c, containerutils.DockerClient)
+				return cliutils.RunConfigCmdWithDeprecationWarning("cocoapodsc", "rt", project.Cocoapods, c, cliutils.CreateConfigCmd)
 			},
 		},
 		{
-			Name:         "docker-pull",
+			Name:         "swift-config",
 			Hidden:       true,
-			Flags:        cliutils.GetCommandFlags(cliutils.ContainerPull),
-			Aliases:      []string{"dpl"},
-			Usage:        dockerpull.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt docker-pull", dockerpull.GetDescription(), dockerpull.Usage),
-			UsageText:    dockerpull.GetArguments(),
+			Aliases:      []string{"swiftc"},
+			Flags:        cliutils.GetCommandFlags(cliutils.SwiftConfig),
+			Usage:        gradleconfig.GetDescription(),
+			HelpName:     corecommon.CreateUsage("rt swift-config", swiftconfig.GetDescription(), swiftconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return containerPullCmd(c, containerutils.DockerClient)
+				return cliutils.RunConfigCmdWithDeprecationWarning("swiftc", "rt", project.Swift, c, cliutils.CreateConfigCmd)
 			},
-		},
-		{
-			Name:         "podman-push",
-			Flags:        cliutils.GetCommandFlags(cliutils.ContainerPush),
-			Aliases:      []string{"pp"},
-			Usage:        podmanpush.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt podman-push", podmanpush.GetDescription(), podmanpush.Usage),
-			UsageText:    podmanpush.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return containerPushCmd(c, containerutils.Podman)
-			},
-			Category: otherCategory,
-		},
-		{
-			Name:         "podman-pull",
-			Flags:        cliutils.GetCommandFlags(cliutils.ContainerPull),
-			Aliases:      []string{"ppl"},
-			Usage:        podmanpull.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt podman-pull", podmanpull.GetDescription(), podmanpull.Usage),
-			UsageText:    podmanpull.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return containerPullCmd(c, containerutils.Podman)
-			},
-			Category: otherCategory,
-		},
-		{
-			Name:         "build-docker-create",
-			Flags:        cliutils.GetCommandFlags(cliutils.BuildDockerCreate),
-			Aliases:      []string{"bdc"},
-			Usage:        builddockercreate.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt build-docker-create", builddockercreate.GetDescription(), builddockercreate.Usage),
-			UsageText:    builddockercreate.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       BuildDockerCreateCmd,
-			Category:     buildCategory,
-		},
-		{
-			Name:            "oc", // Only 'oc start-build' is supported
-			Flags:           cliutils.GetCommandFlags(cliutils.OcStartBuild),
-			Aliases:         []string{"osb"},
-			Usage:           ocstartbuild.GetDescription(),
-			HelpName:        corecommon.CreateUsage("rt oc start-build", ocstartbuild.GetDescription(), ocstartbuild.Usage),
-			ArgsUsage:       common.CreateEnvVars(),
-			SkipFlagParsing: true,
-			BashComplete:    corecommon.CreateBashCompletionFunc(),
-			Action:          ocStartBuildCmd,
-			Category:        otherCategory,
 		},
 		{
 			Name:         "npm-config",
@@ -609,16 +277,6 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:         "nuget-deps-tree",
-			Aliases:      []string{"ndt"},
-			Usage:        nugettree.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt nuget-deps-tree", nugettree.GetDescription(), nugettree.Usage),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       nugetDepsTreeCmd,
-			Category:     otherCategory,
-		},
-		{
 			Name:         "dotnet-config",
 			Hidden:       true,
 			Flags:        cliutils.GetCommandFlags(cliutils.DotnetConfig),
@@ -686,28 +344,6 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:         "ping",
-			Flags:        cliutils.GetCommandFlags(cliutils.Ping),
-			Aliases:      []string{"p"},
-			Usage:        ping.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt ping", ping.GetDescription(), ping.Usage),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       pingCmd,
-		},
-		{
-			Name:            "curl",
-			Flags:           cliutils.GetCommandFlags(cliutils.RtCurl),
-			Aliases:         []string{"cl"},
-			Usage:           curldocs.GetDescription(),
-			HelpName:        corecommon.CreateUsage("rt curl", curldocs.GetDescription(), curldocs.Usage),
-			UsageText:       curldocs.GetArguments(),
-			ArgsUsage:       common.CreateEnvVars(),
-			BashComplete:    corecommon.CreateBashCompletionFunc(),
-			SkipFlagParsing: true,
-			Action:          curlCmd,
-		},
-		{
 			Name:         "pip-config",
 			Hidden:       true,
 			Flags:        cliutils.GetCommandFlags(cliutils.PipConfig),
@@ -734,89 +370,6 @@ func GetCommands() []cli.Command {
 			Action: func(c *cli.Context) error {
 				return cliutils.RunNativeCmdWithDeprecationWarning("pip install", project.Pip, c, pipDeprecatedInstallCmd)
 			},
-		},
-		{
-			Name:         "repo-template",
-			Aliases:      []string{"rpt"},
-			Usage:        repotemplate.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt rpt", repotemplate.GetDescription(), repotemplate.Usage),
-			UsageText:    repotemplate.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       repoTemplateCmd,
-			Category:     repoCategory,
-		},
-		{
-			Name:         "repo-create",
-			Aliases:      []string{"rc"},
-			Flags:        cliutils.GetCommandFlags(cliutils.TemplateConsumer),
-			Usage:        repocreate.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt rc", repocreate.GetDescription(), repocreate.Usage),
-			UsageText:    repocreate.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       repoCreateCmd,
-			Category:     repoCategory,
-		},
-		{
-			Name:         "repo-update",
-			Aliases:      []string{"ru"},
-			Flags:        cliutils.GetCommandFlags(cliutils.TemplateConsumer),
-			Usage:        repoupdate.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt ru", repoupdate.GetDescription(), repoupdate.Usage),
-			UsageText:    repoupdate.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       repoUpdateCmd,
-			Category:     repoCategory,
-		},
-		{
-			Name:         "repo-delete",
-			Aliases:      []string{"rdel"},
-			Flags:        cliutils.GetCommandFlags(cliutils.RepoDelete),
-			Usage:        repodelete.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt rdel", repodelete.GetDescription(), repodelete.Usage),
-			UsageText:    repodelete.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       repoDeleteCmd,
-			Category:     repoCategory,
-		},
-		{
-			Name:         "replication-template",
-			Aliases:      []string{"rplt"},
-			Flags:        cliutils.GetCommandFlags(cliutils.TemplateConsumer),
-			Usage:        replicationtemplate.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt rplt", replicationtemplate.GetDescription(), replicationtemplate.Usage),
-			UsageText:    replicationtemplate.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       replicationTemplateCmd,
-			Category:     replicCategory,
-		},
-		{
-			Name:         "replication-create",
-			Aliases:      []string{"rplc"},
-			Flags:        cliutils.GetCommandFlags(cliutils.TemplateConsumer),
-			Usage:        replicationcreate.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt rplc", replicationcreate.GetDescription(), replicationcreate.Usage),
-			UsageText:    replicationcreate.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       replicationCreateCmd,
-			Category:     replicCategory,
-		},
-		{
-			Name:         "replication-delete",
-			Aliases:      []string{"rpldel"},
-			Flags:        cliutils.GetCommandFlags(cliutils.ReplicationDelete),
-			Usage:        replicationdelete.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt rpldel", replicationdelete.GetDescription(), replicationdelete.Usage),
-			UsageText:    replicationdelete.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       replicationDeleteCmd,
-			Category:     replicCategory,
 		},
 		{
 			Name:         "permission-target-template",
@@ -1004,233 +557,6 @@ func GetCommands() []cli.Command {
 	})
 }
 
-func getRetries(c *cli.Context) (retries int, err error) {
-	retries = cliutils.Retries
-	if c.String("retries") != "" {
-		retries, err = strconv.Atoi(c.String("retries"))
-		if err != nil {
-			err = errors.New("The '--retries' option should have a numeric value. " + cliutils.GetDocumentationMessage())
-			return 0, err
-		}
-	}
-
-	return retries, nil
-}
-
-// getRetryWaitTime extract the given '--retry-wait-time' value and validate that it has a numeric value and a 's'/'ms' suffix.
-// The returned wait time's value is in milliseconds.
-func getRetryWaitTime(c *cli.Context) (waitMilliSecs int, err error) {
-	waitMilliSecs = cliutils.RetryWaitMilliSecs
-	waitTimeStringValue := c.String("retry-wait-time")
-	useSeconds := false
-	if waitTimeStringValue != "" {
-		switch {
-		case strings.HasSuffix(waitTimeStringValue, "ms"):
-			waitTimeStringValue = strings.TrimSuffix(waitTimeStringValue, "ms")
-
-		case strings.HasSuffix(waitTimeStringValue, "s"):
-			useSeconds = true
-			waitTimeStringValue = strings.TrimSuffix(waitTimeStringValue, "s")
-		default:
-			err = getRetryWaitTimeVerificationError()
-			return
-		}
-		waitMilliSecs, err = strconv.Atoi(waitTimeStringValue)
-		if err != nil {
-			err = getRetryWaitTimeVerificationError()
-			return
-		}
-		// Convert seconds to milliseconds
-		if useSeconds {
-			waitMilliSecs *= 1000
-		}
-	}
-	return
-}
-
-func getRetryWaitTimeVerificationError() error {
-	return errorutils.CheckErrorf("The '--retry-wait-time' option should have a numeric value with 's'/'ms' suffix. " + cliutils.GetDocumentationMessage())
-}
-
-func dockerPromoteCmd(c *cli.Context) error {
-	if c.NArg() != 3 {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
-	}
-	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
-	if err != nil {
-		return err
-	}
-	params := services.NewDockerPromoteParams(c.Args().Get(0), c.Args().Get(1), c.Args().Get(2))
-	params.TargetDockerImage = c.String("target-docker-image")
-	params.SourceTag = c.String("source-tag")
-	params.TargetTag = c.String("target-tag")
-	params.Copy = c.Bool("copy")
-	dockerPromoteCommand := container.NewDockerPromoteCommand()
-	dockerPromoteCommand.SetParams(params).SetServerDetails(artDetails)
-
-	return commands.Exec(dockerPromoteCommand)
-}
-
-func containerPushCmd(c *cli.Context, containerManagerType containerutils.ContainerManagerType) (err error) {
-	if c.NArg() != 2 {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
-	}
-	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
-	if err != nil {
-		return
-	}
-	imageTag := c.Args().Get(0)
-	targetRepo := c.Args().Get(1)
-	skipLogin := c.Bool("skip-login")
-
-	buildConfiguration, err := cliutils.CreateBuildConfigurationWithModule(c)
-	if err != nil {
-		return
-	}
-	dockerPushCommand := container.NewPushCommand(containerManagerType)
-	threads, err := cliutils.GetThreadsCount(c)
-	if err != nil {
-		return
-	}
-	printDeploymentView, detailedSummary := log.IsStdErrTerminal(), c.Bool("detailed-summary")
-	dockerPushCommand.SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetCmdParams([]string{"push", imageTag}).SetSkipLogin(skipLogin).SetBuildConfiguration(buildConfiguration).SetRepo(targetRepo).SetServerDetails(artDetails).SetImageTag(imageTag)
-	err = cliutils.ShowDockerDeprecationMessageIfNeeded(containerManagerType, dockerPushCommand.IsGetRepoSupported)
-	if err != nil {
-		return
-	}
-	err = commands.Exec(dockerPushCommand)
-	result := dockerPushCommand.Result()
-
-	// Cleanup.
-	defer cliutils.CleanupResult(result, &err)
-	err = cliutils.PrintCommandSummary(dockerPushCommand.Result(), detailedSummary, printDeploymentView, false, err)
-	return
-}
-
-func containerPullCmd(c *cli.Context, containerManagerType containerutils.ContainerManagerType) error {
-	if c.NArg() != 2 {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
-	}
-	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
-	if err != nil {
-		return err
-	}
-	imageTag := c.Args().Get(0)
-	sourceRepo := c.Args().Get(1)
-	skipLogin := c.Bool("skip-login")
-	buildConfiguration, err := cliutils.CreateBuildConfigurationWithModule(c)
-	if err != nil {
-		return err
-	}
-	dockerPullCommand := container.NewPullCommand(containerManagerType)
-	dockerPullCommand.SetCmdParams([]string{"pull", imageTag}).SetSkipLogin(skipLogin).SetImageTag(imageTag).SetRepo(sourceRepo).SetServerDetails(artDetails).SetBuildConfiguration(buildConfiguration)
-	err = cliutils.ShowDockerDeprecationMessageIfNeeded(containerManagerType, dockerPullCommand.IsGetRepoSupported)
-	if err != nil {
-		return err
-	}
-	return commands.Exec(dockerPullCommand)
-}
-
-func BuildDockerCreateCmd(c *cli.Context) error {
-	if c.NArg() != 1 {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
-	}
-	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
-	if err != nil {
-		return err
-	}
-	sourceRepo := c.Args().Get(0)
-	imageNameWithDigestFile := c.String("image-file")
-	if imageNameWithDigestFile == "" {
-		return cliutils.PrintHelpAndReturnError("The '--image-file' command option was not provided.", c)
-	}
-	buildConfiguration, err := cliutils.CreateBuildConfigurationWithModule(c)
-	if err != nil {
-		return err
-	}
-	buildDockerCreateCommand := container.NewBuildDockerCreateCommand()
-	if err = buildDockerCreateCommand.SetImageNameWithDigest(imageNameWithDigestFile); err != nil {
-		return err
-	}
-	buildDockerCreateCommand.SetRepo(sourceRepo).SetServerDetails(artDetails).SetBuildConfiguration(buildConfiguration)
-	return commands.Exec(buildDockerCreateCommand)
-}
-
-func ocStartBuildCmd(c *cli.Context) error {
-	args := cliutils.ExtractCommand(c)
-
-	// After the 'oc' command, only 'start-build' is allowed
-	parentArgs := c.Parent().Args()
-	if parentArgs[0] == "oc" {
-		if len(parentArgs) < 2 || parentArgs[1] != "start-build" {
-			return errorutils.CheckErrorf("invalid command. The only OpenShift CLI command supported by JFrog CLI is 'oc start-build'")
-		}
-		coreutils.RemoveFlagFromCommand(&args, 0, 0)
-	}
-
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c, args); show || err != nil {
-		return err
-	}
-	if len(args) < 2 {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
-	}
-
-	// Extract build configuration
-	filteredOcArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
-	if err != nil {
-		return err
-	}
-
-	// Extract repo
-	flagIndex, valueIndex, repo, err := coreutils.FindFlag("--repo", filteredOcArgs)
-	if err != nil {
-		return err
-	}
-	coreutils.RemoveFlagFromCommand(&filteredOcArgs, flagIndex, valueIndex)
-	if flagIndex == -1 {
-		err = errorutils.CheckErrorf("the --repo option is mandatory")
-		return err
-	}
-
-	// Extract server-id
-	flagIndex, valueIndex, serverId, err := coreutils.FindFlag("--server-id", filteredOcArgs)
-	if err != nil {
-		return err
-	}
-	coreutils.RemoveFlagFromCommand(&filteredOcArgs, flagIndex, valueIndex)
-
-	ocCmd := oc.NewOcStartBuildCommand().SetOcArgs(filteredOcArgs).SetRepo(repo).SetServerId(serverId).SetBuildConfiguration(buildConfiguration)
-	return commands.Exec(ocCmd)
-}
-
-func nugetDepsTreeCmd(c *cli.Context) error {
-	if c.NArg() != 0 {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
-	}
-
-	return dotnet.DependencyTreeCmd()
-}
-
-func pingCmd(c *cli.Context) error {
-	if c.NArg() > 0 {
-		return cliutils.PrintHelpAndReturnError("No arguments should be sent.", c)
-	}
-	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
-	if err != nil {
-		return err
-	}
-	pingCmd := generic.NewPingCommand()
-	pingCmd.SetServerDetails(artDetails)
-	err = commands.Exec(pingCmd)
-	resString := clientutils.IndentJson(pingCmd.Response())
-	if err != nil {
-		return errors.New(err.Error() + "\n" + resString)
-	}
-	log.Output(resString)
-
-	return err
-}
-
 func prepareDownloadCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	if c.NArg() > 0 && c.IsSet("spec") {
 		return nil, cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
@@ -1241,14 +567,17 @@ func prepareDownloadCommand(c *cli.Context) (*spec.SpecFiles, error) {
 
 	var downloadSpec *spec.SpecFiles
 	var err error
+
 	if c.IsSet("spec") {
 		downloadSpec, err = cliutils.GetSpec(c, true, true)
 	} else {
 		downloadSpec, err = createDefaultDownloadSpec(c)
 	}
+
 	if err != nil {
 		return nil, err
 	}
+
 	setTransitiveInDownloadSpec(downloadSpec)
 	err = spec.ValidateSpec(downloadSpec.Files, false, true)
 	if err != nil {
@@ -1257,107 +586,52 @@ func prepareDownloadCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	return downloadSpec, nil
 }
 
-func downloadCmd(c *cli.Context) error {
-	downloadSpec, err := prepareDownloadCommand(c)
-	if err != nil {
-		return err
-	}
-	fixWinPathsForDownloadCmd(downloadSpec, c)
-	configuration, err := cliutils.CreateDownloadConfiguration(c)
-	if err != nil {
-		return err
-	}
-	serverDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
-	if err != nil {
-		return err
-	}
-	buildConfiguration, err := cliutils.CreateBuildConfigurationWithModule(c)
-	if err != nil {
-		return err
-	}
-	retries, err := getRetries(c)
-	if err != nil {
-		return err
-	}
-	retryWaitTime, err := getRetryWaitTime(c)
-	if err != nil {
-		return err
-	}
-	downloadCommand := generic.NewDownloadCommand()
-	downloadCommand.SetConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(downloadSpec).SetServerDetails(serverDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c)).SetDetailedSummary(c.Bool("detailed-summary")).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
+func checkRbExistenceInV2(c *cli.Context) (bool, error) {
+	bundleNameAndVersion := c.String("bundle")
+	parts := strings.Split(bundleNameAndVersion, "/")
+	rbName := parts[0]
+	rbVersion := parts[1]
 
-	if downloadCommand.ShouldPrompt() && !coreutils.AskYesNo("Sync-deletes may delete some files in your local file system. Are you sure you want to continue?\n"+
-		"You can avoid this confirmation message by adding --quiet to the command.", false) {
-		return nil
-	}
-	// This error is being checked later on because we need to generate summary report before return.
-	err = progressbar.ExecWithProgress(downloadCommand)
-	result := downloadCommand.Result()
-	defer cliutils.CleanupResult(result, &err)
-	basicSummary, err := cliutils.CreateSummaryReportString(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
+	lcDetails, err := createLifecycleDetailsByFlags(c)
 	if err != nil {
-		return err
+		return false, err
 	}
-	err = cliutils.PrintDetailedSummaryReport(basicSummary, result.Reader(), false, err)
-	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c))
+
+	lcServicesManager, err := utils.CreateLifecycleServiceManager(lcDetails, false)
+	if err != nil {
+		return false, err
+	}
+
+	return lcServicesManager.IsReleaseBundleExist(rbName, rbVersion, c.String("project"))
 }
 
-func uploadCmd(c *cli.Context) (err error) {
-	if c.NArg() > 0 && c.IsSet("spec") {
-		return cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
+func createLifecycleDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, error) {
+	lcDetails, err := cliutils.CreateServerDetailsWithConfigOffer(c, true, commonCliUtils.Platform)
+	if err != nil {
+		return nil, err
 	}
-	if !(c.NArg() == 2 || (c.NArg() == 0 && c.IsSet("spec"))) {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
+	if lcDetails.Url == "" {
+		return nil, errors.New("platform URL is mandatory for lifecycle commands")
 	}
+	PlatformToLifecycleUrls(lcDetails)
+	return lcDetails, nil
+}
 
-	var uploadSpec *spec.SpecFiles
-	if c.IsSet("spec") {
-		uploadSpec, err = cliutils.GetFileSystemSpec(c)
+func PlatformToLifecycleUrls(lcDetails *coreConfig.ServerDetails) {
+	// For tests only. in prod - this "if" will always return false
+	if strings.Contains(lcDetails.Url, "artifactory/") {
+		lcDetails.ArtifactoryUrl = utilsForLC.AddTrailingSlashIfNeeded(lcDetails.Url)
+		lcDetails.LifecycleUrl = strings.Replace(
+			utilsForLC.AddTrailingSlashIfNeeded(lcDetails.Url),
+			"artifactory/",
+			"lifecycle/",
+			1,
+		)
 	} else {
-		uploadSpec, err = createDefaultUploadSpec(c)
+		lcDetails.ArtifactoryUrl = utilsForLC.AddTrailingSlashIfNeeded(lcDetails.Url) + "artifactory/"
+		lcDetails.LifecycleUrl = utilsForLC.AddTrailingSlashIfNeeded(lcDetails.Url) + "lifecycle/"
 	}
-	if err != nil {
-		return
-	}
-	err = spec.ValidateSpec(uploadSpec.Files, true, false)
-	if err != nil {
-		return
-	}
-	cliutils.FixWinPathsForFileSystemSourcedCmds(uploadSpec, c)
-	configuration, err := cliutils.CreateUploadConfiguration(c)
-	if err != nil {
-		return
-	}
-	buildConfiguration, err := cliutils.CreateBuildConfigurationWithModule(c)
-	if err != nil {
-		return
-	}
-	retries, err := getRetries(c)
-	if err != nil {
-		return
-	}
-	retryWaitTime, err := getRetryWaitTime(c)
-	if err != nil {
-		return
-	}
-	uploadCmd := generic.NewUploadCommand()
-	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
-	if err != nil {
-		return
-	}
-	printDeploymentView, detailedSummary := log.IsStdErrTerminal(), cliutils.GetDetailedSummary(c)
-	uploadCmd.SetUploadConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(uploadSpec).SetServerDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c)).SetDetailedSummary(detailedSummary || printDeploymentView).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
-
-	if uploadCmd.ShouldPrompt() && !coreutils.AskYesNo("Sync-deletes may delete some artifacts in Artifactory. Are you sure you want to continue?\n"+
-		"You can avoid this confirmation message by adding --quiet to the command.", false) {
-		return nil
-	}
-	// This error is being checked later on because we need to generate summary report before return.
-	err = progressbar.ExecWithProgress(uploadCmd)
-	result := uploadCmd.Result()
-	defer cliutils.CleanupResult(result, &err)
-	err = cliutils.PrintCommandSummary(uploadCmd.Result(), detailedSummary, printDeploymentView, cliutils.IsFailNoOp(c), err)
-	return
+	lcDetails.Url = ""
 }
 
 func prepareCopyMoveCommand(c *cli.Context) (*spec.SpecFiles, error) {
@@ -1385,69 +659,6 @@ func prepareCopyMoveCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	return copyMoveSpec, nil
 }
 
-func moveCmd(c *cli.Context) error {
-	moveSpec, err := prepareCopyMoveCommand(c)
-	if err != nil {
-		return err
-	}
-	moveCmd := generic.NewMoveCommand()
-	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
-	if err != nil {
-		return err
-	}
-	threads, err := cliutils.GetThreadsCount(c)
-	if err != nil {
-		return err
-	}
-	retries, err := getRetries(c)
-	if err != nil {
-		return err
-	}
-	retryWaitTime, err := getRetryWaitTime(c)
-	if err != nil {
-		return err
-	}
-	moveCmd.SetThreads(threads).SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetSpec(moveSpec).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
-	err = commands.Exec(moveCmd)
-	result := moveCmd.Result()
-	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
-}
-
-func copyCmd(c *cli.Context) error {
-	copySpec, err := prepareCopyMoveCommand(c)
-	if err != nil {
-		return err
-	}
-
-	copyCommand := generic.NewCopyCommand()
-	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
-	if err != nil {
-		return err
-	}
-	threads, err := cliutils.GetThreadsCount(c)
-	if err != nil {
-		return err
-	}
-	retries, err := getRetries(c)
-	if err != nil {
-		return err
-	}
-	retryWaitTime, err := getRetryWaitTime(c)
-	if err != nil {
-		return err
-	}
-	copyCommand.SetThreads(threads).SetSpec(copySpec).SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
-	err = commands.Exec(copyCommand)
-	result := copyCommand.Result()
-	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
-}
-
-// Prints a 'brief' (not detailed) summary and returns the appropriate exit error.
-func printBriefSummaryAndGetError(succeeded, failed int, failNoOp bool, originalErr error) error {
-	err := cliutils.PrintBriefSummaryReport(succeeded, failed, failNoOp, originalErr)
-	return cliutils.GetCliError(err, succeeded, failed, failNoOp)
-}
-
 func prepareDeleteCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	if c.NArg() > 0 && c.IsSet("spec") {
 		return nil, cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
@@ -1473,36 +684,6 @@ func prepareDeleteCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	return deleteSpec, nil
 }
 
-func deleteCmd(c *cli.Context) error {
-	deleteSpec, err := prepareDeleteCommand(c)
-	if err != nil {
-		return err
-	}
-
-	deleteCommand := generic.NewDeleteCommand()
-	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
-	if err != nil {
-		return err
-	}
-
-	threads, err := cliutils.GetThreadsCount(c)
-	if err != nil {
-		return err
-	}
-	retries, err := getRetries(c)
-	if err != nil {
-		return err
-	}
-	retryWaitTime, err := getRetryWaitTime(c)
-	if err != nil {
-		return err
-	}
-	deleteCommand.SetThreads(threads).SetQuiet(cliutils.GetQuietValue(c)).SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetSpec(deleteSpec).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
-	err = commands.Exec(deleteCommand)
-	result := deleteCommand.Result()
-	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
-}
-
 func prepareSearchCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	if c.NArg() > 0 && c.IsSet("spec") {
 		return nil, cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
@@ -1526,46 +707,6 @@ func prepareSearchCommand(c *cli.Context) (*spec.SpecFiles, error) {
 		return nil, err
 	}
 	return searchSpec, err
-}
-
-func searchCmd(c *cli.Context) (err error) {
-	searchSpec, err := prepareSearchCommand(c)
-	if err != nil {
-		return
-	}
-	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
-	if err != nil {
-		return
-	}
-	retries, err := getRetries(c)
-	if err != nil {
-		return
-	}
-	retryWaitTime, err := getRetryWaitTime(c)
-	if err != nil {
-		return
-	}
-	searchCmd := generic.NewSearchCommand()
-	searchCmd.SetServerDetails(artDetails).SetSpec(searchSpec).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
-	err = commands.Exec(searchCmd)
-	if err != nil {
-		return
-	}
-	reader := searchCmd.Result().Reader()
-	defer ioutils.Close(reader, &err)
-	length, err := reader.Length()
-	if err != nil {
-		return err
-	}
-	err = cliutils.GetCliError(err, length, 0, cliutils.IsFailNoOp(c))
-	if err != nil {
-		return err
-	}
-	if !c.Bool("count") {
-		return utils.PrintSearchResults(reader)
-	}
-	log.Output(length)
-	return nil
 }
 
 func preparePropsCmd(c *cli.Context) (*generic.PropsCommand, error) {
@@ -1614,289 +755,6 @@ func preparePropsCmd(c *cli.Context) (*generic.PropsCommand, error) {
 	return cmd, nil
 }
 
-func setPropsCmd(c *cli.Context) error {
-	cmd, err := preparePropsCmd(c)
-	if err != nil {
-		return err
-	}
-	retries, err := getRetries(c)
-	if err != nil {
-		return err
-	}
-	retryWaitTime, err := getRetryWaitTime(c)
-	if err != nil {
-		return err
-	}
-	propsCmd := generic.NewSetPropsCommand().SetPropsCommand(*cmd)
-	propsCmd.SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
-	err = commands.Exec(propsCmd)
-	result := propsCmd.Result()
-	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
-}
-
-func deletePropsCmd(c *cli.Context) error {
-	cmd, err := preparePropsCmd(c)
-	if err != nil {
-		return err
-	}
-	retries, err := getRetries(c)
-	if err != nil {
-		return err
-	}
-	retryWaitTime, err := getRetryWaitTime(c)
-	if err != nil {
-		return err
-	}
-	propsCmd := generic.NewDeletePropsCommand().DeletePropsCommand(*cmd)
-	propsCmd.SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
-	err = commands.Exec(propsCmd)
-	result := propsCmd.Result()
-	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
-}
-
-func buildPublishCmd(c *cli.Context) error {
-	if c.NArg() > 2 {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
-	}
-	buildConfiguration := cliutils.CreateBuildConfiguration(c)
-	if err := buildConfiguration.ValidateBuildParams(); err != nil {
-		return err
-	}
-	buildInfoConfiguration := createBuildInfoConfiguration(c)
-	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
-	if err != nil {
-		return err
-	}
-	buildPublishCmd := buildinfo.NewBuildPublishCommand().SetServerDetails(rtDetails).SetBuildConfiguration(buildConfiguration).SetConfig(buildInfoConfiguration).SetDetailedSummary(cliutils.GetDetailedSummary(c))
-
-	err = commands.Exec(buildPublishCmd)
-	if buildPublishCmd.IsDetailedSummary() {
-		if summary := buildPublishCmd.GetSummary(); summary != nil {
-			return cliutils.PrintBuildInfoSummaryReport(summary.IsSucceeded(), summary.GetSha256(), err)
-		}
-	}
-	return err
-}
-
-func buildAppendCmd(c *cli.Context) error {
-	if c.NArg() != 4 {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
-	}
-	buildConfiguration := cliutils.CreateBuildConfiguration(c)
-	if err := buildConfiguration.ValidateBuildParams(); err != nil {
-		return err
-	}
-	buildNameToAppend, buildNumberToAppend := c.Args().Get(2), c.Args().Get(3)
-	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
-	if err != nil {
-		return err
-	}
-	buildAppendCmd := buildinfo.NewBuildAppendCommand().SetServerDetails(rtDetails).SetBuildConfiguration(buildConfiguration).SetBuildNameToAppend(buildNameToAppend).SetBuildNumberToAppend(buildNumberToAppend)
-	return commands.Exec(buildAppendCmd)
-}
-
-func buildAddDependenciesCmd(c *cli.Context) error {
-	if c.NArg() > 2 && c.IsSet("spec") {
-		return cliutils.PrintHelpAndReturnError("Only path or spec is allowed, not both.", c)
-	}
-	if c.IsSet("regexp") && c.IsSet("from-rt") {
-		return cliutils.PrintHelpAndReturnError("The --regexp option is not supported when --from-rt is set to true.", c)
-	}
-	buildConfiguration := cliutils.CreateBuildConfiguration(c)
-	if err := buildConfiguration.ValidateBuildParams(); err != nil {
-		return err
-	}
-	// Odd number of args - Use pattern arg
-	// Even number of args - Use spec flag
-	if c.NArg() > 3 || !(c.NArg()%2 == 1 || (c.NArg()%2 == 0 && c.IsSet("spec"))) {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
-	}
-
-	var dependenciesSpec *spec.SpecFiles
-	var rtDetails *coreConfig.ServerDetails
-	var err error
-	if c.IsSet("spec") {
-		dependenciesSpec, err = cliutils.GetFileSystemSpec(c)
-		if err != nil {
-			return err
-		}
-	} else {
-		dependenciesSpec = createDefaultBuildAddDependenciesSpec(c)
-	}
-	if c.Bool("from-rt") {
-		rtDetails, err = cliutils.CreateArtifactoryDetailsByFlags(c)
-		if err != nil {
-			return err
-		}
-	} else {
-		cliutils.FixWinPathsForFileSystemSourcedCmds(dependenciesSpec, c)
-	}
-	buildAddDependenciesCmd := buildinfo.NewBuildAddDependenciesCommand().SetDryRun(c.Bool("dry-run")).SetBuildConfiguration(buildConfiguration).SetDependenciesSpec(dependenciesSpec).SetServerDetails(rtDetails)
-	err = commands.Exec(buildAddDependenciesCmd)
-	result := buildAddDependenciesCmd.Result()
-	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
-}
-
-func buildCollectEnvCmd(c *cli.Context) error {
-	if c.NArg() > 2 {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
-	}
-	buildConfiguration := cliutils.CreateBuildConfiguration(c)
-	if err := buildConfiguration.ValidateBuildParams(); err != nil {
-		return err
-	}
-	buildCollectEnvCmd := buildinfo.NewBuildCollectEnvCommand().SetBuildConfiguration(buildConfiguration)
-
-	return commands.Exec(buildCollectEnvCmd)
-}
-
-func buildAddGitCmd(c *cli.Context) error {
-	if c.NArg() > 3 {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
-	}
-	buildConfiguration := cliutils.CreateBuildConfiguration(c)
-	if err := buildConfiguration.ValidateBuildParams(); err != nil {
-		return err
-	}
-
-	buildAddGitConfigurationCmd := buildinfo.NewBuildAddGitCommand().SetBuildConfiguration(buildConfiguration).SetConfigFilePath(c.String("config")).SetServerId(c.String("server-id"))
-	if c.NArg() == 3 {
-		buildAddGitConfigurationCmd.SetDotGitPath(c.Args().Get(2))
-	} else if c.NArg() == 1 {
-		buildAddGitConfigurationCmd.SetDotGitPath(c.Args().Get(0))
-	}
-	return commands.Exec(buildAddGitConfigurationCmd)
-}
-
-func buildScanLegacyCmd(c *cli.Context) error {
-	if c.NArg() > 2 {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
-	}
-	buildConfiguration := cliutils.CreateBuildConfiguration(c)
-	if err := buildConfiguration.ValidateBuildParams(); err != nil {
-		return err
-	}
-	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
-	if err != nil {
-		return err
-	}
-	buildScanCmd := buildinfo.NewBuildScanLegacyCommand().SetServerDetails(rtDetails).SetFailBuild(c.BoolT("fail")).SetBuildConfiguration(buildConfiguration)
-	err = commands.Exec(buildScanCmd)
-
-	return checkBuildScanError(err)
-}
-
-func checkBuildScanError(err error) error {
-	// If the build was found vulnerable, exit with ExitCodeVulnerableBuild.
-	if err == utils.GetBuildScanError() {
-		return coreutils.CliError{ExitCode: coreutils.ExitCodeVulnerableBuild, ErrorMsg: err.Error()}
-	}
-	// If the scan operation failed, for example due to HTTP timeout, exit with ExitCodeError.
-	if err != nil {
-		return coreutils.CliError{ExitCode: coreutils.ExitCodeError, ErrorMsg: err.Error()}
-	}
-	return nil
-}
-
-func buildCleanCmd(c *cli.Context) error {
-	if c.NArg() > 2 {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
-	}
-	buildConfiguration := cliutils.CreateBuildConfiguration(c)
-	if err := buildConfiguration.ValidateBuildParams(); err != nil {
-		return err
-	}
-	buildCleanCmd := buildinfo.NewBuildCleanCommand().SetBuildConfiguration(buildConfiguration)
-	return commands.Exec(buildCleanCmd)
-}
-
-func buildPromoteCmd(c *cli.Context) error {
-	if c.NArg() > 3 {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
-	}
-	configuration := createBuildPromoteConfiguration(c)
-	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
-	if err != nil {
-		return err
-	}
-	buildConfiguration := cliutils.CreateBuildConfiguration(c)
-	if err := buildConfiguration.ValidateBuildParams(); err != nil {
-		return err
-	}
-	buildPromotionCmd := buildinfo.NewBuildPromotionCommand().SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetPromotionParams(configuration).SetBuildConfiguration(buildConfiguration)
-	return commands.Exec(buildPromotionCmd)
-}
-
-func buildDiscardCmd(c *cli.Context) error {
-	if c.NArg() > 1 {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
-	}
-	configuration := createBuildDiscardConfiguration(c)
-	if configuration.BuildName == "" {
-		return cliutils.PrintHelpAndReturnError("Build name is expected as a command argument or environment variable.", c)
-	}
-	buildDiscardCmd := buildinfo.NewBuildDiscardCommand()
-	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
-	if err != nil {
-		return err
-	}
-	buildDiscardCmd.SetServerDetails(rtDetails).SetDiscardBuildsParams(configuration)
-
-	return commands.Exec(buildDiscardCmd)
-}
-
-func gitLfsCleanCmd(c *cli.Context) error {
-	if c.NArg() > 1 {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
-	}
-	configuration := createGitLfsCleanConfiguration(c)
-	retries, err := getRetries(c)
-	if err != nil {
-		return err
-	}
-	retryWaitTime, err := getRetryWaitTime(c)
-	if err != nil {
-		return err
-	}
-	gitLfsCmd := generic.NewGitLfsCommand()
-	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
-	if err != nil {
-		return err
-	}
-	gitLfsCmd.SetConfiguration(configuration).SetServerDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
-
-	return commands.Exec(gitLfsCmd)
-}
-
-func curlCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
-		return err
-	}
-	if c.NArg() < 1 {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
-	}
-	rtCurlCommand, err := newRtCurlCommand(c)
-	if err != nil {
-		return err
-	}
-	return commands.Exec(rtCurlCommand)
-}
-
-func newRtCurlCommand(c *cli.Context) (*curl.RtCurlCommand, error) {
-	curlCommand := commands.NewCurlCommand().SetArguments(cliutils.ExtractCommand(c))
-	rtCurlCommand := curl.NewRtCurlCommand(*curlCommand)
-	rtDetails, err := rtCurlCommand.GetServerDetails()
-	if err != nil {
-		return nil, err
-	}
-	if rtDetails.ArtifactoryUrl == "" {
-		return nil, errorutils.CheckErrorf("No Artifactory servers configured. Use the 'jf c add' command to set the Artifactory server details.")
-	}
-	rtCurlCommand.SetServerDetails(rtDetails)
-	rtCurlCommand.SetUrl(rtDetails.ArtifactoryUrl)
-	return rtCurlCommand, err
-}
-
 func pipDeprecatedInstallCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
@@ -1921,99 +779,6 @@ func pipDeprecatedInstallCmd(c *cli.Context) error {
 	pythonCommand := python.NewPipCommand()
 	pythonCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName("install").SetArgs(cliutils.ExtractCommand(c))
 	return commands.Exec(pythonCommand)
-}
-
-func repoTemplateCmd(c *cli.Context) error {
-	if c.NArg() != 1 {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
-	}
-
-	// Run command.
-	repoTemplateCmd := repository.NewRepoTemplateCommand()
-	repoTemplateCmd.SetTemplatePath(c.Args().Get(0))
-	return commands.Exec(repoTemplateCmd)
-}
-
-func repoCreateCmd(c *cli.Context) error {
-	if c.NArg() != 1 {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
-	}
-
-	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
-	if err != nil {
-		return err
-	}
-
-	// Run command.
-	repoCreateCmd := repository.NewRepoCreateCommand()
-	repoCreateCmd.SetTemplatePath(c.Args().Get(0)).SetServerDetails(rtDetails).SetVars(c.String("vars"))
-	return commands.Exec(repoCreateCmd)
-}
-
-func repoUpdateCmd(c *cli.Context) error {
-	if c.NArg() != 1 {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
-	}
-
-	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
-	if err != nil {
-		return err
-	}
-
-	// Run command.
-	repoUpdateCmd := repository.NewRepoUpdateCommand()
-	repoUpdateCmd.SetTemplatePath(c.Args().Get(0)).SetServerDetails(rtDetails).SetVars(c.String("vars"))
-	return commands.Exec(repoUpdateCmd)
-}
-
-func repoDeleteCmd(c *cli.Context) error {
-	if c.NArg() != 1 {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
-	}
-
-	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
-	if err != nil {
-		return err
-	}
-
-	repoDeleteCmd := repository.NewRepoDeleteCommand()
-	repoDeleteCmd.SetRepoPattern(c.Args().Get(0)).SetServerDetails(rtDetails).SetQuiet(cliutils.GetQuietValue(c))
-	return commands.Exec(repoDeleteCmd)
-}
-
-func replicationTemplateCmd(c *cli.Context) error {
-	if c.NArg() != 1 {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
-	}
-	replicationTemplateCmd := replication.NewReplicationTemplateCommand()
-	replicationTemplateCmd.SetTemplatePath(c.Args().Get(0))
-	return commands.Exec(replicationTemplateCmd)
-}
-
-func replicationCreateCmd(c *cli.Context) error {
-	if c.NArg() != 1 {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
-	}
-	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
-	if err != nil {
-		return err
-	}
-	replicationCreateCmd := replication.NewReplicationCreateCommand()
-	replicationCreateCmd.SetTemplatePath(c.Args().Get(0)).SetServerDetails(rtDetails).SetVars(c.String("vars"))
-	return commands.Exec(replicationCreateCmd)
-}
-
-func replicationDeleteCmd(c *cli.Context) error {
-	if c.NArg() != 1 {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
-	}
-	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
-	if err != nil {
-		return err
-	}
-	replicationDeleteCmd := replication.NewReplicationDeleteCommand()
-	replicationDeleteCmd.SetRepoKey(c.Args().Get(0)).SetServerDetails(rtDetails).SetQuiet(cliutils.GetQuietValue(c))
-	return commands.Exec(replicationDeleteCmd)
 }
 
 func permissionTargetTemplateCmd(c *cli.Context) error {
@@ -2489,6 +1254,7 @@ func createDefaultDeleteSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Recursive(c.BoolT("recursive")).
 		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
 		ArchiveEntries(c.String("archive-entries")).
+		RepoOnly(c.Bool("repo-only")).
 		BuildSpec(), nil
 }
 
@@ -2544,84 +1310,14 @@ func createDefaultPropertiesSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		BuildSpec(), nil
 }
 
-func createBuildInfoConfiguration(c *cli.Context) *buildinfocmd.Configuration {
-	flags := new(buildinfocmd.Configuration)
-	flags.BuildUrl = cliutils.GetBuildUrl(c.String("build-url"))
-	flags.DryRun = c.Bool("dry-run")
-	flags.EnvInclude = c.String("env-include")
-	flags.EnvExclude = cliutils.GetEnvExclude(c.String("env-exclude"))
-	if flags.EnvInclude == "" {
-		flags.EnvInclude = "*"
-	}
-	// Allow using `env-exclude=""` and get no filters
-	if flags.EnvExclude == "" {
-		flags.EnvExclude = "*password*;*psw*;*secret*;*key*;*token*;*auth*"
-	}
-	return flags
-}
-
-func createBuildPromoteConfiguration(c *cli.Context) services.PromotionParams {
-	promotionParamsImpl := services.NewPromotionParams()
-	promotionParamsImpl.Comment = c.String("comment")
-	promotionParamsImpl.SourceRepo = c.String("source-repo")
-	promotionParamsImpl.Status = c.String("status")
-	promotionParamsImpl.IncludeDependencies = c.Bool("include-dependencies")
-	promotionParamsImpl.Copy = c.Bool("copy")
-	promotionParamsImpl.Properties = c.String("props")
-	promotionParamsImpl.ProjectKey = cliutils.GetProject(c)
-	promotionParamsImpl.FailFast = c.BoolT("fail-fast")
-
-	// If the command received 3 args, read the build name, build number
-	// and target repo as ags.
-	buildName, buildNumber, targetRepo := c.Args().Get(0), c.Args().Get(1), c.Args().Get(2)
-	// But if the command received only one arg, the build name and build number
-	// are expected as env vars, and only the target repo is received as an arg.
-	if len(c.Args()) == 1 {
-		buildName, buildNumber, targetRepo = "", "", c.Args().Get(0)
-	}
-
-	promotionParamsImpl.BuildName, promotionParamsImpl.BuildNumber = buildName, buildNumber
-	promotionParamsImpl.TargetRepo = targetRepo
-	return promotionParamsImpl
-}
-
-func createBuildDiscardConfiguration(c *cli.Context) services.DiscardBuildsParams {
-	discardParamsImpl := services.NewDiscardBuildsParams()
-	discardParamsImpl.DeleteArtifacts = c.Bool("delete-artifacts")
-	discardParamsImpl.MaxBuilds = c.String("max-builds")
-	discardParamsImpl.MaxDays = c.String("max-days")
-	discardParamsImpl.ExcludeBuilds = c.String("exclude-builds")
-	discardParamsImpl.Async = c.Bool("async")
-	discardParamsImpl.BuildName = cliutils.GetBuildName(c.Args().Get(0))
-	discardParamsImpl.ProjectKey = cliutils.GetProject(c)
-	return discardParamsImpl
-}
-
-func createGitLfsCleanConfiguration(c *cli.Context) (gitLfsCleanConfiguration *generic.GitLfsCleanConfiguration) {
-	gitLfsCleanConfiguration = new(generic.GitLfsCleanConfiguration)
-
-	gitLfsCleanConfiguration.Refs = c.String("refs")
-	if len(gitLfsCleanConfiguration.Refs) == 0 {
-		gitLfsCleanConfiguration.Refs = "refs/remotes/*"
-	}
-
-	gitLfsCleanConfiguration.Repo = c.String("repo")
-	gitLfsCleanConfiguration.Quiet = cliutils.GetQuietValue(c)
-	dotGitPath := ""
-	if c.NArg() == 1 {
-		dotGitPath = c.Args().Get(0)
-	}
-	gitLfsCleanConfiguration.GitPath = dotGitPath
-	return
-}
-
 func createDefaultDownloadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 	offset, limit, err := getOffsetAndLimitValues(c)
 	if err != nil {
 		return nil, err
 	}
+
 	return spec.NewBuilder().
-		Pattern(strings.TrimPrefix(c.Args().Get(0), "/")).
+		Pattern(getSourcePattern(c)).
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
@@ -2646,6 +1342,53 @@ func createDefaultDownloadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		BuildSpec(), nil
 }
 
+func getSourcePattern(c *cli.Context) string {
+	var source string
+	var isRbv2 bool
+	var err error
+
+	if c.IsSet("bundle") {
+		// If the bundle flag is set, we need to check if the bundle exists in rbv2
+		isRbv2, err = checkRbExistenceInV2(c)
+		if err != nil {
+			log.Error("Error occurred while checking if the bundle exists in rbv2:", err.Error())
+		}
+	}
+
+	if isRbv2 {
+		// RB2 will be downloaded like a regular artifact, path: projectKey-release-bundles-v2/rbName/rbVersion
+		source, err = buildSourceForRbv2(c)
+		if err != nil {
+			log.Error("Error occurred while building source path for rbv2:", err.Error())
+			return ""
+		}
+	} else {
+		source = strings.TrimPrefix(c.Args().Get(0), "/")
+	}
+
+	return source
+}
+
+func buildSourceForRbv2(c *cli.Context) (string, error) {
+	bundleNameAndVersion := c.String("bundle")
+	projectKey := c.String("project")
+	source := projectKey
+
+	// Reset bundle flag
+	err := c.Set("bundle", "")
+	if err != nil {
+		return "", err
+	}
+
+	// If projectKey is not empty, append "-" to it
+	if projectKey != "" {
+		source += "-"
+	}
+	// Build RB path: projectKey-release-bundles-v2/rbName/rbVersion/
+	source += releaseBundlesV2 + "/" + bundleNameAndVersion + "/"
+	return source, nil
+}
+
 func setTransitiveInDownloadSpec(downloadSpec *spec.SpecFiles) {
 	transitive := os.Getenv(coreutils.TransitiveDownload)
 	if transitive == "" {
@@ -2655,55 +1398,6 @@ func setTransitiveInDownloadSpec(downloadSpec *spec.SpecFiles) {
 	}
 	for fileIndex := 0; fileIndex < len(downloadSpec.Files); fileIndex++ {
 		downloadSpec.Files[fileIndex].Transitive = transitive
-	}
-}
-
-func createDefaultUploadSpec(c *cli.Context) (*spec.SpecFiles, error) {
-	offset, limit, err := getOffsetAndLimitValues(c)
-	if err != nil {
-		return nil, err
-	}
-	return spec.NewBuilder().
-		Pattern(c.Args().Get(0)).
-		Props(c.String("props")).
-		TargetProps(c.String("target-props")).
-		Offset(offset).
-		Limit(limit).
-		SortOrder(c.String("sort-order")).
-		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
-		Recursive(c.BoolT("recursive")).
-		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
-		Flat(c.Bool("flat")).
-		Explode(c.String("explode")).
-		Regexp(c.Bool("regexp")).
-		Ant(c.Bool("ant")).
-		IncludeDirs(c.Bool("include-dirs")).
-		Target(strings.TrimPrefix(c.Args().Get(1), "/")).
-		Symlinks(c.Bool("symlinks")).
-		Archive(c.String("archive")).
-		BuildSpec(), nil
-}
-
-func createDefaultBuildAddDependenciesSpec(c *cli.Context) *spec.SpecFiles {
-	pattern := c.Args().Get(2)
-	if pattern == "" {
-		// Build name and build number from env
-		pattern = c.Args().Get(0)
-	}
-	return spec.NewBuilder().
-		Pattern(pattern).
-		Recursive(c.BoolT("recursive")).
-		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
-		Regexp(c.Bool("regexp")).
-		Ant(c.Bool("ant")).
-		BuildSpec()
-}
-
-func fixWinPathsForDownloadCmd(uploadSpec *spec.SpecFiles, c *cli.Context) {
-	if coreutils.IsWindows() {
-		for i, file := range uploadSpec.Files {
-			uploadSpec.Files[i].Target = commonCliUtils.FixWinPathBySource(file.Target, c.IsSet("spec"))
-		}
 	}
 }
 

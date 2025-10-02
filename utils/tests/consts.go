@@ -79,6 +79,7 @@ const (
 	LifecycleArtifacts                                    = "lifecycle-artifacts.json"
 	LifecycleBuilds12                                     = "lifecycle-builds-1-2.json"
 	LifecycleBuilds3                                      = "lifecycle-builds-3.json"
+	LifecycleMultipleSources                              = "lifecycle-multiple-sources.json"
 	LifecycleReleaseBundles                               = "lifecycle-release-bundles.json"
 	MavenConfig                                           = "maven.yaml"
 	MavenIncludeExcludePatternsConfig                     = "maven_include_exclude_patterns.yaml"
@@ -86,8 +87,12 @@ const (
 	MavenRepositoryConfig1                                = "maven_repository_config1.json"
 	MavenRepositoryConfig2                                = "maven_repository_config2.json"
 	MavenWithoutDeployerConfig                            = "maven_without_deployer.yaml"
+	MultipleRepositoriesConfig                            = "multiple_repositories_config.json"
+	MixedRepositoriesConfig                               = "mixed_repository_and_pkg_types_config.json"
+	MixedRepositoriesUpdateConfig                         = "mixed_repository_and_pkg_types_update_config.json"
 	MoveCopySpecExclusions                                = "move_copy_spec_exclusions.json"
 	NpmLocalRepositoryConfig                              = "npm_local_repository_config.json"
+	NpmLocalScopedRespositoryConfig                       = "npm_local_scoped_repository_config.json"
 	NpmRemoteRepositoryConfig                             = "npm_remote_repository_config.json"
 	NugetRemoteRepositoryConfig                           = "nuget_remote_repository_config.json"
 	Out                                                   = "out"
@@ -98,6 +103,9 @@ const (
 	PypiLocalRepositoryConfig                             = "pypi_local_repository_config.json"
 	PypiRemoteRepositoryConfig                            = "pypi_remote_repository_config.json"
 	PypiVirtualRepositoryConfig                           = "pypi_virtual_repository_config.json"
+	PoetryLocalRepositoryConfig                           = "poetry_local_repository_config.json"
+	PoetryRemoteRepositoryConfig                          = "poetry_remote_repository_config.json"
+	PoetryVirtualRepositoryConfig                         = "poetry_virtual_repository_config.json"
 	ReplicationTempCreate                                 = "replication_push_create.json"
 	Repo1RepositoryConfig                                 = "repo1_repository_config.json"
 	Repo2RepositoryConfig                                 = "repo2_repository_config.json"
@@ -165,6 +173,7 @@ const (
 	XrayEndpoint                                          = "xray/"
 	YarnRemoteRepositoryConfig                            = "yarn_remote_repository_config.json"
 	ReleaseLifecycleImportDependencySpec                  = "import_bundle_repo_dependency.json"
+	UseNpmRcFlag                                          = "--use-npmrc"
 )
 
 var (
@@ -181,6 +190,7 @@ var (
 	MvnRepo1                       = "cli-mvn1"
 	MvnRepo2                       = "cli-mvn2"
 	NpmRepo                        = "cli-npm"
+	NpmScopedRepo                  = "cli-npm-scoped"
 	NpmRemoteRepo                  = "cli-npm-remote"
 	NugetRemoteRepo                = "cli-nuget-remote"
 	YarnRemoteRepo                 = "cli-yarn-remote"
@@ -189,6 +199,9 @@ var (
 	PypiVirtualRepo                = "cli-pypi-virtual"
 	PipenvRemoteRepo               = "cli-pipenv-pypi-remote"
 	PipenvVirtualRepo              = "cli-pipenv-pypi-virtual"
+	PoetryLocalRepo                = "cli-poetry-local"
+	PoetryRemoteRepo               = "cli-poetry-remote"
+	PoetryVirtualRepo              = "cli-poetry-virtual"
 	DockerLocalRepo                = "cli-docker-local"
 	DockerLocalPromoteRepo         = "cli-docker-local-promote"
 	DockerRemoteRepo               = "cli-docker-remote"
@@ -219,6 +232,7 @@ var (
 	NuGetBuildName              = "cli-nuget-build"
 	PipBuildName                = "cli-pip-build"
 	PipenvBuildName             = "cli-pipenv-build"
+	PoetryBuildName             = "cli-poetry-build"
 	RtBuildName1                = "cli-rt-build1"
 	RtBuildName2                = "cli-rt-build2"
 	RtBuildNameWithSpecialChars = "cli-rt-a$+~&^a#-build3"
@@ -1797,8 +1811,8 @@ func GetGradleDeployedArtifacts() []string {
 	}
 }
 
-func GetNpmDeployedScopedArtifacts(isNpm7 bool) []string {
-	path := NpmRepo + "/@jscope/jfrog-cli-tests/-/@jscope/"
+func GetNpmDeployedScopedArtifacts(npmRepo string, isNpm7 bool) []string {
+	path := npmRepo + "/@jscope/jfrog-cli-tests/-/@jscope/"
 	path += GetNpmArtifactName(isNpm7, true)
 	return []string{
 		path,

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/commandsummary"
 	"io"
 	"net/http"
 	"os"
@@ -13,13 +12,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jfrog/jfrog-cli-artifactory/cliutils/flagkit"
+
 	"github.com/jfrog/gofrog/version"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 
-	corecontainercmds "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
+	corecontainercmds "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/container"
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
-	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
 	buildUtils "github.com/jfrog/jfrog-cli-core/v2/common/build"
 	"github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
@@ -195,19 +195,6 @@ func getDetailedSummaryRecord(transferDetails *clientutils.FileTransferDetails, 
 	return record
 }
 
-func PrintBuildInfoSummaryReport(succeeded bool, sha256 string, originalErr error) error {
-	success, failed := 1, 0
-	if !succeeded {
-		success, failed = 0, 1
-	}
-	buildInfoSummary, mErr := CreateBuildInfoSummaryReportString(success, failed, sha256, originalErr)
-	if mErr != nil {
-		return summaryPrintError(mErr, originalErr)
-	}
-	log.Output(buildInfoSummary)
-	return summaryPrintError(mErr, originalErr)
-}
-
 func PrintCommandSummary(result *commandUtils.Result, detailedSummary, printDeploymentView, failNoOp bool, originalErr error) (err error) {
 	// We would like to print a basic summary of total failures/successes in the case of an error.
 	err = originalErr
@@ -245,45 +232,17 @@ func CreateSummaryReportString(success, failed int, failNoOp bool, err error) (s
 	return clientutils.IndentJson(summaryContent), err
 }
 
-func CreateBuildInfoSummaryReportString(success, failed int, sha256 string, err error) (string, error) {
-	buildInfoSummary := summary.NewBuildInfoSummary(success, failed, sha256, err)
-	buildInfoSummaryContent, mErr := buildInfoSummary.Marshal()
-	if errorutils.CheckError(mErr) != nil {
-		return "", mErr
-	}
-	return clientutils.IndentJson(buildInfoSummaryContent), mErr
-}
-
-func CreateDownloadConfiguration(c *cli.Context) (downloadConfiguration *artifactoryUtils.DownloadConfiguration, err error) {
-	downloadConfiguration = new(artifactoryUtils.DownloadConfiguration)
-	downloadConfiguration.MinSplitSize, err = getMinSplit(c, DownloadMinSplitKb)
-	if err != nil {
-		return nil, err
-	}
-	downloadConfiguration.SplitCount, err = getSplitCount(c, DownloadSplitCount, DownloadMaxSplitCount)
-	if err != nil {
-		return nil, err
-	}
-	downloadConfiguration.Threads, err = GetThreadsCount(c)
-	if err != nil {
-		return nil, err
-	}
-	downloadConfiguration.SkipChecksum = c.Bool("skip-checksum")
-	downloadConfiguration.Symlink = true
-	return
-}
-
 func CreateUploadConfiguration(c *cli.Context) (uploadConfiguration *artifactoryUtils.UploadConfiguration, err error) {
 	uploadConfiguration = new(artifactoryUtils.UploadConfiguration)
-	uploadConfiguration.MinSplitSizeMB, err = getMinSplit(c, UploadMinSplitMb)
+	uploadConfiguration.MinSplitSizeMB, err = getMinSplit(c, flagkit.UploadMinSplitMb)
 	if err != nil {
 		return nil, err
 	}
-	uploadConfiguration.ChunkSizeMB, err = getUploadChunkSize(c, UploadChunkSizeMb)
+	uploadConfiguration.ChunkSizeMB, err = getUploadChunkSize(c, flagkit.UploadChunkSizeMb)
 	if err != nil {
 		return nil, err
 	}
-	uploadConfiguration.SplitCount, err = getSplitCount(c, UploadSplitCount, UploadMaxSplitCount)
+	uploadConfiguration.SplitCount, err = getSplitCount(c, flagkit.UploadSplitCount, flagkit.UploadMaxSplitCount)
 	if err != nil {
 		return nil, err
 	}
@@ -348,18 +307,6 @@ func GetDocumentationMessage() string {
 	return "You can read the documentation at " + coreutils.JFrogHelpUrl + "jfrog-cli"
 }
 
-func GetBuildName(buildName string) string {
-	return getOrDefaultEnv(buildName, coreutils.BuildName)
-}
-
-func GetBuildUrl(buildUrl string) string {
-	return getOrDefaultEnv(buildUrl, BuildUrl)
-}
-
-func GetEnvExclude(envExclude string) string {
-	return getOrDefaultEnv(envExclude, EnvExclude)
-}
-
 // Return argument if not empty or retrieve from environment variable
 func getOrDefaultEnv(arg, envKey string) string {
 	if arg != "" {
@@ -394,6 +341,7 @@ func CreateServerDetailsFromFlags(c *cli.Context) (details *coreConfig.ServerDet
 		details.ServerId = os.Getenv(coreutils.ServerID)
 	}
 	details.InsecureTls = c.Bool(InsecureTls)
+	details.DisableTokenRefresh = c.Bool(disableTokenRefresh)
 	return
 }
 
@@ -425,19 +373,6 @@ func trimPatternPrefix(specFiles *speccore.SpecFiles) {
 	for i := 0; i < len(specFiles.Files); i++ {
 		specFiles.Get(i).Pattern = strings.TrimPrefix(specFiles.Get(i).Pattern, "/")
 	}
-}
-
-func GetFileSystemSpec(c *cli.Context) (fsSpec *speccore.SpecFiles, err error) {
-	fsSpec, err = speccore.CreateSpecFromFile(c.String("spec"), coreutils.SpecVarsStringToMap(c.String("spec-vars")))
-	if err != nil {
-		return
-	}
-	// Override spec with CLI options
-	for i := 0; i < len(fsSpec.Files); i++ {
-		fsSpec.Get(i).Target = strings.TrimPrefix(fsSpec.Get(i).Target, "/")
-		OverrideFieldsIfSet(fsSpec.Get(i), c)
-	}
-	return
 }
 
 // If `fieldName` exist in the cli args, read it to `field` as a string.
@@ -542,10 +477,6 @@ func OverrideFieldsIfSet(spec *speccore.File, c *cli.Context) {
 	overrideStringIfSet(&spec.PublicGpgKey, c, "gpg-key")
 }
 
-func FixWinPathsForFileSystemSourcedCmds(uploadSpec *speccore.SpecFiles, c *cli.Context) {
-	commonCliUtils.FixWinPathsForFileSystemSourcedCmds(uploadSpec, c.IsSet("spec"), c.IsSet("exclusions"))
-}
-
 func CreateConfigCmd(c *cli.Context, confType project.ProjectType) error {
 	if c.NArg() != 0 {
 		return WrongNumberOfArgumentsHandler(c)
@@ -558,20 +489,6 @@ func RunNativeCmdWithDeprecationWarning(cmdName string, projectType project.Proj
 		LogNativeCommandDeprecation(cmdName, projectType.String())
 	}
 	return cmd(c)
-}
-
-func ShowDockerDeprecationMessageIfNeeded(containerManagerType containerutils.ContainerManagerType, isGetRepoSupported func() (bool, error)) error {
-	if containerManagerType == containerutils.DockerClient {
-		// Show a deprecation message for this command, if Artifactory supports fetching the physical docker repository name.
-		supported, err := isGetRepoSupported()
-		if err != nil {
-			return err
-		}
-		if supported {
-			LogNativeCommandDeprecation("docker", "Docker")
-		}
-	}
-	return nil
 }
 
 func LogNativeCommandDeprecation(cmdName, projectType string) {
@@ -607,19 +524,6 @@ func SetCliExecutableName(executablePath string) {
 	coreutils.SetCliExecutableName(filepath.Base(executablePath))
 }
 
-// Returns build configuration struct using the args (build name/number) and options (project) provided by the user.
-// Any empty configuration could be later overridden by environment variables if set.
-func CreateBuildConfiguration(c *cli.Context) *buildUtils.BuildConfiguration {
-	buildConfiguration := new(buildUtils.BuildConfiguration)
-	buildNameArg, buildNumberArg := c.Args().Get(0), c.Args().Get(1)
-	if buildNameArg == "" || buildNumberArg == "" {
-		buildNameArg = ""
-		buildNumberArg = ""
-	}
-	buildConfiguration.SetBuildName(buildNameArg).SetBuildNumber(buildNumberArg).SetProject(c.String("project")).SetModule(c.String("module"))
-	return buildConfiguration
-}
-
 // Returns build configuration struct using the options provided by the user.
 // Any empty configuration could be later overridden by environment variables if set.
 func CreateBuildConfigurationWithModule(c *cli.Context) (buildConfigConfiguration *buildUtils.BuildConfiguration, err error) {
@@ -635,7 +539,7 @@ func CreateArtifactoryDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails,
 		return nil, err
 	}
 	if artDetails.ArtifactoryUrl == "" {
-		return nil, errors.New("the --url option is mandatory")
+		return nil, errors.New("no JFrog Artifactory URL specified, either via the --url flag or as part of the server configuration")
 	}
 	return artDetails, nil
 }
@@ -672,6 +576,7 @@ func CheckNewCliVersionAvailable(currentVersion string) (warningMessage string, 
 	}
 	githubVersionInfo, err := getLatestCliVersionFromGithubAPI()
 	if err != nil {
+		warningMessage = coreutils.PrintComment(fmt.Sprintf("failed while trying to check latest JFrog CLI version: %s", err.Error()))
 		return
 	}
 	latestVersion := strings.TrimPrefix(githubVersionInfo.TagName, "v")
@@ -688,10 +593,6 @@ func CheckNewCliVersionAvailable(currentVersion string) (warningMessage string, 
 			"\n")
 	}
 	return
-}
-
-func GetDetailedSummary(c *cli.Context) bool {
-	return c.Bool("detailed-summary") || commandsummary.ShouldRecordSummary()
 }
 
 // Check if the latest CLI version should be checked via the GitHub API to let the user know if a newer version is available.
@@ -723,12 +624,23 @@ func getLatestCliVersionFromGithubAPI() (githubVersionInfo githubResponse, err e
 	if errorutils.CheckError(err) != nil {
 		return
 	}
+	githubToken := os.Getenv(JfrogCliGithubToken)
+	if githubToken != "" {
+		req.Header.Set("Authorization", "Bearer "+githubToken)
+	} else {
+		log.Debug("There is no GitHub token, please set GitHub token to avoid anonymous rate limits")
+	}
+	log.Debug(fmt.Sprintf("Sending HTTP %s request to: %s", req.Method, req.URL))
 	resp, body, err := doHttpRequest(client, req)
 	if err != nil {
 		err = errors.New("couldn't get latest JFrog CLI latest version info from GitHub API: " + err.Error())
 		return
 	}
 	err = errorutils.CheckResponseStatusWithBody(resp, body, http.StatusOK)
+	if resp.StatusCode == http.StatusForbidden && githubToken == "" {
+		err = errors.New("received HTTP status Forbidden from Github, there is no GitHub token, please set github token to avoid anonymous calls rate limits: " + string(body))
+		return
+	}
 	if err != nil {
 		return
 	}
@@ -808,4 +720,38 @@ func getDebFlag(c *cli.Context) (deb string, err error) {
 		return "", errors.New("the --deb option should be in the form of distribution/component/architecture")
 	}
 	return deb, nil
+}
+
+// ExtractBoolFlagFromArgs Extracts a boolean flag from the args and removes it from the slice.
+func ExtractBoolFlagFromArgs(filteredArgs *[]string, flagName string) (value bool, err error) {
+	var flagIndex int
+	var boolFlag bool
+	flagIndex, boolFlag, err = coreutils.FindBooleanFlag("--"+flagName, *filteredArgs)
+	if err != nil {
+		return false, err
+	}
+	coreutils.RemoveFlagFromCommand(filteredArgs, flagIndex, flagIndex)
+	return boolFlag, nil
+}
+
+// Get a flag value with a fallback for env variables, if both are empty it returns an empty string.
+func GetFlagOrEnvValue(c *cli.Context, flagName, envVarName string) string {
+	value := c.String(flagName)
+	return getOrDefaultEnv(value, envVarName)
+}
+
+// Read application key from command line,config file or env var
+// Return empty string if not found.
+func GetJFrogApplicationKey(c *cli.Context) string {
+	applicationKey := c.String(ApplicationKey)
+	if applicationKey == "" {
+		applicationKey = commonCliUtils.ReadJFrogApplicationKeyFromConfigOrEnv()
+	}
+	return applicationKey
+}
+
+// ShouldHideSurveyLink checks if the survey should be hidden based on the JFROG_CLI_HIDE_SURVEY and CI environment variables
+// Returns true if the survey should be hidden, false otherwise
+func ShouldHideSurveyLink() bool {
+	return getCiValue() || os.Getenv(JfrogCliHideSurvey) == "true"
 }

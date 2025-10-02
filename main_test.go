@@ -10,6 +10,9 @@ import (
 	"strings"
 	"testing"
 
+	artifactoryCLI "github.com/jfrog/jfrog-cli-artifactory/cli"
+	"github.com/jfrog/jfrog-cli/artifactory"
+
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
@@ -20,7 +23,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/log"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
-	"github.com/jfrog/jfrog-cli/artifactory"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils"
@@ -207,17 +209,15 @@ func createConfigFileForTest(dirs []string, resolver, deployer string, t *testin
 		}
 		if global {
 			filePath = filepath.Join(atDir, "projects")
-
 		} else {
 			filePath = filepath.Join(atDir, ".jfrog", "projects")
-
 		}
 		if _, err := os.Stat(filePath); os.IsNotExist(err) {
-			assert.NoError(t, os.MkdirAll(filePath, 0777))
+			assert.NoError(t, os.MkdirAll(filePath, 0o777))
 		}
 		filePath = filepath.Join(filePath, confType.String()+".yaml")
 		// Create config file to make sure the path is valid
-		f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+		f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o644)
 		assert.NoError(t, err, "Couldn't create file")
 		defer func(file *os.File) {
 			assert.NoError(t, file.Close())
@@ -247,7 +247,7 @@ func changeWD(t *testing.T, newPath string) string {
 // Copy config file from `configFilePath` to `inDir`
 func createConfigFile(inDir, configFilePath string, t *testing.T) {
 	if _, err := os.Stat(inDir); os.IsNotExist(err) {
-		assert.NoError(t, os.MkdirAll(inDir, 0777))
+		assert.NoError(t, os.MkdirAll(inDir, 0o777))
 	}
 	_, err := tests.ReplaceTemplateVariables(configFilePath, inDir)
 	assert.NoError(t, err)
@@ -296,6 +296,16 @@ func testConditionalUpload(t *testing.T, execFunc func() error, searchSpec strin
 func TestSearchSimilarCmds(t *testing.T) {
 	cmds, err := getCommands()
 	assert.NoError(t, err)
+	// fetch all legacy commands
+	rtCmdsLegacy := artifactory.GetCommands()
+	// fetch all new commands present as part of jfrog-cli-artifactory
+	rtCmdsCombined, err := ConvertEmbeddedPlugin(artifactoryCLI.GetJfrogCliArtifactoryApp())
+	assert.NoError(t, err)
+	rtCmdsNew, err := fetchOnlyRTCmdsFromNewCmds(rtCmdsCombined)
+	assert.NoError(t, err)
+	// slice containing all artifactory commands
+	rtCmdsNew = append(rtCmdsNew, rtCmdsLegacy...)
+	assert.NoError(t, err)
 	testData := []struct {
 		badCmdSyntax string
 		searchIn     []cli.Command
@@ -304,16 +314,30 @@ func TestSearchSimilarCmds(t *testing.T) {
 		{"rtt", cmds, []string{"rt"}},
 		{"bp", cmds, []string{"rt bp"}},
 		{"asdfewrwqfaxf", cmds, []string{}},
-		{"bpp", artifactory.GetCommands(), []string{"bpr", "bp", "pp"}},
-		{"uplid", artifactory.GetCommands(), []string{"upload"}},
-		{"downlo", artifactory.GetCommands(), []string{"download"}},
-		{"ownload", artifactory.GetCommands(), []string{"download"}},
-		{"ownload", artifactory.GetCommands(), []string{"download"}},
+		{"bpp", rtCmdsNew, []string{"bpr", "bp", "pp"}},
+		{"uplid", rtCmdsNew, []string{"upload"}},
+		{"downlo", rtCmdsNew, []string{"download"}},
+		{"ownload", rtCmdsNew, []string{"download"}},
+		{"ownload", rtCmdsNew, []string{"download"}},
 	}
 	for _, testCase := range testData {
 		actualRes := searchSimilarCmds(testCase.searchIn, testCase.badCmdSyntax)
 		assert.ElementsMatch(t, actualRes, testCase.expectedRes)
 	}
+}
+
+func fetchOnlyRTCmdsFromNewCmds(commands []cli.Command) ([]cli.Command, error) {
+	var rtCmds cli.Commands
+	for _, cmd := range commands {
+		if cmd.Name == "rt" {
+			rtCmds = cmd.Subcommands
+			break
+		}
+	}
+	if len(rtCmds) == 0 {
+		return nil, errors.New("No rt commands found")
+	}
+	return rtCmds, nil
 }
 
 // Prepare and return the tool to check if the deployment view was printed after any command, by redirecting all the logs output into a buffer
@@ -342,7 +366,10 @@ func initDeploymentViewTest(t *testing.T) (assertDeploymentViewFunc func(), clea
 func deleteFilesFromRepo(t *testing.T, repoName string) {
 	deleteSpec := spec.NewBuilder().Pattern(repoName).BuildSpec()
 	_, _, err := tests.DeleteFiles(deleteSpec, serverDetails)
-	assert.NoError(t, err)
+	// Mostly used during cleanup, no need to fail the test
+	if err != nil {
+		t.Logf("Error deleting files from repo %s: %+v", repoName, err)
+	}
 }
 
 func TestIntro(t *testing.T) {

@@ -2,7 +2,15 @@ package main
 
 import (
 	"errors"
+	"fmt"
+	"github.com/jfrog/gofrog/io"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/gradle"
+	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
+	"github.com/jfrog/jfrog-client-go/http/httpclient"
+	"github.com/stretchr/testify/require"
+	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -13,7 +21,6 @@ import (
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/gradle"
 	"github.com/jfrog/jfrog-cli-core/v2/common/build"
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
@@ -216,6 +223,37 @@ func TestGradleBuildWithServerIDWithUsesPlugin(t *testing.T) {
 	cleanGradleTest(t)
 }
 
+func TestSetupGradleCommand(t *testing.T) {
+	restoreFunc := prepareGradleSetupTest(t)
+	defer restoreFunc()
+	// Validate that the module does not exist in the cache before running the test.
+	client, err := httpclient.ClientBuilder().Build()
+	assert.NoError(t, err)
+
+	// This module is part of the dependencies in the build.gradle file of the current test project.
+	// We want to ensure that it is not exist in the cache before running the build command.
+	moduleCacheUrl := serverDetails.ArtifactoryUrl + tests.GradleRemoteRepo + "-cache/com/fasterxml/jackson/core/jackson-core/2.13.2/jackson-core-2.13.2.jar"
+	_, _, err = client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
+	assert.ErrorContains(t, err, "404")
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	assert.NoError(t, execGo(jfrogCli, "setup", "gradle", "--repo="+tests.GradleRemoteRepo))
+
+	// Run `gradle clean` to resolve the artifact from Artifactory and force it to be downloaded.
+	output, err := exec.Command("gradle",
+		"clean",
+		"build",
+		"--info",
+		"--refresh-dependencies").CombinedOutput()
+	assert.NoError(t, err, fmt.Sprintf("%s\n%q", string(output), err))
+
+	// Validate that the module exists in the cache after running the build command.
+	_, res, err := client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
+	if assert.NoError(t, err, "Failed to find the artifact in the cache: "+moduleCacheUrl) {
+		assert.Equal(t, http.StatusOK, res.StatusCode)
+	}
+}
+
 func createGradleProject(t *testing.T, projectName string) string {
 	srcBuildFile := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "gradle", projectName, "build.gradle")
 	buildGradlePath, err := tests.ReplaceTemplateVariables(srcBuildFile, "")
@@ -227,9 +265,26 @@ func createGradleProject(t *testing.T, projectName string) string {
 
 	return buildGradlePath
 }
+
 func initGradleTest(t *testing.T) {
 	if !*tests.TestGradle {
 		t.Skip("Skipping Gradle test. To run Gradle test add the '-test.gradle=true' option.")
 	}
 	createJfrogHomeConfig(t, true)
+}
+
+func prepareGradleSetupTest(t *testing.T) func() {
+	initGradleTest(t)
+	gradleHome := t.TempDir()
+	t.Setenv(gradle.UserHomeEnv, gradleHome)
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	gradleProjectDir := t.TempDir()
+	err = io.CopyDir(filepath.Join(tests.GetTestResourcesPath(), "gradle", "setupcmd"), gradleProjectDir, true, nil)
+	require.NoError(t, err)
+	assert.NoError(t, os.Chdir(gradleProjectDir))
+	restoreDir := clientTestUtils.ChangeDirWithCallback(t, wd, gradleProjectDir)
+	return func() {
+		restoreDir()
+	}
 }

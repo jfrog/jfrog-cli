@@ -1,44 +1,54 @@
 name: Scripts Tests
 on:
+  workflow_dispatch:
   push:
     branches:
-      - '**'
-    tags-ignore:
-      - '**'
-  pull_request:
+      - "master"
+  # Triggers the workflow on PRs to master branch only.
+  pull_request_target:
+    types: [labeled]
+    branches:
+      - "master"
 # Ensures that only the latest commit is running for each PR at a time.
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   Scripts-tests:
-    name: Script tests (${{ matrix.suite.os }})
+    name: Script tests (${{ matrix.os.name }}-${{ matrix.os.version }})
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'safe to test')
     defaults:
       run:
         shell: sh
     strategy:
       fail-fast: false
       matrix:
-        suite:
-          - os: "ubuntu-latest"
+        os:
+          - name: ubuntu
+            version: 24.04
+            osSuffix: ""
 
-          - os: "ubuntu-20.04"
+          - name: ubuntu
+            version: 22.04
+            osSuffix: ""
 
-          - os: "macos-latest"
+          - name: macos
+            version: latest
+            osSuffix: ""
 
-          - os: "macos-12"
+          - name: macos
+            version: 13
+            osSuffix: ""
 
-          - os: "windows-latest"
+          - name: windows
+            version: 2022
             osSuffix: ".exe"
-
-          - os: "windows-2019"
-            osSuffix: ".exe"
-    runs-on: ${{ matrix.suite.os }}
+    runs-on: ${{ matrix.os.name }}-${{ matrix.os.version }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
 
       - name: Setup Go with cache
         uses: jfrog/.github/actions/install-go-with-cache@main
@@ -74,21 +84,21 @@ jobs:
             Write-Host "The JFrog CLI Windows binary's certificate will expire within $daysUntilExpiration days."
             exit 1
           }
-        if: contains( matrix.suite.os, 'windows')
-        
+        if: matrix.os.name == 'windows'
+
       - name: Test Build CLI - sh
         run: |
           rm ./jf
           sh build/build.sh
           ./jf --version
-        if: contains( matrix.suite.os, 'macos') || contains( matrix.suite.os, 'ubuntu')
+        if: matrix.os.name == 'macos' || matrix.os.name == 'ubuntu'
 
       - name: Test Build CLI - bat
         run: |
           rm ./jfrog.exe
           build/build.bat
           ./jfrog.exe --version
-        if: contains( matrix.suite.os, 'windows')
+        if: matrix.os.name == 'windows'
 
       - name: Test install npm - v2
         working-directory: build/npm/v2
@@ -99,7 +109,7 @@ jobs:
           latest_version=$(npm view jfrog-cli-v2 version)
           npm version $latest_version --allow-same-version
           npm install --no-audit
-          ./bin/jfrog${{ matrix.suite.osSuffix }} --version
+          ./bin/jfrog${{ matrix.os.osSuffix }} --version
 
       - name: Test install npm - v2-jf
         working-directory: build/npm/v2-jf
@@ -110,4 +120,4 @@ jobs:
           latest_version=$(npm view jfrog-cli-v2-jf version)
           npm version $latest_version --allow-same-version
           npm install --no-audit
-          ./bin/jf${{ matrix.suite.osSuffix }} --version    
+          ./bin/jf${{ matrix.os.osSuffix }} --version

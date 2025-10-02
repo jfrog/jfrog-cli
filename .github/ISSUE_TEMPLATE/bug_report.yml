@@ -3,11 +3,17 @@ name: "🐛 Bug Report"
 description: Create a report to help us improve
 labels: [bug]
 body:
+  - type: markdown
+    attributes:
+      value: |
+        📊[Help us improve JFrog CLI! Take this 3-minute survey](https://www.surveymonkey.com/r/JFCLIGTB)
   - type: textarea
     id: description
     attributes:
       label: Describe the bug
-      description: What is the problem? A clear and concise description of the bug.
+      description: |
+        What is the problem? A clear and concise description of the bug.
+        Note: Issues related to JFrog security features such as Xray, audit, scan, etc., should be opened on the [jfrog-cli-security repository](https://github.com/jfrog/jfrog-cli-security/issues/new?template=bug_report.yml).
     validations:
       required: true
 

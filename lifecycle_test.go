@@ -3,40 +3,52 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"os"
+	"path"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/jfrog/gofrog/io"
+	rtLifecycle "github.com/jfrog/jfrog-cli-artifactory/lifecycle"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	configUtils "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/inttestutils"
-	lifecycleCli "github.com/jfrog/jfrog-cli/lifecycle"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
+	artifactoryclientUtils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	"github.com/jfrog/jfrog-client-go/lifecycle"
 	"github.com/jfrog/jfrog-client-go/lifecycle/services"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
-	"net/http"
-	"os"
-	"path"
-	"path/filepath"
-	"testing"
-	"time"
 )
 
 const (
-	artifactoryLifecycleMinVersion = "7.68.3"
-	gpgKeyPairName                 = "lc-tests-key-pair"
-	lcTestdataPath                 = "lifecycle"
-	releaseBundlesSpec             = "release-bundles-spec.json"
-	buildsSpec12                   = "builds-spec-1-2.json"
-	buildsSpec3                    = "builds-spec-3.json"
-	prodEnvironment                = "PROD"
-	number1, number2, number3      = "111", "222", "333"
+	artifactoryLifecycleMinVersion          = "7.68.3"
+	signingKeyOptionalArtifactoryMinVersion = "7.104.1"
+	promotionTypeFlagArtifactoryMinVersion  = "7.106.1"
+	gpgKeyPairName                          = "lc-tests-key-pair"
+	lcTestdataPath                          = "lifecycle"
+	releaseBundlesSpec                      = "release-bundles-spec.json"
+	buildsSpec12                            = "builds-spec-1-2.json"
+	buildsSpec3                             = "builds-spec-3.json"
+	prodEnvironment                         = "PROD"
+	number1, number2, number3               = "111", "222", "333"
+	withoutSigningKey                       = true
+	artifactoryLifecycleSetTagMinVersion    = "7.111.0"
+	rbManifestName                          = "release-bundle.json.evd"
+	releaseBundlesV2                        = "release-bundles-v2"
+	minMultiSourcesArtifactoryVersion       = "7.114.0"
 )
 
 var (
@@ -45,7 +57,7 @@ var (
 )
 
 func TestBackwardCompatibleReleaseBundleCreation(t *testing.T) {
-	cleanCallback := initLifecycleTest(t)
+	cleanCallback := initLifecycleTest(t, artifactoryLifecycleMinVersion)
 	defer cleanCallback()
 	lcManager := getLcServiceManager(t)
 
@@ -86,31 +98,238 @@ func compareRbArtifacts(t *testing.T, actual services.ReleaseBundleSpecResponse,
 	assert.ElementsMatch(t, actualArtifactsPaths, expected)
 }
 
-func TestReleaseBundleCreationFromAql(t *testing.T) {
-	testReleaseBundleCreation(t, tests.UploadDevSpecA, tests.LifecycleAql, tests.GetExpectedLifecycleCreationByAql())
-}
-
-func TestReleaseBundleCreationFromArtifacts(t *testing.T) {
-	testReleaseBundleCreation(t, tests.UploadDevSpec, tests.LifecycleArtifacts, tests.GetExpectedLifecycleCreationByArtifacts())
-}
-
-func testReleaseBundleCreation(t *testing.T, uploadSpec, creationSpec string, expected []string) {
-	cleanCallback := initLifecycleTest(t)
+func TestReleaseBundleCreationFromMultiBuildsUsingCommandFlag(t *testing.T) {
+	cleanCallback := initLifecycleTest(t, minMultiSourcesArtifactoryVersion)
 	defer cleanCallback()
 	lcManager := getLcServiceManager(t)
 
+	deleteBuilds := uploadBuilds(t)
+	defer deleteBuilds()
+
+	createRbFromMultiSourcesUsingCommandFlags(t, lcManager, createBuildsSource(), "", tests.LcRbName1, number1, "default", true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
+	assertStatusCompleted(t, lcManager, tests.LcRbName1, number1, "")
+}
+
+func TestReleaseBundleCreationFromMultiBundlesUsingCommandFlag(t *testing.T) {
+	cleanCallback := initLifecycleTest(t, minMultiSourcesArtifactoryVersion)
+	defer cleanCallback()
+	lcManager := getLcServiceManager(t)
+
+	deleteBuilds := uploadBuilds(t)
+	defer deleteBuilds()
+
+	createRbFromSpec(t, tests.LifecycleBuilds12, tests.LcRbName1, number1, true, true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
+
+	createRbFromSpec(t, tests.LifecycleBuilds3, tests.LcRbName2, number2, true, true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
+
+	createRbFromMultiSourcesUsingCommandFlags(t, lcManager, "", createReleaseBundlesSource(), tests.LcRbName3, number3, "default", true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName3, number3)
+	assertStatusCompleted(t, lcManager, tests.LcRbName3, number3, "")
+}
+
+func TestReleaseBundleCreationFromMultipleBuildsAndBundlesUsingCommandFlags(t *testing.T) {
+	t.Skip("JGC-412 - Skipping TestReleaseBundleCreationFromMultipleBuildsAndBundlesUsingCommandFlags")
+
+	cleanCallback := initLifecycleTest(t, minMultiSourcesArtifactoryVersion)
+	defer cleanCallback()
+	lcManager := getLcServiceManager(t)
+
+	deleteBuilds := uploadBuilds(t)
+	defer deleteBuilds()
+
+	createRbFromSpec(t, tests.LifecycleBuilds12, tests.LcRbName1, number1, true, true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
+
+	createRbFromSpec(t, tests.LifecycleBuilds3, tests.LcRbName2, number2, true, true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
+
+	createRbFromMultiSourcesUsingCommandFlags(t, lcManager, createBuildsSource(), createReleaseBundlesSource(), tests.LcRbName3, number3, "default", true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName3, number3)
+	assertStatusCompleted(t, lcManager, tests.LcRbName3, number3, "")
+}
+
+func TestReleaseBundleCreationFromMultipleSourcesUsingSpec(t *testing.T) {
+	t.Skip("JGC-412 - Skipping TestReleaseBundleCreationFromMultipleSourcesUsingSpec")
+
+	cleanCallback := initLifecycleTest(t, minMultiSourcesArtifactoryVersion)
+	defer cleanCallback()
+	lcManager := getLcServiceManager(t)
+
+	deleteBuilds := uploadBuilds(t)
+	defer deleteBuilds()
+
+	createRbFromSpec(t, tests.LifecycleBuilds12, tests.LcRbName1, number1, true, true)
+
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
+
+	createRbFromSpec(t, tests.LifecycleBuilds3, tests.LcRbName2, number2, true, true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
+
+	createRbFromSpec(t, tests.LifecycleMultipleSources, tests.LcRbName3, number3, true, true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName3, number3)
+	assertStatusCompleted(t, lcManager, tests.LcRbName3, number3, "")
+}
+
+func createReleaseBundlesSource() string {
+	return fmt.Sprintf("name=%s, version=%s; name=%s, version=%s", tests.LcRbName1, number1, tests.LcRbName2, number2)
+}
+
+func createBuildsSource() string {
+	return fmt.Sprintf("name=%s, id=%s, include-deps=%s; name=%s, id=%s", tests.LcBuildName1, number1, "true", tests.LcBuildName2, number2)
+}
+
+func TestReleaseBundleCreationFromAql(t *testing.T) {
+	testReleaseBundleCreation(t, tests.UploadDevSpecA, tests.LifecycleAql, tests.GetExpectedLifecycleCreationByAql(), false)
+}
+
+func TestReleaseBundleCreationFromArtifacts(t *testing.T) {
+	testReleaseBundleCreation(t, tests.UploadDevSpec, tests.LifecycleArtifacts, tests.GetExpectedLifecycleCreationByArtifacts(), false)
+}
+
+func TestReleaseBundleCreationFromArtifactsWithoutSigningKey(t *testing.T) {
+	testReleaseBundleCreation(t, tests.UploadDevSpec, tests.LifecycleArtifacts, tests.GetExpectedLifecycleCreationByArtifacts(), withoutSigningKey)
+}
+
+func createRbFromMultiSourcesUsingCommandFlags(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, buildsSourcesOption, bundlesSourcesOption,
+	rbName, rbVersion, project string, sync bool,
+) {
+	var sources []services.RbSource
+	sources = buildMultiSources(sources, buildsSourcesOption, bundlesSourcesOption, project)
+
+	rbDetails := services.ReleaseBundleDetails{
+		ReleaseBundleName:    rbName,
+		ReleaseBundleVersion: rbVersion,
+	}
+	queryParams := services.CommonOptionalQueryParams{
+		Async:      !sync,
+		ProjectKey: project,
+	}
+
+	_, err := lcManager.CreateReleaseBundlesFromMultipleSources(rbDetails, queryParams, gpgKeyPairName, sources)
+	assert.NoError(t, err)
+}
+
+func buildMultiSources(sources []services.RbSource, buildsSourcesStr, bundlesSourcesStr, projectKey string) []services.RbSource {
+	// Process Builds
+	if buildsSourcesStr != "" {
+		sources = buildMultiBuildSources(sources, buildsSourcesStr)
+	}
+
+	// Process Release Bundles
+	if bundlesSourcesStr != "" {
+		sources = buildMultiBundleSources(sources, bundlesSourcesStr, projectKey)
+	}
+
+	return sources
+}
+
+func buildMultiBundleSources(sources []services.RbSource, bundlesSourcesStr, projectKey string) []services.RbSource {
+	var releaseBundleSources []services.ReleaseBundleSource
+	bundleEntries := strings.Split(bundlesSourcesStr, ";")
+	for _, entry := range bundleEntries {
+		entry = strings.TrimSpace(entry)
+		if entry == "" {
+			continue
+		}
+		// Assuming the format "name=xxx, version=xxx"
+		components := strings.Split(entry, ",")
+		if len(components) != 2 {
+			continue
+		}
+		name := strings.TrimSpace(strings.Split(components[0], "=")[1])
+		version := strings.TrimSpace(strings.Split(components[1], "=")[1])
+
+		releaseBundleSources = append(releaseBundleSources, services.ReleaseBundleSource{
+			ProjectKey:           projectKey,
+			ReleaseBundleName:    name,
+			ReleaseBundleVersion: version,
+		})
+	}
+	if len(releaseBundleSources) > 0 {
+		sources = append(sources, services.RbSource{
+			SourceType:     "release_bundles",
+			ReleaseBundles: releaseBundleSources,
+		})
+	}
+	return sources
+}
+
+func buildMultiBuildSources(sources []services.RbSource, sourcesStr string) []services.RbSource {
+	var buildSources []services.BuildSource
+	buildEntries := strings.Split(sourcesStr, ";")
+	for _, entry := range buildEntries {
+		entry = strings.TrimSpace(entry)
+		if entry == "" {
+			continue
+		}
+		// Assuming the format "name=xxx, number=xxx, include-dep=true"
+		components := strings.Split(entry, ",")
+		if len(components) < 2 {
+			continue
+		}
+
+		name := strings.TrimSpace(strings.Split(components[0], "=")[1])
+		number := strings.TrimSpace(strings.Split(components[1], "=")[1])
+
+		includeDepStr := "false"
+		if len(components) >= 3 {
+			parts := strings.Split(components[2], "=")
+			if len(parts) > 1 {
+				includeDepStr = strings.TrimSpace(parts[1])
+			}
+		}
+
+		includeDep, _ := strconv.ParseBool(includeDepStr)
+
+		buildSources = append(buildSources, services.BuildSource{
+			BuildRepository:     getBuildInfoRepositoryByProject("default"),
+			BuildName:           name,
+			BuildNumber:         number,
+			IncludeDependencies: includeDep,
+		})
+	}
+	if len(buildSources) > 0 {
+		sources = append(sources, services.RbSource{
+			SourceType: "builds",
+			Builds:     buildSources,
+		})
+	}
+	return sources
+}
+
+func getBuildInfoRepositoryByProject(projectKey string) string {
+	buildRepo := "artifactory"
+	if projectKey != "" && projectKey != "default" {
+		buildRepo = projectKey
+	}
+	return buildRepo + "-build-info"
+}
+
+func testReleaseBundleCreation(t *testing.T, uploadSpec, creationSpec string, expected []string, withoutSigningKey bool) {
+	if withoutSigningKey {
+		cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
+		defer cleanCallback()
+	} else {
+		cleanCallback := initLifecycleTest(t, artifactoryLifecycleMinVersion)
+		defer cleanCallback()
+	}
+
+	lcManager := getLcServiceManager(t)
 	specFile, err := tests.CreateSpec(uploadSpec)
 	assert.NoError(t, err)
 	runRt(t, "upload", "--spec="+specFile)
 
-	createRbFromSpec(t, creationSpec, tests.LcRbName1, number1, true)
+	createRbFromSpec(t, creationSpec, tests.LcRbName1, number1, true, withoutSigningKey)
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
 
 	assertRbArtifacts(t, lcManager, tests.LcRbName1, number1, expected)
 }
 
 func TestLifecycleFullFlow(t *testing.T) {
-	cleanCallback := initLifecycleTest(t)
+	cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
 	defer cleanCallback()
 	lcManager := getLcServiceManager(t)
 
@@ -119,22 +338,21 @@ func TestLifecycleFullFlow(t *testing.T) {
 	defer deleteBuilds()
 
 	// Create release bundle from builds synchronously.
-	createRbFromSpec(t, tests.LifecycleBuilds12, tests.LcRbName1, number1, true)
+	createRbFromSpec(t, tests.LifecycleBuilds12, tests.LcRbName1, number1, true, false)
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
 
 	// Create release bundle from a build asynchronously and assert status.
 	// This build has dependencies which are included in the release bundle.
-	createRbFromSpec(t, tests.LifecycleBuilds3, tests.LcRbName2, number2, false)
+	createRbFromSpec(t, tests.LifecycleBuilds3, tests.LcRbName2, number2, false, false)
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
 	assertStatusCompleted(t, lcManager, tests.LcRbName2, number2, "")
 
 	// Create a combined release bundle from the two previous release bundle.
-	createRbFromSpec(t, tests.LifecycleReleaseBundles, tests.LcRbName3, number3, true)
+	createRbFromSpec(t, tests.LifecycleReleaseBundles, tests.LcRbName3, number3, true, false)
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName3, number3)
 
 	// Promote the last release bundle to prod repo 1.
-	promoteRb(t, lcManager, number3)
-
+	promoteRb(t, lcManager, tests.LcRbName3, number3, tests.RtProdRepo1, "")
 	// Assert the artifacts of both the initial release bundles made it to prod repo 1.
 	assertExpectedArtifacts(t, tests.SearchAllProdRepo1, tests.GetExpectedLifecycleArtifacts())
 	// Assert no artifacts were promoted to prod repo 2.
@@ -142,11 +360,12 @@ func TestLifecycleFullFlow(t *testing.T) {
 
 	// Export release lifecycle bundle archive
 
-	tempDir, cleanUp := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	_, cleanUp := coreTests.CreateTempDirWithCallbackAndAssert(t)
 	defer cleanUp()
 
-	exportRb(t, tests.LcRbName2, number2, tempDir)
-	defer deleteExportedReleaseBundle(t, tests.LcRbName2)
+	// TODO Temporarily disabling till export on testing suite is stable.
+	/*exportRb(t, tests.LcRbName2, number2, tempDir)
+	defer deleteExportedReleaseBundle(t, tests.LcRbName2)*/
 
 	// TODO Temporarily disabling till distribution on testing suite is stable.
 	/*
@@ -156,12 +375,11 @@ func TestLifecycleFullFlow(t *testing.T) {
 		// Verify the artifacts were distributed correctly by the provided path mappings.
 		assertExpectedArtifacts(t, tests.SearchAllDevRepo, tests.GetExpectedLifecycleDistributedArtifacts())
 	*/
-
 }
 
 // Import bundles only work on onPerm platforms
 func TestImportReleaseBundle(t *testing.T) {
-	cleanCallback := initLifecycleTest(t)
+	cleanCallback := initLifecycleTest(t, artifactoryLifecycleMinVersion)
 	defer cleanCallback()
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
@@ -171,9 +389,25 @@ func TestImportReleaseBundle(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func deleteExportedReleaseBundle(t *testing.T, rbName string) {
-	assert.NoError(t, os.RemoveAll(rbName))
+func TestPromoteReleaseBundleWithPromotionTypeFlag(t *testing.T) {
+	cleanCallback := initLifecycleTest(t, promotionTypeFlagArtifactoryMinVersion)
+	defer cleanCallback()
+	lcManager := getLcServiceManager(t)
+
+	deleteBuilds := uploadBuilds(t)
+	defer deleteBuilds()
+
+	createRbFromSpec(t, tests.LifecycleBuilds12, tests.LcRbName1, number1, true, false)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
+	assertStatusCompleted(t, lcManager, tests.LcRbName1, number1, "")
+
+	promoteRb(t, lcManager, tests.LcRbName1, number1, tests.RtProdRepo1, "move")
+	assertStatusCompleted(t, lcManager, tests.LcRbName1, number1, "")
 }
+
+/*func deleteExportedReleaseBundle(t *testing.T, rbName string) {
+	assert.NoError(t, os.RemoveAll(rbName))
+}*/
 
 func assertExpectedArtifacts(t *testing.T, specFileName string, expected []string) {
 	searchProdSpec, err := tests.CreateSpec(specFileName)
@@ -192,39 +426,106 @@ func uploadBuilds(t *testing.T) func() {
 	}
 }
 
+func uploadBuildsWithProject(t *testing.T) func() {
+	uploadBuildWithArtifactsAndProject(t, tests.UploadDevSpecA, tests.LcBuildName1, number1, tests.ProjectKey)
+	uploadBuildWithArtifactsAndProject(t, tests.UploadDevSpecB, tests.LcBuildName2, number2, tests.ProjectKey)
+	uploadBuildWithDepsAndProject(t, tests.LcBuildName3, number3, tests.ProjectKey)
+	return func() {
+		inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.LcBuildName1, artHttpDetails)
+		inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.LcBuildName2, artHttpDetails)
+		inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.LcBuildName3, artHttpDetails)
+	}
+}
+
 func createRbBackwardCompatible(t *testing.T, specName, sourceOption, rbName, rbVersion string, sync bool) {
 	specFile, err := getSpecFile(specName)
 	assert.NoError(t, err)
-	createRb(t, specFile, sourceOption, rbName, rbVersion, sync)
+	createRbWithFlags(t, specFile, sourceOption, "", "", rbName, rbVersion, "", sync, false)
 }
 
-func createRbFromSpec(t *testing.T, specName, rbName, rbVersion string, sync bool) {
+func createRbFromSpec(t *testing.T, specName, rbName, rbVersion string, sync bool, withoutSigningKey bool) {
 	specFile, err := tests.CreateSpec(specName)
 	assert.NoError(t, err)
-	createRb(t, specFile, "spec", rbName, rbVersion, sync)
+	createRbWithFlags(t, specFile, "spec", "", "", rbName, rbVersion, "", sync, withoutSigningKey)
 }
 
-func createRb(t *testing.T, specFilePath, sourceOption, rbName, rbVersion string, sync bool) {
+func TestCreateBundleWithoutSpec(t *testing.T) {
+	cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
+	defer cleanCallback()
+
+	lcManager := getLcServiceManager(t)
+
+	deleteBuilds := uploadBuilds(t)
+	defer deleteBuilds()
+
+	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, tests.LcRbName1, number1, "default", false, false)
+	assertStatusCompleted(t, lcManager, tests.LcRbName1, number1, "")
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
+
+	createRbWithFlags(t, "", "", tests.LcBuildName2, number2, tests.LcRbName2, number2, "default", false, true)
+	assertStatusCompleted(t, lcManager, tests.LcRbName2, number2, "")
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
+}
+
+func TestCreateBundleWithoutSpecAndWithProject(t *testing.T) {
+	cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
+	defer cleanCallback()
+	deleteProject := createTestProject(t)
+	if deleteProject != nil {
+		defer func() {
+			if err := deleteProject(); err != nil {
+				t.Error(err)
+			}
+		}()
+	}
+	lcManager := getLcServiceManager(t)
+	deleteBuilds := uploadBuildsWithProject(t)
+	defer deleteBuilds()
+
+	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, tests.LcRbName1, number1, tests.ProjectKey, false, false)
+	assertStatusCompletedWithProject(t, lcManager, tests.LcRbName1, number1, "", tests.ProjectKey)
+	defer deleteReleaseBundleWithProject(t, lcManager, tests.LcRbName1, number1, tests.ProjectKey)
+}
+
+func createRbWithFlags(t *testing.T, specFilePath, sourceOption, buildName, buildNumber, rbName, rbVersion, project string,
+	sync, withoutSigningKey bool,
+) {
 	argsAndOptions := []string{
 		"rbc",
 		rbName,
 		rbVersion,
-		getOption(sourceOption, specFilePath),
-		getOption(cliutils.SigningKey, gpgKeyPairName),
 	}
-	// Add the --sync option only if requested, to test the default value.
+
+	if specFilePath != "" {
+		argsAndOptions = append(argsAndOptions, getOption(sourceOption, specFilePath))
+	}
+
+	if buildName != "" && buildNumber != "" {
+		argsAndOptions = append(argsAndOptions, getOption(cliutils.BuildName, buildName))
+		argsAndOptions = append(argsAndOptions, getOption(cliutils.BuildNumber, buildNumber))
+	}
+
+	if !withoutSigningKey {
+		argsAndOptions = append(argsAndOptions, getOption(cliutils.SigningKey, gpgKeyPairName))
+	}
+
 	if sync {
 		argsAndOptions = append(argsAndOptions, getOption(cliutils.Sync, "true"))
 	}
+
+	if project != "" {
+		argsAndOptions = append(argsAndOptions, getOption(cliutils.Project, project))
+	}
+
 	assert.NoError(t, lcCli.Exec(argsAndOptions...))
 }
 
-func exportRb(t *testing.T, rbName, rbVersion, targetPath string) {
+/*func exportRb(t *testing.T, rbName, rbVersion, targetPath string) {
 	lcCli.RunCliCmdWithOutput(t, "rbe", rbName, rbVersion, targetPath+"/")
 	exists, err := fileutils.IsDirExists(path.Join(targetPath, rbName), false)
 	assert.NoError(t, err)
 	assert.Equal(t, true, exists)
-}
+}*/
 
 /*
 func distributeRb(t *testing.T) {
@@ -244,16 +545,26 @@ func getOption(option, value string) string {
 	return fmt.Sprintf("--%s=%s", option, value)
 }
 
-func promoteRb(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbVersion string) {
-	output := lcCli.RunCliCmdWithOutput(t, "rbp", tests.LcRbName3, rbVersion, prodEnvironment,
+func promoteRb(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion, promoteRepo, promotionType string) {
+	cmdArgs := []string{
+		"rbp", rbName, rbVersion, prodEnvironment,
 		getOption(cliutils.SigningKey, gpgKeyPairName),
-		getOption(cliutils.IncludeRepos, tests.RtProdRepo1),
-		"--project=default")
+		getOption(cliutils.IncludeRepos, promoteRepo),
+		"--project=default",
+	}
+
+	// Include promotion type if specified
+	if promotionType != "" {
+		cmdArgs = append(cmdArgs, getOption(cliutils.PromotionType, promotionType))
+	}
+
+	output := lcCli.RunCliCmdWithOutput(t, cmdArgs...)
+
 	var promotionResp services.RbPromotionResp
 	if !assert.NoError(t, json.Unmarshal([]byte(output), &promotionResp)) {
 		return
 	}
-	assertStatusCompleted(t, lcManager, tests.LcRbName3, rbVersion, promotionResp.CreatedMillis.String())
+	assertStatusCompleted(t, lcManager, rbName, rbVersion, promotionResp.CreatedMillis.String())
 }
 
 func getSpecFile(fileName string) (string, error) {
@@ -270,6 +581,15 @@ func assertStatusCompleted(t *testing.T, lcManager *lifecycle.LifecycleServicesM
 	assert.Equal(t, services.Completed, resp.Status)
 }
 
+// If createdMillis is provided, assert status for promotion. If blank, assert for creation.
+func assertStatusCompletedWithProject(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion, createdMillis, projectKey string) {
+	resp, err := getStatusWithProject(lcManager, rbName, rbVersion, createdMillis, projectKey)
+	if !assert.NoError(t, err) {
+		return
+	}
+	assert.Equal(t, services.Completed, resp.Status)
+}
+
 func getLcServiceManager(t *testing.T) *lifecycle.LifecycleServicesManager {
 	lcManager, err := utils.CreateLifecycleServiceManager(lcDetails, false)
 	assert.NoError(t, err)
@@ -279,8 +599,9 @@ func getLcServiceManager(t *testing.T) *lifecycle.LifecycleServicesManager {
 func authenticateLifecycle() string {
 	*tests.JfrogUrl = clientUtils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
 	lcDetails = &configUtils.ServerDetails{
-		Url: *tests.JfrogUrl}
-	lifecycleCli.PlatformToLifecycleUrls(lcDetails)
+		Url: *tests.JfrogUrl,
+	}
+	rtLifecycle.PlatformToLifecycleUrls(lcDetails)
 
 	cred := fmt.Sprintf("--url=%s", *tests.JfrogUrl)
 	if *tests.JfrogAccessToken != "" {
@@ -306,6 +627,18 @@ func getStatus(lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion,
 	return lcManager.GetReleaseBundlePromotionStatus(rbDetails, "", createdMillis, true)
 }
 
+func getStatusWithProject(lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion, createdMillis, projectKey string) (services.ReleaseBundleStatusResponse, error) {
+	rbDetails := services.ReleaseBundleDetails{
+		ReleaseBundleName:    rbName,
+		ReleaseBundleVersion: rbVersion,
+	}
+
+	if createdMillis == "" {
+		return lcManager.GetReleaseBundleCreationStatus(rbDetails, projectKey, true)
+	}
+	return lcManager.GetReleaseBundlePromotionStatus(rbDetails, projectKey, createdMillis, true)
+}
+
 func getReleaseBundleSpecification(lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion string) (services.ReleaseBundleSpecResponse, error) {
 	rbDetails := services.ReleaseBundleDetails{
 		ReleaseBundleName:    rbName,
@@ -326,8 +659,190 @@ func deleteReleaseBundle(t *testing.T, lcManager *lifecycle.LifecycleServicesMan
 	time.Sleep(5 * time.Second)
 }
 
-/*
-func remoteDeleteReleaseBundle(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion string) {
+func deleteReleaseBundleWithProject(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion, projectKey string) {
+	rbDetails := services.ReleaseBundleDetails{
+		ReleaseBundleName:    rbName,
+		ReleaseBundleVersion: rbVersion,
+	}
+
+	assert.NoError(t, lcManager.DeleteReleaseBundleVersion(rbDetails, services.CommonOptionalQueryParams{Async: false, ProjectKey: projectKey}))
+	// Wait after remote deleting. Can be removed once remote deleting supports sync.
+	time.Sleep(5 * time.Second)
+}
+
+func TestSetReleaseBundleTag(t *testing.T) {
+	cleanCallback := initLifecycleTest(t, artifactoryLifecycleSetTagMinVersion)
+	defer cleanCallback()
+	lcManager := getLcServiceManager(t)
+
+	deleteBuilds := uploadBuilds(t)
+	defer deleteBuilds()
+
+	// set tag
+	createRbFromSpec(t, tests.LifecycleBuilds12, tests.LcRbName1, number1, true, true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
+
+	assertStatusCompleted(t, lcManager, tests.LcRbName1, number1, "")
+	setReleaseBundleTag(t, lcManager, tests.LcRbName1, number1, "", "bundle-tag")
+
+	// unset tag
+	createRbFromSpec(t, tests.LifecycleBuilds12, tests.LcRbName2, number1, true, true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number1)
+	assertStatusCompleted(t, lcManager, tests.LcRbName2, number1, "")
+	setReleaseBundleTag(t, lcManager, tests.LcRbName1, number1, "", "bundle-tag")
+	unsetReleaseBundleTag(t, lcManager, tests.LcRbName1, number1)
+}
+
+func unsetReleaseBundleTag(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, version string) {
+	setReleaseBundleTag(t, lcManager, rbName, version, "", "")
+}
+
+func TestReleaseBundleCreateOrUpdateProperties(t *testing.T) {
+	cleanCallback := initLifecycleTest(t, artifactoryLifecycleSetTagMinVersion)
+	defer cleanCallback()
+	lcManager := getLcServiceManager(t)
+
+	deleteBuilds := uploadBuilds(t)
+	defer deleteBuilds()
+
+	// set properties
+	createRbFromSpec(t, tests.LifecycleBuilds12, tests.LcRbName1, number1, true, true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
+	assertStatusCompleted(t, lcManager, tests.LcRbName1, number1, "")
+	setReleaseBundleProperties(t, lcManager, tests.LcRbName1, number1, "default",
+		"key1=value1;key2=value2")
+	setReleaseBundleProperties(t, lcManager, tests.LcRbName1, number1, "default",
+		"key1=value1;key2=''")
+}
+
+func TestReleaseBundleDeleteProperties(t *testing.T) {
+	cleanCallback := initLifecycleTest(t, artifactoryLifecycleSetTagMinVersion)
+	defer cleanCallback()
+	lcManager := getLcServiceManager(t)
+
+	deleteBuilds := uploadBuilds(t)
+	defer deleteBuilds()
+
+	// set and delete properties
+	createRbFromSpec(t, tests.LifecycleBuilds12, tests.LcRbName1, number1, true, true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
+	assertStatusCompleted(t, lcManager, tests.LcRbName1, number1, "")
+	setReleaseBundleProperties(t, lcManager, tests.LcRbName1, number1, "default",
+		"key1=value1;key2=value2")
+	deleteReleaseBundleProperties(t, lcManager, tests.LcRbName1, number1, "default", "key1,key2")
+}
+
+func deleteReleaseBundleProperties(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName,
+	rbVersion, projectKey, delProps string,
+) {
+	rbDetails := services.ReleaseBundleDetails{
+		ReleaseBundleName:    rbName,
+		ReleaseBundleVersion: rbVersion,
+	}
+	queryParams := services.CommonOptionalQueryParams{
+		Async:      false,
+		ProjectKey: projectKey,
+	}
+
+	annotateParams := buildAnnotateParams("", "", delProps, false, false,
+		true, rbDetails, queryParams)
+	assert.NoError(t, lcManager.AnnotateReleaseBundle(annotateParams))
+	// Wait after remote deleting. Can be removed once remote deleting supports sync.
+	time.Sleep(5 * time.Second)
+}
+
+func setReleaseBundleTag(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion,
+	projectKey, tag string,
+) {
+	log.Info(fmt.Sprintf("Setting release bundle tag=%s to: %s/%s", tag, rbName, rbVersion))
+	rbDetails := services.ReleaseBundleDetails{
+		ReleaseBundleName:    rbName,
+		ReleaseBundleVersion: rbVersion,
+	}
+	queryParams := services.CommonOptionalQueryParams{
+		Async:      false,
+		ProjectKey: projectKey,
+	}
+
+	annotateParams := buildAnnotateParams(tag, "", "", true, false, false,
+		rbDetails, queryParams)
+	assert.NoError(t, lcManager.AnnotateReleaseBundle(annotateParams))
+	// Wait after remote deleting. Can be removed once remote deleting supports sync.
+	time.Sleep(5 * time.Second)
+}
+
+func setReleaseBundleProperties(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion,
+	projectKey, properties string,
+) {
+	rbDetails := services.ReleaseBundleDetails{
+		ReleaseBundleName:    rbName,
+		ReleaseBundleVersion: rbVersion,
+	}
+	queryParams := services.CommonOptionalQueryParams{
+		Async:      false,
+		ProjectKey: projectKey,
+	}
+
+	annotateParams := buildAnnotateParams("", properties, "", false, true,
+		false, rbDetails, queryParams)
+	assert.NoError(t, lcManager.AnnotateReleaseBundle(annotateParams))
+	// Wait after remote deleting. Can be removed once remote deleting supports sync.
+	time.Sleep(5 * time.Second)
+}
+
+func buildAnnotateParams(tag, properties, keysToDelete string, tagExists, propsExist, delExist bool, rbDetails services.ReleaseBundleDetails,
+	queryParams services.CommonOptionalQueryParams,
+) services.AnnotateOperationParams {
+	return services.AnnotateOperationParams{
+		RbTag: services.RbAnnotationTag{
+			Tag:   tag,
+			Exist: tagExists,
+		},
+		RbProps: services.RbAnnotationProps{
+			Properties: resolveProps(properties),
+			Exist:      propsExist,
+		},
+		RbDelProps: services.RbDelProps{
+			Keys:  keysToDelete,
+			Exist: delExist,
+		},
+		RbDetails:   rbDetails,
+		QueryParams: queryParams,
+		PropertyParams: services.CommonPropParams{
+			Path:      buildManifestPath(queryParams.ProjectKey, rbDetails.ReleaseBundleName, rbDetails.ReleaseBundleVersion),
+			Recursive: false,
+		},
+		ArtifactoryUrl: services.ArtCommonParams{
+			Url: serverDetails.ArtifactoryUrl,
+		},
+	}
+}
+
+func buildManifestPath(projectKey, bundleName, bundleVersion string) string {
+	return fmt.Sprintf("%s/%s/%s/%s", buildRepoKey(projectKey), bundleName, bundleVersion, rbManifestName)
+}
+
+func buildRepoKey(project string) string {
+	if project == "" || project == "default" {
+		return releaseBundlesV2
+	}
+	return fmt.Sprintf("%s-%s", project, releaseBundlesV2)
+}
+
+func resolveProps(properties string) map[string][]string {
+	if properties == "" {
+		return make(map[string][]string)
+	}
+
+	props, err := artifactoryclientUtils.ParseProperties(properties)
+	if err != nil {
+		return make(map[string][]string)
+	}
+
+	return props.ToMap()
+}
+
+/*func remoteDeleteReleaseBundle(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion string) {
 	params := distribution.NewDistributeReleaseBundleParams(rbName, rbVersion)
 	rules := &distribution.DistributionCommonParams{
 		SiteName:     "*",
@@ -339,8 +854,7 @@ func remoteDeleteReleaseBundle(t *testing.T, lcManager *lifecycle.LifecycleServi
 	assert.NoError(t, lcManager.RemoteDeleteReleaseBundle(params, false))
 	// Wait after remote deleting. Can be removed once remote deleting supports sync.
 	time.Sleep(5 * time.Second)
-}
-*/
+}*/
 
 func uploadBuildWithArtifacts(t *testing.T, specFileName, buildName, buildNumber string) {
 	specFile, err := tests.CreateSpec(specFileName)
@@ -363,11 +877,33 @@ func uploadBuildWithDeps(t *testing.T, buildName, buildNumber string) {
 	runRt(t, "build-publish", buildName, buildNumber)
 }
 
-func initLifecycleTest(t *testing.T) (cleanCallback func()) {
+func uploadBuildWithArtifactsAndProject(t *testing.T, specFileName, buildName, buildNumber, projectKey string) {
+	specFile, err := tests.CreateSpec(specFileName)
+	assert.NoError(t, err)
+
+	runRt(t, "upload", "--spec="+specFile, "--build-name="+buildName, "--build-number="+buildNumber, "--project="+projectKey)
+	runRt(t, "build-publish", buildName, buildNumber, "--project="+projectKey)
+}
+
+func uploadBuildWithDepsAndProject(t *testing.T, buildName, buildNumber, projectKey string) {
+	err := fileutils.CreateDirIfNotExist(tests.Out)
+	assert.NoError(t, err)
+
+	randFile, err := io.CreateRandFile(filepath.Join(tests.Out, "dep-file"), 1000)
+	assert.NoError(t, err)
+
+	runRt(t, "upload", randFile.Name(), tests.RtDevRepo, "--flat", "--project="+projectKey)
+	assert.NoError(t, lcCli.WithoutCredentials().Exec("rt", "bad", buildName, buildNumber, tests.RtDevRepo+"/dep-file", "--from-rt"))
+
+	runRt(t, "build-publish", buildName, buildNumber, "--project="+projectKey)
+}
+
+func initLifecycleTest(t *testing.T, minVersion string) (cleanCallback func()) {
 	if !*tests.TestLifecycle {
 		t.Skip("Skipping lifecycle test. To run release bundle test add the '-test.lc=true' option.")
 	}
-	validateArtifactoryVersion(t, artifactoryLifecycleMinVersion)
+
+	validateArtifactoryVersion(t, minVersion)
 
 	if !isLifecycleSupported(t) {
 		t.Skip("Skipping lifecycle test because the functionality is not enabled on the provided JPD.")

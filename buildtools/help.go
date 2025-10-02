@@ -2,11 +2,12 @@ package buildtools
 
 import (
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/npmpublish"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/dockerlogin"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/dockerpull"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/dockerpush"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npmci"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npminstall"
-	"github.com/jfrog/jfrog-cli/docs/buildtools/npmpublish"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/urfave/cli"
@@ -16,6 +17,15 @@ import (
 // For example, 'jf docker scan --help' doesn't show the real help from the docker cli but gets redirects to 'dockerscanhelp' help output.
 func GetBuildToolsHelpCommands() []cli.Command {
 	return cliutils.GetSortedCommands(cli.CommandsByName{
+		{
+			Name:      "dockerloginhelp",
+			Flags:     cliutils.GetCommandFlags(cliutils.DockerLogin),
+			Usage:     dockerlogin.GetDescription(),
+			HelpName:  corecommon.CreateUsage("docker login", dockerlogin.GetDescription(), dockerlogin.Usage),
+			UsageText: dockerlogin.GetArguments(),
+			ArgsUsage: common.CreateEnvVars(),
+			Hidden:    true,
+		},
 		{
 			Name:      "dockerpushhelp",
 			Flags:     cliutils.GetCommandFlags(cliutils.DockerPush),

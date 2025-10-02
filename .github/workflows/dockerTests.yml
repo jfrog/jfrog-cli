@@ -1,27 +1,34 @@
 name: Docker Tests
 on:
+  workflow_dispatch:
   push:
     branches:
-      - '**'
-    tags-ignore:
-      - '**'
-  # Triggers the workflow on labeled PRs only.
+      - "master"
+  # Triggers the workflow on PRs to master branch only.
   pull_request_target:
     types: [labeled]
+    branches:
+      - "master"
+
 # Ensures that only the latest commit is running for each PR at a time.
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   Docker-tests:
-    if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
-    name: ubuntu-latest
-    runs-on: ubuntu-latest
+    name: Docker tests (${{ matrix.os.name }})
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'safe to test')
+    strategy:
+      matrix:
+        os:
+          - name: ubuntu
+            version: 24.04
+    runs-on: ${{ matrix.os.name }}-${{ matrix.os.version }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
 
       - name: Setup Go with cache
         uses: jfrog/.github/actions/install-go-with-cache@main

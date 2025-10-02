@@ -2,7 +2,13 @@ package main
 
 import (
 	"encoding/xml"
+	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
+	"github.com/jfrog/jfrog-client-go/http/httpclient"
+	"github.com/jfrog/jfrog-client-go/utils/io"
+	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -11,7 +17,7 @@ import (
 	dotnetUtils "github.com/jfrog/build-info-go/build/utils/dotnet"
 	buildInfo "github.com/jfrog/build-info-go/entities"
 	biutils "github.com/jfrog/build-info-go/utils"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/dotnet"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/dotnet"
 	"github.com/jfrog/jfrog-cli-core/v2/common/project"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -43,11 +49,11 @@ type testDescriptor struct {
 func TestNugetResolve(t *testing.T) {
 	uniqueNugetTests := []testDescriptor{
 		{"nugetargswithspaces", "packagesconfig", []string{dotnetUtils.Nuget.String(), "restore", "-PackagesDirectory", "./packages dir with spaces"}, []string{"packagesconfig"}, []int{6}},
-		{"packagesconfigwithoutmodulechnage", "packagesconfig", []string{dotnetUtils.Nuget.String(), "restore"}, []string{"packagesconfig"}, []int{6}},
-		{"packagesconfigwithmodulechnage", "packagesconfig", []string{dotnetUtils.Nuget.String(), "restore", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{6}},
+		{"packagesconfigwithoutmodulechange", "packagesconfig", []string{dotnetUtils.Nuget.String(), "restore"}, []string{"packagesconfig"}, []int{6}},
+		{"packagesconfigwithmodulechange", "packagesconfig", []string{dotnetUtils.Nuget.String(), "restore", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{6}},
 		{"packagesconfigwithconfigpath", "packagesconfig", []string{dotnetUtils.Nuget.String(), "restore", "./packages.config", "-SolutionDirectory", "."}, []string{"packagesconfig"}, []int{6}},
-		{"multipackagesconfigwithoutmodulechnage", "multipackagesconfig", []string{dotnetUtils.Nuget.String(), "restore"}, []string{"proj1", "proj2", "proj3"}, []int{4, 3, 2}},
-		{"multipackagesconfigwithmodulechnage", "multipackagesconfig", []string{dotnetUtils.Nuget.String(), "restore", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{8}},
+		{"multipackagesconfigwithoutmodulechange", "multipackagesconfig", []string{dotnetUtils.Nuget.String(), "restore"}, []string{"proj1", "proj2", "proj3"}, []int{4, 3, 2}},
+		{"multipackagesconfigwithmodulechange", "multipackagesconfig", []string{dotnetUtils.Nuget.String(), "restore", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{8}},
 		{"multipackagesconfigwithslnPath", "multipackagesconfig", []string{dotnetUtils.Nuget.String(), "restore", "./multipackagesconfig.sln"}, []string{"proj1", "proj2", "proj3"}, []int{4, 3, 2}},
 		{"multipackagesconfigsingleprojectdir", "multipackagesconfig", []string{dotnetUtils.Nuget.String(), "restore", "./proj2/", "-SolutionDirectory", "."}, []string{"proj2"}, []int{3}},
 		{"multipackagesconfigsingleprojectconfig", "multipackagesconfig", []string{dotnetUtils.Nuget.String(), "restore", "./proj1/packages.config", "-SolutionDirectory", "."}, []string{"proj1"}, []int{4}},
@@ -66,10 +72,10 @@ func TestDotnetResolve(t *testing.T) {
 func testNativeNugetDotnetResolve(t *testing.T, uniqueTests []testDescriptor, buildName string, projectType project.ProjectType) {
 	initNugetTest(t)
 	testDescriptors := append(slices.Clone(uniqueTests), []testDescriptor{
-		{"referencewithoutmodulechnage", "reference", []string{projectType.String(), "restore"}, []string{"reference"}, []int{6}},
-		{"referencewithmodulechnage", "reference", []string{projectType.String(), "restore", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{6}},
-		{"multireferencewithoutmodulechnage", "multireference", []string{projectType.String(), "restore"}, []string{"proj1", "proj2"}, []int{5, 3}},
-		{"multireferencewithmodulechnage", "multireference", []string{projectType.String(), "restore", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{6}},
+		{"referencewithoutmodulechange", "reference", []string{projectType.String(), "restore"}, []string{"reference"}, []int{6}},
+		{"referencewithmodulechange", "reference", []string{projectType.String(), "restore", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{6}},
+		{"multireferencewithoutmodulechange", "multireference", []string{projectType.String(), "restore"}, []string{"proj1", "proj2"}, []int{5, 3}},
+		{"multireferencewithmodulechange", "multireference", []string{projectType.String(), "restore", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{6}},
 		{"multireferencewithslnpath", "multireference", []string{projectType.String(), "restore", "src/multireference.sln"}, []string{"proj1", "proj2"}, []int{5, 3}},
 		{"multireferencewithslndir", "multireference", []string{projectType.String(), "restore", "src/"}, []string{"proj1", "proj2"}, []int{5, 3}},
 		{"multireferencesingleprojectcsproj", "multireference", []string{projectType.String(), "restore", "src/multireference.proj2/proj2.csproj"}, []string{"proj2"}, []int{3}},
@@ -107,6 +113,7 @@ func TestNuGetWithGlobalConfig(t *testing.T) {
 	assert.NoError(t, err)
 	err = createConfigFileForTest([]string{jfrogHomeDir}, tests.NugetRemoteRepo, "", t, project.Nuget, true)
 	assert.NoError(t, err)
+	// allow insecure connection for testings to work with localhost server
 	testNugetCmd(t, projectPath, tests.NuGetBuildName, "1", []string{"packagesconfig"}, []string{"nuget", "restore"}, []int{6})
 
 	cleanTestsHomeEnv()
@@ -117,7 +124,10 @@ func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expe
 	assert.NoError(t, err, "Failed to get current dir")
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
 	defer chdirCallback()
+
+	allowInsecureConnectionForTests(&args)
 	args = append(args, "--build-name="+buildName, "--build-number="+buildNumber)
+
 	err = runNuGet(t, args...)
 	if err != nil {
 		return
@@ -150,6 +160,12 @@ func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expe
 
 	// cleanup
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+}
+
+// Add allow insecure connection for testings to work with localhost server
+func allowInsecureConnectionForTests(args *[]string) *[]string {
+	*args = append(*args, "--allow-insecure-connections")
+	return args
 }
 
 func assertNugetDependencies(t *testing.T, module buildInfo.Module, moduleName string) {
@@ -197,9 +213,10 @@ type testInitNewConfigDescriptor struct {
 }
 
 func TestInitNewConfig(t *testing.T) {
+	// jfrog-ignore test url
 	baseRtUrl := "http://some/url"
 	expectedV2Url := baseRtUrl + "/api/nuget"
-	expectedV3Url := baseRtUrl + "/api/nuget/v3"
+	expectedV3Url := baseRtUrl + "/api/nuget/v3/index.json"
 	testsSuites := []testInitNewConfigDescriptor{
 		{"useNugetAddSourceV2", true, expectedV2Url},
 		{"useNugetAddSourceV3", false, expectedV3Url},
@@ -224,10 +241,11 @@ func runInitNewConfig(t *testing.T, testSuite testInitNewConfigDescriptor, baseR
 	params := &dotnet.DotnetCommand{}
 	server := &config.ServerDetails{ArtifactoryUrl: baseRtUrl, User: "user", Password: "password"}
 	params.SetServerDetails(server).
-		SetUseNugetV2(testSuite.useNugetV2)
-	// Prepare the config file with NuGet authentication
+		SetUseNugetV2(testSuite.useNugetV2).
+		SetAllowInsecureConnections(true)
 
-	configFile, err := dotnet.InitNewConfig(tempDirPath, "", server, testSuite.useNugetV2)
+	// Prepare the config file with NuGet authentication
+	configFile, err := dotnet.InitNewConfig(tempDirPath, "", server, testSuite.useNugetV2, true)
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -269,4 +287,91 @@ type PackageSources struct {
 
 type PackageSourceCredentials struct {
 	JFrogCli []PackageSources `xml:">add"`
+}
+
+func TestSetupNugetCommand(t *testing.T) {
+	testSetupCommand(t, project.Nuget)
+}
+
+func TestSetupDotnetCommand(t *testing.T) {
+	testSetupCommand(t, project.Dotnet)
+}
+
+func testSetupCommand(t *testing.T, packageManager project.ProjectType) {
+	initNugetTest(t)
+	restoreFunc := prepareSetupTest(t, packageManager)
+	defer func() {
+		restoreFunc()
+	}()
+	// Validate that the package does not exist in the cache before running the test.
+	client, err := httpclient.ClientBuilder().Build()
+	assert.NoError(t, err)
+
+	// We use different versions of the Nunit package for Nuget and Dotnet to differentiate between the two tests.
+	version := "4.0.0"
+	if packageManager == project.Dotnet {
+		version = "4.1.0"
+	}
+	moduleCacheUrl := serverDetails.ArtifactoryUrl + tests.NugetRemoteRepo + "-cache/nunit." + version + ".nupkg"
+	_, _, err = client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
+	assert.ErrorContains(t, err, "404")
+
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+	require.NoError(t, execGo(jfrogCli, "setup", packageManager.String(), "--repo="+tests.NugetRemoteRepo))
+
+	// Run install some random (Nunit) package to test the setup command.
+	var output []byte
+	if packageManager == project.Dotnet {
+		output, err = exec.Command(packageManager.String(), "add", "package", "NUnit", "--version", version).Output()
+	} else {
+		output, err = exec.Command(packageManager.String(), "install", "NUnit", "-Version", version, "-OutputDirectory", t.TempDir(), "-NoHttpCache").Output()
+	}
+	assert.NoError(t, err, fmt.Sprintf("%s\n%q", string(output), err))
+
+	// Validate that the package exists in the cache after running the test.
+	// That means that the setup command worked and the package resolved from Artifactory.
+	_, res, err := client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
+	if assert.NoError(t, err, "Failed to find the artifact in the cache: "+moduleCacheUrl) {
+		assert.Equal(t, http.StatusOK, res.StatusCode)
+	}
+}
+
+func prepareSetupTest(t *testing.T, packageManager project.ProjectType) func() {
+	homeDir, err := os.UserHomeDir()
+	assert.NoError(t, err)
+	var nugetConfigDir string
+	switch {
+	case io.IsWindows():
+		nugetConfigDir = filepath.Join("AppData", "Roaming")
+	case packageManager == project.Nuget:
+		nugetConfigDir = ".config"
+	default:
+		nugetConfigDir = ".nuget"
+	}
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	restoreDir := clientTestUtils.ChangeDirWithCallback(t, wd, t.TempDir())
+
+	// Back up the existing NuGet.config and ensure restoration after the test.
+	restoreConfigFunc, err := ioutils.BackupFile(filepath.Join(homeDir, nugetConfigDir, "NuGet", "NuGet.Config"), packageManager.String()+".config.backup")
+	require.NoError(t, err)
+
+	if packageManager == project.Dotnet {
+		// Dotnet requires creating a new project to install packages.
+		assert.NoError(t, exec.Command(packageManager.String(), "new", "console").Run())
+		// Clear the NuGet cache to ensure the package is resolved from Artifactory.
+		assert.NoError(t, exec.Command(packageManager.String(), "nuget", "locals", "all", "--clear").Run())
+		// Remove the default nuget.org source to force resolving the package from Artifactory.
+		// We ignore the error since the source might not exist.
+		_ = exec.Command(packageManager.String(), "nuget", "remove", "source", "nuget.org").Run()
+	} else {
+		// Remove the default nuget.org source to force resolving the package from Artifactory.
+		// We ignore the error since the source might not exist.
+		_ = exec.Command(packageManager.String(), "sources", "remove", "-name", "nuget.org").Run()
+	}
+	return func() {
+		assert.NoError(t, restoreConfigFunc())
+		restoreDir()
+	}
 }

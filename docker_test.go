@@ -3,19 +3,22 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/docker/docker/api/types/mount"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
+	"strconv"
 	"testing"
 	"time"
+
+	"github.com/docker/docker/api/types/mount"
 
 	biutils "github.com/jfrog/build-info-go/utils"
 
 	"github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/gofrog/version"
-	coreContainer "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
+	coreContainer "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/container"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
 	"github.com/jfrog/jfrog-cli-core/v2/common/build"
@@ -53,6 +56,7 @@ func initContainerTest(t *testing.T) (containerManagers []container.ContainerMan
 		containerManagers = append(containerManagers, container.DockerClient)
 	}
 	if *tests.TestPodman {
+		t.Skip("JGC-410 - Skipping podman tests")
 		containerManagers = append(containerManagers, container.Podman)
 	}
 	if len(containerManagers) == 0 {
@@ -145,7 +149,6 @@ func TestContainerPushWithDetailedSummary(t *testing.T) {
 				assertPrintedDeploymentViewFunc()
 				inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, imageName, tests.DockerBuildName, repo)
 			}()
-
 		}
 	}
 }
@@ -179,6 +182,39 @@ func runPushTest(containerManager container.ContainerManagerType, imageName, mod
 	validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, module, 7, 5, 7, t)
 }
 
+func loginToArtifactory(t *testing.T, container *tests.TestContainer) {
+	password := *tests.JfrogPassword
+	user := *tests.JfrogUser
+	if *tests.JfrogAccessToken != "" {
+		user = auth.ExtractUsernameFromAccessToken(*tests.JfrogAccessToken)
+		password = *tests.JfrogAccessToken
+	}
+	assert.NoError(t, container.Exec(
+		context.Background(),
+		"docker",
+		"login",
+		tests.RtContainerHostName,
+		"--username="+user,
+		"--password="+password,
+	))
+}
+
+func buildBuilderImage(t *testing.T, workspace, dockerfile, containerName string) *tests.TestContainer {
+	ctx := context.Background()
+	testContainer, err := tests.NewContainerRequest().
+		SetDockerfile(workspace, dockerfile, nil).
+		Privileged().
+		Networks(rtNetwork).
+		Name(containerName).
+		Mount(mount.Mount{Type: mount.TypeBind, Source: workspace, Target: "/workspace", ReadOnly: false}).
+		Cmd("--insecure-registry", tests.RtContainerHostName).
+		WaitFor(wait.ForLog("API listen on /var/run/docker.sock").WithStartupTimeout(5*time.Minute)).
+		Remove().
+		Build(ctx, true)
+	assert.NoError(t, err, "Couldn't create builder image.")
+	return testContainer
+}
+
 // This test validate the collect build-info flow for fat-manifest images.
 // The way we build the fat manifest and push it to Artifactory is not important.
 // Therefore, this test runs only with docker.
@@ -194,7 +230,6 @@ func TestPushFatManifestImage(t *testing.T) {
 	assert.NoError(t, fileutils.CreateDirIfNotExist(workspace))
 	testDataDir := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "docker")
 	files, err := os.ReadDir(testDataDir)
-
 	assert.NoError(t, err)
 	for _, file := range files {
 		if !file.IsDir() {
@@ -202,45 +237,23 @@ func TestPushFatManifestImage(t *testing.T) {
 			assert.NoError(t, err)
 		}
 	}
+
 	// Build the builder image locally.
-	ctx := context.Background()
-	testContainer, err := tests.NewContainerRequest().
-		SetDockerfile(workspace, "Dockerfile.Buildx.Fatmanifest", nil).
-		Privileged().
-		Networks(rtNetwork).
-		Name("buildx_container").
-		Mount(mount.Mount{Type: mount.TypeBind, Source: workspace, Target: "/workspace", ReadOnly: false}).
-		Cmd("--insecure-registry", tests.RtContainerHostName).
-		// Docker daemon take times to load. In order to check if it's available we wait for a log message to indications that the Docker daemon has finished initializing.
-		WaitFor(wait.ForLog("API listen on /var/run/docker.sock").WithStartupTimeout(5*time.Minute)).
-		Remove().
-		Build(ctx, true)
-	assert.NoError(t, err, "Couldn't run create buildx image.")
-	defer func() { assert.NoError(t, testContainer.Terminate(ctx)) }()
+	testContainer := buildBuilderImage(t, workspace, "Dockerfile.Buildx.Fatmanifest", "buildx_container")
+	defer func() { assert.NoError(t, testContainer.Terminate(context.Background())) }()
 
 	// Enable the builder util in the container.
-	err = testContainer.Exec(ctx, "sh", "script.sh")
+	err = testContainer.Exec(context.Background(), "sh", "script.sh")
 	assert.NoError(t, err)
 
-	// login from the builder container toward the Artifactory.
-	password := *tests.JfrogPassword
-	user := *tests.JfrogUser
-	if *tests.JfrogAccessToken != "" {
-		user = auth.ExtractUsernameFromAccessToken(*tests.JfrogAccessToken)
-		password = *tests.JfrogAccessToken
-	}
-	assert.NoError(t, testContainer.Exec(
-		ctx,
-		"docker",
-		"login",
-		tests.RtContainerHostName,
-		"--username="+user,
-		"--password="+password))
+	// Login to Artifactory
+	loginToArtifactory(t, testContainer)
+
 	buildxOutputFile := "buildmetadata"
 
-	// Run the builder in the container and push the fat-manifest image to artifactory
+	// Run the builder in the container and push the fat-manifest image to Artifactory
 	assert.NoError(t, testContainer.Exec(
-		ctx,
+		context.Background(),
 		"docker",
 		"buildx",
 		"build",
@@ -263,20 +276,83 @@ func TestPushFatManifestImage(t *testing.T) {
 	assert.NoError(t, artifactoryCli.Exec("build-docker-create", tests.DockerLocalRepo, "--image-file="+buildxOutput, "--build-name="+buildName, "--build-number="+buildNumber))
 	assert.NoError(t, artifactoryCli.Exec("build-publish", buildName, buildNumber))
 
-	// Validate the published build-info exits
+	// Validate the published build-info exists
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
-	if err != nil {
-		assert.NoError(t, err)
-		return
-	}
-	if !found {
-		assert.True(t, found, "build info was expected to be found")
-		return
-	}
-
+	assert.NoError(t, err)
+	assert.True(t, found, "build info was expected to be found")
 	assert.True(t, len(publishedBuildInfo.BuildInfo.Modules) > 1)
 
 	// Validate build-name & build-number properties in all image layers
+	searchSpec := spec.NewBuilder().Pattern(tests.DockerLocalRepo + "/*").Build(buildName).Recursive(true).BuildSpec()
+	searchCmd := generic.NewSearchCommand()
+	searchCmd.SetServerDetails(serverDetails).SetSpec(searchSpec)
+	reader, err := searchCmd.Search()
+	assert.NoError(t, err)
+	totalResults, err := reader.Length()
+	assert.NoError(t, err)
+	assert.True(t, totalResults > 1)
+}
+
+func TestPushMultiTaggedImage(t *testing.T) {
+	if !*tests.TestDocker {
+		t.Skip("Skipping test. To run it, add the '-test.docker=true' option.")
+	}
+
+	buildName := "push-multi-tagged" + tests.DockerBuildName
+	buildNumber := "1"
+
+	// Setup workspace
+	workspace, err := filepath.Abs(tests.Out)
+	assert.NoError(t, err)
+	assert.NoError(t, fileutils.CreateDirIfNotExist(workspace))
+	testDataDir := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "docker")
+	files, err := os.ReadDir(testDataDir)
+	assert.NoError(t, err)
+	for _, file := range files {
+		if !file.IsDir() {
+			_, err := tests.ReplaceTemplateVariables(filepath.Join(testDataDir, file.Name()), tests.Out)
+			assert.NoError(t, err)
+		}
+	}
+
+	// Build the builder image locally
+	testContainer := buildBuilderImage(t, workspace, "Dockerfile.Buildx.Fatmanifest", "buildx_multi_tag_container")
+	defer func() { assert.NoError(t, testContainer.Terminate(context.Background())) }()
+
+	// Enable builder
+	assert.NoError(t, testContainer.Exec(context.Background(), "sh", "script.sh"))
+
+	// Login to Artifactory
+	loginToArtifactory(t, testContainer)
+
+	// Build & push image with multiple tags
+	imageName1 := path.Join(tests.RtContainerHostName, tests.DockerLocalRepo, tests.DockerImageName+"-multi:v1")
+	imageName2 := path.Join(tests.RtContainerHostName, tests.DockerLocalRepo, tests.DockerImageName+"-multi:latest")
+	buildxOutputFile := "multi-build-metadata"
+
+	assert.NoError(t, testContainer.Exec(
+		context.Background(),
+		"docker", "buildx", "build",
+		"--platform", "linux/amd64,linux/arm64",
+		"-t", imageName1,
+		"-t", imageName2,
+		"-f", "Dockerfile.Fatmanifest",
+		"--metadata-file", "/workspace/"+buildxOutputFile,
+		"--push", ".",
+	))
+
+	// Run build-docker-create & publish
+	buildxOutput := filepath.Join(workspace, buildxOutputFile)
+	assert.NoError(t, artifactoryCli.Exec("build-docker-create", tests.DockerLocalRepo, "--image-file="+buildxOutput, "--build-name="+buildName, "--build-number="+buildNumber))
+	assert.NoError(t, artifactoryCli.Exec("build-publish", buildName, buildNumber))
+
+	// Validate build-info is published
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	assert.NoError(t, err)
+	assert.True(t, found, "build info was expected to be found")
+	assert.True(t, len(publishedBuildInfo.BuildInfo.Modules) >= 1)
+
+	// Validate build-name & build-number properties in all layers
 	searchSpec := spec.NewBuilder().Pattern(tests.DockerLocalRepo + "/*").Build(buildName).Recursive(true).BuildSpec()
 	searchCmd := generic.NewSearchCommand()
 	searchCmd.SetServerDetails(serverDetails).SetSpec(searchSpec)
@@ -375,7 +451,6 @@ func TestContainerFatManifestPull(t *testing.T) {
 
 				inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.DockerBuildName, artHttpDetails)
 			}()
-
 		}
 	}
 }
@@ -553,6 +628,103 @@ func TestNativeDockerFlagParsing(t *testing.T) {
 	}
 }
 
+func TestDockerLoginWithServer(t *testing.T) {
+	cleanup := initNativeDockerWithArtTest(t)
+	defer cleanup()
+
+	var credentials string
+	if *tests.JfrogAccessToken != "" {
+		credentials = "--access-token=" + *tests.JfrogAccessToken
+	} else {
+		credentials = "--user=" + *tests.JfrogUser + " --password=" + *tests.JfrogPassword
+	}
+	err := coreTests.NewJfrogCli(execMain, "jfrog config", credentials).Exec("add", "artDocker", "--interactive=false", "--url="+"http://localhost:8082", "--enc-password="+strconv.FormatBool(true))
+	assert.NoError(t, err)
+
+	imageName := path.Join(*tests.ContainerRegistry, tests.DockerRemoteRepo, "alpine:latest")
+
+	// Ensure we're logged out first
+	cmd := exec.Command("docker", "logout", *tests.ContainerRegistry)
+	_, err = cmd.CombinedOutput()
+	assert.NoError(t, err)
+
+	// since we're logged out, pulling should fail
+	cmd = exec.Command("docker", "pull", imageName)
+	output, err := cmd.CombinedOutput()
+	assert.Error(t, err)
+	assert.Contains(t, string(output), "Authentication is required")
+
+	// Login (perform jf docker login)
+	err = runJfrogCliWithoutAssertion("docker", "login", "--server-id=artDocker")
+	assert.NoError(t, err)
+
+	// pull should work now
+	cmd = exec.Command("docker", "pull", imageName)
+	output, err = cmd.CombinedOutput()
+	assert.NoError(t, err)
+	assert.Contains(t, string(output), "Downloaded newer image")
+}
+
+func TestDockerLoginWithRegistry(t *testing.T) {
+	cleanup := initNativeDockerWithArtTest(t)
+	defer cleanup()
+
+	imageName := path.Join(*tests.ContainerRegistry, tests.DockerRemoteRepo, "busybox:latest")
+
+	// Ensure we're logged out first
+	cmd := exec.Command("docker", "logout", *tests.ContainerRegistry)
+	_, err := cmd.CombinedOutput()
+	assert.NoError(t, err)
+
+	// since we're logged out, pulling should fail
+	cmd = exec.Command("docker", "pull", imageName)
+	output, err := cmd.CombinedOutput()
+	assert.Error(t, err)
+	assert.Contains(t, string(output), "Authentication is required")
+
+	// Login (perform jf docker login)
+	err = runJfrogCliWithoutAssertion("docker", "login", *tests.ContainerRegistry)
+	assert.NoError(t, err)
+
+	// pull should work now
+	cmd = exec.Command("docker", "pull", imageName)
+	output, err = cmd.CombinedOutput()
+	assert.NoError(t, err)
+	assert.Contains(t, string(output), "Downloaded newer image")
+}
+
+func TestDockerLoginWithRegistryUserAndPass(t *testing.T) {
+	cleanup := initNativeDockerWithArtTest(t)
+	defer cleanup()
+
+	imageName := path.Join(*tests.ContainerRegistry, tests.DockerRemoteRepo, "hello-world:linux")
+
+	// Ensure we're logged out first
+	cmd := exec.Command("docker", "logout", *tests.ContainerRegistry)
+	_, err := cmd.CombinedOutput()
+	assert.NoError(t, err)
+
+	// since we're logged out, pulling should fail
+	cmd = exec.Command("docker", "pull", imageName)
+	output, err := cmd.CombinedOutput()
+	assert.Error(t, err)
+	assert.Contains(t, string(output), "Authentication is required")
+
+	// Login (perform jf docker login)
+	password := *tests.JfrogPassword
+	if *tests.JfrogAccessToken != "" {
+		password = *tests.JfrogAccessToken
+	}
+	err = runJfrogCliWithoutAssertion("docker", "login", *tests.ContainerRegistry, "--username="+*tests.JfrogUser, "--password="+password)
+	assert.NoError(t, err)
+
+	// pull should work now
+	cmd = exec.Command("docker", "pull", imageName)
+	output, err = cmd.CombinedOutput()
+	assert.NoError(t, err)
+	assert.Contains(t, string(output), "Downloaded newer image")
+}
+
 func jfrogRtCliTask(args ...string) func() error {
 	return func() error {
 		return artifactoryCli.Exec(args...)
@@ -575,7 +747,6 @@ func runCmdWithRetries(t *testing.T, task func() error) {
 		ExecutionHandler: func() (bool, error) {
 			err := task()
 			return err != nil, err
-
 		},
 	}
 	assert.NoError(t, executor.Execute())

@@ -1,4 +1,4 @@
-node("docker-xxlarge") {
+node("docker-ubuntu20-xlarge") {
     cleanWs()
     // Subtract repo name from the repo url (https://REPO_NAME/ -> REPO_NAME/)
     withCredentials([string(credentialsId: 'repo21-url', variable: 'REPO21_URL')]) {
@@ -23,15 +23,14 @@ node("docker-xxlarge") {
     identifier = 'v2-jf'
     nodeVersion = 'v8.17.0'
 
-    masterBranch = 'v2'
-    devBranch = 'dev'
+    masterBranch = 'master'
 
     releaseVersion = ''
 
     repo = 'jfrog-cli'
     sh 'rm -rf temp'
     sh 'mkdir temp'
-    def goRoot = tool 'go-1.23.2'
+    def goRoot = tool 'go-1.24.6'
     env.GOROOT="$goRoot"
     env.PATH+=":${goRoot}/bin:/tmp/node-${nodeVersion}-linux-x64/bin"
     env.GO111MODULE="on"
@@ -62,7 +61,6 @@ node("docker-xxlarge") {
         stage('Sync branches') {
             setReleaseVersion()
             validateReleaseVersion()
-            synchronizeBranches()
         }
 
         stage('Install npm') {
@@ -105,6 +103,7 @@ def runRelease(architectures) {
         version = getCliVersion(builderPath)
         print "CLI version: $version"
     }
+
     configRepo21()
 
     try {
@@ -116,6 +115,12 @@ def runRelease(architectures) {
                     """
                 }
             }
+        }
+
+        // We sign darwin binaries throughout GitHub actions to use MacOS machine,
+        // the binaries will be uploaded to GitHub packages
+        stage('Prepare Signed MacOS binaries') {
+            triggerDarwinBinariesSigningWorkflow()
         }
 
         // We sign the binary also for the standalone Windows executable, and not just for Windows executable packaged inside Chocolaty.
@@ -170,30 +175,9 @@ def runRelease(architectures) {
 
 def setReleaseVersion() {
     dir("$cliWorkspace/$repo") {
-        sh "git checkout $devBranch"
+        sh "git checkout $masterBranch"
         sh "build/build.sh"
         releaseVersion = getCliVersion("./jf")
-    }
-}
-
-def synchronizeBranches() {
-    dir("$cliWorkspace/$repo") {
-        withCredentials([string(credentialsId: 'ecosystem-github-automation', variable: 'GITHUB_ACCESS_TOKEN')]) {
-            print "Merge to $masterBranch"
-            sh """#!/bin/bash
-                git checkout $masterBranch
-                git merge origin/$devBranch --no-edit
-                git push "https://$GITHUB_ACCESS_TOKEN@github.com/jfrog/jfrog-cli.git"
-            """
-
-            print "Merge to $devBranch"
-            sh """#!/bin/bash
-                git checkout $devBranch
-                git merge origin/$masterBranch --no-edit
-                git push "https://$GITHUB_ACCESS_TOKEN@github.com/jfrog/jfrog-cli.git"
-                git checkout $masterBranch
-            """
-        }
     }
 }
 
@@ -257,7 +241,7 @@ def cleanupRepo21() {
 
 def buildRpmAndDeb(version, architectures) {
     boolean built = false
-    withCredentials([file(credentialsId: 'rpm-gpg-key2', variable: 'rpmGpgKeyFile'), string(credentialsId: 'rpm-sign-passphrase', variable: 'rpmSignPassphrase')]) {
+    withCredentials([file(credentialsId: 'rpm-gpg-key3', variable: 'rpmGpgKeyFile'), string(credentialsId: 'rpm-sign-passphrase', variable: 'rpmSignPassphrase')]) {
         def dirPath = "${pwd()}/jfrog-cli/build/deb_rpm/${identifier}/pkg"
         def gpgPassphraseFilePath = "$dirPath/RPM-GPG-PASSPHRASE-jfrog-cli"
         writeFile(file: gpgPassphraseFilePath, text: "$rpmSignPassphrase")
@@ -314,7 +298,12 @@ def uploadCli(architectures) {
     for (int i = 0; i < architectures.size(); i++) {
         def currentBuild = architectures[i]
         stage("Build and upload ${currentBuild.pkg}") {
-            buildAndUpload(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, currentBuild.fileExtension)
+            // MacOS binaries should be downloaded from GitHub packages, as they are signed there.
+            if (currentBuild.goos == 'darwin') {
+                uploadSignedDarwinBinaries(currentBuild.goarch,currentBuild.pkg)
+            } else {
+                buildAndUpload(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, currentBuild.fileExtension)
+            }
         }
     }
 }
@@ -510,4 +499,35 @@ def dockerLogin(){
     ]) {
             sh "echo $REPO21_PASSWORD | docker login $REPO_NAME_21 -u=$REPO21_USER --password-stdin"
        }
+}
+
+
+/**
+ * Triggers Github action that signs and notarize the MacOS binaries.
+ * The artifacts will be uploaded to Github artifacts
+ */
+def triggerDarwinBinariesSigningWorkflow() {
+    withCredentials([string(credentialsId: 'ecosystem-github-automation', variable: "GITHUB_ACCESS_TOKEN")]) {
+        stage("Sign MacOS binaries") {
+            sh ('export GITHUB_ACCESS_TOKEN=$GITHUB_ACCESS_TOKEN')
+            sh """#!/bin/bash
+                 chmod +x ${repo}/build/apple_release/scripts/trigger-sign-mac-OS-workflow.sh
+                 bash ${repo}/build/apple_release/scripts/trigger-sign-mac-OS-workflow.sh ${cliExecutableName} ${releaseVersion}
+            """
+        }
+    }
+}
+
+/**
+ * Uploads signed darwin binaries from Github artifacts and uploads to releases
+ */
+def uploadSignedDarwinBinaries(goarch,pkg) {
+  withCredentials([string(credentialsId: 'ecosystem-github-automation', variable: "GITHUB_ACCESS_TOKEN")]) {
+        sh('export GITHUB_ACCESS_TOKEN=$GITHUB_ACCESS_TOKEN')
+        sh """#!/bin/bash
+             chmod +x ${repo}/build/apple_release/scripts/download-signed-mac-OS-binaries.sh
+             ${repo}/build/apple_release/scripts/download-signed-mac-OS-binaries.sh ${cliExecutableName} ${releaseVersion} ${goarch}
+             $builderPath rt u ./${cliExecutableName} ecosys-jfrog-cli/$identifier/$version/${pkg}/ --flat
+        """
+   }
 }

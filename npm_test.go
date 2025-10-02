@@ -2,14 +2,20 @@ package main
 
 import (
 	"fmt"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/generic"
+	utils2 "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-client-go/http/httpclient"
+	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v2"
 
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/yarn"
 
@@ -31,7 +37,7 @@ import (
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/npm"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/npm"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
@@ -144,10 +150,160 @@ func testNpm(t *testing.T, isLegacy bool) {
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.NpmBuildName, artHttpDetails)
 }
 
+func TestNpmPublishWithNpmrc(t *testing.T) {
+	testNpmPublishWithNpmrc(t, validateNpmPublish, "npmpublishrcproject", tests.NpmRepo, false)
+}
+
+func TestNpmPublishWithNpmrcScoped(t *testing.T) {
+	testNpmPublishWithNpmrc(t, validateNpmScopedPublish, "npmpublishrcscopedproject", tests.NpmScopedRepo, true)
+}
+
+func testNpmPublishWithNpmrc(t *testing.T, validationFunc func(t *testing.T, npmTest npmTestParams, isNpm7 bool), projectName string, repoName string, isScoped bool) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+	buildNumber := "1"
+	npmVersion, _, err := buildutils.GetNpmVersionAndExecPath(log.Logger)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+
+	// Init npm project & npmp command for testing
+	npmProjectPath := initNpmPublishRcProjectTest(t, projectName)
+	configFilePath := filepath.Join(npmProjectPath, ".jfrog", "projects", "npm.yaml")
+
+	// fetch module id
+	packageJsonPath := npmProjectPath + "/package.json"
+	moduleName := readModuleId(t, packageJsonPath, npmVersion)
+
+	err = createNpmrcForTesting(t, configFilePath)
+	assert.NoError(t, err)
+
+	if isScoped {
+		addNpmScopeRegistryToNpmRc(t, npmProjectPath, packageJsonPath, npmVersion)
+	}
+
+	npmpCmd, err := publishUsingNpmrc(configFilePath, buildNumber)
+	assert.NoError(t, err)
+
+	result := npmpCmd.Result()
+	assert.NotNil(t, result)
+
+	validateNpmLocalBuildInfo(t, tests.NpmBuildName, buildNumber, moduleName)
+	assert.NoError(t, artifactoryCli.Exec("bp", tests.NpmBuildName, buildNumber))
+
+	// validation
+	testParams := npmTestParams{testName: "npm p",
+		nativeCommand:  "npm publish",
+		legacyCommand:  "rt npm-publish",
+		repo:           repoName,
+		wd:             npmProjectPath,
+		validationFunc: validateNpmPublish,
+		buildNumber:    buildNumber,
+		moduleName:     moduleName,
+	}
+	validationFunc(t, testParams, false)
+}
+
+func TestNpmInstallClientNative(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	npmVersion, _, err := buildutils.GetNpmVersionAndExecPath(log.Logger)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	buildNumber := "1"
+
+	npmProjectDirectory := initNpmProjectTest(t)
+	configFilePath := filepath.Join(npmProjectDirectory, ".jfrog", "projects", "npm.yaml")
+	err = createNpmrcForTesting(t, configFilePath)
+	assert.NoError(t, err)
+
+	clientTestUtils.ChangeDirAndAssert(t, npmProjectDirectory)
+	npmrcFileInfo, err := os.Stat(".npmrc")
+	if err != nil && os.IsNotExist(err) {
+		assert.Fail(t, err.Error())
+	}
+
+	packageJsonPath := npmProjectDirectory + "/package.json"
+	moduleName := readModuleId(t, packageJsonPath, npmVersion)
+	runJfrogCli(t, "npm", "i", "--run-native=true", "--build-name="+tests.NpmBuildName, "--build-number="+buildNumber)
+	validateNpmLocalBuildInfo(t, tests.NpmBuildName, buildNumber, moduleName)
+	assert.NoError(t, artifactoryCli.Exec("bp", tests.NpmBuildName, buildNumber))
+
+	npmTest := npmTestParams{
+		testName:    "npm with run-native",
+		buildNumber: buildNumber,
+		npmArgs:     "--run-native=true",
+	}
+
+	validateNpmInstall(t, npmTest, isNpm7(npmVersion))
+	postTestFileInfo, postTestFileInfoErr := os.Stat(".npmrc")
+	validateNpmrcFileInfo(t, npmTest, npmrcFileInfo, postTestFileInfo, err, postTestFileInfoErr)
+	validateIfFileWasEverModified(t, npmrcFileInfo, postTestFileInfo)
+}
+
+func createNpmrcForTesting(t *testing.T, configFilePath string) (err error) {
+	// Creation of npmrc - npmCommand.CreateTempNpmrc() function is used to create a npmrc file
+	npmCommand := npm.NewNpmCommand("install", true)
+	npmCommand.SetConfigFilePath(configFilePath)
+	npmCommand.SetServerDetails(serverDetails)
+	err = npmCommand.Init()
+	assert.NoError(t, err)
+	err = npmCommand.PreparePrerequisites(tests.NpmRepo)
+	assert.NoError(t, err)
+	err = npmCommand.CreateTempNpmrc()
+	return
+}
+
+func publishUsingNpmrc(configFilePath string, buildNumber string) (npm.NpmPublishCommand, error) {
+	args := []string{"--run-native=true", "--build-name=" + tests.NpmBuildName, "--build-number=" + buildNumber}
+	npmpCmd := npm.NewNpmPublishCommand()
+	npmpCmd.SetConfigFilePath(configFilePath).SetArgs(args)
+	err := npmpCmd.Init()
+	if err != nil {
+		return *npmpCmd, err
+	}
+	err = commands.Exec(npmpCmd)
+	if err != nil {
+		return *npmpCmd, err
+	}
+	return *npmpCmd, err
+}
+
 func readModuleId(t *testing.T, wd string, npmVersion *version.Version) string {
 	packageInfo, err := buildutils.ReadPackageInfoFromPackageJsonIfExists(filepath.Dir(wd), npmVersion)
 	assert.NoError(t, err)
 	return packageInfo.BuildInfoModuleId()
+}
+
+func addNpmScopeRegistryToNpmRc(t *testing.T, projectPath string, packageJsonPath string, npmVersion *version.Version) {
+	scope := getScopeFromPackageJson(t, packageJsonPath, npmVersion)
+	authConfig, err := serverDetails.CreateArtAuthConfig()
+	assert.NoError(t, err)
+	_, registry, err := utils2.GetArtifactoryNpmRepoDetails(tests.NpmScopedRepo, authConfig, false)
+	assert.NoError(t, err)
+	scopedRegistry := scope + ":registry=" + registry
+	npmrcFilePath := filepath.Join(projectPath, ".npmrc")
+	npmrcFile, err := os.OpenFile(npmrcFilePath, os.O_APPEND|os.O_WRONLY, 0644)
+	assert.NoError(t, err)
+	defer npmrcFile.Close()
+	_, err = npmrcFile.WriteString(scopedRegistry)
+	assert.NoError(t, err)
+}
+
+func getScopeFromPackageJson(t *testing.T, wd string, npmVersion *version.Version) string {
+	packageInfo, err := buildutils.ReadPackageInfoFromPackageJsonIfExists(filepath.Dir(wd), npmVersion)
+	assert.NoError(t, err)
+	return packageInfo.Scope
 }
 
 func TestNpmWithGlobalConfig(t *testing.T) {
@@ -257,6 +413,11 @@ func validateNpmrcFileInfo(t *testing.T, npmTest npmTestParams, npmrcFileInfo, p
 	assert.Nil(t, bcpNpmrc, "The file 'jfrog.npmrc.backup' was supposed to be deleted but it was not when running the configuration:\n%v", npmTest)
 }
 
+// if file was backed up then it's mod time should be changed
+func validateIfFileWasEverModified(t *testing.T, fileInfo, postTestFileInfo os.FileInfo) {
+	assert.Equal(t, fileInfo.ModTime(), postTestFileInfo.ModTime())
+}
+
 func initNpmFilesTest(t *testing.T) (npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi, npmPostInstallProjectPath string) {
 	npmProjectPath = createNpmProject(t, "npmproject")
 	npmScopedProjectPath = createNpmProject(t, "npmscopedproject")
@@ -275,6 +436,14 @@ func initNpmFilesTest(t *testing.T) (npmProjectPath, npmScopedProjectPath, npmNp
 
 func initNpmProjectTest(t *testing.T) (npmProjectPath string) {
 	npmProjectPath = filepath.Dir(createNpmProject(t, "npmproject"))
+	err := createConfigFileForTest([]string{npmProjectPath}, tests.NpmRemoteRepo, tests.NpmRepo, t, project.Npm, false)
+	assert.NoError(t, err)
+	prepareArtifactoryForNpmBuild(t, npmProjectPath)
+	return
+}
+
+func initNpmPublishRcProjectTest(t *testing.T, projectName string) (npmProjectPath string) {
+	npmProjectPath = filepath.Dir(createNpmProject(t, projectName))
 	err := createConfigFileForTest([]string{npmProjectPath}, tests.NpmRemoteRepo, tests.NpmRepo, t, project.Npm, false)
 	assert.NoError(t, err)
 	prepareArtifactoryForNpmBuild(t, npmProjectPath)
@@ -357,8 +526,8 @@ func validateNpmPublish(t *testing.T, npmTestParams npmTestParams, isNpm7 bool) 
 }
 
 func validateNpmScopedPublish(t *testing.T, npmTestParams npmTestParams, isNpm7 bool) {
-	verifyExistInArtifactoryByProps(tests.GetNpmDeployedScopedArtifacts(isNpm7),
-		tests.NpmRepo+"/*",
+	verifyExistInArtifactoryByProps(tests.GetNpmDeployedScopedArtifacts(npmTestParams.repo, isNpm7),
+		npmTestParams.repo+"/*",
 		fmt.Sprintf("build.name=%v;build.number=%v;build.timestamp=*", tests.NpmBuildName, npmTestParams.buildNumber), t)
 	validateNpmCommonPublish(t, npmTestParams, isNpm7, true)
 }
@@ -586,7 +755,13 @@ func TestNpmPublishWithWorkspaces(t *testing.T) {
 	// Init npm project & npmp command for testing
 	npmProjectPath := initNpmWorkspacesProjectTest(t)
 	configFilePath := filepath.Join(npmProjectPath, ".jfrog", "projects", "npm.yaml")
-	args := []string{"--detailed-summary=true", "--workspaces", "--verbose"}
+
+	// Add build info parameters
+	buildName := tests.NpmBuildName + "-workspaces"
+	buildNumber := "789"
+	args := []string{"--detailed-summary=true", "--workspaces", "--verbose",
+		"--build-name=" + buildName, "--build-number=" + buildNumber}
+
 	npmpCmd := npm.NewNpmPublishCommand()
 	npmpCmd.SetConfigFilePath(configFilePath).SetArgs(args)
 	npmpCmd.SetNpmArgs(args)
@@ -607,6 +782,119 @@ func TestNpmPublishWithWorkspaces(t *testing.T) {
 		assert.Equal(t, len(expectedTars), len(files), "Summary validation failed - two archive should be deployed.")
 		assert.Len(t, files[index].Sha256, 64)
 	}
+
+	// Validate build info was created
+	buildInfoService := build.CreateBuildInfoService()
+	npmBuild, err := buildInfoService.GetOrCreateBuild(buildName, buildNumber)
+	assert.NoError(t, err)
+	defer func() {
+		assert.NoError(t, npmBuild.Clean())
+	}()
+
+	npmBuildInfo, err := npmBuild.ToBuildInfo()
+	assert.NoError(t, err)
+	assert.NotNil(t, npmBuildInfo)
+	assert.NotEmpty(t, npmBuildInfo.Started)
+
+	// Should have multiple modules for workspaces (one per workspace package)
+	assert.GreaterOrEqual(t, len(npmBuildInfo.Modules), 1, "There should be a single module created as part of workspaces publish")
+
+	module := npmBuildInfo.Modules[0]
+	assert.NotEmpty(t, module.Id, "Module %d should have an ID")
+	assert.Equal(t, buildinfo.Npm, module.Type, "Module %d should be npm type")
+	assert.Equal(t, len(module.Artifacts), 2, "Module %d should have artifacts")
+
+	// Validate artifact properties
+	for j, artifact := range module.Artifacts {
+		assert.NotEmpty(t, artifact.Name, "Artifact %d in module %d should have a name", j)
+		assert.NotEmpty(t, artifact.Path, "Artifact %d in module %d should have a path", j)
+		assert.NotEmpty(t, artifact.Sha1, "Artifact %d in module %d should have SHA1", j)
+		assert.NotEmpty(t, artifact.Sha256, "Artifact %d in module %d should have SHA256", j)
+		assert.NotEmpty(t, artifact.Md5, "Artifact %d in module %d should have MD5", j)
+		assert.Contains(t, artifact.Name, "nested"+strconv.Itoa(j+1))
+	}
+
+	// Publish build info to Artifactory
+	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	// Clean up
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+}
+
+func TestNpmPublishWithWorkspacesRunNative(t *testing.T) {
+	// Check npm version
+	npmVersion, _, err := buildutils.GetNpmVersionAndExecPath(log.Logger)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	// In npm under v7 skip test
+	if npmVersion.Compare(minimumWorkspacesNpmVersion) > 0 {
+		log.Info("Test skipped as this function in not supported in npm version " + npmVersion.GetVersion())
+		return
+	}
+
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	// Init npm project & npmp command for testing
+	npmProjectPath := initNpmWorkspacesProjectTest(t)
+	configFilePath := filepath.Join(npmProjectPath, ".jfrog", "projects", "npm.yaml")
+
+	// Create npmrc for run-native functionality
+	err = createNpmrcForTesting(t, configFilePath)
+	assert.NoError(t, err)
+
+	// Add build info parameters with run-native flag
+	buildName := tests.NpmBuildName + "-workspaces-native"
+	buildNumber := "890"
+	args := []string{"--workspaces", "--build-name=" + buildName, "--build-number=" + buildNumber, "--run-native"}
+
+	npmpCmd := npm.NewNpmPublishCommand()
+	npmpCmd.SetConfigFilePath(configFilePath).SetArgs(args)
+	assert.NoError(t, npmpCmd.Init())
+	err = commands.Exec(npmpCmd)
+	assert.NoError(t, err)
+
+	// Validate build info was created
+	buildInfoService := build.CreateBuildInfoService()
+	npmBuild, err := buildInfoService.GetOrCreateBuild(buildName, buildNumber)
+	assert.NoError(t, err)
+	defer func() {
+		assert.NoError(t, npmBuild.Clean())
+	}()
+
+	npmBuildInfo, err := npmBuild.ToBuildInfo()
+	assert.NoError(t, err)
+	assert.NotNil(t, npmBuildInfo)
+	assert.NotEmpty(t, npmBuildInfo.Started)
+
+	// Should have single module with multiple artifacts for workspaces with run-native
+	assert.GreaterOrEqual(t, len(npmBuildInfo.Modules), 1, "There should be a single module created as part of workspaces publish with run-native")
+
+	module := npmBuildInfo.Modules[0]
+	assert.NotEmpty(t, module.Id, "Module should have an ID")
+	assert.Equal(t, buildinfo.Npm, module.Type, "Module should be npm type")
+	assert.Equal(t, len(module.Artifacts), 2, "Module should have exactly 2 artifacts for workspaces")
+
+	// Validate artifact properties
+	for j, artifact := range module.Artifacts {
+		assert.NotEmpty(t, artifact.Name, "Artifact %d should have a name", j)
+		assert.NotEmpty(t, artifact.Path, "Artifact %d should have a path", j)
+		assert.NotEmpty(t, artifact.Sha1, "Artifact %d should have SHA1", j)
+		assert.NotEmpty(t, artifact.Sha256, "Artifact %d should have SHA256", j)
+		assert.NotEmpty(t, artifact.Md5, "Artifact %d should have MD5", j)
+		assert.Contains(t, artifact.Name, "nested"+strconv.Itoa(j+1), "Artifact %d should be named nested%d", j, j+1)
+	}
+
+	// Publish build info to Artifactory
+	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	// Clean up
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 }
 
 // Test npm publish command with provided tarball
@@ -666,7 +954,7 @@ func TestYarn(t *testing.T) {
 	testDataTarget := filepath.Join(tempDirPath, tests.Out, "yarn")
 	assert.NoError(t, biutils.CopyDir(testDataSource, testDataTarget, true, nil))
 
-	yarnProjectPath := filepath.Join(testDataTarget, "yarnproject")
+	yarnProjectPath := filepath.Join(testDataTarget, "yarnprojectV2")
 	assert.NoError(t, createConfigFileForTest([]string{yarnProjectPath}, tests.NpmRemoteRepo, "", t, project.Yarn, false))
 
 	wd, err := os.Getwd()
@@ -711,6 +999,169 @@ func TestYarn(t *testing.T) {
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.YarnBuildName, artHttpDetails)
 }
 
+func TestYarnSetVersion(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+
+	// Temporarily change the cache folder to a temporary folder - to make sure the cache is clean and dependencies will be downloaded from Artifactory
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+
+	testDataSource := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "yarn")
+	testDataTarget := filepath.Join(tempDirPath, tests.Out, "yarn")
+	assert.NoError(t, biutils.CopyDir(testDataSource, testDataTarget, true, nil))
+
+	yarnProjectPath := filepath.Join(testDataTarget, "yarnprojectV2")
+	assert.NoError(t, createConfigFileForTest([]string{yarnProjectPath}, tests.NpmRemoteRepo, "", t, project.Yarn, false))
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, yarnProjectPath)
+	defer chdirCallback()
+	cleanUpYarnGlobalFolder := clientTestUtils.SetEnvWithCallbackAndAssert(t, "YARN_GLOBAL_FOLDER", tempDirPath)
+	defer cleanUpYarnGlobalFolder()
+
+	// Add "localhost" to http whitelist
+	yarnExecPath, err := exec.LookPath("yarn")
+	assert.NoError(t, err)
+	// Get original http white list config
+	origWhitelist, err := yarn.ConfigGet("unsafeHttpWhitelist", yarnExecPath, true)
+	assert.NoError(t, err)
+	assert.NoError(t, yarn.ConfigSet("unsafeHttpWhitelist", "[\"localhost\"]", yarnExecPath, true))
+	defer func() {
+		// Restore original whitelist config
+		assert.NoError(t, yarn.ConfigSet("unsafeHttpWhitelist", origWhitelist, yarnExecPath, true))
+	}()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	err = jfrogCli.Exec("yarn", "set", "version", "3.2.1")
+	assert.NoError(t, err)
+	modifyExistingYarnRc(t, "3.2.1")
+}
+
+func TestYarnUpgradeToV4(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+
+	// Temporarily change the cache folder to a temporary folder - to make sure the cache is clean and dependencies will be downloaded from Artifactory
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+
+	testDataSource := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "yarn")
+	testDataTarget := filepath.Join(tempDirPath, tests.Out, "yarn")
+	assert.NoError(t, biutils.CopyDir(testDataSource, testDataTarget, true, nil))
+
+	yarnProjectPath := filepath.Join(testDataTarget, "yarnprojectV2")
+	assert.NoError(t, createConfigFileForTest([]string{yarnProjectPath}, tests.NpmRemoteRepo, "", t, project.Yarn, false))
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, yarnProjectPath)
+	defer chdirCallback()
+	cleanUpYarnGlobalFolder := clientTestUtils.SetEnvWithCallbackAndAssert(t, "YARN_GLOBAL_FOLDER", tempDirPath)
+	defer cleanUpYarnGlobalFolder()
+
+	// Add "localhost" to http whitelist
+	yarnExecPath, err := exec.LookPath("yarn")
+	assert.NoError(t, err)
+	// Get original http white list config
+	origWhitelist, err := yarn.ConfigGet("unsafeHttpWhitelist", yarnExecPath, true)
+	assert.NoError(t, err)
+	assert.NoError(t, yarn.ConfigSet("unsafeHttpWhitelist", "[\"localhost\"]", yarnExecPath, true))
+	defer func() {
+		// Restore original whitelist config
+		assert.NoError(t, yarn.ConfigSet("unsafeHttpWhitelist", origWhitelist, yarnExecPath, true))
+	}()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	err = jfrogCli.Exec("yarn", "set", "version", "4.0.1")
+	assert.Error(t, err)
+}
+
+func TestYarnInV4(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+
+	// Temporarily change the cache folder to a temporary folder - to make sure the cache is clean and dependencies will be downloaded from Artifactory
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+
+	testDataSource := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "yarn")
+	testDataTarget := filepath.Join(tempDirPath, tests.Out, "yarn")
+	assert.NoError(t, biutils.CopyDir(testDataSource, testDataTarget, true, nil))
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+
+	yarnProjectPath := filepath.Join(testDataTarget, "yarnprojectV4")
+	assert.NoError(t, createConfigFileForTest([]string{yarnProjectPath}, tests.NpmRemoteRepo, "", t, project.Yarn, false))
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, yarnProjectPath)
+	defer chdirCallback()
+	cleanUpYarnGlobalFolder := clientTestUtils.SetEnvWithCallbackAndAssert(t, "YARN_GLOBAL_FOLDER", tempDirPath)
+	defer cleanUpYarnGlobalFolder()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	err = jfrogCli.Exec("yarn", "install")
+	assert.Error(t, err)
+}
+
+func TestYarnChangeVersionInV4(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+
+	// Temporarily change the cache folder to a temporary folder - to make sure the cache is clean and dependencies will be downloaded from Artifactory
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+
+	testDataSource := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "yarn")
+	testDataTarget := filepath.Join(tempDirPath, tests.Out, "yarn")
+	assert.NoError(t, biutils.CopyDir(testDataSource, testDataTarget, true, nil))
+
+	yarnProjectPath := filepath.Join(testDataTarget, "yarnprojectV4")
+	assert.NoError(t, createConfigFileForTest([]string{yarnProjectPath}, tests.NpmRemoteRepo, "", t, project.Yarn, false))
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, yarnProjectPath)
+	defer chdirCallback()
+	cleanUpYarnGlobalFolder := clientTestUtils.SetEnvWithCallbackAndAssert(t, "YARN_GLOBAL_FOLDER", tempDirPath)
+	defer cleanUpYarnGlobalFolder()
+
+	// Add "localhost" to http whitelist
+	yarnExecPath, err := exec.LookPath("yarn")
+	assert.NoError(t, err)
+
+	yarnrcPath := ".yarnrc.yml"
+	data, err := os.ReadFile(yarnrcPath)
+	assert.NoError(t, err)
+	// Parse YAML
+	var config = make(map[string]any)
+	err = yaml.Unmarshal(data, &config)
+	if err != nil {
+		assert.NoError(t, err)
+	}
+	config["unsafeHttpWhitelist"] = []string{"localhost"}
+	updatedYamlData, err := yaml.Marshal(&config)
+	assert.NoError(t, err)
+	err = os.WriteFile(yarnrcPath, updatedYamlData, 0644)
+	assert.NoError(t, err)
+
+	assert.NoError(t, err)
+	defer func() {
+		// Restore original whitelist config
+		assert.NoError(t, yarn.ConfigSet("unsafeHttpWhitelist", "[]", yarnExecPath, true))
+	}()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+
+	err = jfrogCli.Exec("yarn", "set", "version", "3.2.1")
+	assert.NoError(t, err)
+	modifyExistingYarnRc(t, "3.2.1")
+
+	err = jfrogCli.Exec("yarn", "--version")
+	assert.NoError(t, err)
+}
+
 // Checks if the expected dependencies match the actual dependencies. Only the dependencies' IDs and scopes (not more than one scope) are compared.
 func equalDependenciesSlices(t *testing.T, expectedDependencies []expectedDependency, actualDependencies []buildinfo.Dependency) {
 	assert.Equal(t, len(expectedDependencies), len(actualDependencies))
@@ -728,6 +1179,16 @@ func equalDependenciesSlices(t *testing.T, expectedDependencies []expectedDepend
 		assert.True(t, found, "The dependencies from the build-info did not match the expected. expected: %v, actual: %v",
 			expectedDependencies, dependenciesToPrintableArray(actualDependencies))
 	}
+}
+
+func modifyExistingYarnRc(t *testing.T, version string) {
+	yarnConfig := make(map[string]any)
+	yarnRcPath := ".yarnrc.yml"
+	yarnConfig["yarnPath"] = ".yarn/releases/yarn-" + version + ".cjs"
+	updatedYamlData, err := yaml.Marshal(&yarnConfig)
+	assert.NoError(t, err)
+	err = os.WriteFile(yarnRcPath, updatedYamlData, 0644)
+	assert.NoError(t, err)
 }
 
 func isNpm7(npmVersion *version.Version) bool {
@@ -768,4 +1229,27 @@ func assertNpmPublishResultFiles(t *testing.T, npmpCmd *npm.NpmPublishCommand) (
 	}
 	assert.NotNil(t, files)
 	return files
+}
+
+func TestSetupNpmCommand(t *testing.T) {
+	initNpmTest(t)
+	// Validate that the module does not exist in the cache before running the test.
+	client, err := httpclient.ClientBuilder().Build()
+	assert.NoError(t, err)
+	moduleCacheUrl := serverDetails.ArtifactoryUrl + tests.NpmRemoteRepo + "-cache/chalk-animation/-/chalk-animation-2.0.3.tgz"
+	_, _, err = client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
+	assert.ErrorContains(t, err, "404")
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	require.NoError(t, execGo(jfrogCli, "setup", "npm", "--repo="+tests.NpmRemoteRepo))
+
+	// Run 'npm install' to resolve the module from Artifactory and force it to be downloaded from Artifactory.
+	output, err := exec.Command("npm", "install", "chalk-animation@2.0.3", "--cache", t.TempDir(), "--prefix", t.TempDir()).Output()
+	assert.NoError(t, err, fmt.Sprintf("%s\n%q", string(output), err))
+	// Validate that the module exists in the cache after running the test.
+	// That means that the setup command worked and the 'go get' resolved the module from Artifactory.
+	_, res, err := client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
+	if assert.NoError(t, err, "Failed to find the artifact in the cache: "+moduleCacheUrl) {
+		assert.Equal(t, http.StatusOK, res.StatusCode)
+	}
 }

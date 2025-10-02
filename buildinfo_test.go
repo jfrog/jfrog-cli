@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/formats"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/formats"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
@@ -18,12 +18,12 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
+	rtBuildInfo "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/buildinfo"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/inttestutils"
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	rtutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
@@ -266,6 +266,17 @@ func TestBuildPublishDryRun(t *testing.T) {
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
 	validateBuildInfo(buildInfo, t, 0, 9, tests.RtBuildName1, buildinfo.Generic)
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	// Verify build publish info overwrite flag with dryrun
+	for i := 0; i < 2; i++ {
+		runRt(t, "bp", tests.RtBuildName1, buildNumber)
+	}
+	existingBuildInfo, found, err := tests.GetBuildRuns(serverDetails, tests.RtBuildName1)
+	assertBuildNumberOccurrencesForGivenBuildNameAndNumber(t, existingBuildInfo, 2, found, buildNumber, err)
+	runRt(t, "bp", tests.RtBuildName1, buildNumber, "--dry-run=true", "--overwrite=true")
+	// Expect no changes in the build info since it's a dry run
+	assertBuildNumberOccurrencesForGivenBuildNameAndNumber(t, existingBuildInfo, 2, found, buildNumber, err)
 
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 	cleanArtifactoryTest()
@@ -517,8 +528,10 @@ func testArtifactoryPublishWithoutBuildUrl(t *testing.T, buildName, buildNumber 
 func TestArtifactoryPublishBuildInfoBuildUrl(t *testing.T) {
 	initArtifactoryTest(t, "")
 	buildNumber := "11"
+	// jfrog-ignore - false positive not a real URL.
 	buildUrl := "http://example.ci.com"
-	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, cliutils.BuildUrl, "http://override-me.ci.com")
+	// jfrog-ignore - false positive not a real URL.
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.BuildUrl, "http://override-me.ci.com")
 	defer setEnvCallBack()
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 
@@ -538,9 +551,10 @@ func TestArtifactoryPublishBuildInfoBuildUrl(t *testing.T) {
 func TestArtifactoryPublishBuildInfoBuildUrlFromEnv(t *testing.T) {
 	initArtifactoryTest(t, "")
 	buildNumber := "11"
+	// jfrog-ignore - false positive not a real URL.
 	buildUrl := "http://example-env.ci.com"
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
-	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, cliutils.BuildUrl, buildUrl)
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.BuildUrl, buildUrl)
 	defer setEnvCallBack()
 	bi, err := uploadFilesAndGetBuildInfo(t, tests.RtBuildName1, buildNumber, "")
 	if err != nil {
@@ -656,6 +670,160 @@ func TestBuildAddGit(t *testing.T) {
 
 func TestBuildAddGitEnvBuildNameAndNumber(t *testing.T) {
 	testBuildAddGit(t, true)
+}
+
+func TestBuildPublishWithOverwrite(t *testing.T) {
+	initArtifactoryTest(t, "")
+	buildName := tests.RtBuildName1
+	buildNumber := "1"
+	preReleaseBuildNumber := "1-rc"
+	defaultNumberOfBuilds := 5
+	nonExistingBuildNumber := "1-x-rc"
+
+	// Clean old build tests if exists
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	// Publish build info without overwrite flag
+	for i := 0; i < defaultNumberOfBuilds; i++ {
+		runRt(t, "bp", buildName, buildNumber)
+	}
+	for i := 0; i < 2; i++ {
+		runRt(t, "bp", buildName, preReleaseBuildNumber)
+	}
+	publishedBuildInfo, found, err := tests.GetBuildRuns(serverDetails, buildName)
+	assertNoErrorAndAssertBuildInfoFound(t, err, found)
+	// Verify if total of 7 build info's are available
+	assert.Equal(t, 7, len(publishedBuildInfo.BuildsNumbers), "expected five build info's to be available")
+
+	buildNumberFrequency := rtBuildInfo.CalculateBuildNumberFrequency(publishedBuildInfo)
+	// Verify if 5 build info's are available for given build number and 2 for pre-release build number
+	assert.Equal(t, defaultNumberOfBuilds, buildNumberFrequency[buildNumber])
+	assert.Equal(t, 2, buildNumberFrequency[preReleaseBuildNumber])
+
+	// Publish build info with overwrite flag
+	runRt(t, "bp", buildName, buildNumber, "--overwrite=true")
+	publishedBuildInfo, found, err = tests.GetBuildRuns(serverDetails, buildName)
+	assertNoErrorAndAssertBuildInfoFound(t, err, found)
+	buildNumbersFrequencyAfterOverwrite := rtBuildInfo.CalculateBuildNumberFrequency(publishedBuildInfo)
+	// Since overwrite is ran for buildNumber verify if only one build info is available for given build number
+	assert.Equal(t, 1, buildNumbersFrequencyAfterOverwrite[buildNumber])
+	// Since overwrite is ran for buildNumber verify no change for preReleaseBuildNumber
+	assert.Equal(t, 2, buildNumbersFrequencyAfterOverwrite[preReleaseBuildNumber])
+
+	// Verify that only one build info is available for given build number with overwrite
+	runRt(t, "bp", buildName, preReleaseBuildNumber, "--overwrite=true")
+	publishedBuildInfo, found, err = tests.GetBuildRuns(serverDetails, buildName)
+	assertNoErrorAndAssertBuildInfoFound(t, err, found)
+	buildNumbersFrequencyAfterOverwrite = rtBuildInfo.CalculateBuildNumberFrequency(publishedBuildInfo)
+	// Since overwrite is ran for preReleaseBuildNumber verify no change for buildNumber
+	assert.Equal(t, 1, buildNumbersFrequencyAfterOverwrite[buildNumber], "expected only one build info to be available")
+	// Since overwrite is ran for preReleaseBuildNumber verify if only one build info is available for given preReleaseBuildNumber
+	assert.Equal(t, 1, buildNumbersFrequencyAfterOverwrite[preReleaseBuildNumber])
+
+	// Delete existing build info
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	// Run build-publish with overwrite flag and build should be published
+	runRt(t, "bp", buildName, buildNumber, "--overwrite=true")
+	publishedBuildInfo, found, err = tests.GetBuildRuns(serverDetails, buildName)
+	// Verify even though overwrite is used when no build infos are available build info should be published
+	assertBuildNumberOccurrencesForGivenBuildNameAndNumber(t, publishedBuildInfo, 1, found, buildNumber, err)
+
+	// Run build-publish with overwrite flag and build should be published
+	runRt(t, "bp", buildName, nonExistingBuildNumber, "--overwrite=true")
+	publishedBuildInfo, found, err = tests.GetBuildRuns(serverDetails, buildName)
+	// Verify even though overwrite is used when no build infos are available build info should be published
+	assertBuildNumberOccurrencesForGivenBuildNameAndNumber(t, publishedBuildInfo, 1, found, nonExistingBuildNumber, err)
+
+	// Cleanup
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryBuildPublishWithCollectEnvAndCollectGit(t *testing.T) {
+	initArtifactoryTest(t, "")
+	buildNumber := "12"
+
+	// Build collect env
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, "DONT_COLLECT", "foo")
+	defer setEnvCallBack()
+	setEnvCallBack = clientTestUtils.SetEnvWithCallbackAndAssert(t, "COLLECT", "bar")
+	defer setEnvCallBack()
+
+	oldHomeDir := os.Getenv(coreutils.HomeDir)
+	createJfrogHomeConfig(t, true)
+
+	// Create .git folder for this test
+	originalFolder := "buildaddgit_.git_suffix"
+	baseDir, dotGitPath := coretests.PrepareDotGitDir(t, originalFolder, "testdata")
+	defer cleanBuildAddGitTest(t, baseDir, originalFolder, oldHomeDir, dotGitPath)
+
+	// Get path for build-add-git config file
+	pwd, _ := os.Getwd()
+	configPath := filepath.Join(pwd, "testdata", "buildaddgit_config.yaml")
+
+	expectedVcsUrl := "https://github.com/jfrog/jfrog-cli-go.git"
+	expectedVcsRevision := "b033a0e508bdb52eee25654c9e12db33ff01b8ff"
+	expectedVcsBranch := "master"
+	expectedVcsMessage := "TEST-4 - Adding text to file2.txt"
+
+	// Publish build info
+	runRt(t, "bp", tests.RtBuildName1, buildNumber, "--collect-env", "--collect-git-info", "--dot-git-path",
+		baseDir, "--git-config-file-path", configPath, "--env-exclude=*password*;*psw*;*secret*;*key*;*token*;DONT_COLLECT")
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.RtBuildName1, buildNumber)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
+
+	// validate env results
+	// Make sure no sensitive data in build env
+	for k := range buildInfo.Properties {
+		assert.NotContains(t, k, "password")
+		assert.NotContains(t, k, "psw")
+		assert.NotContains(t, k, "secret")
+		assert.NotContains(t, k, "key")
+		assert.NotContains(t, k, "token")
+		assert.NotContains(t, k, "DONT_COLLECT")
+	}
+	// Make sure "COLLECT" env appear in build env
+	assert.Contains(t, buildInfo.Properties, "buildInfo.env.COLLECT")
+	assert.Empty(t, buildInfo.Modules, "Env collection should not add a new module to the build info")
+
+	// Validate git results
+	buildInfoVcsUrl := buildInfo.VcsList[0].Url
+	buildInfoVcsRevision := buildInfo.VcsList[0].Revision
+	buildInfoVcsBranch := buildInfo.VcsList[0].Branch
+	buildInfoVcsMessage := buildInfo.VcsList[0].Message
+	assert.Equal(t, expectedVcsRevision, buildInfoVcsRevision, "Wrong revision")
+	assert.Equal(t, expectedVcsUrl, buildInfoVcsUrl, "Wrong url")
+	assert.Equal(t, expectedVcsBranch, buildInfoVcsBranch, "Wrong branch")
+	assert.Equal(t, expectedVcsMessage, buildInfoVcsMessage, "Wrong Message")
+	assert.False(t, buildInfo.Issues == nil || len(buildInfo.Issues.AffectedIssues) != 4,
+		"Wrong issues number, expected 4 issues, received: %+v", *buildInfo.Issues)
+	assert.Empty(t, buildInfo.Modules, "Vcs collection should not add a new module to the build info")
+
+	// Cleanup
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
+func assertBuildNumberOccurrencesForGivenBuildNameAndNumber(t *testing.T, existingBuildInfo *buildinfo.BuildRuns,
+	expectedOccurrences int, found bool, buildNumber string, err error) {
+
+	buildNumbersFrequencyAfterOverwrite := rtBuildInfo.CalculateBuildNumberFrequency(existingBuildInfo)
+	assertNoErrorAndAssertBuildInfoFound(t, err, found)
+	assert.Equal(t, expectedOccurrences, buildNumbersFrequencyAfterOverwrite[buildNumber], "expected only one build info to be available")
+}
+
+func assertNoErrorAndAssertBuildInfoFound(t *testing.T, err error, found bool) {
+	assert.NoError(t, err)
+	assert.True(t, found, "build info was expected to be found")
 }
 
 func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
@@ -919,4 +1087,116 @@ type buildAddDepsBuildInfoTestParams struct {
 	buildName            string
 	buildNumber          string
 	expectedModule       string
+}
+
+func TestBuildInfoPropertiesRemoval(t *testing.T) {
+	initArtifactoryTest(t, "")
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+
+	runRt(t, "upload", "testdata/a/a1.in", tests.RtRepo1+"/test/a1.in")
+
+	test := buildAddDepsBuildInfoTestParams{
+		description:          "Test properties field removal",
+		commandArgs:          []string{"--module=testModule", "testdata/a/a1.in"},
+		expectedDependencies: []string{"a1.in"},
+		buildName:            tests.RtBuildName1,
+		buildNumber:          "1",
+		expectedModule:       "testModule",
+	}
+
+	collectDepsAndPublishBuild(test, false, t)
+
+	buildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.RtBuildName1, "1")
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+
+	buildInfoBytes, err := json.Marshal(buildInfo)
+	assert.NoError(t, err)
+
+	var buildInfoMap map[string]interface{}
+	err = json.Unmarshal(buildInfoBytes, &buildInfoMap)
+	assert.NoError(t, err)
+
+	buildInfoData, ok := buildInfoMap["buildInfo"].(map[string]interface{})
+	assert.True(t, ok, "Failed to get buildInfo data")
+
+	modules, ok := buildInfoData["modules"].([]interface{})
+	assert.True(t, ok, "Failed to get modules array")
+	assert.NotEmpty(t, modules, "No modules found in build info")
+
+	for _, module := range modules {
+		moduleMap, ok := module.(map[string]interface{})
+		assert.True(t, ok, "Failed to parse module")
+		_, hasProperties := moduleMap["properties"]
+		assert.False(t, hasProperties, "Properties field should not be present in module")
+	}
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
+func TestBuildInfoPropertiesRemovalInBadAndPublish(t *testing.T) {
+	initArtifactoryTest(t, "")
+	buildName := tests.RtBuildName1 + "-props"
+	buildNumber := "1"
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	runRt(t, "upload", "testdata/a/a1.in", tests.RtRepo1+"/test/a1.in")
+
+	badTest := buildAddDepsBuildInfoTestParams{
+		description:          "Test properties field removal in bad command",
+		commandArgs:          []string{"--module=badModule", "testdata/a/a1.in"},
+		expectedDependencies: []string{"a1.in"},
+		buildName:            buildName,
+		buildNumber:          buildNumber,
+		expectedModule:       "badModule",
+	}
+	collectDepsAndPublishBuild(badTest, false, t)
+
+	specFile, err := tests.CreateSpec(tests.UploadFlatRecursive)
+	assert.NoError(t, err)
+	runRt(t, "upload", "--spec="+specFile, "--build-name="+buildName, "--build-number="+buildNumber, "--module=publishModule")
+
+	runRt(t, "bp", buildName, buildNumber)
+
+	buildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+
+	buildInfoBytes, err := json.Marshal(buildInfo)
+	assert.NoError(t, err)
+
+	var buildInfoMap map[string]interface{}
+	err = json.Unmarshal(buildInfoBytes, &buildInfoMap)
+	assert.NoError(t, err)
+
+	buildInfoData, ok := buildInfoMap["buildInfo"].(map[string]interface{})
+	assert.True(t, ok, "Failed to get buildInfo data")
+
+	modules, ok := buildInfoData["modules"].([]interface{})
+	assert.True(t, ok, "Failed to get modules array")
+	assert.NotEmpty(t, modules, "No modules found in build info")
+
+	for _, module := range modules {
+		moduleMap, ok := module.(map[string]interface{})
+		assert.True(t, ok, "Failed to parse module")
+		_, hasProperties := moduleMap["properties"]
+		assert.False(t, hasProperties, "Properties field should not be present in module")
+	}
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	cleanArtifactoryTest()
 }

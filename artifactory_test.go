@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-artifactory/cliutils/flagkit"
 	"io"
 	"net"
 	"net/http"
@@ -29,7 +30,7 @@ import (
 	"github.com/jfrog/archiver/v3"
 	gofrogio "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/gofrog/version"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
@@ -40,7 +41,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/dependencies"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/inttestutils"
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	cliproxy "github.com/jfrog/jfrog-cli/utils/tests/proxy/server"
 	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
@@ -67,6 +67,8 @@ import (
 // https://jira.jfrog.org/browse/JA-2620
 // Minimum Artifactory version with Terraform support
 const terraformMinArtifactoryVersion = "7.38.4"
+const deleteReleaseBundleV1ApiUrl = "artifactory/api/release/bundles/"
+const deleteReleaseBundleV2ApiUrl = "lifecycle/api/v2/release_bundle/records/"
 
 // JFrog CLI for Artifactory sub-commands (jfrog rt ...)
 var artifactoryCli *coretests.JfrogCli
@@ -192,6 +194,35 @@ func TestArtifactoryExcludeUpload(t *testing.T) {
 	}
 }
 
+func TestSearchWithBuildNameSpecialChars(t *testing.T) {
+	initArtifactoryTest(t, "")
+	defer cleanArtifactoryTest()
+
+	testCases := []struct {
+		name      string
+		buildName string
+	}{
+		{"buildName with space", "my build"},
+		{"buildName with special chars", "my-build with#special@chars"},
+		{"buildName with colon", "build:with:colon"},
+		{"buildName with spaces and colons", "build :: with :: colon"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			buildNumber := "1"
+			artifactPath := filepath.Join("testdata", "a", "a1.in")
+
+			runRt(t, "upload", artifactPath, tests.RtRepo1, "--build-name="+tc.buildName, "--build-number="+buildNumber)
+			runRt(t, "build-publish", tc.buildName, buildNumber)
+
+			searchCmd := []string{"search", "--build=" + tc.buildName}
+			err := artifactoryCli.Exec(searchCmd...)
+			assert.NoError(t, err)
+		})
+	}
+}
+
 func TestArtifactorySimpleUploadWithWildcardSpec(t *testing.T) {
 	initArtifactoryTest(t, "")
 	// Init tmp dir
@@ -223,10 +254,11 @@ func TestArtifactorySimpleUploadSpecUsingConfig(t *testing.T) {
 	inttestutils.VerifyExistInArtifactory(tests.GetSimpleUploadExpectedRepo1(), searchFilePath, serverDetails, t)
 	cleanArtifactoryTest()
 }
+
 func TestReleaseBundleImportOnPrem(t *testing.T) {
 	// Cleanup
 	defer func() {
-		deleteReceivedReleaseBundle(t, "cli-tests", "2")
+		deleteReceivedReleaseBundle(t, deleteReleaseBundleV1ApiUrl, "cli-tests", "2")
 		cleanArtifactoryTest()
 	}()
 	initArtifactoryTest(t, "")
@@ -238,6 +270,35 @@ func TestReleaseBundleImportOnPrem(t *testing.T) {
 	assert.NoError(t, err)
 	testFilePath := filepath.Join(wd, "testdata", "lifecycle", "import", "cli-tests-2.zip")
 	assert.NoError(t, lcCli.Exec("rbi", testFilePath))
+}
+
+func TestReleaseBundleV2Download(t *testing.T) {
+	buildNumber := "5"
+	defer func() {
+		deleteReceivedReleaseBundle(t, deleteReleaseBundleV2ApiUrl, tests.LcRbName1, buildNumber)
+		inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+		cleanArtifactoryTest()
+	}()
+	initArtifactoryTest(t, "")
+	initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
+
+	runRt(t, "upload", "testdata/a/a1.in", tests.RtRepo1, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber)
+	runRt(t, "build-publish", tests.RtBuildName1, buildNumber)
+
+	// Create RBV2
+	err := lcCli.Exec("rbc", tests.LcRbName1, buildNumber, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber)
+	assert.NoError(t, err)
+
+	runRt(t, "download", "--bundle="+tests.LcRbName1+"/"+buildNumber)
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	exists, err := fileutils.IsDirExists(filepath.Join(wd, tests.LcRbName1), false)
+
+	assert.NoError(t, err)
+	assert.True(t, exists)
+
+	clientTestUtils.RemoveAllAndAssert(t, filepath.Join(wd, tests.LcRbName1))
 }
 
 func TestArtifactoryUploadPathWithSpecialCharsAsNoRegex(t *testing.T) {
@@ -416,11 +477,11 @@ func TestArtifactoryDownloadPatternWithUnicodeChars(t *testing.T) {
 }
 
 func TestArtifactoryConcurrentDownload(t *testing.T) {
-	testArtifactoryDownload(cliutils.DownloadMinSplitKb*1000, t)
+	testArtifactoryDownload(flagkit.DownloadMinSplitKb*1000, t)
 }
 
 func TestArtifactoryBulkDownload(t *testing.T) {
-	testArtifactoryDownload(cliutils.DownloadMinSplitKb*1000-1, t)
+	testArtifactoryDownload(flagkit.DownloadMinSplitKb*1000-1, t)
 }
 
 func testArtifactoryDownload(fileSize int, t *testing.T) {
@@ -5112,6 +5173,24 @@ func TestConfigAddWithStdinAccessToken(t *testing.T) {
 	details, err := config.GetSpecificConfig(tests.ServerId, false, false)
 	assert.NoError(t, err)
 	assert.Equal(t, "accesstoken", details.AccessToken)
+	assert.Equal(t, false, details.DisableTokenRefresh)
+}
+
+func TestConfigAddWithDisableRefreshToken(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	err := configCli.WithoutCredentials().Exec("add", tests.ServerId, "--artifactory-url="+*tests.JfrogUrl+tests.
+		ArtifactoryEndpoint, "--access-token=password", "--disable-token-refresh=true")
+	assert.NoError(t, err)
+
+	defer func() {
+		assert.NoError(t, configCli.WithoutCredentials().Exec("rm", tests.ServerId, "--quiet"))
+	}()
+
+	details, err := config.GetSpecificConfig(tests.ServerId, false, false)
+	assert.NoError(t, err)
+	assert.Equal(t, "password", details.AccessToken)
+	assert.Equal(t, true, details.DisableTokenRefresh)
 }
 
 func pipeStdinSecret(t *testing.T, secret string) func() {
@@ -5511,15 +5590,41 @@ func TestArtifactoryCurl(t *testing.T) {
 	_, err := createServerConfigAndReturnPassphrase(t)
 	defer deleteServerConfig(t)
 	assert.NoError(t, err)
-	// Check curl command with config default server
-	err = artifactoryCli.WithoutCredentials().Exec("curl", "-XGET", "/api/system/version")
-	assert.NoError(t, err)
-	// Check curl command with '--server-id' flag
-	err = artifactoryCli.WithoutCredentials().Exec("curl", "-XGET", "/api/system/version", "--server-id="+tests.ServerId)
-	assert.NoError(t, err)
-	// Check curl command with invalid server id - should get an error.
-	err = artifactoryCli.WithoutCredentials().Exec("curl", "-XGET", "/api/system/version", "--server-id=not_configured_name_"+tests.ServerId)
-	assert.Error(t, err)
+
+	baseArgs := []string{"curl", "-XGET", "/api/system/version"}
+
+	testRuns := []struct {
+		testName         string
+		serverIDEnvValue string
+		expectedErr      bool
+		serverID         string
+	}{
+		{"defaultConfig", "", false, ""},
+		{"serverIdFlag", "", false, tests.ServerId},
+		{"invalidServerId", "", true, "not_configured_name_" + tests.ServerId},
+		{"envVarSet", tests.ServerId, false, ""},
+		{"envVarWithFlag", tests.ServerId, false, tests.ServerId},
+		{"priorityFlagOverEnv", "wrong_server_id", false, tests.ServerId},
+		{"priorityEnvOverDefault", tests.ServerId, false, ""},
+	}
+
+	for _, test := range testRuns {
+		t.Run(test.testName, func(t *testing.T) {
+			setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.ServerID, test.serverIDEnvValue)
+
+			args := append([]string{}, baseArgs...)
+			if test.serverID != "" {
+				args = append(args, "--server-id="+test.serverID)
+			}
+			err = artifactoryCli.WithoutCredentials().Exec(args...)
+			if test.expectedErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+			setEnvCallBack()
+		})
+	}
 
 	cleanArtifactoryTest()
 }
@@ -5654,10 +5759,10 @@ func sendArtifactoryTrustedPublicKey(t *testing.T, artHttpDetails httputils.Http
 	assert.NoError(t, err)
 }
 
-func deleteReceivedReleaseBundle(t *testing.T, bundleName, bundleVersion string) {
+func deleteReceivedReleaseBundle(t *testing.T, url, bundleName, bundleVersion string) {
 	client, err := httpclient.ClientBuilder().Build()
 	assert.NoError(t, err)
-	deleteApi := path.Join("artifactory/api/release/bundles/", bundleName, bundleVersion)
+	deleteApi := path.Join(url, bundleName, bundleVersion)
 	_, _, err = client.SendDelete(*tests.JfrogUrl+deleteApi, []byte{}, artHttpDetails, "Deleting release bundle")
 	assert.NoError(t, err)
 }

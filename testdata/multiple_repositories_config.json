@@ -1,0 +1,20 @@
+[
+  {
+    "key": "${REPO1_KEY}",
+    "rclass": "local",
+    "packageType": "maven",
+    "description": "First test repository for batch operations"
+  },
+  {
+    "key": "${REPO2_KEY}",
+    "rclass": "local",
+    "packageType": "npm",
+    "description": "Second test repository for batch operations"
+  },
+  {
+    "key": "${REPO3_KEY}",
+    "rclass": "local",
+    "packageType": "docker",
+    "description": "Third test repository for batch operations"
+  }
+] 

@@ -3,17 +3,20 @@ package token
 import (
 	"errors"
 	"fmt"
+	"os"
+	"strconv"
+
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	generic "github.com/jfrog/jfrog-cli-core/v2/general/token"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/utils/accesstoken"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
-	"strconv"
 )
 
 func AccessTokenCreateCmd(c *cli.Context) error {
@@ -67,13 +70,63 @@ func AccessTokenCreateCmd(c *cli.Context) error {
 	return nil
 }
 
+func ExchangeOidcTokenCmd(c *cli.Context) error {
+	if c.NArg() < 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	serverDetails, err := createPlatformDetailsByFlags(c)
+	if err != nil {
+		return err
+	}
+
+	oidcAccessTokenCreateCmd, err := CreateOidcTokenExchangeCommand(c, serverDetails)
+	if err != nil {
+		return err
+	}
+
+	if err = commands.ExecAndThenReportUsage(oidcAccessTokenCreateCmd); err != nil {
+		return err
+	}
+	// Print to the console only if the specific EOT command has been executed.
+	// Otherwise, it will be printed by the config command, which is unnecessary.
+	oidcAccessTokenCreateCmd.PrintResponseToConsole()
+	return nil
+}
+
+func CreateOidcTokenExchangeCommand(c *cli.Context, serverDetails *coreConfig.ServerDetails) (*generic.OidcTokenExchangeCommand, error) {
+	oidcAccessTokenCreateCmd := generic.NewOidcTokenExchangeCommand()
+	// Validate supported oidc provider type
+	if err := oidcAccessTokenCreateCmd.SetProviderTypeAsString(cliutils.GetFlagOrEnvValue(c, cliutils.OidcProviderType, coreutils.OidcProviderType)); err != nil {
+		return nil, err
+	}
+
+	oidcAccessTokenCreateCmd.
+		SetServerDetails(serverDetails).
+		// Mandatory flags
+		SetProviderName(c.Args().Get(0)).
+		SetOidcTokenID(getOidcTokenIdInput(c)).
+		SetAudience(c.String(cliutils.OidcAudience)).
+		// Optional values exported by CI servers
+		SetJobId(os.Getenv(coreutils.CIJobID)).
+		SetRunId(os.Getenv(coreutils.CIRunID)).
+		SetVcsRevision(os.Getenv(coreutils.CIVcsRevision)).
+		SetVcsUrl(os.Getenv(coreutils.CIVcsUrl)).
+		SetVcsBranch(os.Getenv(coreutils.CIVcsBranch)).
+		// Values which can both be exported or explicitly set
+		SetProjectKey(cliutils.GetFlagOrEnvValue(c, cliutils.Project, coreutils.Project)).
+		SetApplicationKey(cliutils.GetJFrogApplicationKey(c))
+
+	return oidcAccessTokenCreateCmd, nil
+}
+
 func createPlatformDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, error) {
 	platformDetails, err := cliutils.CreateServerDetailsWithConfigOffer(c, true, commonCliUtils.Platform)
 	if err != nil {
 		return nil, err
 	}
 	if platformDetails.Url == "" {
-		return nil, errors.New("JFrog Platform URL is mandatory for access token creation")
+		return nil, errors.New("no JFrog Platform URL specified, either via the --url flag or as part of the server configuration")
 	}
 	return platformDetails, nil
 }
@@ -110,4 +163,15 @@ func assertAccessTokenAvailable(serverDetails *coreConfig.ServerDetails) error {
 		return errorutils.CheckErrorf("authenticating with access token is currently mandatory for creating access tokens")
 	}
 	return nil
+}
+
+// The OIDC token ID can be provided as a command line argument or as a flag or environment variable.
+// Depends on the origin of the command.
+// For example when used in CI/CD, the token ID is provided as a environment variable.
+func getOidcTokenIdInput(c *cli.Context) string {
+	oidcTokenId := c.Args().Get(1)
+	if oidcTokenId == "" {
+		oidcTokenId = cliutils.GetFlagOrEnvValue(c, cliutils.OidcTokenID, coreutils.OidcExchangeTokenId)
+	}
+	return oidcTokenId
 }

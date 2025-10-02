@@ -5,6 +5,8 @@ import (
 	"sort"
 	"strconv"
 
+	"github.com/jfrog/jfrog-cli-artifactory/cliutils/flagkit"
+
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 
@@ -14,11 +16,9 @@ import (
 
 const (
 	// CLI base commands keys
-	Setup = "setup"
 	Intro = "intro"
 
 	// Artifactory's Commands Keys
-	DeleteConfig           = "delete-config"
 	Upload                 = "upload"
 	Download               = "download"
 	Move                   = "move"
@@ -35,12 +35,16 @@ const (
 	BuildAddGit            = "build-add-git"
 	BuildCollectEnv        = "build-collect-env"
 	GitLfsClean            = "git-lfs-clean"
+	Setup                  = "setup"
 	Mvn                    = "mvn"
 	MvnConfig              = "mvn-config"
+	CocoapodsConfig        = "cocoapods-config"
+	SwiftConfig            = "swift-config"
 	Gradle                 = "gradle"
 	GradleConfig           = "gradle-config"
 	DockerPromote          = "docker-promote"
 	Docker                 = "docker"
+	DockerLogin            = "docker-login"
 	DockerPush             = "docker-push"
 	DockerPull             = "docker-pull"
 	ContainerPull          = "container-pull"
@@ -72,6 +76,7 @@ const (
 	PipenvInstall          = "pipenv-install"
 	PoetryConfig           = "poetry-config"
 	Poetry                 = "poetry"
+	RubyConfig             = "ruby-config"
 	Ping                   = "ping"
 	RtCurl                 = "rt-curl"
 	TemplateConsumer       = "template-consumer"
@@ -90,13 +95,6 @@ const (
 	TransferConfigMerge          = "transfer-config-merge"
 	passphrase                   = "passphrase"
 
-	// Distribution's Command Keys
-	ReleaseBundleV1Create     = "release-bundle-v1-create"
-	ReleaseBundleV1Update     = "release-bundle-v1-update"
-	ReleaseBundleV1Sign       = "release-bundle-v1-sign"
-	ReleaseBundleV1Distribute = "release-bundle-v1-distribute"
-	ReleaseBundleV1Delete     = "release-bundle-v1-delete"
-
 	// MC's Commands Keys
 	McConfig       = "mc-config"
 	LicenseAcquire = "license-acquire"
@@ -106,8 +104,9 @@ const (
 	JpdDelete      = "jpd-delete"
 
 	// Config commands keys
-	AddConfig  = "config-add"
-	EditConfig = "config-edit"
+	AddConfig    = "config-add"
+	EditConfig   = "config-edit"
+	DeleteConfig = "delete-config"
 
 	// Project commands keys
 	InitProject = "project-init"
@@ -118,26 +117,19 @@ const (
 	// TransferInstall commands keys
 	TransferInstall = "transfer-plugin-install"
 
-	// Lifecycle commands keys
-	ReleaseBundleCreate       = "release-bundle-create"
-	ReleaseBundlePromote      = "release-bundle-promote"
-	ReleaseBundleDistribute   = "release-bundle-distribute"
-	ReleaseBundleDeleteLocal  = "release-bundle-delete-local"
-	ReleaseBundleDeleteRemote = "release-bundle-delete-remote"
-	ReleaseBundleExport       = "release-bundle-export"
-	ReleaseBundleImport       = "release-bundle-import"
-
 	// Access Token Create commands keys
 	AccessTokenCreate = "access-token-create"
+	ExchangeOidcToken = "exchange-oidc-token"
 
 	// *** Artifactory Commands' flags ***
 	// Base flags
-	url         = "url"
-	platformUrl = "platform-url"
-	user        = "user"
-	password    = "password"
-	accessToken = "access-token"
-	serverId    = "server-id"
+	url                 = "url"
+	platformUrl         = "platform-url"
+	user                = "user"
+	password            = "password"
+	accessToken         = "access-token"
+	serverId            = "server-id"
+	disableTokenRefresh = "disable-token-refresh"
 
 	passwordStdin    = "password-stdin"
 	accessTokenStdin = "access-token-stdin"
@@ -162,8 +154,8 @@ const (
 	specVars = "spec-vars"
 
 	// Build info flags
-	buildName   = "build-name"
-	buildNumber = "build-number"
+	BuildName   = "build-name"
+	BuildNumber = "build-number"
 	module      = "module"
 
 	// Generic commands flags
@@ -283,6 +275,7 @@ const (
 	envExclude         = "env-exclude"
 	buildUrl           = "build-url"
 	Project            = "project"
+	bpOverwrite        = "bpOverwrite"
 
 	// Unique build-add-dependencies flags
 	badPrefix    = "bad-"
@@ -336,12 +329,14 @@ const (
 	repoDeploy      = "repo-deploy"
 
 	// Unique maven-config flags
-	repoResolveReleases  = "repo-resolve-releases"
-	repoResolveSnapshots = "repo-resolve-snapshots"
-	repoDeployReleases   = "repo-deploy-releases"
-	repoDeploySnapshots  = "repo-deploy-snapshots"
-	includePatterns      = "include-patterns"
-	excludePatterns      = "exclude-patterns"
+	repoResolveReleases   = "repo-resolve-releases"
+	repoResolveSnapshots  = "repo-resolve-snapshots"
+	repoDeployReleases    = "repo-deploy-releases"
+	repoDeploySnapshots   = "repo-deploy-snapshots"
+	includePatterns       = "include-patterns"
+	excludePatterns       = "exclude-patterns"
+	disableSnapshots      = "disable-snapshots"
+	snapshotsUpdatePolicy = "snapshots-update-policy"
 
 	// Unique gradle-config flags
 	usesPlugin          = "uses-plugin"
@@ -354,6 +349,7 @@ const (
 	// Build tool flags
 	deploymentThreads = "deployment-threads"
 	skipLogin         = "skip-login"
+	validateSha       = "validate-sha"
 
 	// Unique docker promote flags
 	dockerPromotePrefix = "docker-promote-"
@@ -361,6 +357,9 @@ const (
 	sourceTag           = "source-tag"
 	targetTag           = "target-tag"
 	dockerPromoteCopy   = dockerPromotePrefix + Copy
+
+	// Unique docker login flags
+	dockerLoginUsername = "username"
 
 	// Unique build docker create
 	imageFile = "image-file"
@@ -372,9 +371,12 @@ const (
 	// Unique npm flags
 	npmPrefix          = "npm-"
 	npmDetailedSummary = npmPrefix + detailedSummary
+	runNative          = "run-native"
+	npmWorkspaces      = "workspaces"
 
 	// Unique nuget/dotnet config flags
-	nugetV2 = "nuget-v2"
+	nugetV2                  = "nuget-v2"
+	allowInsecureConnections = "allow-insecure-connections"
 
 	// Unique go flags
 	noFallback = "no-fallback"
@@ -424,6 +426,13 @@ const (
 	atcExpiry               = accessTokenCreatePrefix + Expiry
 	atcRefreshable          = accessTokenCreatePrefix + Refreshable
 	atcAudience             = accessTokenCreatePrefix + Audience
+
+	// #nosec G101 -- False positive - no hardcoded credentials.
+	OidcTokenID      = "oidc-token-id"
+	OidcProviderName = "oidc-provider-name"
+	OidcAudience     = "oidc-audience"
+	OidcProviderType = "oidc-provider-type"
+	ApplicationKey   = "application-key"
 
 	// Unique Xray Flags for upload/publish commands
 	xrayScan = "scan"
@@ -513,17 +522,18 @@ const (
 	licenseCount = "license-count"
 
 	// *** Config Commands' flags ***
-	configPrefix      = "config-"
-	configPlatformUrl = configPrefix + url
-	configRtUrl       = "artifactory-url"
-	configDistUrl     = "distribution-url"
-	configXrUrl       = "xray-url"
-	configMcUrl       = "mission-control-url"
-	configPlUrl       = "pipelines-url"
-	configAccessToken = configPrefix + accessToken
-	configUser        = configPrefix + user
-	configPassword    = configPrefix + password
-	configInsecureTls = configPrefix + InsecureTls
+	configPrefix                    = "config-"
+	configPlatformUrl               = configPrefix + url
+	configRtUrl                     = "artifactory-url"
+	configDistUrl                   = "distribution-url"
+	configXrUrl                     = "xray-url"
+	configMcUrl                     = "mission-control-url"
+	configPlUrl                     = "pipelines-url"
+	configAccessToken               = configPrefix + accessToken
+	configUser                      = configPrefix + user
+	configPassword                  = configPrefix + password
+	configInsecureTls               = configPrefix + InsecureTls
+	configDisableRefreshAccessToken = configPrefix + disableTokenRefresh
 
 	// *** Project Commands' flags ***
 	projectPath = "path"
@@ -568,22 +578,11 @@ const (
 	InstallPluginHomeDir = "home-dir"
 
 	// Unique lifecycle flags
-	lifecyclePrefix      = "lc-"
-	lcSync               = lifecyclePrefix + Sync
-	lcProject            = lifecyclePrefix + Project
-	Builds               = "builds"
-	lcBuilds             = lifecyclePrefix + Builds
-	ReleaseBundles       = "release-bundles"
-	lcReleaseBundles     = lifecyclePrefix + ReleaseBundles
-	SigningKey           = "signing-key"
-	lcSigningKey         = lifecyclePrefix + SigningKey
-	PathMappingPattern   = "mapping-pattern"
-	lcPathMappingPattern = lifecyclePrefix + PathMappingPattern
-	PathMappingTarget    = "mapping-target"
-	lcPathMappingTarget  = lifecyclePrefix + PathMappingTarget
-	lcDryRun             = lifecyclePrefix + dryRun
-	lcIncludeRepos       = lifecyclePrefix + IncludeRepos
-	lcExcludeRepos       = lifecyclePrefix + ExcludeRepos
+	Builds         = "builds"
+	ReleaseBundles = "release-bundles"
+	SigningKey     = "signing-key"
+	setupRepo      = repo
+	PromotionType  = "promotion-type"
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -591,6 +590,10 @@ var flagsMap = map[string]cli.Flag{
 	platformUrl: cli.StringFlag{
 		Name:  url,
 		Usage: "[Optional] JFrog platform URL. (example: https://acme.jfrog.io)` `",
+	},
+	dockerLoginUsername: cli.StringFlag{
+		Name:  dockerLoginUsername,
+		Usage: "[Optional] Docker registry username.` `",
 	},
 	user: cli.StringFlag{
 		Name:  user,
@@ -661,12 +664,12 @@ var flagsMap = map[string]cli.Flag{
 		Name:  specVars,
 		Usage: "[Optional] List of semicolon-separated(;) variables in the form of \"key1=value1;key2=value2;...\" (wrapped by quotes) to be replaced in the File Spec. In the File Spec, the variables should be used as follows: ${key1}.` `",
 	},
-	buildName: cli.StringFlag{
-		Name:  buildName,
+	BuildName: cli.StringFlag{
+		Name:  BuildName,
 		Usage: "[Optional] Providing this option will collect and record build info for this build name. Build number option is mandatory when this option is provided.` `",
 	},
-	buildNumber: cli.StringFlag{
-		Name:  buildNumber,
+	BuildNumber: cli.StringFlag{
+		Name:  BuildNumber,
 		Usage: "[Optional] Providing this option will collect and record build info for this build number. Build name option is mandatory when this option is provided.` `",
 	},
 	module: cli.StringFlag{
@@ -746,6 +749,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Overwrite,
 		Usage: "[Default: false] Overwrites the instance configuration if an instance with the same ID already exists.` `",
 	},
+	bpOverwrite: cli.BoolFlag{
+		Name:  Overwrite,
+		Usage: "[Default: false] Overwrites all existing occurrences of build infos with the provided name and number. Build artifacts will not be deleted.` `",
+	},
 	BasicAuthOnly: cli.BoolFlag{
 		Name: BasicAuthOnly,
 		Usage: "[Default: false] Set to true to disable replacing username and password/API key with an automatically created access token that's refreshed hourly. " +
@@ -798,15 +805,15 @@ var flagsMap = map[string]cli.Flag{
 	},
 	uploadMinSplit: cli.StringFlag{
 		Name:  MinSplit,
-		Usage: "[Default: " + strconv.Itoa(UploadMinSplitMb) + "] The minimum file size in MiB required to attempt a multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 or GCP storage.` `",
+		Usage: "[Default: " + strconv.Itoa(flagkit.UploadMinSplitMb) + "] The minimum file size in MiB required to attempt a multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 or GCP storage.` `",
 	},
 	uploadSplitCount: cli.StringFlag{
 		Name:  SplitCount,
-		Usage: "[Default: " + strconv.Itoa(UploadSplitCount) + "] The maximum number of parts that can be concurrently uploaded per file during a multi-part upload. Set to 0 to disable multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 or GCP storage.` `",
+		Usage: "[Default: " + strconv.Itoa(flagkit.UploadSplitCount) + "] The maximum number of parts that can be concurrently uploaded per file during a multi-part upload. Set to 0 to disable multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 or GCP storage.` `",
 	},
 	ChunkSize: cli.StringFlag{
 		Name:  ChunkSize,
-		Usage: "[Default: " + strconv.Itoa(UploadChunkSizeMb) + "] The upload chunk size in MiB that can be concurrently uploaded during a multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 or GCP storage.` `",
+		Usage: "[Default: " + strconv.Itoa(flagkit.UploadChunkSizeMb) + "] The upload chunk size in MiB that can be concurrently uploaded during a multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 or GCP storage.` `",
 	},
 	syncDeletesQuiet: cli.BoolFlag{
 		Name:  quiet,
@@ -823,7 +830,7 @@ var flagsMap = map[string]cli.Flag{
 	downloadMinSplit: cli.StringFlag{
 		Name:  MinSplit,
 		Value: "",
-		Usage: "[Default: " + strconv.Itoa(DownloadMinSplitKb) + "] Minimum file size in KB to split into ranges when downloading. Set to -1 for no splits.` `",
+		Usage: "[Default: " + strconv.Itoa(flagkit.DownloadMinSplitKb) + "] Minimum file size in KB to split into ranges when downloading. Set to -1 for no splits.` `",
 	},
 	skipChecksum: cli.BoolFlag{
 		Name:  skipChecksum,
@@ -832,7 +839,7 @@ var flagsMap = map[string]cli.Flag{
 	downloadSplitCount: cli.StringFlag{
 		Name:  SplitCount,
 		Value: "",
-		Usage: "[Default: " + strconv.Itoa(DownloadSplitCount) + "] Number of parts to split a file when downloading. Set to 0 for no splits.` `",
+		Usage: "[Default: " + strconv.Itoa(flagkit.DownloadSplitCount) + "] Number of parts to split a file when downloading. Set to 0 for no splits.` `",
 	},
 	downloadExplode: cli.BoolFlag{
 		Name:  explode,
@@ -1114,6 +1121,14 @@ var flagsMap = map[string]cli.Flag{
 		Name:  excludePatterns,
 		Usage: "[Optional] Filter deployed artifacts by setting a wildcard pattern that specifies which artifacts to exclude. You may provide multiple patterns separated by ', '.` `",
 	},
+	disableSnapshots: cli.BoolFlag{
+		Name:  disableSnapshots,
+		Usage: "[Default: false] Set to true to disable snapshot resolution.` `",
+	},
+	snapshotsUpdatePolicy: cli.StringFlag{
+		Name:  snapshotsUpdatePolicy,
+		Usage: "[Optional] Set snapshot update policy. Defaults to daily.` `",
+	},
 	repoResolve: cli.StringFlag{
 		Name:  repoResolve,
 		Usage: "[Optional] Repository for dependencies resolution.` `",
@@ -1158,6 +1173,10 @@ var flagsMap = map[string]cli.Flag{
 	nugetV2: cli.BoolFlag{
 		Name:  nugetV2,
 		Usage: "[Default: false] Set to true if you'd like to use the NuGet V2 protocol when restoring packages from Artifactory.` `",
+	},
+	allowInsecureConnections: cli.BoolFlag{
+		Name:  allowInsecureConnections,
+		Usage: "[Default: false] Set to true if you wish to configure NuGet sources with unsecured connections. This is recommended for testing purposes only. ` `",
 	},
 	noFallback: cli.BoolTFlag{
 		Name:  noFallback,
@@ -1245,7 +1264,7 @@ var flagsMap = map[string]cli.Flag{
 	// Distribution's commands Flags
 	distUrl: cli.StringFlag{
 		Name:  url,
-		Usage: "[Optional] JFrog Distribution URL.` `",
+		Usage: "[Optional] JFrog Distribution URL. (example: https://acme.jfrog.io/distribution)` `",
 	},
 	rbDryRun: cli.BoolFlag{
 		Name:  dryRun,
@@ -1320,7 +1339,7 @@ var flagsMap = map[string]cli.Flag{
 	// Xray's commands Flags
 	xrUrl: cli.StringFlag{
 		Name:  url,
-		Usage: "[Optional] JFrog Xray URL.` `",
+		Usage: "[Optional] JFrog Xray URL. (example: https://acme.jfrog.io/xray)` `",
 	},
 	xrayScan: cli.StringFlag{
 		Name:  xrayScan,
@@ -1483,7 +1502,7 @@ var flagsMap = map[string]cli.Flag{
 	// Mission Control's commands Flags
 	mcUrl: cli.StringFlag{
 		Name:  url,
-		Usage: "[Optional] JFrog Mission Control URL.` `",
+		Usage: "[Optional] JFrog Mission Control URL. (example: https://acme.jfrog.io/mc)` `",
 	},
 	mcAccessToken: cli.StringFlag{
 		Name:  accessToken,
@@ -1543,6 +1562,10 @@ var flagsMap = map[string]cli.Flag{
 	configInsecureTls: cli.StringFlag{
 		Name:  InsecureTls,
 		Usage: "[Default: false] Set to true to skip TLS certificates verification, while encrypting the Artifactory password during the config process.` `",
+	},
+	configDisableRefreshAccessToken: cli.BoolFlag{
+		Name:  disableTokenRefresh,
+		Usage: "[Default: false] Set to true to disable automatic refresh of access tokens.` `",
 	},
 	projectPath: cli.StringFlag{
 		Name:  projectPath,
@@ -1628,54 +1651,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  PreChecks,
 		Usage: "[Default: false] Set to true to run pre-transfer checks.` `",
 	},
-	lcSync: cli.BoolFlag{
-		Name:  Sync,
-		Usage: "[Default: false] Set to true to run synchronously.` `",
-	},
-	lcProject: cli.StringFlag{
-		Name:  Project,
-		Usage: "[Optional] Project key associated with the Release Bundle version.` `",
-	},
-	lcBuilds: cli.StringFlag{
-		Name:   Builds,
-		Usage:  "[Optional] Path to a JSON file containing information of the source builds from which to create a release bundle.` `",
-		Hidden: true,
-	},
-	lcReleaseBundles: cli.StringFlag{
-		Name:   ReleaseBundles,
-		Usage:  "[Optional] Path to a JSON file containing information of the source release bundles from which to create a release bundle.` `",
-		Hidden: true,
-	},
-	lcSigningKey: cli.StringFlag{
-		Name:  SigningKey,
-		Usage: "[Mandatory] The GPG/RSA key-pair name given in Artifactory.` `",
-	},
-	lcPathMappingPattern: cli.StringFlag{
-		Name:  PathMappingPattern,
-		Usage: "[Optional] Specify along with '" + PathMappingTarget + "' to distribute artifacts to a different path on the edge node. You can use wildcards to specify multiple artifacts.` `",
-	},
-	lcPathMappingTarget: cli.StringFlag{
-		Name: PathMappingTarget,
-		Usage: "[Optional] The target path for distributed artifacts on the edge node. If not specified, the artifacts will have the same path and name on the edge node, as on the source Artifactory server. " +
-			"For flexibility in specifying the distribution path, you can include placeholders in the form of {1}, {2} which are replaced by corresponding tokens in the pattern path that are enclosed in parenthesis.` `",
-	},
-	lcDryRun: cli.BoolFlag{
-		Name:  dryRun,
-		Usage: "[Default: false] Set to true to only simulate the distribution of the release bundle.` `",
-	},
 	ThirdPartyContextualAnalysis: cli.BoolFlag{
 		Name:   ThirdPartyContextualAnalysis,
 		Usage:  "Default: false] [npm] when set, the Contextual Analysis scan also uses the code of the project dependencies to determine the applicability of the vulnerability.",
 		Hidden: true,
-	},
-	lcIncludeRepos: cli.StringFlag{
-		Name: IncludeRepos,
-		Usage: "[Optional] List of semicolon-separated(;) repositories to include in the promotion. If this property is left undefined, all repositories (except those specifically excluded) are included in the promotion. " +
-			"If one or more repositories are specifically included, all other repositories are excluded.` `",
-	},
-	lcExcludeRepos: cli.StringFlag{
-		Name:  ExcludeRepos,
-		Usage: "[Optional] List of semicolon-separated(;) repositories to exclude from the promotion.` `",
 	},
 	atcProject: cli.StringFlag{
 		Name:  Project,
@@ -1716,30 +1695,71 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Reference,
 		Usage: "[Default: false] Generate a Reference Token (alias to Access Token) in addition to the full token (available from Artifactory 7.38.10)` `",
 	},
+	setupRepo: cli.StringFlag{
+		Name:  repo,
+		Usage: "[Optional] Specifies the Artifactory repository name for the selected package manager, replacing the interactive repository selection.` `",
+	},
+	PromotionType: cli.StringFlag{
+		Name:  PromotionType,
+		Usage: "[Default: copy] Specifies promotion type. [Valid values: move / copy]` `",
+	},
+	OidcTokenID: cli.StringFlag{
+		Name:  OidcTokenID,
+		Usage: "[Optional] The ID of the OIDC token to be exchanged.` `",
+	},
+	OidcProviderName: cli.StringFlag{
+		Name:  OidcProviderName,
+		Usage: "[Optional] The OIDC provider to be used for the token exchange.` `",
+	},
+	OidcAudience: cli.StringFlag{
+		Name:  OidcAudience,
+		Usage: "[Optional] The audience for the OIDC token.` `",
+	},
+	OidcProviderType: cli.StringFlag{
+		Name:  OidcProviderType,
+		Usage: "[Default: GitHub] The type of the OIDC provider.Possible values are: GitHub,Azure,GenericOidc` `",
+	},
+	ApplicationKey: cli.StringFlag{
+		Name:  ApplicationKey,
+		Usage: "[Optional] JFrog ApplicationKey Key` ` ",
+	},
+	runNative: cli.BoolFlag{
+		Name:  runNative,
+		Usage: "[Default: false] Set to true if you'd like to use the native client configurations. Note: This flag would invoke native client behind the scenes, has performance implications and does not support deployment view and detailed summary` `",
+	},
+	npmWorkspaces: cli.BoolFlag{
+		Name:  npmWorkspaces,
+		Usage: "[Default: false] Set to true if you'd like to use npm workspaces.` `",
+	},
+	validateSha: cli.BoolFlag{
+		Name:  validateSha,
+		Usage: "[Default: false] Set to true to enable SHA validation during Docker push.` `",
+	},
 }
 
 var commandFlags = map[string][]string{
 	AddConfig: {
 		interactive, EncPassword, configPlatformUrl, configRtUrl, configDistUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, sshPassphrase, ClientCertPath,
-		ClientCertKeyPath, BasicAuthOnly, configInsecureTls, Overwrite, passwordStdin, accessTokenStdin,
+		ClientCertKeyPath, BasicAuthOnly, configInsecureTls, Overwrite, passwordStdin, accessTokenStdin, OidcTokenID,
+		OidcProviderName, OidcAudience, OidcProviderType, ApplicationKey, configDisableRefreshAccessToken,
 	},
 	EditConfig: {
 		interactive, EncPassword, configPlatformUrl, configRtUrl, configDistUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, sshPassphrase, ClientCertPath,
-		ClientCertKeyPath, BasicAuthOnly, configInsecureTls, passwordStdin, accessTokenStdin,
+		ClientCertKeyPath, BasicAuthOnly, configInsecureTls, passwordStdin, accessTokenStdin, configDisableRefreshAccessToken,
 	},
 	DeleteConfig: {
 		deleteQuiet,
 	},
 	Upload: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath, uploadTargetProps,
-		ClientCertKeyPath, specFlag, specVars, buildName, buildNumber, module, uploadExclusions, deb,
+		ClientCertKeyPath, specFlag, specVars, BuildName, BuildNumber, module, uploadExclusions, deb,
 		uploadRecursive, uploadFlat, uploadRegexp, retries, retryWaitTime, dryRun, uploadExplode, symlinks, includeDirs,
 		failNoOp, threads, uploadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, Project,
 		uploadAnt, uploadArchive, uploadMinSplit, uploadSplitCount, ChunkSize,
 	},
 	Download: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
-		ClientCertKeyPath, specFlag, specVars, buildName, buildNumber, module, exclusions, sortBy,
+		ClientCertKeyPath, specFlag, specVars, BuildName, BuildNumber, module, exclusions, sortBy,
 		sortOrder, limit, offset, downloadRecursive, downloadFlat, build, includeDeps, excludeArtifacts, downloadMinSplit, downloadSplitCount,
 		retries, retryWaitTime, dryRun, downloadExplode, bypassArchiveInspection, validateSymlinks, bundle, publicGpgKey, includeDirs,
 		downloadProps, downloadExcludeProps, failNoOp, threads, archiveEntries, downloadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, Project,
@@ -1777,7 +1797,7 @@ var commandFlags = map[string][]string{
 	},
 	BuildPublish: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, buildUrl, bpDryRun,
-		envInclude, envExclude, InsecureTls, Project, bpDetailedSummary,
+		envInclude, envExclude, InsecureTls, Project, bpDetailedSummary, bpOverwrite,
 	},
 	BuildAppend: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, buildUrl, bpDryRun,
@@ -1793,11 +1813,11 @@ var commandFlags = map[string][]string{
 		Project,
 	},
 	BuildDockerCreate: {
-		buildName, buildNumber, module, url, user, password, accessToken, sshPassphrase, sshKeyPath,
+		BuildName, BuildNumber, module, url, user, password, accessToken, sshPassphrase, sshKeyPath,
 		serverId, imageFile, Project,
 	},
 	OcStartBuild: {
-		buildName, buildNumber, module, Project, serverId, ocStartBuildRepo,
+		BuildName, BuildNumber, module, Project, serverId, ocStartBuildRepo,
 	},
 	BuildScanLegacy: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, fail, InsecureTls,
@@ -1815,29 +1835,38 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, refs, glcRepo, glcDryRun,
 		glcQuiet, InsecureTls, retries, retryWaitTime,
 	},
+	CocoapodsConfig: {
+		global, serverIdResolve, repoResolve,
+	},
+	SwiftConfig: {
+		global, serverIdResolve, repoResolve,
+	},
 	MvnConfig: {
-		global, serverIdResolve, serverIdDeploy, repoResolveReleases, repoResolveSnapshots, repoDeployReleases, repoDeploySnapshots, includePatterns, excludePatterns, UseWrapper,
+		global, serverIdResolve, serverIdDeploy, repoResolveReleases, repoResolveSnapshots, repoDeployReleases, repoDeploySnapshots, includePatterns, excludePatterns, UseWrapper, disableSnapshots, snapshotsUpdatePolicy,
 	},
 	GradleConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy, usesPlugin, UseWrapper, deployMavenDesc,
 		deployIvyDesc, ivyDescPattern, ivyArtifactsPattern,
 	},
 	Mvn: {
-		buildName, buildNumber, deploymentThreads, InsecureTls, Project, detailedSummary, xrayScan, xrOutput,
+		BuildName, BuildNumber, deploymentThreads, InsecureTls, Project, detailedSummary, xrayScan, xrOutput,
 	},
 	Gradle: {
-		buildName, buildNumber, deploymentThreads, Project, detailedSummary, xrayScan, xrOutput,
+		BuildName, BuildNumber, deploymentThreads, Project, detailedSummary, xrayScan, xrOutput,
 	},
 	Docker: {
-		buildName, buildNumber, module, Project,
-		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, FixableOnly, vuln,
+		BuildName, BuildNumber, module, Project,
+		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, FixableOnly, vuln, validateSha,
+	},
+	DockerLogin: {
+		serverId, dockerLoginUsername, password,
 	},
 	DockerPush: {
-		buildName, buildNumber, module, Project,
-		serverId, skipLogin, threads, detailedSummary,
+		BuildName, BuildNumber, module, Project,
+		serverId, skipLogin, threads, detailedSummary, validateSha,
 	},
 	DockerPull: {
-		buildName, buildNumber, module, Project,
+		BuildName, BuildNumber, module, Project,
 		serverId, skipLogin,
 	},
 	DockerPromote: {
@@ -1845,21 +1874,21 @@ var commandFlags = map[string][]string{
 		serverId,
 	},
 	ContainerPush: {
-		buildName, buildNumber, module, url, user, password, accessToken, sshPassphrase, sshKeyPath,
-		serverId, skipLogin, threads, Project, detailedSummary,
+		BuildName, BuildNumber, module, url, user, password, accessToken, sshPassphrase, sshKeyPath,
+		serverId, skipLogin, threads, Project, detailedSummary, validateSha,
 	},
 	ContainerPull: {
-		buildName, buildNumber, module, url, user, password, accessToken, sshPassphrase, sshKeyPath,
+		BuildName, BuildNumber, module, url, user, password, accessToken, sshPassphrase, sshKeyPath,
 		serverId, skipLogin, Project,
 	},
 	NpmConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	NpmInstallCi: {
-		buildName, buildNumber, module, Project,
+		BuildName, BuildNumber, module, Project, runNative,
 	},
 	NpmPublish: {
-		buildName, buildNumber, module, Project, npmDetailedSummary, xrayScan, xrOutput,
+		BuildName, BuildNumber, module, Project, npmDetailedSummary, xrayScan, xrOutput, runNative, npmWorkspaces,
 	},
 	PnpmConfig: {
 		global, serverIdResolve, repoResolve,
@@ -1868,38 +1897,38 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, repoResolve,
 	},
 	Yarn: {
-		buildName, buildNumber, module, Project,
+		BuildName, BuildNumber, module, Project,
 	},
 	NugetConfig: {
 		global, serverIdResolve, repoResolve, nugetV2,
 	},
 	Nuget: {
-		buildName, buildNumber, module, Project,
+		BuildName, BuildNumber, module, Project, allowInsecureConnections,
 	},
 	DotnetConfig: {
 		global, serverIdResolve, repoResolve, nugetV2,
 	},
 	Dotnet: {
-		buildName, buildNumber, module, Project,
+		BuildName, BuildNumber, module, Project,
 	},
 	GoConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	GoPublish: {
-		url, user, password, accessToken, buildName, buildNumber, module, Project, detailedSummary, goPublishExclusions,
+		url, user, password, accessToken, BuildName, BuildNumber, module, Project, detailedSummary, goPublishExclusions,
 	},
 	Go: {
-		buildName, buildNumber, module, Project, noFallback,
+		BuildName, BuildNumber, module, Project, noFallback,
 	},
 	TerraformConfig: {
 		global, serverIdDeploy, repoDeploy,
 	},
 	Terraform: {
 		namespace, provider, tag, exclusions,
-		buildName, buildNumber, module, Project,
+		BuildName, BuildNumber, module, Project,
 	},
 	Twine: {
-		buildName, buildNumber, module, Project,
+		BuildName, BuildNumber, module, Project,
 	},
 	TransferConfig: {
 		Force, Verbose, IncludeRepos, ExcludeRepos, SourceWorkingDir, TargetWorkingDir, PreChecks,
@@ -1918,39 +1947,22 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	PipInstall: {
-		buildName, buildNumber, module, Project,
+		BuildName, BuildNumber, module, Project,
 	},
 	PipenvConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	PipenvInstall: {
-		buildName, buildNumber, module, Project,
+		BuildName, BuildNumber, module, Project,
 	},
 	PoetryConfig: {
 		global, serverIdResolve, repoResolve,
 	},
 	Poetry: {
-		buildName, buildNumber, module, Project,
+		BuildName, BuildNumber, module, Project,
 	},
-	ReleaseBundleV1Create: {
-		distUrl, user, password, accessToken, serverId, specFlag, specVars, targetProps,
-		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, InsecureTls, distTarget, rbDetailedSummary,
-	},
-	ReleaseBundleV1Update: {
-		distUrl, user, password, accessToken, serverId, specFlag, specVars, targetProps,
-		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, InsecureTls, distTarget, rbDetailedSummary,
-	},
-	ReleaseBundleV1Sign: {
-		distUrl, user, password, accessToken, serverId, rbPassphrase, rbRepo,
-		InsecureTls, rbDetailedSummary,
-	},
-	ReleaseBundleV1Distribute: {
-		distUrl, user, password, accessToken, serverId, rbDryRun, DistRules,
-		site, city, countryCodes, sync, maxWaitMinutes, InsecureTls, CreateRepo,
-	},
-	ReleaseBundleV1Delete: {
-		distUrl, user, password, accessToken, serverId, rbDryRun, DistRules,
-		site, city, countryCodes, sync, maxWaitMinutes, InsecureTls, deleteFromDist, deleteQuiet,
+	RubyConfig: {
+		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	TemplateConsumer: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
@@ -1976,6 +1988,9 @@ var commandFlags = map[string][]string{
 		platformUrl, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath, ClientCertKeyPath,
 		atcProject, atcGrantAdmin, atcGroups, atcScope, atcExpiry,
 		atcRefreshable, atcDescription, atcAudience, atcReference,
+	},
+	ExchangeOidcToken: {
+		url, OidcTokenID, OidcAudience, OidcProviderName, OidcProviderType, ApplicationKey, Project, repository,
 	},
 	UserCreate: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId,
@@ -2004,31 +2019,6 @@ var commandFlags = map[string][]string{
 	},
 	TransferInstall: {
 		installPluginVersion, InstallPluginSrcDir, InstallPluginHomeDir,
-	},
-	ReleaseBundleCreate: {
-		platformUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcBuilds, lcReleaseBundles,
-		specFlag, specVars,
-	},
-	ReleaseBundlePromote: {
-		platformUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcIncludeRepos, lcExcludeRepos,
-	},
-	ReleaseBundleDistribute: {
-		platformUrl, user, password, accessToken, serverId, lcProject, DistRules, site, city, countryCodes,
-		lcDryRun, CreateRepo, lcPathMappingPattern, lcPathMappingTarget, lcSync, maxWaitMinutes,
-	},
-	ReleaseBundleDeleteLocal: {
-		platformUrl, user, password, accessToken, serverId, deleteQuiet, lcSync, lcProject,
-	},
-	ReleaseBundleDeleteRemote: {
-		platformUrl, user, password, accessToken, serverId, deleteQuiet, lcDryRun, DistRules, site, city, countryCodes,
-		lcSync, maxWaitMinutes, lcProject,
-	},
-	ReleaseBundleExport: {
-		platformUrl, user, password, accessToken, serverId, lcPathMappingTarget, lcPathMappingPattern, Project,
-		downloadMinSplit, downloadSplitCount,
-	},
-	ReleaseBundleImport: {
-		user, password, accessToken, serverId, platformUrl,
 	},
 	// Mission Control's commands
 	McConfig: {
@@ -2077,6 +2067,9 @@ var commandFlags = map[string][]string{
 	},
 	SyncStatus: {
 		branch, repository, serverId,
+	},
+	Setup: {
+		serverId, url, user, password, accessToken, sshPassphrase, sshKeyPath, ClientCertPath, ClientCertKeyPath, Project, setupRepo,
 	},
 }
 

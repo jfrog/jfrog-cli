@@ -41,10 +41,9 @@ createBranch() {
   branchName="bump-ver-from-$fromVersion-to-$toVersion"
   git remote rm upstream
   git remote add upstream https://github.com/jfrog/jfrog-cli.git
-  git checkout dev
-  git fetch upstream dev
-  git reset --hard upstream/dev
-  git push
+  git checkout master
+  git fetch upstream master
+  git reset --hard upstream/master
   git checkout -b "$branchName"
 }
 
@@ -82,7 +81,9 @@ replaceVersion() {
         exit 1
     fi
 
-    git add "$filePath"
+    if [ "${BUMP_VERSION_SKIP_GIT:-}" != "true" ]; then
+        git add "$filePath"
+    fi
 }
 
 ## Validate the argument was received.
@@ -98,7 +99,9 @@ populateFromVersion
 validateVersions "$fromVersion" "$toVersion"
 
 ## Create a new branch
-createBranch
+if [ "${BUMP_VERSION_SKIP_GIT:-}" != "true" ]; then
+    createBranch
+fi
 
 ## Add calls to the function to replace version in file with specified filePath values
 replaceVersion "utils/cliutils/cli_consts.go" "CliVersion  = \"$fromVersion\"" "$fromVersion" "$toVersion"
@@ -110,6 +113,8 @@ replaceVersion "build/npm/v2-jf/package.json" "\"version\": \"$fromVersion\"," "
 ## Print success message if validation and replacement pass
 echo "Version bumped successfully."
 
-## Push the new branch, with the version bump
-git commit -m "Bump version from $fromVersion to $toVersion"
-git push --set-upstream origin "$branchName"
+if [ "${BUMP_VERSION_SKIP_GIT:-}" != "true" ]; then
+    ## Push the new branch, with the version bump
+    git commit -m "Bump version from $fromVersion to $toVersion"
+    git push --set-upstream origin "$branchName"
+fi

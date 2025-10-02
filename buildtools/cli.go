@@ -3,21 +3,29 @@ package buildtools
 import (
 	"errors"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-security/utils/techutils"
 	"os"
+	"os/exec"
+	"sort"
 	"strconv"
 	"strings"
 
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/dotnet"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/golang"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/gradle"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/mvn"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/npm"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/python"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/terraform"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/python"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/setup"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
+	"github.com/jfrog/jfrog-cli-security/utils/techutils"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/rubyconfig"
+	setupdocs "github.com/jfrog/jfrog-cli/docs/buildtools/setup"
+
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/container"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/dotnet"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/golang"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/gradle"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/mvn"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/npm"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/terraform"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/yarn"
 	commandsUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/yarn"
 	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
 	"github.com/jfrog/jfrog-cli-core/v2/common/build"
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
@@ -65,11 +73,23 @@ import (
 )
 
 const (
-	buildToolsCategory = "Build Tools"
+	buildToolsCategory = "Package Managers:"
 )
 
 func GetCommands() []cli.Command {
-	return cliutils.GetSortedCommands(cli.CommandsByName{
+	cmds := cliutils.GetSortedCommands(cli.CommandsByName{
+		{
+			// Currently, the setup command is hidden from the help menu, till it will be released as GA.
+			Hidden:       true,
+			Name:         "setup",
+			Flags:        cliutils.GetCommandFlags(cliutils.Setup),
+			Usage:        setupdocs.GetDescription(),
+			HelpName:     corecommon.CreateUsage("setup", setupdocs.GetDescription(), setupdocs.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			UsageText:    setupdocs.GetArguments(),
+			BashComplete: corecommon.CreateBashCompletionFunc(setup.GetSupportedPackageManagersList()...),
+			Action:       setupCmd,
+		},
 		{
 			Name:         "mvn-config",
 			Aliases:      []string{"mvnc"},
@@ -316,6 +336,19 @@ func GetCommands() []cli.Command {
 			Action:          PoetryCmd,
 		},
 		{
+			Name:         "ruby-config",
+			Flags:        cliutils.GetCommandFlags(cliutils.RubyConfig),
+			Aliases:      []string{"rubyc"},
+			Usage:        rubyconfig.GetDescription(),
+			HelpName:     corecommon.CreateUsage("ruby-config", rubyconfig.GetDescription(), rubyconfig.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Category:     buildToolsCategory,
+			Action: func(c *cli.Context) error {
+				return cliutils.CreateConfigCmd(c, project.Ruby)
+			},
+		},
+		{
 			Name:         "npm-config",
 			Flags:        cliutils.GetCommandFlags(cliutils.NpmConfig),
 			Aliases:      []string{"npmc"},
@@ -373,7 +406,7 @@ func GetCommands() []cli.Command {
 				}
 				return true
 			}(),
-			BashComplete: corecommon.CreateBashCompletionFunc("push", "pull", "scan"),
+			BashComplete: corecommon.CreateBashCompletionFunc("login", "push", "pull", "scan"),
 			Category:     buildToolsCategory,
 			Action:       dockerCmd,
 		},
@@ -416,6 +449,66 @@ func GetCommands() []cli.Command {
 			Action:          twineCmd,
 		},
 	})
+	return decorateWithFlagCapture(cmds)
+}
+
+// decorateWithFlagCapture injects a Before hook into every command returned from this package,
+// so we can capture user-provided flags consistently in one place for all build commands.
+func decorateWithFlagCapture(cmds []cli.Command) []cli.Command {
+	for i := range cmds {
+		skipFlagParsing := cmds[i].SkipFlagParsing
+		origBefore := cmds[i].Before
+		cmds[i].Before = func(c *cli.Context) error {
+			captureUserFlagsForMetrics(c, skipFlagParsing)
+			if origBefore != nil {
+				return origBefore(c)
+			}
+			return nil
+		}
+	}
+	return cmds
+}
+
+// captureUserFlagsForMetrics extracts flag names as provided by the end-user for the given command
+// and records them for usage metrics. Works even when SkipFlagParsing is true by scanning os.Args.
+func captureUserFlagsForMetrics(c *cli.Context, skipFlagParsing bool) {
+	flagSet := map[string]struct{}{}
+
+	if !skipFlagParsing {
+		for _, fn := range c.FlagNames() {
+			flagSet[fn] = struct{}{}
+		}
+	} else {
+		for _, next := range c.Args() {
+			if !strings.HasPrefix(next, "-") {
+				continue
+			}
+			if strings.HasPrefix(next, "--") {
+				name := strings.TrimPrefix(next, "--")
+				if eq := strings.Index(name, "="); eq >= 0 {
+					name = name[:eq]
+				}
+				if name != "" {
+					flagSet[name] = struct{}{}
+				}
+			} else {
+				trimmed := strings.TrimLeft(next, "-")
+				for _, ch := range trimmed {
+					flagSet[string(ch)] = struct{}{}
+				}
+			}
+		}
+	}
+
+	if len(flagSet) == 0 {
+		return
+	}
+	flags := make([]string, 0, len(flagSet))
+	for f := range flagSet {
+		flags = append(flags, f)
+	}
+	sort.Strings(flags)
+	commands.SetContextFlags(flags)
 }
 
 func MvnCmd(c *cli.Context) (err error) {
@@ -566,9 +659,18 @@ func NugetCmd(c *cli.Context) error {
 		return err
 	}
 
+	allowInsecureConnection, err := cliutils.ExtractBoolFlagFromArgs(&filteredNugetArgs, "allow-insecure-connections")
+	if err != nil {
+		return err
+	}
+
 	nugetCmd := dotnet.NewNugetCommand()
-	nugetCmd.SetServerDetails(rtDetails).SetRepoName(targetRepo).SetBuildConfiguration(buildConfiguration).
-		SetBasicCommand(filteredNugetArgs[0]).SetUseNugetV2(useNugetV2)
+	nugetCmd.SetServerDetails(rtDetails).
+		SetRepoName(targetRepo).
+		SetBuildConfiguration(buildConfiguration).
+		SetBasicCommand(filteredNugetArgs[0]).
+		SetUseNugetV2(useNugetV2).
+		SetAllowInsecureConnections(allowInsecureConnection)
 	// Since we are using the values of the command's arguments and flags along the buildInfo collection process,
 	// we want to separate the actual NuGet basic command (restore/build...) from the arguments and flags
 	if len(filteredNugetArgs) > 1 {
@@ -604,10 +706,15 @@ func DotnetCmd(c *cli.Context) error {
 		return err
 	}
 
+	allowInsecureConnection, err := cliutils.ExtractBoolFlagFromArgs(&filteredDotnetArgs, "allow-insecure-connections")
+	if err != nil {
+		return err
+	}
+
 	// Run command.
 	dotnetCmd := dotnet.NewDotnetCoreCliCommand()
 	dotnetCmd.SetServerDetails(rtDetails).SetRepoName(targetRepo).SetBuildConfiguration(buildConfiguration).
-		SetBasicCommand(filteredDotnetArgs[0]).SetUseNugetV2(useNugetV2)
+		SetBasicCommand(filteredDotnetArgs[0]).SetUseNugetV2(useNugetV2).SetAllowInsecureConnections(allowInsecureConnection)
 	// Since we are using the values of the command's arguments and flags along the buildInfo collection process,
 	// we want to separate the actual .NET basic command (restore/build...) from the arguments and flags
 	if len(filteredDotnetArgs) > 1 {
@@ -723,6 +830,8 @@ func dockerCmd(c *cli.Context) error {
 		err = pullCmd(c, image)
 	case "push":
 		err = pushCmd(c, image)
+	case "login":
+		err = loginCmd(c)
 	case "scan":
 		return dockerScanCmd(c, image)
 	default:
@@ -738,7 +847,7 @@ func pullCmd(c *cli.Context, image string) error {
 	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "dockerpullhelp"); show || err != nil {
 		return err
 	}
-	_, rtDetails, _, skipLogin, filteredDockerArgs, buildConfiguration, err := commandsUtils.ExtractDockerOptionsFromArgs(c.Args())
+	_, rtDetails, _, skipLogin, _, filteredDockerArgs, buildConfiguration, err := extractDockerOptionsFromArgs(c.Args())
 	if err != nil {
 		return err
 	}
@@ -761,25 +870,82 @@ func pushCmd(c *cli.Context, image string) (err error) {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
-	threads, rtDetails, detailedSummary, skipLogin, filteredDockerArgs, buildConfiguration, err := commandsUtils.ExtractDockerOptionsFromArgs(c.Args())
+	threads, rtDetails, detailedSummary, skipLogin, validateSha, filteredDockerArgs, buildConfiguration, err := extractDockerOptionsFromArgs(c.Args())
 	if err != nil {
 		return
 	}
 	printDeploymentView := log.IsStdErrTerminal()
-	PushCommand := container.NewPushCommand(containerutils.DockerClient)
-	PushCommand.SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetCmdParams(filteredDockerArgs).SetSkipLogin(skipLogin).SetBuildConfiguration(buildConfiguration).SetServerDetails(rtDetails).SetImageTag(image)
-	supported, err := PushCommand.IsGetRepoSupported()
+	pushCommand := container.NewPushCommand(containerutils.DockerClient)
+	pushCommand.SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetCmdParams(filteredDockerArgs).SetSkipLogin(skipLogin).SetBuildConfiguration(buildConfiguration).SetServerDetails(rtDetails).SetValidateSha(validateSha).SetImageTag(image)
+	supported, err := pushCommand.IsGetRepoSupported()
 	if err != nil {
 		return err
 	}
 	if !supported {
 		return cliutils.NotSupportedNativeDockerCommand("docker-push")
 	}
-	err = commands.Exec(PushCommand)
-	result := PushCommand.Result()
+	err = commands.Exec(pushCommand)
+	result := pushCommand.Result()
 	defer cliutils.CleanupResult(result, &err)
-	err = cliutils.PrintCommandSummary(PushCommand.Result(), detailedSummary, printDeploymentView, false, err)
+	err = cliutils.PrintCommandSummary(pushCommand.Result(), detailedSummary, printDeploymentView, false, err)
 	return
+}
+
+func loginCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "dockerloginhelp"); show || err != nil {
+		return err
+	}
+
+	// extract all options
+	_, rtDetails, _, _, _, _, _, err := extractDockerOptionsFromArgs(c.Args())
+	if err != nil {
+		return err
+	}
+
+	// extract login specific options
+	user, password, err := extractDockerLoginOptionsFromArgs(c.Args())
+	if err != nil {
+		return err
+	}
+
+	// check if registry is provided by user then use that
+	// else use the default from the server details
+	// below code checks if the arg after login is not a flag and considers that as the image registry
+	var registry string
+	for i, arg := range c.Args() {
+		if arg == "login" {
+			if len(c.Args()) > i+1 && !strings.HasPrefix(c.Args()[i+1], "-") {
+				registry = c.Args()[i+1]
+				break
+			}
+			break
+		}
+	}
+
+	// check if username and password are provided by user then use those to login
+	if user != "" && password != "" {
+		// registry is mandatory when using username and password
+		if registry == "" {
+			return errors.New("you need to specify a registry for login using username and password")
+		}
+		cmd := exec.Command("docker", "login", registry, "-u", user, "-p", password)
+		_, err := cmd.CombinedOutput()
+		return err
+	}
+
+	// if registry is not provided use the default from the server details
+	if registry == "" {
+		registry = rtDetails.GetUrl()
+	}
+
+	loginCommand := container.NewContainerManagerCommand(containerutils.DockerClient)
+	loginCommand.SetServerDetails(rtDetails).SetLoginRegistry(registry)
+	// Perform login
+	if err := loginCommand.PerformLogin(rtDetails, containerutils.DockerClient); err != nil {
+		return err
+	}
+	log.Info("Login Succeeded.")
+	return nil
 }
 
 func dockerScanCmd(c *cli.Context, imageTag string) error {
@@ -794,12 +960,70 @@ func dockerNativeCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
-	_, _, _, _, cleanArgs, _, err := commandsUtils.ExtractDockerOptionsFromArgs(c.Args())
+	_, _, _, _, _, cleanArgs, _, err := extractDockerOptionsFromArgs(c.Args())
 	if err != nil {
 		return err
 	}
 	cm := containerutils.NewManager(containerutils.DockerClient)
 	return cm.RunNativeCmd(cleanArgs)
+}
+
+// Remove all the none docker CLI flags from args.
+func extractDockerOptionsFromArgs(args []string) (threads int, serverDetails *coreConfig.ServerDetails, detailedSummary, skipLogin bool, validateSha bool, cleanArgs []string, buildConfig *build.BuildConfiguration, err error) {
+	cleanArgs = append([]string(nil), args...)
+	var serverId string
+	cleanArgs, serverId, err = coreutils.ExtractServerIdFromCommand(cleanArgs)
+	if err != nil {
+		return
+	}
+	serverDetails, err = coreConfig.GetSpecificConfig(serverId, true, true)
+	if err != nil {
+		return
+	}
+	cleanArgs, threads, err = coreutils.ExtractThreadsFromArgs(cleanArgs, 3)
+	if err != nil {
+		return
+	}
+	cleanArgs, detailedSummary, err = coreutils.ExtractDetailedSummaryFromArgs(cleanArgs)
+	if err != nil {
+		return
+	}
+	cleanArgs, skipLogin, err = coreutils.ExtractSkipLoginFromArgs(cleanArgs)
+	if err != nil {
+		return
+	}
+	// Extract validateSha flag
+	cleanArgs, validateSha, err = coreutils.ExtractBoolFlagFromArgs(cleanArgs, "validate-sha")
+	if err != nil {
+		return
+	}
+	cleanArgs, buildConfig, err = build.ExtractBuildDetailsFromArgs(cleanArgs)
+	return
+}
+
+func extractDockerLoginOptionsFromArgs(args []string) (user, password string, err error) {
+	_, _, user, err = coreutils.FindFlag("-u", args)
+	if err != nil {
+		return
+	}
+	if user == "" {
+		_, user, err = coreutils.ExtractStringOptionFromArgs(args, "username")
+		if err != nil {
+			return
+		}
+	}
+
+	_, _, password, err = coreutils.FindFlag("-p", args)
+	if err != nil {
+		return
+	}
+	if password == "" {
+		_, password, err = coreutils.ExtractStringOptionFromArgs(args, "password")
+		if err != nil {
+			return
+		}
+	}
+	return
 }
 
 // Assuming command name is the first argument that isn't a flag.
@@ -876,7 +1100,8 @@ func NpmPublishCmd(c *cli.Context) (err error) {
 	if npmCmd.GetXrayScan() {
 		commandsUtils.ConditionalUploadScanFunc = scan.ConditionalUploadDefaultScanFunc
 	}
-	printDeploymentView, detailedSummary := log.IsStdErrTerminal(), npmCmd.IsDetailedSummary()
+	// deployment view are not available for native npm commands
+	printDeploymentView, detailedSummary := log.IsStdErrTerminal() && !npmCmd.UseNative(), npmCmd.IsDetailedSummary()
 	if !detailedSummary {
 		npmCmd.SetDetailedSummary(printDeploymentView)
 	}
@@ -884,6 +1109,63 @@ func NpmPublishCmd(c *cli.Context) (err error) {
 	result := npmCmd.Result()
 	defer cliutils.CleanupResult(result, &err)
 	err = cliutils.PrintCommandSummary(npmCmd.Result(), detailedSummary, printDeploymentView, false, err)
+	return
+}
+
+func setupCmd(c *cli.Context) (err error) {
+	if c.NArg() > 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+	var packageManager project.ProjectType
+	packageManagerStr := c.Args().Get(0)
+	// If the package manager was provided as an argument, validate it.
+	if packageManagerStr != "" {
+		packageManager = project.FromString(packageManagerStr)
+		if !setup.IsSupportedPackageManager(packageManager) {
+			return cliutils.PrintHelpAndReturnError(fmt.Sprintf("The package manager %s is not supported", packageManagerStr), c)
+		}
+	} else {
+		// If the package manager wasn't provided as an argument, select it interactively.
+		packageManager, err = selectPackageManagerInteractively()
+		if err != nil {
+			return
+		}
+	}
+	setupCmd := setup.NewSetupCommand(packageManager)
+	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
+	if err != nil {
+		return err
+	}
+	repoName := c.String("repo")
+	if repoName != "" {
+		// If a repository was provided, validate it exists in Artifactory.
+		if err = validateRepoExists(repoName, artDetails); err != nil {
+			return err
+		}
+	}
+	setupCmd.SetServerDetails(artDetails).SetRepoName(repoName).SetProjectKey(cliutils.GetProject(c))
+	return commands.Exec(setupCmd)
+}
+
+// validateRepoExists checks if the specified repository exists in Artifactory.
+func validateRepoExists(repoName string, artDetails *coreConfig.ServerDetails) error {
+	serviceDetails, err := artDetails.CreateArtAuthConfig()
+	if err != nil {
+		return err
+	}
+	return utils.ValidateRepoExists(repoName, serviceDetails)
+}
+
+func selectPackageManagerInteractively() (selectedPackageManager project.ProjectType, err error) {
+	var selected string
+	var selectableItems []ioutils.PromptItem
+	for _, packageManager := range setup.GetSupportedPackageManagersList() {
+		selectableItems = append(selectableItems, ioutils.PromptItem{Option: packageManager, TargetValue: &selected})
+	}
+	err = ioutils.SelectString(selectableItems, "Please select a package manager to set up:", false, func(item ioutils.PromptItem) {
+		*item.TargetValue = item.Option
+		selectedPackageManager = project.FromString(*item.TargetValue)
+	})
 	return
 }
 
@@ -933,19 +1215,20 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 	cmdName, filteredArgs := getCommandName(orgArgs)
 	switch projectType {
 	case project.Pip:
-		pythonCommand := python.NewPipCommand()
-		pythonCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
-		return commands.Exec(pythonCommand)
+		pipCommand := python.NewPipCommand()
+		pipCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
+		return commands.Exec(pipCommand)
 	case project.Pipenv:
-		pythonCommand := python.NewPipenvCommand()
-		pythonCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
-		return commands.Exec(pythonCommand)
+		pipenvCommand := python.NewPipenvCommand()
+		pipenvCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
+		return commands.Exec(pipenvCommand)
 	case project.Poetry:
-		pythonCommand := python.NewPoetryCommand()
-		pythonCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
-		return commands.Exec(pythonCommand)
+		poetryCommand := python.NewPoetryCommand()
+		poetryCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
+		return commands.Exec(poetryCommand)
+	default:
+		return errorutils.CheckErrorf("%s is not supported", projectType)
 	}
-	return errorutils.CheckErrorf("%s is not supported", projectType)
 }
 
 func terraformCmd(c *cli.Context) error {
@@ -962,7 +1245,7 @@ func terraformCmd(c *cli.Context) error {
 	case "publish", "p":
 		return terraformPublishCmd(configFilePath, filteredArgs, c)
 	default:
-		return errorutils.CheckErrorf("Terraform command:\"" + cmdName + "\" is not supported. " + cliutils.GetDocumentationMessage())
+		return errorutils.CheckErrorf("Terraform command: '%s' is not supported. %s", cmdName, cliutils.GetDocumentationMessage())
 	}
 }
 
@@ -992,7 +1275,7 @@ func getProjectConfigPathOrThrow(projectType project.ProjectType, cmdName, confi
 		return
 	}
 	if !exists {
-		return "", errorutils.CheckErrorf(getMissingConfigErrMsg(cmdName, configCmdName))
+		return "", errorutils.CheckErrorf("%s", getMissingConfigErrMsg(cmdName, configCmdName))
 	}
 	return
 }
@@ -1043,5 +1326,5 @@ func getTwineConfigPath() (configFilePath string, err error) {
 			return
 		}
 	}
-	return "", errorutils.CheckErrorf(getMissingConfigErrMsg("twine", "pip-config OR pipenv-config"))
+	return "", errorutils.CheckErrorf("%s", getMissingConfigErrMsg("twine", "pip-config OR pipenv-config"))
 }
