@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/jfrog/build-info-go/build"
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/build-info-go/flexpack"
 	"github.com/jfrog/gofrog/crypto"
@@ -20,16 +21,31 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
+const (
+	// Environment variables
+	autoPublishBuildInfoEnv = "JFROG_AUTO_PUBLISH_BUILD_INFO"
+)
+
+// createBuildInfoServiceWithAdapter creates a build info service with logger compatibility
+// This wrapper fixes the logger interface incompatibility between jfrog-client-go and build-info-go
+func createBuildInfoServiceWithAdapter() *build.BuildInfoService {
+	// Now that we fixed the Log interface compatibility, we can use the original function
+	return buildUtils.CreateBuildInfoService()
+}
+
 // GetBuildInfoForPackageManager determines the package manager and collects appropriate build info
 func GetBuildInfoForPackageManager(pkgManager, workingDir string, buildConfiguration *buildUtils.BuildConfiguration) error {
-	log.Info("Collecting build info for package manager: " + pkgManager)
+	log.Debug("Collecting build info for package manager: " + pkgManager)
 
 	switch pkgManager {
 	case "poetry":
 		return GetPoetryBuildInfo(workingDir, buildConfiguration)
+	case "mvn", "maven":
+		// Maven FlexPack is handled directly in jfrog-cli-artifactory Maven command
+		return GetBuildInfoForUploadedArtifacts("", buildConfiguration)
 	case "pip", "pipenv":
 		// For now, fall back to generic build info collection
-		// This can be extended with pip-specific FlexPack implementations
+		// This can be extended with pip-specific native implementations
 		return GetBuildInfoForUploadedArtifacts("", buildConfiguration)
 	case "gem":
 		// Use existing gem implementation
@@ -42,7 +58,7 @@ func GetBuildInfoForPackageManager(pkgManager, workingDir string, buildConfigura
 
 // GetPoetryBuildInfo collects build info for Poetry projects
 func GetPoetryBuildInfo(workingDir string, buildConfiguration *buildUtils.BuildConfiguration) error {
-	log.Info("Collecting Poetry build info from directory: " + workingDir)
+	log.Debug("Collecting Poetry build info from directory: " + workingDir)
 
 	buildName, err := buildConfiguration.GetBuildName()
 	if err != nil {
@@ -58,15 +74,12 @@ func GetPoetryBuildInfo(workingDir string, buildConfiguration *buildUtils.BuildC
 
 	log.Debug("Poetry build info collection for build: " + buildName + "-" + buildNumber)
 
-	// Extract repository configuration specifically for Poetry
-	log.Info("Extracting repository configuration for Poetry project...")
 	repoConfig, err := extractRepositoryConfigForProject(project.Poetry)
 	if err != nil {
 		log.Error("Failed to extract Poetry repository configuration: ", err)
 		return fmt.Errorf("extractRepositoryConfigForProject failed: %w", err)
 	}
 
-	log.Info("Retrieved Poetry repository configuration successfully")
 	log.Debug("Poetry repo config - Repo: " + repoConfig.TargetRepo())
 
 	// Get server details for build info collection
@@ -76,28 +89,18 @@ func GetPoetryBuildInfo(workingDir string, buildConfiguration *buildUtils.BuildC
 		return fmt.Errorf("ServerDetails extraction failed: %w", err)
 	}
 
-	// Use enhanced Poetry implementation for dependency collection
-	log.Info("Collecting Poetry dependencies and build artifacts...")
 	err = collectPoetryBuildInfo(workingDir, buildName, buildNumber, serverDetails, repoConfig.TargetRepo(), buildConfiguration)
 	if err != nil {
 		log.Warn("Enhanced Poetry collection failed, falling back to standard method: " + err.Error())
-		log.Info("Poetry build info collection (using standard method).")
-
-		// Fallback: Save build info with Poetry configuration (generic method)
 		err = saveBuildInfo(serverDetails, repoConfig.TargetRepo(), "", buildConfiguration)
 		if err != nil {
 			log.Error("Failed to save Poetry build info: ", err)
 			return fmt.Errorf("saveBuildInfo failed: %w", err)
 		}
-	} else {
-		log.Info("Successfully collected Poetry build info with dependencies and artifacts.")
-		// Enhanced collection succeeded, no need for additional saveBuildInfo call
 	}
 
-	log.Info("Successfully collected Poetry build info.")
-
 	// Check if auto-publish is enabled
-	autoPublish := os.Getenv("JFROG_AUTO_PUBLISH_BUILD_INFO")
+	autoPublish := os.Getenv(autoPublishBuildInfoEnv)
 	if autoPublish == "true" {
 		log.Info("Auto-publishing build info is enabled.")
 		err = publishBuildInfo(serverDetails, buildName, buildNumber, buildConfiguration.GetProject())
@@ -114,28 +117,24 @@ func GetPoetryBuildInfo(workingDir string, buildConfiguration *buildUtils.BuildC
 
 // GetBuildInfoForUploadedArtifacts handles build info for uploaded artifacts (generic fallback)
 func GetBuildInfoForUploadedArtifacts(uploadedFile string, buildConfiguration *buildUtils.BuildConfiguration) error {
-	log.Info("Extracting repository configuration for build info...")
 	repoConfig, err := extractRepositoryConfig()
 	if err != nil {
 		log.Error("Failed to extract repository configuration: ", err)
 		return fmt.Errorf("extractRepositoryConfig failed: %w", err)
 	}
 
-	log.Info("Retrieving server details...")
 	serverDetails, err := repoConfig.ServerDetails()
 	if err != nil {
 		log.Error("Failed to retrieve server details: ", err)
 		return fmt.Errorf("ServerDetails extraction failed: %w", err)
 	}
 
-	log.Info("Saving build info for uploaded file: " + uploadedFile)
 	err = saveBuildInfo(serverDetails, repoConfig.TargetRepo(), uploadedFile, buildConfiguration)
 	if err != nil {
 		log.Error("Failed to save build info: ", err)
 		return fmt.Errorf("saveBuildInfo failed: %w", err)
 	}
 
-	log.Info("Successfully saved build info for uploaded artifact.")
 	return nil
 }
 
@@ -222,7 +221,7 @@ func getBuildPropsForArtifact(buildName, buildNumber, project string) (string, e
 // createBuildInfo creates build info with artifacts
 func createBuildInfo(buildName, buildNumber, project, moduleName string, artifacts []buildinfo.Artifact) error {
 	log.Debug("Creating build info service...")
-	buildInfoService := buildUtils.CreateBuildInfoService()
+	buildInfoService := createBuildInfoServiceWithAdapter()
 
 	log.Debug("Getting or creating build: " + buildName + "-" + buildNumber)
 	build, err := buildInfoService.GetOrCreateBuildWithProject(buildName, buildNumber, project)
@@ -238,7 +237,6 @@ func createBuildInfo(buildName, buildNumber, project, moduleName string, artifac
 		return fmt.Errorf("AddArtifacts failed: %w", err)
 	}
 
-	log.Info("Successfully created build info with artifacts.")
 	return nil
 }
 
@@ -252,7 +250,7 @@ func publishBuildInfo(serverDetails *config.ServerDetails, buildName, buildNumbe
 		return fmt.Errorf("CreateServiceManager failed: %w", err)
 	}
 
-	buildInfoService := buildUtils.CreateBuildInfoService()
+	buildInfoService := createBuildInfoServiceWithAdapter()
 	build, err := buildInfoService.GetOrCreateBuildWithProject(buildName, buildNumber, project)
 	if err != nil {
 		log.Error("Failed to get or create build: ", err)
@@ -384,7 +382,7 @@ func collectPoetryBuildInfo(workingDir, buildName, buildNumber string, serverDet
 	}
 
 	// Save complete build info (dependencies + artifacts) for jfrog-cli rt bp compatibility
-	err = saveBuildInfoNative(buildInfo)
+	err = saveBuildInfoNative(buildInfo, buildConfiguration)
 	if err != nil {
 		return fmt.Errorf("failed to save build info: %w", err)
 	}
@@ -394,12 +392,15 @@ func collectPoetryBuildInfo(workingDir, buildName, buildNumber string, serverDet
 }
 
 // saveBuildInfoNative saves build info for jfrog-cli rt bp compatibility (native path)
-func saveBuildInfoNative(buildInfo *buildinfo.BuildInfo) error {
+func saveBuildInfoNative(buildInfo *buildinfo.BuildInfo, buildConfiguration *buildUtils.BuildConfiguration) error {
 	// Use the same approach as createBuildInfo but with the buildUtils service
-	buildInfoService := buildUtils.CreateBuildInfoService()
+	buildInfoService := createBuildInfoServiceWithAdapter()
+
+	// Get project key from build configuration
+	projectKey := buildConfiguration.GetProject()
 
 	// Create or get build
-	bld, err := buildInfoService.GetOrCreateBuildWithProject(buildInfo.Name, buildInfo.Number, "")
+	bld, err := buildInfoService.GetOrCreateBuildWithProject(buildInfo.Name, buildInfo.Number, projectKey)
 	if err != nil {
 		return fmt.Errorf("failed to create build: %w", err)
 	}
@@ -414,7 +415,7 @@ func saveBuildInfoNative(buildInfo *buildinfo.BuildInfo) error {
 	}
 
 	// Note: No need to call SaveBuildInfo here as AddArtifacts already saves the build
-	// The FlexPack buildInfo object is used only for extracting artifacts and dependencies
+	// The native buildInfo object is used only for extracting artifacts and dependencies
 	// The actual build persistence is handled by the build service methods
 
 	log.Info("Build info with artifacts saved successfully")
