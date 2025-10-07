@@ -35,11 +35,11 @@ On Windows, run:
 ```
 
 After the build process completes, you will find the `jf` (on Unix-based systems) or `jf.exe` (on Windows) executable in the current directory. 
-If you are unsure of the binary name, check the output of the build script or look for an executable named `jf` or `jfrog-cli` in the project root.
+If you are unsure of the binary name, check the output of the build script or look for an executable named `jf` or `jfrog-cli` in the project root. Once the JFrog CLI  is built locally, use JFCM (JFrog CLI Manager) to test and manage it alongside released versions.
 
-## Using jfcm (JFrog CLI Manager)
+## Testing and Managing Locally Built jfrog-cli with JFCM
 
-jfcm (JFrog CLI Manager) is a comprehensive tool for managing JFrog CLI on your development machine. Beyond version management, it provides features like output comparison, command history, and performance benchmarking. It's particularly useful for contributors who need to test changes, compare behavior across versions, and analyze CLI performance.
+jfcm (JFrog CLI Manager) is a comprehensive tool for managing JFrog CLI on your development machine. Beyond version management, it provides features like jfrog-cli output comparison, command history, and performance benchmarking. It's particularly useful for contributors who need to test changes, compare behavior across versions, and analyze CLI performance.
 
 ### Installing jfcm
 
