@@ -24,7 +24,7 @@ func GetStats(c *cli.Context) error {
 			SetFormat(format)
 		return newStatsCommand.Run()
 	} else {
-		_ = cli.ShowSubcommandHelp(c)
+		cli.ShowSubcommandHelp(c)
 		return fmt.Errorf("wrong product %s only artifactory or rt is supported", productName))
 		return nil
 	}
