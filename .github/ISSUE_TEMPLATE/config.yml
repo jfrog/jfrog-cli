@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: 📊 Help us improve JFrog CLI! Take this 3-minute survey
+    url: https://www.surveymonkey.com/r/JFCLIGTB
+    about: Take this 3-minute survey and help us improve JFrog CLI
   - name: 🕵️ Audit & Scan
     url: https://github.com/jfrog/jfrog-cli-security/issues/new/choose
     about: Report 'jf audit', 'jf scan', 'jf curation-audit', 'jf build-scan', 'jf docker scan' and 'jf xr' issues under the jfrog-cli-security repository.

@@ -6,7 +6,7 @@ on:
       - "master"
   # Triggers the workflow on PRs to master branch only.
   pull_request_target:
-    types: [opened, synchronize]
+    types: [labeled]
     branches:
       - "master"
 
@@ -17,6 +17,7 @@ concurrency:
 jobs:
   Python-Tests:
     name: ${{ matrix.suite }} ${{ matrix.os.name }}
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'safe to test')
     strategy:
       fail-fast: false
       matrix:
@@ -38,14 +39,14 @@ jobs:
 
       - name: Checkout code
         if: matrix.os.name != 'macos'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
 
       # Due to a bug in Python 3.12.0 we temporarily use version 3.11.5
       - name: Setup Python3
         if: matrix.os.name != 'macos'
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11.5"
 

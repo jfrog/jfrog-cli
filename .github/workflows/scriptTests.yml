@@ -6,7 +6,7 @@ on:
       - "master"
   # Triggers the workflow on PRs to master branch only.
   pull_request_target:
-    types: [opened, synchronize]
+    types: [labeled]
     branches:
       - "master"
 # Ensures that only the latest commit is running for each PR at a time.
@@ -16,6 +16,7 @@ concurrency:
 jobs:
   Scripts-tests:
     name: Script tests (${{ matrix.os.name }}-${{ matrix.os.version }})
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'safe to test')
     defaults:
       run:
         shell: sh
@@ -45,7 +46,7 @@ jobs:
     runs-on: ${{ matrix.os.name }}-${{ matrix.os.version }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
 

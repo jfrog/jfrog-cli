@@ -1,0 +1,97 @@
+name: Prepare Release
+on:
+  workflow_call:
+    inputs:
+      version:
+        type: string
+        description: The version to prepare the release for should be "minor" or "patch"
+        default: "minor"
+      ref:
+        type: string
+        description: The branch to prepare the release for
+        default: "master"
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+jobs:
+  prepare-release:
+    name: Prepare ${{ inputs.version }} From ${{ inputs.ref }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Setup Go with cache
+        uses: jfrog/.github/actions/install-go-with-cache@main
+
+      - name: Compute current version
+        id: compute-current-version
+        run: |
+          current_version=$(go run main.go -v)
+          current_version=${current_version//[^0-9.+]/}
+          echo "current_version=${current_version}" >> $GITHUB_OUTPUT
+
+      - name: Compute next version
+        id: compute-next-version
+        run: |
+          next_version=$(build/compute_next_${{ inputs.version }}.sh)
+          echo "next_version=${next_version}" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create and checkout new branch
+        id: branch
+        run: |
+          BRANCH_NAME="bump-ver-from-${{ steps.compute-current-version.outputs.current_version }}-to-${{ steps.compute-next-version.outputs.next_version }}"
+          git config --local user.email "action@github.com"
+          git config --local user.name "github-actions[bot]"
+          git checkout -b "$BRANCH_NAME"
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+      - name: Bump version
+        run: build/bump-version.sh ${{ steps.compute-next-version.outputs.next_version }}
+        env:
+          BUMP_VERSION_SKIP_GIT: true
+
+      - name: Update dependencies
+        run: make update-all
+
+      - name: Check binary
+        run: |
+          ./build/build.sh
+          ./jf --version
+
+      - name: Commit changes
+        run: |
+          git add .
+          git commit -m "Bump version to ${{ steps.compute-next-version.outputs.next_version }}"
+          git push -u origin "${{ steps.branch.outputs.branch_name }}"
+
+      - name: Create pull request
+        run: gh pr create --title "Bump version to ${{ steps.compute-next-version.outputs.next_version }}" --body "Bump version to ${{ steps.compute-next-version.outputs.next_version }}"
+        env:
+          GH_TOKEN: ${{ secrets.CLI_ACTION_TOKEN }}
+
+      - name: Get PR number
+        id: get-pr-number
+        run: |
+          PR_NUMBER=$(gh pr list --head "${{ steps.branch.outputs.branch_name }}" --json number --jq '.[0].number')
+          echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.CLI_ACTION_TOKEN }}
+
+      - name: Annotate workflow with PR link and version
+        run: |
+          PR_URL="${{ github.server_url }}/${{ github.repository }}/pull/${{ steps.get-pr-number.outputs.pr_number }}"
+          echo "::notice title=Release prepared::Prepared release version ${{ steps.compute-next-version.outputs.next_version }}. PR: ${PR_URL}"
+
+      - name: Skip from release notes
+        run: |
+          gh pr edit ${{ steps.get-pr-number.outputs.pr_number }} --add-label "ignore for release"
+        env:
+          GH_TOKEN: ${{ secrets.CLI_ACTION_TOKEN }}

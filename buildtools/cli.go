@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -76,7 +77,7 @@ const (
 )
 
 func GetCommands() []cli.Command {
-	return cliutils.GetSortedCommands(cli.CommandsByName{
+	cmds := cliutils.GetSortedCommands(cli.CommandsByName{
 		{
 			// Currently, the setup command is hidden from the help menu, till it will be released as GA.
 			Hidden:       true,
@@ -448,11 +449,85 @@ func GetCommands() []cli.Command {
 			Action:          twineCmd,
 		},
 	})
+	return decorateWithFlagCapture(cmds)
+}
+
+// decorateWithFlagCapture injects a Before hook into every command returned from this package,
+// so we can capture user-provided flags consistently in one place for all build commands.
+func decorateWithFlagCapture(cmds []cli.Command) []cli.Command {
+	for i := range cmds {
+		skipFlagParsing := cmds[i].SkipFlagParsing
+		origBefore := cmds[i].Before
+		cmds[i].Before = func(c *cli.Context) error {
+			captureUserFlagsForMetrics(c, skipFlagParsing)
+			if origBefore != nil {
+				return origBefore(c)
+			}
+			return nil
+		}
+	}
+	return cmds
+}
+
+// captureUserFlagsForMetrics extracts flag names as provided by the end-user for the given command
+// and records them for usage metrics. Works even when SkipFlagParsing is true by scanning os.Args.
+func captureUserFlagsForMetrics(c *cli.Context, skipFlagParsing bool) {
+	flagSet := map[string]struct{}{}
+
+	if !skipFlagParsing {
+		for _, fn := range c.FlagNames() {
+			flagSet[fn] = struct{}{}
+		}
+	} else {
+		for _, next := range c.Args() {
+			if !strings.HasPrefix(next, "-") {
+				continue
+			}
+			if strings.HasPrefix(next, "--") {
+				name := strings.TrimPrefix(next, "--")
+				if eq := strings.Index(name, "="); eq >= 0 {
+					name = name[:eq]
+				}
+				if name != "" {
+					flagSet[name] = struct{}{}
+				}
+			} else {
+				trimmed := strings.TrimLeft(next, "-")
+				for _, ch := range trimmed {
+					flagSet[string(ch)] = struct{}{}
+				}
+			}
+		}
+	}
+
+	if len(flagSet) == 0 {
+		return
+	}
+	flags := make([]string, 0, len(flagSet))
+	for f := range flagSet {
+		flags = append(flags, f)
+	}
+	sort.Strings(flags)
+	commands.SetContextFlags(flags)
 }
 
 func MvnCmd(c *cli.Context) (err error) {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
+	}
+
+	// FlexPack bypasses all config file requirements
+	if os.Getenv("JFROG_RUN_NATIVE") == "true" {
+		log.Debug("Routing to Maven native implementation")
+		// Extract build configuration for FlexPack
+		args := cliutils.ExtractCommand(c)
+		filteredMavenArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
+		if err != nil {
+			return err
+		}
+		// Create Maven command with empty config for FlexPack
+		mvnCmd := mvn.NewMvnCommand().SetConfigPath("").SetGoals(filteredMavenArgs).SetConfiguration(buildConfiguration)
+		return commands.Exec(mvnCmd)
 	}
 
 	configFilePath, err := getProjectConfigPathOrThrow(project.Maven, "mvn", "mvn-config")
@@ -1039,7 +1114,8 @@ func NpmPublishCmd(c *cli.Context) (err error) {
 	if npmCmd.GetXrayScan() {
 		commandsUtils.ConditionalUploadScanFunc = scan.ConditionalUploadDefaultScanFunc
 	}
-	printDeploymentView, detailedSummary := log.IsStdErrTerminal(), npmCmd.IsDetailedSummary()
+	// deployment view are not available for native npm commands
+	printDeploymentView, detailedSummary := log.IsStdErrTerminal() && !npmCmd.UseNative(), npmCmd.IsDetailedSummary()
 	if !detailedSummary {
 		npmCmd.SetDetailedSummary(printDeploymentView)
 	}

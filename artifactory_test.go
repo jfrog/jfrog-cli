@@ -5173,6 +5173,24 @@ func TestConfigAddWithStdinAccessToken(t *testing.T) {
 	details, err := config.GetSpecificConfig(tests.ServerId, false, false)
 	assert.NoError(t, err)
 	assert.Equal(t, "accesstoken", details.AccessToken)
+	assert.Equal(t, false, details.DisableTokenRefresh)
+}
+
+func TestConfigAddWithDisableRefreshToken(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	err := configCli.WithoutCredentials().Exec("add", tests.ServerId, "--artifactory-url="+*tests.JfrogUrl+tests.
+		ArtifactoryEndpoint, "--access-token=password", "--disable-token-refresh=true")
+	assert.NoError(t, err)
+
+	defer func() {
+		assert.NoError(t, configCli.WithoutCredentials().Exec("rm", tests.ServerId, "--quiet"))
+	}()
+
+	details, err := config.GetSpecificConfig(tests.ServerId, false, false)
+	assert.NoError(t, err)
+	assert.Equal(t, "password", details.AccessToken)
+	assert.Equal(t, true, details.DisableTokenRefresh)
 }
 
 func pipeStdinSecret(t *testing.T, secret string) func() {
