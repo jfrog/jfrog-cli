@@ -542,6 +542,9 @@ const (
 	Completion = "completion"
 	Install    = "install"
 
+	// *** Stats Commands's flags ***
+	Stats = "stats"
+
 	// *** TransferFiles Commands' flags ***
 	transferFilesPrefix = "transfer-files-"
 	Filestore           = "filestore"
@@ -1963,6 +1966,9 @@ var commandFlags = map[string][]string{
 	},
 	RubyConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
+	},
+	Stats: {
+		xrOutput, accessToken, serverId,
 	},
 	TemplateConsumer: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
