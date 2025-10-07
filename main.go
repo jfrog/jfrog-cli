@@ -6,7 +6,7 @@ import (
 	"fmt"
 	statsDocs "github.com/jfrog/jfrog-cli/docs/general/stats"
 	"github.com/jfrog/jfrog-cli/general/ai"
-	stats "github.com/jfrog/jfrog-cli/stats"
+	"github.com/jfrog/jfrog-cli/stats"
 	"os"
 	"runtime"
 	"sort"
