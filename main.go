@@ -6,7 +6,7 @@ import (
 	"fmt"
 	statsDocs "github.com/jfrog/jfrog-cli/docs/general/stats"
 	"github.com/jfrog/jfrog-cli/general/ai"
-	"github.com/jfrog/jfrog-cli/stats"
+	services "github.com/jfrog/jfrog-cli/stats"
 	"os"
 	"runtime"
 	"sort"
@@ -540,7 +540,7 @@ func getCommands() ([]cli.Command, error) {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     otherCategory,
-			Action:       stats.GetStats,
+			Action:       services.GetStats,
 		},
 	}
 

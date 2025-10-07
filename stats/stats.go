@@ -1,9 +1,8 @@
 package services
 
 import (
-	"errors"
+	"fmt"
 	"github.com/jfrog/jfrog-cli-artifactory/stats"
-	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/urfave/cli"
 )
@@ -25,7 +24,6 @@ func GetStats(c *cli.Context) error {
 		return newStatsCommand.Run()
 	} else {
 		cli.ShowSubcommandHelp(c)
-		return fmt.Errorf("wrong product %s only artifactory or rt is supported", productName))
-		return nil
+		return fmt.Errorf("wrong product %s only artifactory or rt is supported", productName)
 	}
 }

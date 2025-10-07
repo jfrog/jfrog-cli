@@ -16,7 +16,7 @@ require (
 	github.com/docker/docker v27.5.1+incompatible
 	github.com/gocarina/gocsv v0.0.0-20240520201108-78e41c74b4b1
 	github.com/jfrog/archiver/v3 v3.6.1
-	github.com/jfrog/build-info-go v1.11.0
+	github.com/jfrog/build-info-go v1.12.0
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-artifactory v0.7.3-0.20250924123948-4fce9d68fabe
 	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20250925124759-72e2205de3f6
@@ -38,7 +38,7 @@ require (
 	github.com/AdaLogics/go-fuzz-headers v0.0.0-20240806141605-e8a1dd7889d6 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/BurntSushi/toml v1.5.0 // indirect
-	github.com/CycloneDX/cyclonedx-go v0.9.2 // indirect
+	github.com/CycloneDX/cyclonedx-go v0.9.3 // indirect
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.3.0 // indirect
@@ -70,14 +70,14 @@ require (
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
-	github.com/forPelevin/gomoji v1.3.1 // indirect
+	github.com/forPelevin/gomoji v1.4.0 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.8.0 // indirect
 	github.com/gfleury/go-bitbucket-v1 v0.0.0-20230825095122-9bc1711434ab // indirect
 	github.com/go-chi/chi v4.1.2+incompatible // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.6.2 // indirect
-	github.com/go-git/go-git/v5 v5.16.2 // indirect
+	github.com/go-git/go-git/v5 v5.16.3 // indirect
 	github.com/go-jose/go-jose/v4 v4.0.5 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
@@ -247,12 +247,12 @@ require (
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
 
-replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20250907205057-2bfe50c014b7
+replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20251006061821-8b1be6a65215
 
-replace github.com/jfrog/jfrog-cli-artifactory => github.com/naveenku-jfrog/jfrog-cli-artifactory v0.0.0-20250929050556-7007a44d6a33
+replace github.com/jfrog/jfrog-cli-artifactory => github.com/naveenku-jfrog/jfrog-cli-artifactory v0.0.0-20251007085159-3db123d4398b
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/naveenku-jfrog/jfrog-cli-core/v2 v2.0.0-20250929050103-7661eda385b4
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/naveenku-jfrog/jfrog-cli-core/v2 v2.0.0-20251007071921-a9564595b084
 
-replace github.com/jfrog/jfrog-client-go => github.com/naveenku-jfrog/jfrog-client-go v1.54.2-0.20250929043331-99e7b9120eb2
+replace github.com/jfrog/jfrog-client-go => github.com/naveenku-jfrog/jfrog-client-go v1.54.2-0.20251007084958-5eeaa42c31a6
 
 //replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.17.2-0.20250511132918-d9cc4cd50020
