@@ -14,7 +14,7 @@ func GetArguments() string {
 	--ServerId (optional) 
 	The server id for which the product will be searched. If not provided, the default configured server value will be used.
 
-	--Format (optional)
+	--format (optional)
 	The output format in which you want statistics to be shown. Currently, Json, Table and Text (default) are supported.
 
 	--accessToken(optional)
