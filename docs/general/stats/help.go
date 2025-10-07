@@ -11,7 +11,7 @@ func GetArguments() string {
 	Product (Mandatory)
 	The Product name for which you want to display statistics for now, only artifactory(rt) is supported.
 
-	--ServerId (optional) 
+    --server-id (optional)
 	The server id for which the product will be searched. If not provided, the default configured server value will be used.
 
 	--format (optional)
