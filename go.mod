@@ -18,11 +18,11 @@ require (
 	github.com/jfrog/archiver/v3 v3.6.1
 	github.com/jfrog/build-info-go v1.12.0
 	github.com/jfrog/gofrog v1.7.6
-	github.com/jfrog/jfrog-cli-artifactory v0.7.3-0.20251007111915-ee166dfe921b
-	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20251007110407-2348aea7acd0
+	github.com/jfrog/jfrog-cli-artifactory v0.7.3-0.20251008063046-4bfcdeb54f16
+	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20251008065215-ebd53b5439fa
 	github.com/jfrog/jfrog-cli-platform-services v1.10.0
 	github.com/jfrog/jfrog-cli-security v1.21.8
-	github.com/jfrog/jfrog-client-go v1.55.1-0.20251007092348-3a3f6f58ae23
+	github.com/jfrog/jfrog-client-go v1.55.1-0.20251008045603-4ca43b3f3d45
 	github.com/jszwec/csvutil v1.10.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/stretchr/testify v1.11.1
