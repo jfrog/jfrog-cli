@@ -322,7 +322,7 @@ func getCommands() ([]cli.Command, error) {
 			Action:   summary.FinalizeCommandSummaries,
 		},
 		{
-			Name:         "statistics",
+			Name:         "stats",
 			Aliases:      []string{"st"},
 			Flags:        cliutils.GetCommandFlags(cliutils.Stats),
 			Usage:        statsDocs.GetDescription(),
