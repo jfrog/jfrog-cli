@@ -131,8 +131,6 @@ func TestReleaseBundleCreationFromMultiBundlesUsingCommandFlag(t *testing.T) {
 }
 
 func TestReleaseBundleCreationFromMultipleBuildsAndBundlesUsingCommandFlags(t *testing.T) {
-	t.Skip("JGC-412 - Skipping TestReleaseBundleCreationFromMultipleBuildsAndBundlesUsingCommandFlags")
-
 	cleanCallback := initLifecycleTest(t, minMultiSourcesArtifactoryVersion)
 	defer cleanCallback()
 	lcManager := getLcServiceManager(t)
