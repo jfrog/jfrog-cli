@@ -734,6 +734,9 @@ func TestNpmPackInstall(t *testing.T) {
 // Workspaces has been introduced in npm v7.0.0+
 // Read more about npm workspaces here: https://docs.npmjs.com/cli/v7/using-npm/workspaces
 func TestNpmPublishWithWorkspaces(t *testing.T) {
+	if coreutils.IsWindows() {
+		t.Skip("JGC-417 - Test is flaky on Windows, skipping...")
+	}
 	// Check npm version
 	npmVersion, _, err := buildutils.GetNpmVersionAndExecPath(log.Logger)
 	if err != nil {
