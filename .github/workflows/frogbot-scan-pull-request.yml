@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Setup Go with cache
-        uses: jfrog/.github/actions/install-go-with-cache@main
+        uses: jfrog/.github/actions/install-go-with-cache@bump-golang-linter
 
       - uses: jfrog/frogbot@v2
         env:

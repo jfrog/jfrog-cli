@@ -41,7 +41,7 @@ jobs:
     runs-on: ${{ matrix.os.name }}-${{ matrix.os.version }}
     steps:
       - name: Setup Go with cache
-        uses: jfrog/.github/actions/install-go-with-cache@main
+        uses: jfrog/.github/actions/install-go-with-cache@bump-golang-linter
 
       - name: Checkout the repository
         uses: actions/checkout@v5

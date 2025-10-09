@@ -31,7 +31,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
 
       - name: Setup Go with cache
-        uses: jfrog/.github/actions/install-go-with-cache@main
+        uses: jfrog/.github/actions/install-go-with-cache@bump-golang-linter
 
       - name: Containerize Artifactory
         run: |

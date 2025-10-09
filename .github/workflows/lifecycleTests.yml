@@ -32,7 +32,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
 
       - name: Setup Go with cache
-        uses: jfrog/.github/actions/install-go-with-cache@main
+        uses: jfrog/.github/actions/install-go-with-cache@bump-golang-linter
 
       - name: Run Lifecycle tests
         run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.lifecycle --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --jfrog.user=${{ secrets.PLATFORM_USER }} --ci.runId=${{ runner.os }}-lifecycle

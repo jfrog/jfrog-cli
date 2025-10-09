@@ -74,7 +74,7 @@ jobs:
 
       - name: Setup Go with cache
         if: matrix.os.name != 'macos'
-        uses: jfrog/.github/actions/install-go-with-cache@main
+        uses: jfrog/.github/actions/install-go-with-cache@bump-golang-linter
 
       - name: Debug macOS Environment and Set Timeout
         if: runner.os == 'macOS'

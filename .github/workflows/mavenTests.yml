@@ -44,7 +44,7 @@ jobs:
 
       - name: Setup Go with cache
         if: matrix.os.name != 'macos'
-        uses: jfrog/.github/actions/install-go-with-cache@main
+        uses: jfrog/.github/actions/install-go-with-cache@bump-golang-linter
 
       # Fixed Maven version to avoid updating to 3.9, which includes breaking changes.
       - name: Setup Maven v3.8.8
