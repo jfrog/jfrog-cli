@@ -450,6 +450,9 @@ func TestMavenBuildIncludePatterns(t *testing.T) {
 }
 
 func TestMavenDeploy(t *testing.T) {
+	if coreutils.IsWindows() {
+		t.Skip("JGC-419 - Test is flaky on Windows, skipping...")
+	}
 	initMavenTest(t, false)
 	runMavenAndValidateDeployedArtifacts(t, true, "install")
 	deleteDeployedArtifacts(t)
