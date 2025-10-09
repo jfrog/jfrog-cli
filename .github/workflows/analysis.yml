@@ -40,7 +40,7 @@ jobs:
         uses: jfrog/.github/actions/install-go-with-cache@main
 
       - name: Run golangci linter
-        uses: jfrog/.github/actions/golangci-lint@main
+        uses: jfrog/.github/actions/golangci-lint@bump-golang-linter
 
   Go-Sec:
     name: Go-Sec
