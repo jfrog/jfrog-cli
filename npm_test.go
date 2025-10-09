@@ -825,6 +825,9 @@ func TestNpmPublishWithWorkspaces(t *testing.T) {
 }
 
 func TestNpmPublishWithWorkspacesRunNative(t *testing.T) {
+	if coreutils.IsWindows() {
+		t.Skip("JGC-417 - Test is flaky on Windows, skipping...")
+	}
 	// Check npm version
 	npmVersion, _, err := buildutils.GetNpmVersionAndExecPath(log.Logger)
 	if err != nil {
