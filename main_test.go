@@ -385,6 +385,7 @@ func TestIntro(t *testing.T) {
 }
 
 func TestSurvey(t *testing.T) {
+	t.Setenv("CI", "false")
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 	_, contentErr, err := tests.GetCmdOutput(t, jfrogCli, "intro")
 	require.NoError(t, err)
