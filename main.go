@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/agnivade/levenshtein"
+	appTrustCLI "github.com/jfrog/jfrog-cli-application/cli"
 	artifactoryCLI "github.com/jfrog/jfrog-cli-artifactory/cli"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli-core/v2/plugins/components"
@@ -374,10 +375,15 @@ func getCommands() ([]cli.Command, error) {
 	if err != nil {
 		return nil, err
 	}
+	appTrustCmds, err := ConvertEmbeddedPlugin(appTrustCLI.GetJfrogCliApptrustApp())
+	if err != nil {
+		return nil, err
+	}
 
 	allCommands := append(slices.Clone(cliNameSpaces), securityCmds...)
 	allCommands = mergeCommands(allCommands, artifactoryCmds)
 	allCommands = append(allCommands, platformServicesCmds...)
+	allCommands = append(allCommands, appTrustCmds...)
 	allCommands = append(allCommands, utils.GetPlugins()...)
 	allCommands = append(allCommands, buildtools.GetCommands()...)
 	return append(allCommands, buildtools.GetBuildToolsHelpCommands()...), nil
