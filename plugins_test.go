@@ -1,12 +1,13 @@
 package main
 
 import (
-	biutils "github.com/jfrog/build-info-go/utils"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	biutils "github.com/jfrog/build-info-go/utils"
 
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
@@ -141,7 +142,7 @@ func installAndAssertPlugin(t *testing.T, jfrogCli *coreTests.JfrogCli, pluginVe
 
 func verifyPluginSignature(t *testing.T, jfrogCli *coreTests.JfrogCli) error {
 	// Get signature from plugin.
-	content, err := tests.GetCmdOutput(t, jfrogCli, officialPluginForTest, plugins.SignatureCommandName)
+	content, _, err := tests.GetCmdOutput(t, jfrogCli, officialPluginForTest, plugins.SignatureCommandName)
 	if err != nil {
 		return err
 	}
@@ -166,7 +167,7 @@ func verifyPluginSignature(t *testing.T, jfrogCli *coreTests.JfrogCli) error {
 
 func verifyPluginVersion(t *testing.T, jfrogCli *coreTests.JfrogCli, expectedVersion string) error {
 	// Run plugin's -v command.
-	content, err := tests.GetCmdOutput(t, jfrogCli, officialPluginForTest, "-v")
+	content, _, err := tests.GetCmdOutput(t, jfrogCli, officialPluginForTest, "-v")
 	if err != nil {
 		return err
 	}
