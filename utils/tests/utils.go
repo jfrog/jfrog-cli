@@ -645,13 +645,18 @@ func RedirectLogOutputToNil() (previousLog log.Log) {
 // Redirect output to a file, execute the command and read output.
 // The reason for redirecting to a file and not to a buffer is the limited
 // size of the buffer while using os.Pipe.
-func GetCmdOutput(t *testing.T, jfrogCli *coreTests.JfrogCli, cmd ...string) ([]byte, error) {
+func GetCmdOutput(t *testing.T, jfrogCli *coreTests.JfrogCli, cmd ...string) ([]byte, []byte, error) {
 	oldStdout := os.Stdout
+	oldStdErr := os.Stderr
 	temp, err := os.CreateTemp("", "output")
 	assert.NoError(t, err)
+	tempErr, err := os.CreateTemp("", "output")
+	assert.NoError(t, err)
 	os.Stdout = temp
+	os.Stderr = tempErr
 	defer func() {
 		os.Stdout = oldStdout
+		os.Stderr = oldStdErr
 		assert.NoError(t, temp.Close())
 		assert.NoError(t, os.Remove(temp.Name()))
 	}()
@@ -659,7 +664,8 @@ func GetCmdOutput(t *testing.T, jfrogCli *coreTests.JfrogCli, cmd ...string) ([]
 	assert.NoError(t, err)
 	content, err := os.ReadFile(temp.Name())
 	assert.NoError(t, err)
-	return content, err
+	errContent, err := os.ReadFile(tempErr.Name())
+	return content, errContent, err
 }
 
 func VerifySha256DetailedSummaryFromBuffer(t *testing.T, buffer *bytes.Buffer, logger log.Log) {

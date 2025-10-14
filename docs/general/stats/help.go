@@ -1,9 +1,9 @@
 package statsDocs
 
 var Usage = []string{"stats <product-name> [--server-id <server-id>] [--format <format>] [--access-token <access-token>]",
-"jf stats rt",
-"jf stats rt --format json",
-"jf stats rt --server-id <JFROG_SERVER_ID>"}
+	"jf stats rt",
+	"jf stats rt --format json",
+	"jf stats rt --server-id <JFROG_SERVER_ID>"}
 
 func GetDescription() string {
 	return `Returns all statistics related to a specific product for a given server.`

@@ -5,20 +5,21 @@
 # Default target
 help:
 	@echo "Available targets:"
-	@echo "  update-all           - Update all JFrog dependencies to latest versions"
-	@echo "  update-build-info-go - Update build-info-go to latest main branch"
-	@echo "  update-client-go     - Update client-go to latest main branch"
-	@echo "  update-gofrog        - Update gofrog to latest main branch"
-	@echo "  update-core          - Update jfrog-cli-core to latest main branch"
-	@echo "  update-artifactory   - Update jfrog-cli-artifactory to latest main branch"
+	@echo "  update-all               - Update all JFrog dependencies to latest versions"
+	@echo "  update-build-info-go     - Update build-info-go to latest main branch"
+	@echo "  update-client-go         - Update client-go to latest main branch"
+	@echo "  update-gofrog            - Update gofrog to latest main branch"
+	@echo "  update-core              - Update jfrog-cli-core to latest main branch"
+	@echo "  update-artifactory       - Update jfrog-cli-artifactory to latest main branch"
 	@echo "  update-platform-services - Update jfrog-cli-platform-services to latest main branch"
-	@echo "  update-security      - Update jfrog-cli-security to latest main branch"
-	@echo "  clean                - Clean build artifacts"
-	@echo "  test                 - Run tests"
-	@echo "  build                - Build the project"
+	@echo "  update-security          - Update jfrog-cli-security to latest main branch"
+	@echo "  update-apptrust          - Update jfrog-cli-application to latest main branch"
+	@echo "  clean                    - Clean build artifacts"
+	@echo "  test                     - Run tests"
+	@echo "  build                    - Build the project"
 
 # Update all JFrog dependencies
-update-all: update-build-info-go update-client-go update-gofrog update-core update-artifactory update-platform-services update-security
+update-all: update-build-info-go update-client-go update-gofrog update-core update-artifactory update-platform-services update-security update-apptrust
 	@echo "All JFrog dependencies updated successfully!"
 	@GOPROXY=direct go mod tidy
 
@@ -63,6 +64,12 @@ update-security:
 	@echo "Updating jfrog-cli-security to latest main branch..."
 	@GOPROXY=direct go get github.com/jfrog/jfrog-cli-security@main
 	@echo "jfrog-cli-security updated successfully!"
+
+# Update jfrog-cli-application to latest main branch
+update-apptrust:
+	@echo "Updating jfrog-cli-application to latest main branch..."
+	@GOPROXY=direct go get github.com/jfrog/jfrog-cli-application@main
+	@echo "jfrog-cli-application updated successfully!"
 
 
 # Clean build artifacts

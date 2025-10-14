@@ -18,8 +18,9 @@ require (
 	github.com/jfrog/archiver/v3 v3.6.1
 	github.com/jfrog/build-info-go v1.12.0
 	github.com/jfrog/gofrog v1.7.6
-	github.com/jfrog/jfrog-cli-artifactory v0.7.3-0.20251007111915-ee166dfe921b
-	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20251007110407-2348aea7acd0
+	github.com/jfrog/jfrog-cli-application v1.0.1
+	github.com/jfrog/jfrog-cli-artifactory v0.7.3-0.20251008063046-4bfcdeb54f16
+	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20251008065215-ebd53b5439fa
 	github.com/jfrog/jfrog-cli-platform-services v1.10.0
 	github.com/jfrog/jfrog-cli-security v1.21.8
 	github.com/jfrog/jfrog-client-go v1.55.1-0.20251008045603-4ca43b3f3d45
@@ -135,7 +136,7 @@ require (
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
-	github.com/mattn/go-tty v0.0.5 // indirect
+	github.com/mattn/go-tty v0.0.7 // indirect
 	github.com/microsoft/azure-devops-go-api/azuredevops/v7 v7.1.0 // indirect
 	github.com/minio/sha256-simd v1.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
