@@ -729,12 +729,20 @@ func TestIDECommandsRegistration(t *testing.T) {
 	// This test verifies that our IDE commands are properly registered in the CLI
 	// without requiring a running Artifactory server
 
-	// Test that IDE setup command is available
+	// Test that IDE namespace is available
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
-	err := jfrogCli.Exec("ide", "setup", "--help")
+	err := jfrogCli.Exec("ide", "--help")
+	assert.NoError(t, err, "IDE namespace should be available")
+
+	// Test that setup command is available
+	err = jfrogCli.Exec("ide", "setup", "--help")
 	assert.NoError(t, err, "IDE setup command should be available")
 
-	// Test that IDE command is available with alias
-	err = jfrogCli.Exec("ide", "s", "--help")
-	assert.NoError(t, err, "IDE setup alias 's' should be available")
+	// Test that VSCode IDE is supported
+	err = jfrogCli.Exec("ide", "setup", "vscode", "--help")
+	assert.NoError(t, err, "VSCode IDE setup should be available")
+
+	// Test that JetBrains IDE is supported
+	err = jfrogCli.Exec("ide", "setup", "jetbrains", "--help")
+	assert.NoError(t, err, "JetBrains IDE setup should be available")
 }
