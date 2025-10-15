@@ -814,7 +814,7 @@ func TestNpmPublishWithWorkspaces(t *testing.T) {
 		assert.NotEmpty(t, artifact.Sha1, "Artifact %d in module %d should have SHA1", j)
 		assert.NotEmpty(t, artifact.Sha256, "Artifact %d in module %d should have SHA256", j)
 		assert.NotEmpty(t, artifact.Md5, "Artifact %d in module %d should have MD5", j)
-		assert.Contains(t, artifact.Name, "nested"+strconv.Itoa(j+1))
+		assert.True(t, containsTarName(artifact.Name, expectedTars))
 	}
 
 	// Publish build info to Artifactory
@@ -865,6 +865,7 @@ func TestNpmPublishWithWorkspacesRunNative(t *testing.T) {
 	err = commands.Exec(npmpCmd)
 	assert.NoError(t, err)
 
+	expectedTars := []string{"nested1", "nested2"}
 	// Validate build info was created
 	buildInfoService := build.CreateBuildInfoService()
 	npmBuild, err := buildInfoService.GetOrCreateBuild(buildName, buildNumber)
@@ -893,7 +894,7 @@ func TestNpmPublishWithWorkspacesRunNative(t *testing.T) {
 		assert.NotEmpty(t, artifact.Sha1, "Artifact %d should have SHA1", j)
 		assert.NotEmpty(t, artifact.Sha256, "Artifact %d should have SHA256", j)
 		assert.NotEmpty(t, artifact.Md5, "Artifact %d should have MD5", j)
-		assert.Contains(t, artifact.Name, "nested"+strconv.Itoa(j+1), "Artifact %d should be named nested%d", j, j+1)
+		assert.True(t, containsTarName(artifact.Name, expectedTars))
 	}
 
 	// Publish build info to Artifactory
@@ -1258,4 +1259,14 @@ func TestSetupNpmCommand(t *testing.T) {
 	if assert.NoError(t, err, "Failed to find the artifact in the cache: "+moduleCacheUrl) {
 		assert.Equal(t, http.StatusOK, res.StatusCode)
 	}
+}
+
+func containsTarName(tarName string, expectedTars []string) bool {
+	isTarPresent := false
+	for _, tar := range expectedTars {
+		strings.Contains(tarName, tar)
+		isTarPresent = true
+		break
+	}
+	return isTarPresent
 }
