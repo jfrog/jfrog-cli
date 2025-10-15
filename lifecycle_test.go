@@ -890,10 +890,10 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 	defer deleteBuilds()
 
 	const rbName = "my-versioned-app"
-	const versionA = "1.0.0.0"
-	const versionB = "1.0.1.0"
-	const versionC = "1.1.0.0-rc"
-	const versionD = "2.0.0.0"
+	const versionA = "1.0.0.1"
+	const versionB = "1.0.1.1"
+	const versionC = "1.1.0.1-rc"
+	const versionD = "2.0.0.1"
 
 	createRbFromSpec(t, tests.LifecycleBuilds12, rbName, versionA, true, true)
 	defer deleteReleaseBundle(t, lcManager, rbName, versionA)
@@ -951,7 +951,7 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 			name:              "Filter by containing 'rc'",
 			releaseBundleName: rbName,
 			queryParams: services.GetSearchOptionalQueryParams{
-				FilterBy: "1.1.0-rc*",
+				FilterBy: "1.1.0.1-rc*",
 			},
 			expectedRbVersions: []string{versionC},
 			expectedTotal:      1,
