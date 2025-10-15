@@ -750,6 +750,15 @@ func deleteReleaseBundleProperties(t *testing.T, lcManager *lifecycle.LifecycleS
 	time.Sleep(5 * time.Second)
 }
 
+func createRbIfDoesNotExists(t *testing.T, specName, rbName, rbVersion string, lcManager *lifecycle.LifecycleServicesManager) {
+	isExist, err := lcManager.IsReleaseBundleExist(rbName, rbVersion, "")
+	assert.NoError(t, err)
+	if isExist {
+		return
+	}
+	createRbFromSpec(t, specName, rbName, rbVersion, true, true)
+}
+
 func TestReleaseBundlesSearchGroups(t *testing.T) {
 	cleanCallback := initLifecycleTest(t, artifactoryLifecycleSetTagMinVersion)
 	defer cleanCallback()
@@ -768,19 +777,23 @@ func TestReleaseBundlesSearchGroups(t *testing.T) {
 	const version1 = "1.0.0"
 
 	// Create Release Bundle A
-	createRbFromSpec(t, tests.LifecycleBuilds12, rbNameA, version1, true, true)
+	createRbIfDoesNotExists(t, tests.LifecycleBuilds12, rbNameA, version1, lcManager)
+	defer deleteReleaseBundle(t, lcManager, rbNameA, version1)
 	assertStatusCompleted(t, lcManager, rbNameA, version1, "")
 
 	// Create Release Bundle B
-	createRbFromSpec(t, tests.LifecycleBuilds12, rbNameB, version1, true, true)
+	createRbIfDoesNotExists(t, tests.LifecycleBuilds12, rbNameB, version1, lcManager)
+	defer deleteReleaseBundle(t, lcManager, rbNameB, version1)
 	assertStatusCompleted(t, lcManager, rbNameB, version1, "")
 
 	// Create Release Bundle C
-	createRbFromSpec(t, tests.LifecycleBuilds12, rbNameC, version1, true, true)
+	createRbIfDoesNotExists(t, tests.LifecycleBuilds12, rbNameC, version1, lcManager)
+	defer deleteReleaseBundle(t, lcManager, rbNameC, version1)
 	assertStatusCompleted(t, lcManager, rbNameC, version1, "")
 
 	// Create Release Bundle D (for filter/exclusion)
-	createRbFromSpec(t, tests.LifecycleBuilds12, rbNameD, version1, true, true)
+	createRbIfDoesNotExists(t, tests.LifecycleBuilds12, rbNameD, version1, lcManager)
+	defer deleteReleaseBundle(t, lcManager, rbNameD, version1)
 	assertStatusCompleted(t, lcManager, rbNameD, version1, "")
 
 	time.Sleep(3 * time.Second)
@@ -874,10 +887,6 @@ func TestReleaseBundlesSearchGroups(t *testing.T) {
 			}
 		})
 	}
-	deleteReleaseBundle(t, lcManager, rbNameA, version1)
-	deleteReleaseBundle(t, lcManager, rbNameB, version1)
-	deleteReleaseBundle(t, lcManager, rbNameC, version1)
-	deleteReleaseBundle(t, lcManager, rbNameD, version1)
 }
 
 func TestReleaseBundlesSearchVersions(t *testing.T) {
@@ -895,22 +904,26 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 	const versionC = "1.1.0-rc"
 	const versionD = "2.0.0"
 
-	createRbFromSpec(t, tests.LifecycleBuilds12, rbName, versionA, true, true)
+	createRbIfDoesNotExists(t, tests.LifecycleBuilds12, rbName, versionA, lcManager)
+	defer deleteReleaseBundle(t, lcManager, rbName, versionA)
 	assertStatusCompleted(t, lcManager, rbName, versionA, "")
 
 	time.Sleep(1 * time.Second)
 
-	createRbFromSpec(t, tests.LifecycleBuilds12, rbName, versionC, true, true)
-	assertStatusCompleted(t, lcManager, rbName, versionC, "")
-
-	time.Sleep(1 * time.Second)
-
-	createRbFromSpec(t, tests.LifecycleBuilds12, rbName, versionB, true, true)
+	createRbIfDoesNotExists(t, tests.LifecycleBuilds12, rbName, versionB, lcManager)
+	defer deleteReleaseBundle(t, lcManager, rbName, versionB)
 	assertStatusCompleted(t, lcManager, rbName, versionB, "")
 
 	time.Sleep(1 * time.Second)
 
-	createRbFromSpec(t, tests.LifecycleBuilds12, rbName, versionD, true, true)
+	createRbIfDoesNotExists(t, tests.LifecycleBuilds12, rbName, versionC, lcManager)
+	defer deleteReleaseBundle(t, lcManager, rbName, versionC)
+	assertStatusCompleted(t, lcManager, rbName, versionC, "")
+
+	time.Sleep(1 * time.Second)
+
+	createRbIfDoesNotExists(t, tests.LifecycleBuilds12, rbName, versionD, lcManager)
+	defer deleteReleaseBundle(t, lcManager, rbName, versionD)
 	assertStatusCompleted(t, lcManager, rbName, versionD, "")
 
 	log.Info("Created four versions for release bundle '%s' for search testing.", rbName)
@@ -1031,10 +1044,6 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 			}
 		})
 	}
-	deleteReleaseBundle(t, lcManager, rbName, versionA)
-	deleteReleaseBundle(t, lcManager, rbName, versionB)
-	deleteReleaseBundle(t, lcManager, rbName, versionC)
-	deleteReleaseBundle(t, lcManager, rbName, versionD)
 }
 
 func setReleaseBundleTag(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion,
