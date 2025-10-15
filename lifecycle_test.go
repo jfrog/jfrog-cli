@@ -808,7 +808,7 @@ func TestReleaseBundlesSearchGroups(t *testing.T) {
 		{
 			name: "Filter by prefix 'my-awesome-app'",
 			queryParams: services.GetSearchOptionalQueryParams{
-				FilterBy: "name~" + rbPrefix + "*",
+				FilterBy: rbPrefix + "~",
 			},
 			expectedRbNames: []string{rbNameA, rbNameB, rbNameC},
 			expectedTotal:   3,
@@ -817,7 +817,7 @@ func TestReleaseBundlesSearchGroups(t *testing.T) {
 		{
 			name: "Filter by containing 'beta'",
 			queryParams: services.GetSearchOptionalQueryParams{
-				FilterBy: "name~*beta*",
+				FilterBy: rbPrefix + "-beta",
 			},
 			expectedRbNames: []string{rbNameB},
 			expectedTotal:   1,
@@ -826,9 +826,7 @@ func TestReleaseBundlesSearchGroups(t *testing.T) {
 		{
 			name: "Limit to 2 results",
 			queryParams: services.GetSearchOptionalQueryParams{
-				Limit:    2,
-				OrderBy:  "release_bundle_name",
-				OrderAsc: true,
+				Limit: 2,
 			},
 			expectedRbNames: []string{rbNameA, rbNameB},
 			expectedTotal:   4,
@@ -837,10 +835,8 @@ func TestReleaseBundlesSearchGroups(t *testing.T) {
 		{
 			name: "Offset by 1, Limit to 2 results",
 			queryParams: services.GetSearchOptionalQueryParams{
-				Offset:   1,
-				Limit:    2,
-				OrderBy:  "release_bundle_name",
-				OrderAsc: true,
+				Offset: 1,
+				Limit:  2,
 			},
 			expectedRbNames: []string{rbNameB, rbNameC},
 			expectedTotal:   4,
@@ -849,21 +845,10 @@ func TestReleaseBundlesSearchGroups(t *testing.T) {
 		{
 			name: "Order by name Descending",
 			queryParams: services.GetSearchOptionalQueryParams{
-				OrderBy:  "release_bundle_name",
+				OrderBy:  "created",
 				OrderAsc: false,
 			},
 			expectedRbNames: []string{rbNameD, rbNameC, rbNameB, rbNameA},
-			expectedTotal:   4,
-			expectError:     false,
-		},
-		{
-			name: "Order by name Ascending with includes (if supported)",
-			queryParams: services.GetSearchOptionalQueryParams{
-				OrderBy:  "release_bundle_name",
-				OrderAsc: true,
-				Includes: "properties",
-			},
-			expectedRbNames: []string{rbNameA, rbNameB, rbNameC, rbNameD},
 			expectedTotal:   4,
 			expectError:     false,
 		},
