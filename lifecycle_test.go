@@ -810,7 +810,7 @@ func TestReleaseBundlesSearchGroups(t *testing.T) {
 			queryParams: services.GetSearchOptionalQueryParams{
 				FilterBy: rbPrefix + "~",
 			},
-			expectedRbNames: []string{rbNameA, rbNameB, rbNameC},
+			expectedRbNames: []string{rbNameC, rbNameB, rbNameA},
 			expectedTotal:   3,
 			expectError:     false,
 		},
