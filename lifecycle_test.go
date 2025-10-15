@@ -947,7 +947,7 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 			queryParams: services.GetSearchOptionalQueryParams{
 				FilterBy: "1.0*",
 			},
-			expectedRbVersions: []string{versionA, versionB},
+			expectedRbVersions: []string{versionB, versionA},
 			expectedTotal:      2,
 			expectError:        false,
 		},
