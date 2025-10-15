@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/stretchr/testify/require"
 	"net/http"
 	"os"
 	"path"
@@ -897,9 +898,7 @@ func TestReleaseBundlesSearchGroups(t *testing.T) {
 func TestReleaseBundlesSearchVersions(t *testing.T) {
 	cleanCallback := initLifecycleTest(t, artifactoryLifecycleSetTagMinVersion)
 	defer cleanCallback()
-
 	lcManager := getLcServiceManager(t)
-
 	deleteBuilds := uploadBuilds(t)
 	defer deleteBuilds()
 
@@ -912,19 +911,16 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 	createRbFromSpec(t, tests.LifecycleBuilds12, rbName, versionA, true, true)
 	defer deleteReleaseBundle(t, lcManager, rbName, versionA)
 	assertStatusCompleted(t, lcManager, rbName, versionA, "")
-
 	time.Sleep(1 * time.Second)
 
 	createRbFromSpec(t, tests.LifecycleBuilds12, rbName, versionC, true, true)
 	defer deleteReleaseBundle(t, lcManager, rbName, versionC)
 	assertStatusCompleted(t, lcManager, rbName, versionC, "")
-
 	time.Sleep(1 * time.Second)
 
 	createRbFromSpec(t, tests.LifecycleBuilds12, rbName, versionB, true, true)
 	defer deleteReleaseBundle(t, lcManager, rbName, versionB)
 	assertStatusCompleted(t, lcManager, rbName, versionB, "")
-
 	time.Sleep(1 * time.Second)
 
 	createRbFromSpec(t, tests.LifecycleBuilds12, rbName, versionD, true, true)
@@ -932,7 +928,6 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 	assertStatusCompleted(t, lcManager, rbName, versionD, "")
 
 	log.Info("Created four versions for release bundle '%s' for search testing.", rbName)
-	time.Sleep(3 * time.Second)
 
 	testCases := []struct {
 		name               string
@@ -1008,13 +1003,13 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 			expectError:        false,
 		},
 		{
-			name:              "Order by created_millis Ascending",
+			name:              "Order by created Ascending",
 			releaseBundleName: rbName,
 			queryParams: services.GetSearchOptionalQueryParams{
 				OrderBy:  "created",
 				OrderAsc: true,
 			},
-			expectedRbVersions: []string{versionA, versionC, versionB, versionD},
+			expectedRbVersions: []string{versionA, versionC, versionB, versionD}, // Order of creation
 			expectedTotal:      4,
 			expectError:        false,
 		},
@@ -1022,7 +1017,25 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			resp, err := lcManager.ReleaseBundlesSearchVersions(tc.releaseBundleName, tc.queryParams)
+			var resp services.ReleaseBundleVersionsResponse
+			var err error
+
+			retries := 10
+			delay := 5 * time.Second
+
+			for i := 0; i < retries; i++ {
+				resp, err = lcManager.ReleaseBundlesSearchVersions(tc.releaseBundleName, tc.queryParams)
+				if err == nil && resp.Total == tc.expectedTotal {
+					break
+				}
+				if tc.expectError && err != nil {
+					break
+				}
+				log.Warn(fmt.Sprintf("Attempt %d/%d for '%s': Total count actual %d, expected %d. Retrying in %v...",
+					i+1, retries, tc.name, resp.Total, tc.expectedTotal, delay))
+				time.Sleep(delay)
+			}
+
 			if tc.expectError {
 				assert.Error(t, err)
 				if tc.errorMessage != "" {
@@ -1030,7 +1043,8 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 				}
 				return
 			}
-			assert.NoError(t, err, fmt.Sprintf("Expected no error for test case: %s", tc.name))
+
+			require.NoError(t, err, fmt.Sprintf("Expected no error for test case: %s", tc.name))
 			assert.Equal(t, tc.expectedTotal, resp.Total, "Total count mismatch")
 
 			var actualVersions []string
