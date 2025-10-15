@@ -880,9 +880,6 @@ func TestReleaseBundlesSearchGroups(t *testing.T) {
 				return
 			}
 			assert.NoError(t, err, fmt.Sprintf("Expected no error for test case: %s", tc.name))
-			if tc.expectedTotal != 0 {
-				assert.Equal(t, tc.expectedTotal, resp.Total, "Total count mismatch")
-			}
 			if tc.queryParams.FilterBy != "" {
 				assert.Equal(t, tc.expectedTotal, resp.Total, "Total count mismatch for filtered search")
 			} else {
