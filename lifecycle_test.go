@@ -750,13 +750,13 @@ func deleteReleaseBundleProperties(t *testing.T, lcManager *lifecycle.LifecycleS
 	time.Sleep(5 * time.Second)
 }
 
-func createRbIfDoesNotExists(t *testing.T, specName, rbName, rbVersion string, lcManager *lifecycle.LifecycleServicesManager) {
+func createRbIfDoesNotExists(t *testing.T, rbName, rbVersion string, lcManager *lifecycle.LifecycleServicesManager) {
 	isExist, err := lcManager.IsReleaseBundleExist(rbName, rbVersion, "")
 	assert.NoError(t, err)
 	if isExist {
 		return
 	}
-	createRbFromSpec(t, specName, rbName, rbVersion, true, true)
+	createRbFromSpec(t, tests.LifecycleBuilds12, rbName, rbVersion, true, true)
 }
 
 func TestReleaseBundlesSearchGroups(t *testing.T) {
@@ -777,22 +777,22 @@ func TestReleaseBundlesSearchGroups(t *testing.T) {
 	const version1 = "1.0.0"
 
 	// Create Release Bundle A
-	createRbIfDoesNotExists(t, tests.LifecycleBuilds12, rbNameA, version1, lcManager)
+	createRbIfDoesNotExists(t, rbNameA, version1, lcManager)
 	defer deleteReleaseBundle(t, lcManager, rbNameA, version1)
 	assertStatusCompleted(t, lcManager, rbNameA, version1, "")
 
 	// Create Release Bundle B
-	createRbIfDoesNotExists(t, tests.LifecycleBuilds12, rbNameB, version1, lcManager)
+	createRbIfDoesNotExists(t, rbNameB, version1, lcManager)
 	defer deleteReleaseBundle(t, lcManager, rbNameB, version1)
 	assertStatusCompleted(t, lcManager, rbNameB, version1, "")
 
 	// Create Release Bundle C
-	createRbIfDoesNotExists(t, tests.LifecycleBuilds12, rbNameC, version1, lcManager)
+	createRbIfDoesNotExists(t, rbNameC, version1, lcManager)
 	defer deleteReleaseBundle(t, lcManager, rbNameC, version1)
 	assertStatusCompleted(t, lcManager, rbNameC, version1, "")
 
 	// Create Release Bundle D (for filter/exclusion)
-	createRbIfDoesNotExists(t, tests.LifecycleBuilds12, rbNameD, version1, lcManager)
+	createRbIfDoesNotExists(t, rbNameD, version1, lcManager)
 	defer deleteReleaseBundle(t, lcManager, rbNameD, version1)
 	assertStatusCompleted(t, lcManager, rbNameD, version1, "")
 
@@ -904,25 +904,25 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 	const versionC = "1.1.0-rc"
 	const versionD = "2.0.0"
 
-	createRbIfDoesNotExists(t, tests.LifecycleBuilds12, rbName, versionA, lcManager)
+	createRbIfDoesNotExists(t, rbName, versionA, lcManager)
 	defer deleteReleaseBundle(t, lcManager, rbName, versionA)
 	assertStatusCompleted(t, lcManager, rbName, versionA, "")
 
 	time.Sleep(1 * time.Second)
 
-	createRbIfDoesNotExists(t, tests.LifecycleBuilds12, rbName, versionB, lcManager)
+	createRbIfDoesNotExists(t, rbName, versionB, lcManager)
 	defer deleteReleaseBundle(t, lcManager, rbName, versionB)
 	assertStatusCompleted(t, lcManager, rbName, versionB, "")
 
 	time.Sleep(1 * time.Second)
 
-	createRbIfDoesNotExists(t, tests.LifecycleBuilds12, rbName, versionC, lcManager)
+	createRbIfDoesNotExists(t, rbName, versionC, lcManager)
 	defer deleteReleaseBundle(t, lcManager, rbName, versionC)
 	assertStatusCompleted(t, lcManager, rbName, versionC, "")
 
 	time.Sleep(1 * time.Second)
 
-	createRbIfDoesNotExists(t, tests.LifecycleBuilds12, rbName, versionD, lcManager)
+	createRbIfDoesNotExists(t, rbName, versionD, lcManager)
 	defer deleteReleaseBundle(t, lcManager, rbName, versionD)
 	assertStatusCompleted(t, lcManager, rbName, versionD, "")
 
