@@ -289,6 +289,8 @@ var reposConfigMap = map[*string]string{
 	&DockerLocalPromoteRepo:         DockerLocalPromoteRepositoryConfig,
 	&DockerRemoteRepo:               DockerRemoteRepositoryConfig,
 	&DockerVirtualRepo:              DockerVirtualRepositoryConfig,
+	&OciLocalRepo:                   OciLocalRepositoryConfig,
+	&OciRemoteRepo:                  OciRemoteRepositoryConfig,
 	&RtDevRepo:                      DevRepoRepositoryConfig,
 	&RtProdRepo1:                    ProdRepo1RepositoryConfig,
 	&RtProdRepo2:                    ProdRepo2RepositoryConfig,
@@ -330,7 +332,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestArtifactory:        {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo, &TerraformRepo, &ReleaseLifecycleDependencyRepo},
 		TestArtifactoryProject: {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo},
 		TestDistribution:       {&DistRepo1, &DistRepo2},
-		TestDocker:             {&DockerLocalRepo, &DockerLocalPromoteRepo, &DockerRemoteRepo},
+		TestDocker:             {&DockerLocalRepo, &DockerLocalPromoteRepo, &DockerRemoteRepo, &OciLocalRepo, &OciRemoteRepo},
 		TestDockerScan:         {&DockerLocalRepo, &DockerLocalPromoteRepo, &DockerRemoteRepo},
 		TestPodman:             {&DockerLocalRepo, &DockerLocalPromoteRepo, &DockerRemoteRepo},
 		TestGo:                 {&GoRepo, &GoRemoteRepo},
@@ -425,6 +427,8 @@ func getSubstitutionMap() map[string]string {
 		"${DOCKER_PROMOTE_REPO}":       DockerLocalPromoteRepo,
 		"${DOCKER_REMOTE_REPO}":        DockerRemoteRepo,
 		"${DOCKER_VIRTUAL_REPO}":       DockerVirtualRepo,
+		"${OCI_LOCAL_REPO}":            OciLocalRepo,
+		"${OCI_REMOTE_REPO}":           OciRemoteRepo,
 		"${DOCKER_IMAGE_NAME}":         DockerImageName,
 		"${CONTAINER_REGISTRY_DOMAIN}": RtContainerHostName,
 		"${MAVEN_REPO1}":               MvnRepo1,
@@ -499,6 +503,8 @@ func AddTimestampToGlobalVars() {
 	DockerLocalPromoteRepo += uniqueSuffix
 	DockerRemoteRepo += uniqueSuffix
 	DockerVirtualRepo += uniqueSuffix
+	OciLocalRepo += uniqueSuffix
+	OciRemoteRepo += uniqueSuffix
 	TerraformRepo += uniqueSuffix
 	GradleRemoteRepo += uniqueSuffix
 	GradleRepo += uniqueSuffix

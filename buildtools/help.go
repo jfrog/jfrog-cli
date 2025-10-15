@@ -3,6 +3,7 @@ package buildtools
 import (
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/npmpublish"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/dockerbuild"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/dockerlogin"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/dockerpull"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/dockerpush"
@@ -41,6 +42,15 @@ func GetBuildToolsHelpCommands() []cli.Command {
 			Usage:     dockerpull.GetDescription(),
 			HelpName:  corecommon.CreateUsage("docker pull", dockerpull.GetDescription(), dockerpull.Usage),
 			UsageText: dockerpull.GetArguments(),
+			ArgsUsage: common.CreateEnvVars(),
+			Hidden:    true,
+		},
+		{
+			Name:      "dockerbuildhelp",
+			Flags:     cliutils.GetCommandFlags(cliutils.DockerBuild),
+			Usage:     dockerbuild.GetDescription(),
+			HelpName:  corecommon.CreateUsage("docker build", dockerbuild.GetDescription(), dockerbuild.Usage),
+			UsageText: dockerbuild.GetArguments(),
 			ArgsUsage: common.CreateEnvVars(),
 			Hidden:    true,
 		},
