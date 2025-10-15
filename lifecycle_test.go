@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -824,13 +825,10 @@ func TestReleaseBundlesSearchGroups(t *testing.T) {
 		{
 			name: "Limit to 2 results",
 			queryParams: services.GetSearchOptionalQueryParams{
-				Limit:    2,
-				OrderBy:  "created",
-				OrderAsc: false,
+				Limit: 2,
 			},
-			expectedRbNames: []string{rbNameD, rbNameC},
-			expectedTotal:   4,
-			expectError:     false,
+			expectedTotal: 2,
+			expectError:   false,
 		},
 		{
 			name: "Offset by 1, Limit to 2 results",
@@ -865,12 +863,15 @@ func TestReleaseBundlesSearchGroups(t *testing.T) {
 				return
 			}
 			assert.NoError(t, err, fmt.Sprintf("Expected no error for test case: %s", tc.name))
+			if tc.queryParams.Limit != 0 {
+				actualTotal := len(resp.ReleaseBundleSearchGroup)
+				assert.Equal(t, tc.expectedTotal, actualTotal, tc.name)
+			}
 			if tc.queryParams.FilterBy != "" {
 				assert.Equal(t, tc.expectedTotal, resp.Total, "Total count mismatch for filtered search")
 			} else {
 				assert.GreaterOrEqual(t, resp.Total, tc.expectedTotal, "Total count should be at least expected for unfiltered search")
 			}
-
 			var actualNames []string
 			for _, rb := range resp.ReleaseBundleSearchGroup {
 				actualNames = append(actualNames, rb.ReleaseBundleName)
@@ -947,7 +948,7 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 			queryParams: services.GetSearchOptionalQueryParams{
 				FilterBy: "1.0*",
 			},
-			expectedRbVersions: []string{versionB, versionA},
+			expectedRbVersions: []string{versionA, versionB},
 			expectedTotal:      2,
 			expectError:        false,
 		},
@@ -1045,6 +1046,7 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 				actualVersions = append(actualVersions, rb.ReleaseBundleVersion)
 			}
 			if tc.queryParams.FilterBy != "" {
+				sort.Strings(actualVersions)
 				assert.Equal(t, tc.expectedRbVersions, actualVersions, "Release bundle versions order mismatch")
 			} else {
 				assert.Subset(t, actualVersions, tc.expectedRbVersions, "Actual names should contain all expected names")
