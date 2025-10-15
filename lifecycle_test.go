@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -747,6 +748,293 @@ func deleteReleaseBundleProperties(t *testing.T, lcManager *lifecycle.LifecycleS
 	assert.NoError(t, lcManager.AnnotateReleaseBundle(annotateParams))
 	// Wait after remote deleting. Can be removed once remote deleting supports sync.
 	time.Sleep(5 * time.Second)
+}
+
+func TestReleaseBundlesSearchGroups(t *testing.T) {
+	cleanCallback := initLifecycleTest(t, artifactoryLifecycleSetTagMinVersion)
+	defer cleanCallback()
+
+	lcManager := getLcServiceManager(t)
+
+	deleteBuilds := uploadBuilds(t)
+	defer deleteBuilds()
+
+	const rbPrefix = "my-awesome-app"
+	const rbNameA = rbPrefix + "-alpha"
+	const rbNameB = rbPrefix + "-beta"
+	const rbNameC = rbPrefix + "-core"
+	const rbNameD = "another-app"
+
+	const version1 = "2.0.0"
+
+	// Create Release Bundle A
+	createRbFromSpec(t, tests.LifecycleBuilds12, rbNameA, version1, true, true)
+	defer deleteReleaseBundle(t, lcManager, rbNameA, version1)
+	assertStatusCompleted(t, lcManager, rbNameA, version1, "")
+
+	// Create Release Bundle B
+	createRbFromSpec(t, tests.LifecycleBuilds12, rbNameB, version1, true, true)
+	defer deleteReleaseBundle(t, lcManager, rbNameB, version1)
+	assertStatusCompleted(t, lcManager, rbNameB, version1, "")
+
+	// Create Release Bundle C
+	createRbFromSpec(t, tests.LifecycleBuilds12, rbNameC, version1, true, true)
+	defer deleteReleaseBundle(t, lcManager, rbNameC, version1)
+	assertStatusCompleted(t, lcManager, rbNameC, version1, "")
+
+	// Create Release Bundle D (for filter/exclusion)
+	createRbFromSpec(t, tests.LifecycleBuilds12, rbNameD, version1, true, true)
+	defer deleteReleaseBundle(t, lcManager, rbNameD, version1)
+	assertStatusCompleted(t, lcManager, rbNameD, version1, "")
+
+	time.Sleep(3 * time.Second)
+
+	testCases := []struct {
+		name            string
+		queryParams     services.GetSearchOptionalQueryParams
+		expectedRbNames []string
+		expectedTotal   int
+		expectError     bool
+		errorMessage    string
+	}{
+		{
+			name:            "No query params - all groups, default order",
+			queryParams:     services.GetSearchOptionalQueryParams{},
+			expectedRbNames: []string{rbNameD, rbNameC, rbNameB, rbNameA},
+			expectedTotal:   4,
+			expectError:     false,
+		},
+		{
+			name: "Filter by prefix 'my-awesome-app'",
+			queryParams: services.GetSearchOptionalQueryParams{
+				FilterBy: rbPrefix + "~",
+			},
+			expectedRbNames: []string{rbNameC, rbNameB, rbNameA},
+			expectedTotal:   3,
+			expectError:     false,
+		},
+		{
+			name: "Filter by containing 'beta'",
+			queryParams: services.GetSearchOptionalQueryParams{
+				FilterBy: rbPrefix + "-beta",
+			},
+			expectedRbNames: []string{rbNameB},
+			expectedTotal:   1,
+			expectError:     false,
+		},
+		{
+			name: "Limit to 2 results",
+			queryParams: services.GetSearchOptionalQueryParams{
+				Limit: 2,
+			},
+			expectedTotal: 2,
+			expectError:   false,
+		},
+		{
+			name: "Offset by 1, Limit to 2 results",
+			queryParams: services.GetSearchOptionalQueryParams{
+				Offset: 1,
+				Limit:  2,
+			},
+			expectedTotal: 2,
+			expectError:   false,
+		},
+		{
+			name: "Order by name Descending",
+			queryParams: services.GetSearchOptionalQueryParams{
+				OrderBy:  "created",
+				OrderAsc: false,
+			},
+			expectedRbNames: []string{rbNameD, rbNameC, rbNameB, rbNameA},
+			expectedTotal:   4,
+			expectError:     false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			resp, err := lcManager.ReleaseBundlesSearchGroup(tc.queryParams)
+			if tc.expectError {
+				assert.Error(t, err)
+				if tc.errorMessage != "" {
+					assert.Contains(t, err.Error(), tc.errorMessage)
+				}
+				return
+			}
+			assert.NoError(t, err, fmt.Sprintf("Expected no error for test case: %s", tc.name))
+			if tc.queryParams.FilterBy != "" {
+				assert.Equal(t, tc.expectedTotal, len(resp.ReleaseBundleSearchGroup), "Total count mismatch for filtered search")
+			} else {
+				assert.GreaterOrEqual(t, resp.Total, tc.expectedTotal, "Total count should be at least expected for unfiltered search")
+			}
+			var actualNames []string
+			for _, rb := range resp.ReleaseBundleSearchGroup {
+				actualNames = append(actualNames, rb.ReleaseBundleName)
+			}
+			if tc.queryParams.FilterBy != "" {
+				assert.Equal(t, tc.expectedRbNames, actualNames, "Release bundle names order mismatch")
+			} else {
+				assert.Subset(t, actualNames, tc.expectedRbNames, "Actual names should contain all expected names")
+			}
+		})
+	}
+}
+
+func TestReleaseBundlesSearchVersions(t *testing.T) {
+	cleanCallback := initLifecycleTest(t, artifactoryLifecycleSetTagMinVersion)
+	defer cleanCallback()
+
+	lcManager := getLcServiceManager(t)
+
+	deleteBuilds := uploadBuilds(t)
+	defer deleteBuilds()
+
+	const rbName = "my-versioned-app"
+	const versionA = "3.1.0"
+	const versionB = "3.0.1"
+	const versionC = "3.1.0-rc"
+	const versionD = "3.0.0"
+
+	createRbFromSpec(t, tests.LifecycleBuilds12, rbName, versionA, true, true)
+	defer deleteReleaseBundle(t, lcManager, rbName, versionA)
+	assertStatusCompleted(t, lcManager, rbName, versionA, "")
+
+	time.Sleep(1 * time.Second)
+
+	createRbFromSpec(t, tests.LifecycleBuilds12, rbName, versionC, true, true)
+	defer deleteReleaseBundle(t, lcManager, rbName, versionC)
+	assertStatusCompleted(t, lcManager, rbName, versionC, "")
+
+	time.Sleep(1 * time.Second)
+
+	createRbFromSpec(t, tests.LifecycleBuilds12, rbName, versionB, true, true)
+	defer deleteReleaseBundle(t, lcManager, rbName, versionB)
+	assertStatusCompleted(t, lcManager, rbName, versionB, "")
+
+	time.Sleep(1 * time.Second)
+
+	createRbFromSpec(t, tests.LifecycleBuilds12, rbName, versionD, true, true)
+	defer deleteReleaseBundle(t, lcManager, rbName, versionD)
+	assertStatusCompleted(t, lcManager, rbName, versionD, "")
+
+	log.Info("Created four versions for release bundle '%s' for search testing.", rbName)
+	time.Sleep(3 * time.Second)
+
+	testCases := []struct {
+		name               string
+		releaseBundleName  string
+		queryParams        services.GetSearchOptionalQueryParams
+		expectedRbVersions []string
+		expectedTotal      int
+		expectError        bool
+		errorMessage       string
+	}{
+		{
+			name:               "No query params - all versions, default order",
+			releaseBundleName:  rbName,
+			queryParams:        services.GetSearchOptionalQueryParams{},
+			expectedRbVersions: []string{versionA, versionB, versionC, versionD},
+			expectedTotal:      4,
+			expectError:        false,
+		},
+		{
+			name:              "Filter by prefix '1.0'",
+			releaseBundleName: rbName,
+			queryParams: services.GetSearchOptionalQueryParams{
+				FilterBy: "3.0*",
+			},
+			expectedRbVersions: []string{versionA, versionB},
+			expectedTotal:      2,
+			expectError:        false,
+		},
+		{
+			name:              "Filter by containing 'rc'",
+			releaseBundleName: rbName,
+			queryParams: services.GetSearchOptionalQueryParams{
+				FilterBy: "3.1.0-rc*",
+			},
+			expectedRbVersions: []string{versionC},
+			expectedTotal:      1,
+			expectError:        false,
+		},
+		{
+			name:              "Limit to 2 results, ordered by version ascending",
+			releaseBundleName: rbName,
+			queryParams: services.GetSearchOptionalQueryParams{
+				Limit:    2,
+				OrderBy:  "release_bundle_version",
+				OrderAsc: true,
+			},
+			expectedRbVersions: []string{versionA, versionB},
+			expectedTotal:      2,
+			expectError:        false,
+		},
+		{
+			name:              "Offset by 2, Limit 1, ordered by version descending",
+			releaseBundleName: rbName,
+			queryParams: services.GetSearchOptionalQueryParams{
+				Offset:   2,
+				Limit:    1,
+				OrderBy:  "release_bundle_version",
+				OrderAsc: false,
+			},
+			expectedRbVersions: []string{versionB},
+			expectedTotal:      1,
+			expectError:        false,
+		},
+		{
+			name:              "Order by version Descending",
+			releaseBundleName: rbName,
+			queryParams: services.GetSearchOptionalQueryParams{
+				OrderBy:  "release_bundle_version",
+				OrderAsc: false,
+			},
+			expectedRbVersions: []string{versionD, versionC, versionB, versionA},
+			expectedTotal:      4,
+			expectError:        false,
+		},
+		{
+			name:              "Order by created Ascending",
+			releaseBundleName: rbName,
+			queryParams: services.GetSearchOptionalQueryParams{
+				OrderBy:  "created",
+				OrderAsc: true,
+			},
+			expectedRbVersions: []string{versionA, versionC, versionB, versionD},
+			expectedTotal:      4,
+			expectError:        false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			var resp services.ReleaseBundleVersionsResponse
+			var err error
+			resp, err = lcManager.ReleaseBundlesSearchVersions(tc.releaseBundleName, tc.queryParams)
+			if tc.expectError {
+				assert.Error(t, err)
+				if tc.errorMessage != "" {
+					assert.Contains(t, err.Error(), tc.errorMessage)
+				}
+				return
+			}
+			if tc.queryParams.FilterBy != "" {
+				assert.Equal(t, tc.expectedTotal, len(resp.ReleaseBundles), "Total count mismatch for filtered search")
+			} else {
+				assert.GreaterOrEqual(t, resp.Total, tc.expectedTotal, "Total count should be at least expected for unfiltered search")
+			}
+			var actualVersions []string
+			for _, rb := range resp.ReleaseBundles {
+				actualVersions = append(actualVersions, rb.ReleaseBundleVersion)
+			}
+			if tc.queryParams.FilterBy != "" {
+				sort.Strings(actualVersions)
+				assert.Equal(t, tc.expectedRbVersions, actualVersions, "Release bundle versions order mismatch")
+			} else {
+				assert.Subset(t, actualVersions, tc.expectedRbVersions, "Actual names should contain all expected names")
+			}
+		})
+	}
 }
 
 func setReleaseBundleTag(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion,
