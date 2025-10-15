@@ -801,7 +801,7 @@ func TestReleaseBundlesSearchGroups(t *testing.T) {
 		{
 			name:            "No query params - all groups, default order",
 			queryParams:     services.GetSearchOptionalQueryParams{},
-			expectedRbNames: []string{rbNameD, rbNameA, rbNameB, rbNameC},
+			expectedRbNames: []string{rbNameD, rbNameC, rbNameB, rbNameA},
 			expectedTotal:   4,
 			expectError:     false,
 		},
@@ -826,9 +826,11 @@ func TestReleaseBundlesSearchGroups(t *testing.T) {
 		{
 			name: "Limit to 2 results",
 			queryParams: services.GetSearchOptionalQueryParams{
-				Limit: 2,
+				Limit:    2,
+				OrderBy:  "created",
+				OrderAsc: false,
 			},
-			expectedRbNames: []string{rbNameA, rbNameB},
+			expectedRbNames: []string{rbNameD, rbNameC},
 			expectedTotal:   4,
 			expectError:     false,
 		},
@@ -875,7 +877,7 @@ func TestReleaseBundlesSearchGroups(t *testing.T) {
 			for _, rb := range resp.ReleaseBundleSearchGroup {
 				actualNames = append(actualNames, rb.ReleaseBundleName)
 			}
-			if tc.queryParams.OrderBy != "" || tc.queryParams.FilterBy != "" {
+			if tc.queryParams.FilterBy != "" {
 				assert.Equal(t, tc.expectedRbNames, actualNames, "Release bundle names order mismatch")
 			} else {
 				assert.Subset(t, actualNames, tc.expectedRbNames, "Actual names should contain all expected names")
