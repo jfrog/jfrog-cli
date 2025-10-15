@@ -941,7 +941,7 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 			name:              "Filter by prefix '1.0'",
 			releaseBundleName: rbName,
 			queryParams: services.GetSearchOptionalQueryParams{
-				FilterBy: "version~1.0*",
+				FilterBy: "1.0*",
 			},
 			expectedRbVersions: []string{versionA, versionB},
 			expectedTotal:      2,
@@ -951,7 +951,7 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 			name:              "Filter by containing 'rc'",
 			releaseBundleName: rbName,
 			queryParams: services.GetSearchOptionalQueryParams{
-				FilterBy: "version~*rc*",
+				FilterBy: "1.1.0-*",
 			},
 			expectedRbVersions: []string{versionC},
 			expectedTotal:      1,
