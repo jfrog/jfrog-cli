@@ -1010,20 +1010,7 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var resp services.ReleaseBundleVersionsResponse
 			var err error
-			retries := 10
-			delay := 5 * time.Second
-			for i := 0; i < retries; i++ {
-				resp, err = lcManager.ReleaseBundlesSearchVersions(tc.releaseBundleName, tc.queryParams)
-				if err == nil && resp.Total == tc.expectedTotal {
-					break
-				}
-				if tc.expectError && err != nil {
-					break
-				}
-				log.Warn(fmt.Sprintf("Attempt %d/%d for '%s': Total count actual %d, expected %d. Retrying in %v...",
-					i+1, retries, tc.name, resp.Total, tc.expectedTotal, delay))
-				time.Sleep(delay)
-			}
+			resp, err = lcManager.ReleaseBundlesSearchVersions(tc.releaseBundleName, tc.queryParams)
 			if tc.expectError {
 				assert.Error(t, err)
 				if tc.errorMessage != "" {
