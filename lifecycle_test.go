@@ -769,22 +769,18 @@ func TestReleaseBundlesSearchGroups(t *testing.T) {
 
 	// Create Release Bundle A
 	createRbFromSpec(t, tests.LifecycleBuilds12, rbNameA, version1, true, true)
-	defer deleteReleaseBundle(t, lcManager, rbNameA, version1)
 	assertStatusCompleted(t, lcManager, rbNameA, version1, "")
 
 	// Create Release Bundle B
 	createRbFromSpec(t, tests.LifecycleBuilds12, rbNameB, version1, true, true)
-	defer deleteReleaseBundle(t, lcManager, rbNameB, version1)
 	assertStatusCompleted(t, lcManager, rbNameB, version1, "")
 
 	// Create Release Bundle C
 	createRbFromSpec(t, tests.LifecycleBuilds12, rbNameC, version1, true, true)
-	defer deleteReleaseBundle(t, lcManager, rbNameC, version1)
 	assertStatusCompleted(t, lcManager, rbNameC, version1, "")
 
 	// Create Release Bundle D (for filter/exclusion)
 	createRbFromSpec(t, tests.LifecycleBuilds12, rbNameD, version1, true, true)
-	defer deleteReleaseBundle(t, lcManager, rbNameD, version1)
 	assertStatusCompleted(t, lcManager, rbNameD, version1, "")
 
 	time.Sleep(3 * time.Second)
@@ -807,7 +803,7 @@ func TestReleaseBundlesSearchGroups(t *testing.T) {
 		{
 			name: "Filter by prefix 'my-awesome-app'",
 			queryParams: services.GetSearchOptionalQueryParams{
-				FilterBy: rbPrefix + "~",
+				FilterBy: rbPrefix + "*",
 			},
 			expectedRbNames: []string{rbNameC, rbNameB, rbNameA},
 			expectedTotal:   3,
@@ -878,6 +874,10 @@ func TestReleaseBundlesSearchGroups(t *testing.T) {
 			}
 		})
 	}
+	deleteReleaseBundle(t, lcManager, rbNameA, version1)
+	deleteReleaseBundle(t, lcManager, rbNameB, version1)
+	deleteReleaseBundle(t, lcManager, rbNameC, version1)
+	deleteReleaseBundle(t, lcManager, rbNameD, version1)
 }
 
 func TestReleaseBundlesSearchVersions(t *testing.T) {
@@ -890,31 +890,27 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 	defer deleteBuilds()
 
 	const rbName = "my-versioned-app"
-	const versionA = "3.0.0"
-	const versionB = "3.0.1"
-	const versionC = "3.1.0-rc"
-	const versionD = "4.0.0"
+	const versionA = "1.0.0"
+	const versionB = "1.0.1"
+	const versionC = "1.1.0-rc"
+	const versionD = "2.0.0"
 
 	createRbFromSpec(t, tests.LifecycleBuilds12, rbName, versionA, true, true)
-	defer deleteReleaseBundle(t, lcManager, rbName, versionA)
 	assertStatusCompleted(t, lcManager, rbName, versionA, "")
 
 	time.Sleep(1 * time.Second)
 
 	createRbFromSpec(t, tests.LifecycleBuilds12, rbName, versionC, true, true)
-	defer deleteReleaseBundle(t, lcManager, rbName, versionC)
 	assertStatusCompleted(t, lcManager, rbName, versionC, "")
 
 	time.Sleep(1 * time.Second)
 
 	createRbFromSpec(t, tests.LifecycleBuilds12, rbName, versionB, true, true)
-	defer deleteReleaseBundle(t, lcManager, rbName, versionB)
 	assertStatusCompleted(t, lcManager, rbName, versionB, "")
 
 	time.Sleep(1 * time.Second)
 
 	createRbFromSpec(t, tests.LifecycleBuilds12, rbName, versionD, true, true)
-	defer deleteReleaseBundle(t, lcManager, rbName, versionD)
 	assertStatusCompleted(t, lcManager, rbName, versionD, "")
 
 	log.Info("Created four versions for release bundle '%s' for search testing.", rbName)
@@ -941,7 +937,7 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 			name:              "Filter by prefix '1.0'",
 			releaseBundleName: rbName,
 			queryParams: services.GetSearchOptionalQueryParams{
-				FilterBy: "3.0*",
+				FilterBy: "1.0*",
 			},
 			expectedRbVersions: []string{versionA, versionB},
 			expectedTotal:      2,
@@ -951,7 +947,7 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 			name:              "Filter by containing 'rc'",
 			releaseBundleName: rbName,
 			queryParams: services.GetSearchOptionalQueryParams{
-				FilterBy: "3.1.0-rc*",
+				FilterBy: "1.1.0-rc*",
 			},
 			expectedRbVersions: []string{versionC},
 			expectedTotal:      1,
@@ -1035,6 +1031,10 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 			}
 		})
 	}
+	deleteReleaseBundle(t, lcManager, rbName, versionA)
+	deleteReleaseBundle(t, lcManager, rbName, versionB)
+	deleteReleaseBundle(t, lcManager, rbName, versionC)
+	deleteReleaseBundle(t, lcManager, rbName, versionD)
 }
 
 func setReleaseBundleTag(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion,
