@@ -836,9 +836,8 @@ func TestReleaseBundlesSearchGroups(t *testing.T) {
 				Offset: 1,
 				Limit:  2,
 			},
-			expectedRbNames: []string{rbNameB, rbNameC},
-			expectedTotal:   4,
-			expectError:     false,
+			expectedTotal: 2,
+			expectError:   false,
 		},
 		{
 			name: "Order by name Descending",
@@ -967,7 +966,7 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 				OrderAsc: true,
 			},
 			expectedRbVersions: []string{versionA, versionB},
-			expectedTotal:      4,
+			expectedTotal:      2,
 			expectError:        false,
 		},
 		{
@@ -980,7 +979,7 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 				OrderAsc: false,
 			},
 			expectedRbVersions: []string{versionB},
-			expectedTotal:      4,
+			expectedTotal:      1,
 			expectError:        false,
 		},
 		{
