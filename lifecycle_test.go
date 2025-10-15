@@ -827,7 +827,7 @@ func TestReleaseBundlesSearchGroups(t *testing.T) {
 			name: "Limit to 2 results",
 			queryParams: services.GetSearchOptionalQueryParams{
 				Limit:    2,
-				OrderBy:  "name",
+				OrderBy:  "release_bundle_name",
 				OrderAsc: true,
 			},
 			expectedRbNames: []string{rbNameA, rbNameB},
@@ -839,7 +839,7 @@ func TestReleaseBundlesSearchGroups(t *testing.T) {
 			queryParams: services.GetSearchOptionalQueryParams{
 				Offset:   1,
 				Limit:    2,
-				OrderBy:  "name",
+				OrderBy:  "release_bundle_name",
 				OrderAsc: true,
 			},
 			expectedRbNames: []string{rbNameB, rbNameC},
@@ -849,7 +849,7 @@ func TestReleaseBundlesSearchGroups(t *testing.T) {
 		{
 			name: "Order by name Descending",
 			queryParams: services.GetSearchOptionalQueryParams{
-				OrderBy:  "name",
+				OrderBy:  "release_bundle_name",
 				OrderAsc: false,
 			},
 			expectedRbNames: []string{rbNameD, rbNameC, rbNameB, rbNameA},
@@ -859,7 +859,7 @@ func TestReleaseBundlesSearchGroups(t *testing.T) {
 		{
 			name: "Order by name Ascending with includes (if supported)",
 			queryParams: services.GetSearchOptionalQueryParams{
-				OrderBy:  "name",
+				OrderBy:  "release_bundle_name",
 				OrderAsc: true,
 				Includes: "properties",
 			},
