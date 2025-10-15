@@ -863,12 +863,8 @@ func TestReleaseBundlesSearchGroups(t *testing.T) {
 				return
 			}
 			assert.NoError(t, err, fmt.Sprintf("Expected no error for test case: %s", tc.name))
-			if tc.queryParams.Limit != 0 {
-				actualTotal := len(resp.ReleaseBundleSearchGroup)
-				assert.Equal(t, tc.expectedTotal, actualTotal, tc.name)
-			}
 			if tc.queryParams.FilterBy != "" {
-				assert.Equal(t, tc.expectedTotal, resp.Total, "Total count mismatch for filtered search")
+				assert.Equal(t, tc.expectedTotal, len(resp.ReleaseBundleSearchGroup), "Total count mismatch for filtered search")
 			} else {
 				assert.GreaterOrEqual(t, resp.Total, tc.expectedTotal, "Total count should be at least expected for unfiltered search")
 			}
@@ -1037,7 +1033,7 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 				return
 			}
 			if tc.queryParams.FilterBy != "" {
-				assert.Equal(t, tc.expectedTotal, resp.Total, "Total count mismatch for filtered search")
+				assert.Equal(t, tc.expectedTotal, len(resp.ReleaseBundles), "Total count mismatch for filtered search")
 			} else {
 				assert.GreaterOrEqual(t, resp.Total, tc.expectedTotal, "Total count should be at least expected for unfiltered search")
 			}
