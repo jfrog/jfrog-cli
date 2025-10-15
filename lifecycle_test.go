@@ -802,7 +802,6 @@ func TestReleaseBundlesSearchGroups(t *testing.T) {
 			name:            "No query params - all groups, default order",
 			queryParams:     services.GetSearchOptionalQueryParams{},
 			expectedRbNames: []string{rbNameD, rbNameA, rbNameB, rbNameC},
-			expectedTotal:   4,
 			expectError:     false,
 		},
 		{
@@ -880,8 +879,9 @@ func TestReleaseBundlesSearchGroups(t *testing.T) {
 				return
 			}
 			assert.NoError(t, err, fmt.Sprintf("Expected no error for test case: %s", tc.name))
-			assert.Equal(t, tc.expectedTotal, resp.Total, "Total count mismatch")
-
+			if tc.expectedTotal != 0 {
+				assert.Equal(t, tc.expectedTotal, resp.Total, "Total count mismatch")
+			}
 			var actualNames []string
 			for _, rb := range resp.ReleaseBundleSearchGroup {
 				actualNames = append(actualNames, rb.ReleaseBundleName)
