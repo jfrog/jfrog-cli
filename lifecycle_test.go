@@ -976,7 +976,7 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 			releaseBundleName: rbName,
 			queryParams: services.GetSearchOptionalQueryParams{
 				Limit:    2,
-				OrderBy:  "version",
+				OrderBy:  "release_bundle_version",
 				OrderAsc: true,
 			},
 			expectedRbVersions: []string{versionA, versionB},
@@ -989,7 +989,7 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 			queryParams: services.GetSearchOptionalQueryParams{
 				Offset:   2,
 				Limit:    1,
-				OrderBy:  "version",
+				OrderBy:  "release_bundle_version",
 				OrderAsc: false,
 			},
 			expectedRbVersions: []string{versionB},
@@ -1000,7 +1000,7 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 			name:              "Order by version Descending",
 			releaseBundleName: rbName,
 			queryParams: services.GetSearchOptionalQueryParams{
-				OrderBy:  "version",
+				OrderBy:  "release_bundle_version",
 				OrderAsc: false,
 			},
 			expectedRbVersions: []string{versionD, versionC, versionB, versionA},
@@ -1011,7 +1011,7 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 			name:              "Order by created_millis Ascending",
 			releaseBundleName: rbName,
 			queryParams: services.GetSearchOptionalQueryParams{
-				OrderBy:  "created_millis",
+				OrderBy:  "created",
 				OrderAsc: true,
 			},
 			expectedRbVersions: []string{versionA, versionC, versionB, versionD},
