@@ -48,7 +48,7 @@ func TestVscodeSetupCommand(t *testing.T) {
 	expectedServiceURL := serverDetails.ArtifactoryUrl + "api/aieditorextensions/" + repoName + "/_apis/public/gallery"
 
 	// Run the VSCode setup command
-	runJfrogCli(t, "vscode-config", expectedServiceURL, "--product-json-path", productPath)
+	runJfrogCli(t, "ide", "setup", "vscode", expectedServiceURL, "--product-json-path", productPath)
 
 	// Verify the configuration was applied
 	modifiedData, err := os.ReadFile(productPath)
@@ -126,7 +126,7 @@ func TestVscodeAutoDetection(t *testing.T) {
 	serviceURL := serverDetails.ArtifactoryUrl + "api/aieditorextensions/" + repoName + "/_apis/public/gallery"
 
 	// Test with an explicit path (simulating successful auto-detection)
-	runJfrogCli(t, "vscode-config", serviceURL, "--product-json-path", productPath)
+	runJfrogCli(t, "ide", "setup", "vscode", serviceURL, "--product-json-path", productPath)
 
 	// Verify configuration was applied
 	modifiedData, err := os.ReadFile(productPath)
@@ -172,10 +172,10 @@ func TestVscodeInvalidRepository(t *testing.T) {
 	if serverDetails != nil {
 		var err error
 		if serverDetails.AccessToken != "" {
-			err = execJfrogCli("vscode-config", "--repo-key", "non-existent-repo", "--product-json-path", productPath,
+			err = execJfrogCli("ide", "setup", "vscode", "--repo-key", "non-existent-repo", "--product-json-path", productPath,
 				"--url", serverDetails.ArtifactoryUrl, "--access-token", serverDetails.AccessToken)
 		} else {
-			err = execJfrogCli("vscode-config", "--repo-key", "non-existent-repo", "--product-json-path", productPath,
+			err = execJfrogCli("ide", "setup", "vscode", "--repo-key", "non-existent-repo", "--product-json-path", productPath,
 				"--url", serverDetails.ArtifactoryUrl, "--user", serverDetails.User, "--password", serverDetails.Password)
 		}
 		assert.Error(t, err, "Command should fail with invalid repository")
@@ -223,7 +223,7 @@ func TestVscodePermissionHandling(t *testing.T) {
 	serviceURL := serverDetails.ArtifactoryUrl + "api/aieditorextensions/" + repoName + "/_apis/public/gallery"
 
 	// Command should fail due to permission issues
-	err = execJfrogCli("vscode-config", serviceURL, "--product-json-path", productPath)
+	err = execJfrogCli("ide", "setup", "vscode", serviceURL, "--product-json-path", productPath)
 	assert.Error(t, err, "Command should fail due to permission issues")
 
 	// Restore permissions for cleanup
@@ -272,7 +272,7 @@ ide.system.path=${user.home}/.local/share/JetBrains/IntelliJIdea2023.3
 	require.NoError(t, err)
 
 	// Test JetBrains setup command
-	expectedRepositoryURL := serverDetails.ArtifactoryUrl + "api/jetbrainsplugins/" + repoName
+	expectedRepositoryURL := serverDetails.ArtifactoryUrl + "api/aieditorextensions/" + repoName
 
 	// Set environment variable to make the mock IDE detectable (OS-specific)
 	var envVar, envValue string
@@ -307,7 +307,7 @@ ide.system.path=${user.home}/.local/share/JetBrains/IntelliJIdea2023.3
 	}
 
 	// Run the JetBrains setup command
-	runJfrogCli(t, "jetbrains-config", expectedRepositoryURL)
+	runJfrogCli(t, "ide", "setup", "jetbrains", expectedRepositoryURL)
 
 	// Verify the configuration was applied
 	modifiedProperties, err := os.ReadFile(propertiesPath)
@@ -411,10 +411,10 @@ func TestJetbrainsAutoDetection(t *testing.T) {
 	}
 
 	// Test JetBrains auto-detection command
-	repositoryURL := serverDetails.ArtifactoryUrl + "api/jetbrainsplugins/" + repoName
+	repositoryURL := serverDetails.ArtifactoryUrl + "api/aieditorextensions/" + repoName
 
 	// Note: This will work if the auto-detection logic finds our mock IDEs
-	runJfrogCli(t, "jetbrains-config", repositoryURL)
+	runJfrogCli(t, "ide", "setup", "jetbrains", repositoryURL)
 
 	// Verify configuration was applied to detected IDEs
 	for _, ide := range ides {
@@ -472,10 +472,10 @@ ide.config.path=${user.home}/.config/JetBrains/IntelliJIdea2023.3
 	if serverDetails != nil {
 		var err error
 		if serverDetails.AccessToken != "" {
-			err = execJfrogCli("jetbrains-config", "--repo-key", "non-existent-repo",
+			err = execJfrogCli("ide", "setup", "jetbrains", "--repo-key", "non-existent-repo",
 				"--url", serverDetails.ArtifactoryUrl, "--access-token", serverDetails.AccessToken)
 		} else {
-			err = execJfrogCli("jetbrains-config", "--repo-key", "non-existent-repo",
+			err = execJfrogCli("ide", "setup", "jetbrains", "--repo-key", "non-existent-repo",
 				"--url", serverDetails.ArtifactoryUrl, "--user", serverDetails.User, "--password", serverDetails.Password)
 		}
 		assert.Error(t, err, "Command should fail with invalid repository")
@@ -536,10 +536,10 @@ ide.config.path=${user.home}/.config/JetBrains/IntelliJIdea2023.3
 		t.Fatalf("Failed to set XDG_CONFIG_HOME: %v", err)
 	}
 
-	repositoryURL := serverDetails.ArtifactoryUrl + "api/jetbrainsplugins/" + repoName
+	repositoryURL := serverDetails.ArtifactoryUrl + "api/aieditorextensions/" + repoName
 
 	// Command should fail due to permission issues
-	err = execJfrogCli("jetbrains-config", repositoryURL)
+	err = execJfrogCli("ide", "setup", "jetbrains", repositoryURL)
 	assert.Error(t, err, "Command should fail due to permission issues")
 
 	// Restore permissions for cleanup
@@ -647,7 +647,7 @@ func BenchmarkVscodeSetup(b *testing.B) {
 
 		// Run the setup command
 		jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
-		err = jfrogCli.Exec("vscode-config", serviceURL, "--product-json-path", productPath)
+		err = jfrogCli.Exec("ide", "setup", "vscode", serviceURL, "--product-json-path", productPath)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -705,7 +705,7 @@ ide.config.path=${user.home}/.config/JetBrains/IntelliJIdea2023.3
 		t.Fatalf("Failed to set XDG_CONFIG_HOME: %v", err)
 	}
 
-	repositoryURL := serverDetails.ArtifactoryUrl + "api/jetbrainsplugins/" + repoName
+	repositoryURL := serverDetails.ArtifactoryUrl + "api/aieditorextensions/" + repoName
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -717,7 +717,7 @@ ide.config.path=${user.home}/.config/JetBrains/IntelliJIdea2023.3
 
 		// Run the setup command
 		jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
-		err = jfrogCli.Exec("jetbrains-config", repositoryURL)
+		err = jfrogCli.Exec("ide", "setup", "jetbrains", repositoryURL)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -729,16 +729,12 @@ func TestIDECommandsRegistration(t *testing.T) {
 	// This test verifies that our IDE commands are properly registered in the CLI
 	// without requiring a running Artifactory server
 
-	// Test that VSCode command is available
+	// Test that IDE setup command is available
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
-	err := jfrogCli.Exec("vscode-config", "--help")
-	assert.NoError(t, err, "VSCode config command should be available")
+	err := jfrogCli.Exec("ide", "setup", "--help")
+	assert.NoError(t, err, "IDE setup command should be available")
 
-	// Test that JetBrains command is available
-	err = jfrogCli.Exec("jetbrains-config", "--help")
-	assert.NoError(t, err, "JetBrains config command should be available")
-
-	// Test that JetBrains alias is available
-	err = jfrogCli.Exec("jb", "--help")
-	assert.NoError(t, err, "JetBrains alias 'jb' should be available")
+	// Test that IDE command is available with alias
+	err = jfrogCli.Exec("ide", "s", "--help")
+	assert.NoError(t, err, "IDE setup alias 's' should be available")
 }
