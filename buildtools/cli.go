@@ -848,6 +848,8 @@ func dockerCmd(c *cli.Context) error {
 		err = loginCmd(c)
 	case "scan":
 		return dockerScanCmd(c, image)
+	case "build", "buildx": // Handle both build and buildx with same handler
+		err = buildCmd(c)
 	default:
 		err = dockerNativeCmd(c)
 	}
@@ -903,6 +905,22 @@ func pushCmd(c *cli.Context, image string) (err error) {
 	defer cliutils.CleanupResult(result, &err)
 	err = cliutils.PrintCommandSummary(pushCommand.Result(), detailedSummary, printDeploymentView, false, err)
 	return
+}
+
+func buildCmd(c *cli.Context) error {
+	// Extract build configuration and arguments
+	_, _, _, _, _, cleanArgs, buildConfiguration, err := extractDockerOptionsFromArgs(c.Args())
+	if err != nil {
+		return err
+	}
+
+	// Delegate to jfrog-cli-artifactory container package
+	// The strategy factory will determine if this is build or buildx
+	buildCommand := container.NewBuildCommand()
+	buildCommand.SetCmdParams(cleanArgs)
+	buildCommand.SetBuildConfiguration(buildConfiguration)
+
+	return buildCommand.Run()
 }
 
 func loginCmd(c *cli.Context) error {
