@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	tests2 "github.com/jfrog/jfrog-cli-artifactory/utils/tests"
 	"os"
 	"os/exec"
 	"path"
@@ -27,7 +28,6 @@ import (
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
-	commonTests "github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/auth"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
@@ -112,7 +112,7 @@ func TestContainerPushWithDetailedSummary(t *testing.T) {
 			func() {
 				imageTag, err := inttestutils.BuildTestImage(imageName+":1", "", repo, containerManager)
 				assert.NoError(t, err)
-				defer commonTests.DeleteTestImage(t, imageTag, containerManager)
+				defer tests2.DeleteTestImage(t, imageTag, containerManager)
 				// Testing detailed summary without build-info
 				pushCommand := coreContainer.NewPushCommand(containerManager)
 				pushCommand.SetThreads(1).SetDetailedSummary(true).SetCmdParams([]string{"push", imageTag}).SetBuildConfiguration(new(build.BuildConfiguration)).SetRepo(tests.DockerLocalRepo).SetServerDetails(serverDetails).SetImageTag(imageTag)
@@ -165,7 +165,7 @@ func TestContainerPushWithMultipleSlash(t *testing.T) {
 func runPushTest(containerManager container.ContainerManagerType, imageName, module string, withModule bool, t *testing.T, repo string) {
 	imageTag, err := inttestutils.BuildTestImage(imageName+":1", "", repo, containerManager)
 	assert.NoError(t, err)
-	defer commonTests.DeleteTestImage(t, imageTag, containerManager)
+	defer tests2.DeleteTestImage(t, imageTag, containerManager)
 	buildNumber := "1"
 
 	if withModule {
@@ -369,7 +369,7 @@ func TestContainerPushBuildNameNumberFromEnv(t *testing.T) {
 		func() {
 			imageTag, err := inttestutils.BuildTestImage(tests.DockerImageName+":1", "", tests.DockerLocalRepo, containerManager)
 			assert.NoError(t, err)
-			defer commonTests.DeleteTestImage(t, imageTag, containerManager)
+			defer tests2.DeleteTestImage(t, imageTag, containerManager)
 			buildNumber := "1"
 			setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.BuildName, tests.DockerBuildName)
 			defer setEnvCallBack()
@@ -392,7 +392,7 @@ func TestContainerPull(t *testing.T) {
 		func() {
 			imageName, err := inttestutils.BuildTestImage(tests.DockerImageName+":1", "", tests.DockerLocalRepo, containerManager)
 			assert.NoError(t, err)
-			defer commonTests.DeleteTestImage(t, imageName, containerManager)
+			defer tests2.DeleteTestImage(t, imageName, containerManager)
 			for _, repo := range []string{tests.DockerVirtualRepo, tests.DockerLocalRepo} {
 
 				// Push container image
@@ -432,7 +432,7 @@ func TestContainerFatManifestPull(t *testing.T) {
 			func() {
 				// Pull container image
 				imageTag := path.Join(*tests.ContainerRegistry, dockerRepo, imageName+":2.2")
-				defer commonTests.DeleteTestImage(t, imageTag, containerManager)
+				defer tests2.DeleteTestImage(t, imageTag, containerManager)
 				runCmdWithRetries(t, jfrogRtCliTask(containerManager.String()+"-pull", imageTag, dockerRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber))
 				runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
 
@@ -461,7 +461,7 @@ func TestDockerPromote(t *testing.T) {
 	// Build and push image
 	imageName, err := inttestutils.BuildTestImage(tests.DockerImageName+":1", "", tests.DockerLocalRepo, container.DockerClient)
 	assert.NoError(t, err)
-	defer commonTests.DeleteTestImage(t, imageName, container.DockerClient)
+	defer tests2.DeleteTestImage(t, imageName, container.DockerClient)
 
 	// Push image
 	runCmdWithRetries(t, jfrogRtCliTask("docker-push", imageName, tests.DockerLocalRepo))
@@ -596,13 +596,13 @@ func TestNativeDockerPushPull(t *testing.T) {
 	runRt(t, "build-publish", tests.DockerBuildName, pushBuildNumber)
 	imagePath := path.Join(tests.DockerLocalRepo, tests.DockerImageName, pushBuildNumber) + "/"
 	validateContainerBuild(tests.DockerBuildName, pushBuildNumber, imagePath, module, 7, 5, 7, t)
-	commonTests.DeleteTestImage(t, image, container.DockerClient)
+	tests2.DeleteTestImage(t, image, container.DockerClient)
 
 	runCmdWithRetries(t, jfCliTask("docker", "-D", "pull", image, "--build-name="+tests.DockerBuildName, "--build-number="+pullBuildNumber, "--module="+module))
 	runRt(t, "build-publish", tests.DockerBuildName, pullBuildNumber)
 	imagePath = path.Join(tests.DockerLocalRepo, tests.DockerImageName, pullBuildNumber) + "/"
 	validateContainerBuild(tests.DockerBuildName, pullBuildNumber, imagePath, module, 0, 7, 0, t)
-	commonTests.DeleteTestImage(t, image, container.DockerClient)
+	tests2.DeleteTestImage(t, image, container.DockerClient)
 
 	inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName, tests.DockerLocalRepo)
 }
