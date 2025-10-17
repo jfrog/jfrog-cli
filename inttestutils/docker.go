@@ -1,6 +1,7 @@
 package inttestutils
 
 import (
+	tests2 "github.com/jfrog/jfrog-cli-artifactory/utils/tests"
 	"path"
 	"path/filepath"
 	"strings"
@@ -14,7 +15,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli/utils/tests"
-	commonTests "github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/stretchr/testify/assert"
@@ -24,7 +24,7 @@ func BuildTestImage(imageName, dockerfileName, repo string, containerManagerType
 	log.Info("Building image", imageName, "with", containerManagerType.String())
 	imageName = path.Join(*tests.ContainerRegistry, repo, imageName)
 	dockerFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "docker")
-	imageBuilder := commonTests.NewBuildDockerImage(imageName, dockerFilePath, containerManagerType).SetDockerFileName(dockerfileName)
+	imageBuilder := tests2.NewBuildDockerImage(imageName, dockerFilePath, containerManagerType).SetDockerFileName(dockerfileName)
 	return imageName, gofrogcmd.RunCmd(imageBuilder)
 }
 
