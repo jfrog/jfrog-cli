@@ -1,9 +1,6 @@
 package statsDocs
 
-var Usage = []string{"stats <product-name> [--server-id <server-id>] [--format <format>] [--access-token <access-token>]",
-	"jf stats rt",
-	"jf stats rt --format json",
-	"jf stats rt --server-id <JFROG_SERVER_ID>"}
+var Usage = []string{"stats <product-name> [--server-id <server-id>] [--format <format>] [--access-token <access-token>]"}
 
 func GetDescription() string {
 	return `Returns all statistics related to a specific product for a given server.`
@@ -12,7 +9,7 @@ func GetDescription() string {
 func GetArguments() string {
 	return `	 
 	Product (Mandatory)
-	The Product name for which you want to display statistics for now, only artifactory(rt) is supported.
+	The Product name for which you want to display statistics, for now, only artifactory(rt) is supported.
 
     --server-id (optional)
 	The server id for which the product will be searched. If not provided, the default configured server value will be used.
