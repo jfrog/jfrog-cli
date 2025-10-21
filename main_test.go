@@ -384,12 +384,28 @@ func TestIntro(t *testing.T) {
 	assert.Contains(t, buffer.String(), "Thank you for installing version")
 }
 
-func TestSurvey(t *testing.T) {
+func TestSurvey_NotDisplayedOnNonHelp(t *testing.T) {
 	t.Setenv("CI", "false")
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 	_, contentErr, err := tests.GetCmdOutput(t, jfrogCli, "intro")
 	require.NoError(t, err)
+	assert.NotContains(t, string(contentErr), "https://")
+}
+
+func TestSurvey_DisplayedOnHelp(t *testing.T) {
+	t.Setenv("CI", "false")
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+	_, contentErr, err := tests.GetCmdOutput(t, jfrogCli, "help")
+	require.NoError(t, err)
 	assert.Contains(t, string(contentErr), "https://") // not doing more check as url can change
+}
+
+func TestSurvey_NotDisplayedOnHelpCI(t *testing.T) {
+	t.Setenv("CI", "true")
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+	_, contentErr, err := tests.GetCmdOutput(t, jfrogCli, "help")
+	require.NoError(t, err)
+	assert.NotContains(t, string(contentErr), "https://") // not doing more check as url can change
 }
 
 func TestGenerateAndLogTraceIdToken(t *testing.T) {
