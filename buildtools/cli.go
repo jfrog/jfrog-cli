@@ -1236,12 +1236,18 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 		if buildConfiguration != nil {
 			buildName, err := buildConfiguration.GetBuildName()
 			if err == nil && buildName != "" {
-				workingDir, _ := os.Getwd()
-				if err := buildinfo.GetPoetryBuildInfo(workingDir, buildConfiguration); err != nil {
+				workingDir, err := os.Getwd()
+				if err != nil {
+					log.Warn("Failed to get working directory, skipping build info collection: " + err.Error())
+				} else if err := buildinfo.GetPoetryBuildInfo(workingDir, buildConfiguration); err != nil {
 					log.Warn("Failed to collect Poetry build info: " + err.Error())
 				} else {
-					buildNumber, _ := buildConfiguration.GetBuildNumber()
-					log.Info(fmt.Sprintf("Poetry build info collected. Use 'jf rt bp %s %s' to publish it to Artifactory.", buildName, buildNumber))
+					buildNumber, err := buildConfiguration.GetBuildNumber()
+					if err != nil {
+						log.Warn("Failed to get build number: " + err.Error())
+					} else {
+						log.Info(fmt.Sprintf("Poetry build info collected. Use 'jf rt bp %s %s' to publish it to Artifactory.", buildName, buildNumber))
+					}
 				}
 			}
 		}
