@@ -66,6 +66,7 @@ import (
 	yarndocs "github.com/jfrog/jfrog-cli/docs/buildtools/yarn"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/yarnconfig"
 	"github.com/jfrog/jfrog-cli/docs/common"
+	"github.com/jfrog/jfrog-cli/utils/buildinfo"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -1210,6 +1211,48 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 	}
 	if c.NArg() < 1 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	// FlexPack native mode for Poetry (bypasses config file requirements)
+	if os.Getenv("JFROG_RUN_NATIVE") == "true" && projectType == project.Poetry {
+		log.Debug("Routing to Poetry native implementation")
+		args := cliutils.ExtractCommand(c)
+		filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
+		if err != nil {
+			return err
+		}
+		cmdName, poetryArgs := getCommandName(filteredArgs)
+
+		// Execute native poetry command directly (similar to Maven FlexPack)
+		log.Info(fmt.Sprintf("Running Poetry %s.", cmdName))
+		poetryCmd := exec.Command("poetry", append([]string{cmdName}, poetryArgs...)...)
+		poetryCmd.Stdout = os.Stdout
+		poetryCmd.Stderr = os.Stderr
+		if err := poetryCmd.Run(); err != nil {
+			return fmt.Errorf("poetry %s failed: %w", cmdName, err)
+		}
+
+		// Collect build info if build parameters provided
+		if buildConfiguration != nil {
+			buildName, err := buildConfiguration.GetBuildName()
+			if err == nil && buildName != "" {
+				workingDir, err := os.Getwd()
+				if err != nil {
+					log.Warn("Failed to get working directory, skipping build info collection: " + err.Error())
+				} else if err := buildinfo.GetPoetryBuildInfo(workingDir, buildConfiguration); err != nil {
+					log.Warn("Failed to collect Poetry build info: " + err.Error())
+				} else {
+					buildNumber, err := buildConfiguration.GetBuildNumber()
+					if err != nil {
+						log.Warn("Failed to get build number: " + err.Error())
+					} else {
+						log.Info(fmt.Sprintf("Poetry build info collected. Use 'jf rt bp %s %s' to publish it to Artifactory.", buildName, buildNumber))
+					}
+				}
+			}
+		}
+
+		return nil
 	}
 
 	// Get python configuration.
