@@ -20,11 +20,11 @@ require (
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-application v1.0.1
 	github.com/jfrog/jfrog-cli-artifactory v0.7.3-0.20251029093809-3aaa4e93a359
-	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20251015045218-1a38c9e47097
+	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20251023084247-a56afca52451
 	github.com/jfrog/jfrog-cli-evidence v0.8.2
 	github.com/jfrog/jfrog-cli-platform-services v1.10.0
-	github.com/jfrog/jfrog-cli-security v1.21.8
-	github.com/jfrog/jfrog-client-go v1.55.1-0.20251015041910-ef0fe832b111
+	github.com/jfrog/jfrog-cli-security v1.21.10
+	github.com/jfrog/jfrog-client-go v1.55.1-0.20251023073119-78f187c9afbf
 	github.com/jszwec/csvutil v1.10.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/stretchr/testify v1.11.1
@@ -146,7 +146,7 @@ require (
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jedib0t/go-pretty/v6 v6.6.8 // indirect
 	github.com/jedisct1/go-minisign v0.0.0-20211028175153-1c139d1cc84b // indirect
-	github.com/jfrog/froggit-go v1.20.3 // indirect
+	github.com/jfrog/froggit-go v1.20.4 // indirect
 	github.com/jfrog/go-mockhttp v0.3.1 // indirect
 	github.com/jfrog/jfrog-apps-config v1.0.1 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
