@@ -1,3 +1,17 @@
+properties([
+    parameters([
+        booleanParam(name: 'RUN_BUILD_RPM', defaultValue: true, description: 'Run build RPM step'),
+        booleanParam(name: 'RUN_NPM_PACKAGE', defaultValue: true, description: 'Run NPM package publish'),
+        booleanParam(name: 'RUN_DOCKER_PUBLISH', defaultValue: true, description: 'Run Docker image publish'),
+        booleanParam(name: 'RUN_CREATE_TAG', defaultValue: true, description: 'Run createTag step'),
+        booleanParam(name: 'RUN_CHOCOLATEY', defaultValue: true, description: 'Run Chocolatey publish'),
+        booleanParam(name: 'RUN_LATEST_SCRIPT_PUBLISH', defaultValue: true, description: 'Run latest script publish'),
+        booleanParam(name: 'RUN_DISTRIBUTE_EXECUTABLE', defaultValue: true, description: 'Run distribute executable step'),
+        booleanParam(name: 'RUN_UPLOAD_CLI', defaultValue: true, description: 'Run uploadCli step'),
+        booleanParam(name: 'RUN_DARWIN_WORKFLOW', defaultValue: true, description: 'Run Darwin workflow (MacOS binaries signing)')
+    ])
+])
+
 node("docker-ubuntu20-xlarge") {
     cleanWs()
     // Subtract repo name from the repo url (https://REPO_NAME/ -> REPO_NAME/)
@@ -7,7 +21,7 @@ node("docker-ubuntu20-xlarge") {
         env.REPO_NAME_21="$repo21Name"
     }
     def architectures = [
-            [pkg: 'jfrog-cli-windows-amd64', goos: 'windows', goarch: 'amd64', fileExtension: '.exe', chocoImage: '${REPO_NAME_21}/jfrog-docker/linuturk/mono-choco'],
+            [pkg: 'jfrog-cli-windows-amd64', goos: 'windows', goarch: 'amd64', fileExtension: '.exe', chocoImage: '${REPO_NAME_21}/jfrog-docker/chocolatey/choco'],
             [pkg: 'jfrog-cli-linux-386', goos: 'linux', goarch: '386', fileExtension: '', debianImage: '${REPO_NAME_21}/jfrog-docker/i386/ubuntu:20.04', debianArch: 'i386'],
             [pkg: 'jfrog-cli-linux-amd64', goos: 'linux', goarch: 'amd64', fileExtension: '', debianImage: '${REPO_NAME_21}/jfrog-docker/ubuntu:20.04', debianArch: 'x86_64', rpmImage: 'almalinux:8.10'],
             [pkg: 'jfrog-cli-linux-arm64', goos: 'linux', goarch: 'arm64', fileExtension: ''],
@@ -119,33 +133,41 @@ def runRelease(architectures) {
 
         // We sign darwin binaries throughout GitHub actions to use MacOS machine,
         // the binaries will be uploaded to GitHub packages
-        stage('Prepare Signed MacOS binaries') {
-            triggerDarwinBinariesSigningWorkflow()
+        if (params.RUN_DARWIN_WORKFLOW) {
+            stage('Prepare Signed MacOS binaries') {
+                triggerDarwinBinariesSigningWorkflow()
+            }
         }
 
         // We sign the binary also for the standalone Windows executable, and not just for Windows executable packaged inside Chocolaty.
         downloadToolsCert()
-        print "Uploading version $version to Repo21"
-        uploadCli(architectures)
-        stage("Distribute executables") {
-            distributeToReleases("ecosystem-jfrog-cli", version, "cli-rbc-spec.json")
+        if (params.RUN_UPLOAD_CLI) {
+            print "Uploading version $version to Repo21"
+            uploadCli(architectures)
         }
-        stage("Publish latest scripts") {
-            withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
-                options = "--url https://releases.jfrog.io/artifactory --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
-                sh """#!/bin/bash
-                    $builderPath rt cp jfrog-cli/$identifier/$version/scripts/getCli.sh jfrog-cli/$identifier/scripts/ --flat $options --fail-no-op
-                    $builderPath rt cp jfrog-cli/$identifier/$version/scripts/install-cli.sh jfrog-cli/$identifier/scripts/ --flat $options --fail-no-op
-                """
-                if (identifier == "v2-jf") {
+        if (params.RUN_DISTRIBUTE_EXECUTABLE) {
+            stage("Distribute executables") {
+                distributeToReleases("ecosystem-jfrog-cli", version, "cli-rbc-spec.json")
+            }
+        }
+        if (params.RUN_LATEST_SCRIPT_PUBLISH) {
+            stage("Publish latest scripts") {
+                withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
+                    options = "--url https://releases.jfrog.io/artifactory --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
                     sh """#!/bin/bash
-                        $builderPath rt cp jfrog-cli/$identifier/$version/scripts/setup-cli.sh jfrog-cli/setup/scripts/getCli.sh --flat $options --fail-no-op
-                        $builderPath rt cp "jfrog-cli/$identifier/$version/scripts/gitlab/(*)" "jfrog-cli/gitlab/{1}" $options --fail-no-op
+                        $builderPath rt cp jfrog-cli/$identifier/$version/scripts/getCli.sh jfrog-cli/$identifier/scripts/ --flat $options --fail-no-op
+                        $builderPath rt cp jfrog-cli/$identifier/$version/scripts/install-cli.sh jfrog-cli/$identifier/scripts/ --flat $options --fail-no-op
                     """
+                    if (identifier == "v2-jf") {
+                        sh """#!/bin/bash
+                            $builderPath rt cp jfrog-cli/$identifier/$version/scripts/setup-cli.sh jfrog-cli/setup/scripts/getCli.sh --flat $options --fail-no-op
+                            $builderPath rt cp "jfrog-cli/$identifier/$version/scripts/gitlab/(*)" "jfrog-cli/gitlab/{1}" $options --fail-no-op
+                        """
+                    }
                 }
             }
         }
-        if (identifier == "v2") {
+        if (identifier == "v2" && params.RUN_CREATE_TAG) {
             createTag()
         }
 
@@ -157,16 +179,22 @@ def runRelease(architectures) {
             buildRpmAndDeb(version, architectures)
         }
 
-        stage('Npm publish') {
-            publishNpmPackage(jfrogCliRepoDir)
+        if (params.RUN_NPM_PACKAGE) {
+            stage('Npm publish') {
+                publishNpmPackage(jfrogCliRepoDir)
+            }
         }
 
-        stage('Build and publish docker images') {
-            buildPublishDockerImages(version, jfrogCliRepoDir)
+        if (params.RUN_DOCKER_PUBLISH) {
+            stage('Build and publish docker images') {
+                buildPublishDockerImages(version, jfrogCliRepoDir)
+            }
         }
 
-        stage('Build and publish Chocolatey') {
-            publishChocoPackageWithRetries(version, jfrogCliRepoDir, architectures)
+        if (params.RUN_CHOCOLATEY) {
+            stage('Build and publish Chocolatey') {
+                publishChocoPackageWithRetries(version, jfrogCliRepoDir, architectures)
+            }
         }
     } finally {
         cleanupRepo21()
@@ -257,7 +285,7 @@ def buildRpmAndDeb(version, architectures) {
                     }
                 }
             }
-            if (currentBuild.rpmImage) {
+            if (currentBuild.rpmImage && params.RUN_BUILD_RPM) {
                 stage("Build rpm ${currentBuild.pkg}") {
                     build(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, cliExecutableName)
                     dir("$jfrogCliRepoDir") {
@@ -467,6 +495,7 @@ def publishChocoPackageWithRetries(version, jfrogCliRepoDir, architectures) {
             currentAttempt++
             if (currentAttempt > maxAttempts) {
                 error "Max attempts reached. Publishing Choco failed!"
+                return
             }
             sleep waitSeconds
         }
@@ -482,10 +511,10 @@ def publishChocoPackage(version, jfrogCliRepoDir, architecture) {
     dir(jfrogCliRepoDir+"build/chocolatey/$identifier") {
         withCredentials([string(credentialsId: 'choco-api-key', variable: 'CHOCO_API_KEY')]) {
             sh """#!/bin/bash
-                mv $jfrogCliRepoDir/${cliExecutableName}.exe $jfrogCliRepoDir/build/chocolatey/$identifier/tools
+                cp $jfrogCliRepoDir/${cliExecutableName}.exe $jfrogCliRepoDir/build/chocolatey/$identifier/tools
                 cp $jfrogCliRepoDir/LICENSE $jfrogCliRepoDir/build/chocolatey/$identifier/tools
-                docker run -v \$PWD:/work -w /work $architecture.chocoImage pack version=$version
-                docker run -v \$PWD:/work -w /work $architecture.chocoImage push --apiKey \$CHOCO_API_KEY ${packageName}.${version}.nupkg
+                docker run -v \$PWD:/work -w /work $architecture.chocoImage choco pack version=$version
+                docker run -v \$PWD:/work -w /work $architecture.chocoImage choco push --source='https://push.chocolatey.org/' --apiKey \$CHOCO_API_KEY ${packageName}.${version}.nupkg
             """
         }
     }
