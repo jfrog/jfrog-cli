@@ -51,6 +51,7 @@ var (
 	JfrogAccessToken          *string
 	JfrogTargetUrl            *string
 	JfrogTargetAccessToken    *string
+	EvidenceAccessToken       *string
 	JfrogHome                 *string
 	TestArtifactoryProject    *bool
 	TestArtifactory           *bool
@@ -73,6 +74,7 @@ var (
 	TestAccess                *bool
 	TestTransfer              *bool
 	TestLifecycle             *bool
+	TestEvidence              *bool
 	HideUnitTestLog           *bool
 	ciRunId                   *string
 	InstallDataTransferPlugin *bool
@@ -88,6 +90,7 @@ func init() {
 	JfrogAccessToken = flag.String("jfrog.adminToken", tests.GetLocalArtifactoryTokenIfNeeded(*JfrogUrl), "JFrog platform admin token")
 	JfrogTargetUrl = flag.String("jfrog.targetUrl", "", "JFrog target platform url for transfer tests")
 	JfrogTargetAccessToken = flag.String("jfrog.targetAdminToken", "", "JFrog target platform admin token for transfer tests")
+	EvidenceAccessToken = flag.String("jfrog.evidenceToken", "", "JFrog Evidence service access token")
 	JfrogHome = flag.String("jfrog.home", "", "The JFrog home directory of the local Artifactory installation")
 	TestArtifactory = flag.Bool("test.artifactory", false, "Test Artifactory")
 	TestArtifactoryProject = flag.Bool("test.artifactoryProject", false, "Test Artifactory project")
@@ -109,6 +112,7 @@ func init() {
 	TestAccess = flag.Bool("test.access", false, "Test Access")
 	TestTransfer = flag.Bool("test.transfer", false, "Test files transfer")
 	TestLifecycle = flag.Bool("test.lifecycle", false, "Test lifecycle")
+	TestEvidence = flag.Bool("test.evidence", false, "Test evidence")
 	ContainerRegistry = flag.String("test.containerRegistry", "localhost:8082", "Container registry")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
 	InstallDataTransferPlugin = flag.Bool("test.installDataTransferPlugin", false, "Install data-transfer plugin on the source Artifactory server")
