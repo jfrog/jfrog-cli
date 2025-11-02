@@ -66,7 +66,7 @@ func initEvidenceCli() {
 	if evidenceCli != nil {
 		return
 	}
-	evidenceCli = coreTests.NewJfrogCli(execMain, "jfrog-evidence", "")
+	evidenceCli = coreTests.NewJfrogCli(execMain, "jfrog evd", "")
 }
 
 // configureEvidenceServer sets up server details for Evidence service
