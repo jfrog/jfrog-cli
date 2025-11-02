@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
@@ -61,12 +60,17 @@ func InitEvidenceTests() {
 	initEvidenceArtifactoryClient()
 }
 
-// initEvidenceCli initializes the Evidence CLI
+// initEvidenceCli initializes the Evidence CLI with authentication flags
 func initEvidenceCli() {
 	if evidenceCli != nil {
 		return
 	}
-	evidenceCli = coreTests.NewJfrogCli(execMain, "jfrog evd", "")
+
+	// Build authentication flags similar to standalone evidence tests
+	authFlags := fmt.Sprintf("--url=%s --access-token=%s", *tests.JfrogUrl, *tests.EvidenceAccessToken)
+	evidenceCli = coreTests.NewJfrogCli(execMain, "jfrog evd", authFlags)
+
+	fmt.Printf("✓ Evidence CLI initialized with URL: %s\n", *tests.JfrogUrl)
 }
 
 // configureEvidenceServer sets up server details for Evidence service
@@ -78,15 +82,6 @@ func configureEvidenceServer() {
 	evidenceServerDetails = &config.ServerDetails{
 		Url:         *tests.JfrogUrl,
 		AccessToken: *tests.EvidenceAccessToken,
-	}
-
-	// Set environment variables for Evidence CLI (it reads from env)
-	// The Evidence CLI uses JFROG_CLI_URL and access token from standard JFrog CLI config
-	if err := os.Setenv("JFROG_CLI_URL", *tests.JfrogUrl); err != nil {
-		fmt.Printf("Error setting JFROG_CLI_URL: %v\n", err)
-	}
-	if err := os.Setenv("JFROG_CLI_ACCESS_TOKEN", *tests.EvidenceAccessToken); err != nil {
-		fmt.Printf("Error setting JFROG_CLI_ACCESS_TOKEN: %v\n", err)
 	}
 
 	fmt.Printf("✓ Evidence service configured for: %s\n", *tests.JfrogUrl)
@@ -130,4 +125,3 @@ func CleanEvidenceTests() {
 	// Evidence tests clean up their own resources (repositories, artifacts) via t.Cleanup()
 	// No global cleanup needed
 }
-
