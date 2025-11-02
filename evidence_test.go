@@ -81,16 +81,12 @@ func configureEvidenceServer() {
 	}
 
 	// Set environment variables for Evidence CLI (it reads from env)
-	// Only set if not already set (fallback behavior)
-	if os.Getenv("JFROG_URL") == "" {
-		if err := os.Setenv("JFROG_URL", *tests.JfrogUrl); err != nil {
-			fmt.Printf("Error setting JFROG_URL: %v\n", err)
-		}
+	// The Evidence CLI uses JFROG_CLI_URL and access token from standard JFrog CLI config
+	if err := os.Setenv("JFROG_CLI_URL", *tests.JfrogUrl); err != nil {
+		fmt.Printf("Error setting JFROG_CLI_URL: %v\n", err)
 	}
-	if os.Getenv("JFROG_ACCESS_TOKEN") == "" {
-		if err := os.Setenv("JFROG_ACCESS_TOKEN", *tests.EvidenceAccessToken); err != nil {
-			fmt.Printf("Error setting JFROG_ACCESS_TOKEN: %v\n", err)
-		}
+	if err := os.Setenv("JFROG_CLI_ACCESS_TOKEN", *tests.EvidenceAccessToken); err != nil {
+		fmt.Printf("Error setting JFROG_CLI_ACCESS_TOKEN: %v\n", err)
 	}
 
 	fmt.Printf("✓ Evidence service configured for: %s\n", *tests.JfrogUrl)
