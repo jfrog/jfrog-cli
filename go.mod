@@ -285,4 +285,4 @@ replace github.com/jfrog/jfrog-cli-core/v2 => github.com/attiasas/jfrog-cli-core
 //replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.54.2-0.20251007084958-5eeaa42c31a6
 
 // attiasas:fix_docker_scan_usage_name
-replace github.com/jfrog/jfrog-cli-security => github.com/attiasas/jfrog-cli-security v0.0.0-20251104120916-4dc3bfdfa653
+replace github.com/jfrog/jfrog-cli-security => github.com/attiasas/jfrog-cli-security v0.0.0-20251104122029-477be4261d4d

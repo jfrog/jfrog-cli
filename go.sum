@@ -696,8 +696,8 @@ github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 h1:DklsrG3d
 github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2/go.mod h1:WaHUgvxTVq04UNunO+XhnAqY/wQc+bxr74GqbsZ/Jqw=
 github.com/attiasas/jfrog-cli-core/v2 v2.0.0-20251104113958-abd9de5958c4 h1:O7w7kj9Lmotj2MjRap6V80JsRwFfcK71qN3BXZkUSBk=
 github.com/attiasas/jfrog-cli-core/v2 v2.0.0-20251104113958-abd9de5958c4/go.mod h1:qGHIijD2doUdFaRFRhudtCmlt0ENDaBvM3dnUClpmHc=
-github.com/attiasas/jfrog-cli-security v0.0.0-20251104120916-4dc3bfdfa653 h1:87wDy2gLDoFqrk8rGYv07uus6aUXm8aJu4DFWvfe6Fk=
-github.com/attiasas/jfrog-cli-security v0.0.0-20251104120916-4dc3bfdfa653/go.mod h1:PtxVbVrkujrfdR4NcuVeRSBcoquQ99oV+f6CDXH3564=
+github.com/attiasas/jfrog-cli-security v0.0.0-20251104122029-477be4261d4d h1:0rCvDM3SVlrpSWGR/o/D5EC/CGS9MsQ78prwgjGnpYQ=
+github.com/attiasas/jfrog-cli-security v0.0.0-20251104122029-477be4261d4d/go.mod h1:PtxVbVrkujrfdR4NcuVeRSBcoquQ99oV+f6CDXH3564=
 github.com/avast/retry-go/v4 v4.6.1 h1:VkOLRubHdisGrHnTu89g08aQEWEgRU7LVEop3GbIcMk=
 github.com/avast/retry-go/v4 v4.6.1/go.mod h1:V6oF8njAwxJ5gRo1Q7Cxab24xs5NCWZBeaHHBklR8mA=
 github.com/aws/aws-sdk-go v1.55.7 h1:UJrkFq7es5CShfBwlWAC8DA077vp8PyVbQd3lqLiztE=
