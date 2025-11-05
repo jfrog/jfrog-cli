@@ -192,13 +192,13 @@ func initAccessClient() {
 	}
 
 	var err error
-	accessManager, err = access.New(artifactoryDetails)
+	accessManager, err = utils.CreateAccessServiceManager(artifactoryDetails, false)
 	if err != nil {
 		fmt.Printf("Warning: Failed to create Access services manager: %v\n", err)
 		return
 	}
 
-	fmt.Printf("Access services manager initialized for Evidence tests\n")
+	fmt.Printf("✓ Access services manager initialized for Evidence tests\n")
 }
 
 // initLifecycleClient initializes the Lifecycle services manager for Evidence tests
@@ -207,15 +207,28 @@ func initLifecycleClient() {
 		return
 	}
 
-	// Lifecycle is embedded in Artifactory, use the same auth details
+	// Lifecycle is embedded in Artifactory, prepare the server details
+	lifecycleDetails := &config.ServerDetails{
+		Url:            artifactoryDetails.Url,
+		ArtifactoryUrl: artifactoryDetails.ArtifactoryUrl,
+		AccessToken:    artifactoryDetails.AccessToken,
+		User:           artifactoryDetails.User,
+		Password:       artifactoryDetails.Password,
+	}
+
+	if lifecycleDetails.Url != "" {
+		baseUrl := clientutils.AddTrailingSlashIfNeeded(lifecycleDetails.Url)
+		lifecycleDetails.LifecycleUrl = baseUrl + "artifactory/"
+	}
+
 	var err error
-	lifecycleManager, err = lifecycle.New(artifactoryDetails)
+	lifecycleManager, err = utils.CreateLifecycleServiceManager(lifecycleDetails, false)
 	if err != nil {
 		fmt.Printf("Warning: Failed to create Lifecycle services manager: %v\n", err)
 		return
 	}
 
-	fmt.Printf("Lifecycle services manager initialized for Evidence tests (embedded in Artifactory)\n")
+	fmt.Printf("✓ Lifecycle services manager initialized for Evidence tests (embedded in Artifactory)\n")
 }
 
 // CleanEvidenceTests cleans up after evidence tests
