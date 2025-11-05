@@ -5804,6 +5804,9 @@ func TestArtifactorySearchByPattern(t *testing.T) {
 			// Create a simple local repository
 			repoConfig := fmt.Sprintf(`{"key":"%s","rclass":"local","packageType":"generic"}`, repoName)
 			execCreateRepoRestFromString(repoConfig, repoName)
+		} else {
+			// Clean up any existing files in the repository to ensure a clean state
+			runRt(t, "delete", repoName+"/*", "--quiet")
 		}
 	}
 
