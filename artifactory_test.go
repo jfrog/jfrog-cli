@@ -4568,9 +4568,9 @@ func CleanArtifactoryTests() {
 }
 
 func initArtifactoryTest(t *testing.T, minVersion string) {
-	if !*tests.TestArtifactory {
-		t.Skip("Skipping artifactory test. To run artifactory test add the '-test.artifactory=true' option.")
-	}
+	//if !*tests.TestArtifactory {
+	//	t.Skip("Skipping artifactory test. To run artifactory test add the '-test.artifactory=true' option.")
+	//}
 	if minVersion != "" {
 		validateArtifactoryVersion(t, minVersion)
 	}
@@ -5765,4 +5765,121 @@ func deleteReceivedReleaseBundle(t *testing.T, url, bundleName, bundleVersion st
 	deleteApi := path.Join(url, bundleName, bundleVersion)
 	_, _, err = client.SendDelete(*tests.JfrogUrl+deleteApi, []byte{}, artHttpDetails, "Deleting release bundle")
 	assert.NoError(t, err)
+}
+
+var searchByPatternDataProvider = []struct {
+	pattern         string
+	recursive       bool
+	expectedResults []utils.SearchResult
+}{
+	{tests.RtRepo1, true, []utils.SearchResult{
+		{Path: tests.RtRepo1 + "/file1.txt"},
+		{Path: tests.RtRepo1 + "/deep/file2.txt"},
+		{Path: tests.RtRepo1 + "/my-repo-local.txt"},
+		{Path: tests.RtRepo1 + "/a-file.tar.gz"},
+		{Path: tests.RtRepo1 + "/deep/a-another.tar.gz"},
+	}},
+	{`repo-w*ldcard`, true, []utils.SearchResult{
+		{Path: "repo-wildcard/file.ldcard"},
+	}},
+	{tests.RtRepo2 + `/a*b*c/dd/`, true, []utils.SearchResult{
+		{Path: tests.RtRepo2 + "/a-b-c/dd/file3.txt"},
+		{Path: tests.RtRepo2 + "/a-b-c/dd/deep/file4.txt"},
+	}},
+	{tests.RtRepo2 + `/a*b*c/dd/`, true, []utils.SearchResult{
+		{Path: tests.RtRepo2 + "/a-b-c/dd/file3.txt"},
+		{Path: tests.RtRepo2 + "/a-b-c/dd/deep/file4.txt"},
+	}},
+	{tests.RtRepo1, false, []utils.SearchResult{
+		{Path: tests.RtRepo1 + "/file1.txt"},
+		{Path: tests.RtRepo1 + "/my-repo-local.txt"},
+		{Path: tests.RtRepo1 + "/a-file.tar.gz"},
+	}},
+	{"*" + tests.RtRepo1, false, []utils.SearchResult{
+		{Path: tests.RtRepo1 + "/my-repo-local.txt"},
+	}},
+	{tests.RtRepo2 + `/a*b*c/dd/`, false, []utils.SearchResult{
+		{Path: tests.RtRepo2 + "/a-b-c/dd/file3.txt"},
+	}},
+	{`*/a*b*c/dd/`, false, []utils.SearchResult{
+		{Path: tests.RtRepo2 + "/a-b-c/dd/file3.txt"},
+	}},
+	{`**/a-.*.tar.gz`, false, []utils.SearchResult{
+		{Path: tests.RtRepo1 + "/a-file.tar.gz"},
+		{Path: tests.RtRepo1 + "/deep/a-another.tar.gz"},
+	}},
+}
+
+func TestArtifactorySearchByPattern(t *testing.T) {
+	initArtifactoryTest(t, "")
+	specContent := `
+{
+  "files": [
+    {
+      "pattern": "testdata/a.txt",
+      "target": "` + tests.RtRepo1 + `/file1.txt"
+    },
+    {
+      "pattern": "testdata/a.txt",
+      "target": "` + tests.RtRepo1 + `/deep/file2.txt"
+    },
+    {
+      "pattern": "testdata/a.txt",
+      "target": "` + tests.RtRepo1 + `/my-repo-local.txt"
+    },
+    {
+      "pattern": "testdata/a.txt",
+      "target": "` + tests.RtRepo1 + `/a-file.tar.gz"
+    },
+    {
+      "pattern": "testdata/a.txt",
+      "target": "` + tests.RtRepo1 + `/deep/a-another.tar.gz"
+    },
+    {
+      "pattern": "testdata/a.txt",
+      "target": "repo-wildcard/file.ldcard"
+    },
+    {
+      "pattern": "testdata/a.txt",
+      "target": "repo-wildcard/file.nothanks"
+    },
+    {
+      "pattern": "testdata/a.txt",
+      "target": "` + tests.RtRepo2 + `/a-b-c/dd/file3.txt"
+    },
+    {
+      "pattern": "testdata/a.txt",
+      "target": "` + tests.RtRepo2 + `/a-b-c/dd/deep/file4.txt"
+    }
+  ]
+}
+`
+	specFile, err := os.CreateTemp(t.TempDir(), "search-spec-*.json")
+	require.NoError(t, err, "Failed to create temp spec file")
+	_, err = specFile.WriteString(specContent)
+	require.NoError(t, err, "Failed to write to temp spec file")
+	err = specFile.Close()
+	require.NoError(t, err, "Failed to close temp spec file")
+	runRt(t, "upload", "--spec="+specFile.Name())
+
+	for _, sample := range searchByPatternDataProvider {
+		t.Run(sample.pattern+"_recursive_"+strconv.FormatBool(sample.recursive), func(t *testing.T) {
+			searchSpecBuilder := spec.NewBuilder().Pattern(sample.pattern).Recursive(sample.recursive)
+			searchCmd := generic.NewSearchCommand()
+			searchCmd.SetServerDetails(serverDetails)
+			searchCmd.SetSpec(searchSpecBuilder.BuildSpec())
+			reader, err := searchCmd.Search()
+			require.NoError(t, err)
+			defer readerCloseAndAssert(t, reader)
+			var resultItems []utils.SearchResult
+			readerNoDate, err := utils.SearchResultNoDate(reader)
+			require.NoError(t, err)
+			for resultItem := new(utils.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
+				resultItems = append(resultItems, *resultItem)
+			}
+			readerGetErrorAndAssert(t, readerNoDate)
+			assert.ElementsMatch(t, sample.expectedResults, resultItems)
+		})
+	}
+	cleanArtifactoryTest()
 }
