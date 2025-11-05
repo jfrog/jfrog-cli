@@ -5,10 +5,6 @@ go 1.24.6
 replace (
 	// Should not be updated to 0.2.6 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
 	github.com/c-bata/go-prompt => github.com/c-bata/go-prompt v0.2.5
-
-	// TESTING: Use feature/RTDEV-63595 branch commit
-	github.com/jfrog/jfrog-cli-evidence => github.com/jfrog/jfrog-cli-evidence v0.8.3-0.20251102110334-bfa53029fcab
-
 	// Should not be updated to 0.2.0-beta.2 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
 	github.com/pkg/term => github.com/pkg/term v1.1.0
 )
@@ -24,7 +20,7 @@ require (
 	github.com/jfrog/jfrog-cli-application v1.0.1
 	github.com/jfrog/jfrog-cli-artifactory v0.7.3-0.20251029093809-3aaa4e93a359
 	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20251028101519-8c79bb06de65
-	github.com/jfrog/jfrog-cli-evidence v0.8.2
+	github.com/jfrog/jfrog-cli-evidence v0.8.3-0.20251105224020-4f26eeff3736
 	github.com/jfrog/jfrog-cli-platform-services v1.10.0
 	github.com/jfrog/jfrog-cli-security v1.21.10
 	github.com/jfrog/jfrog-client-go v1.55.1-0.20251028101538-d0d16f019d67

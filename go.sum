@@ -1163,8 +1163,8 @@ github.com/jfrog/jfrog-cli-artifactory v0.7.3-0.20251029093809-3aaa4e93a359 h1:r
 github.com/jfrog/jfrog-cli-artifactory v0.7.3-0.20251029093809-3aaa4e93a359/go.mod h1:4D19dyt67m1wtAojNhSYR34xpOSzTyucs2iHEJG9tF8=
 github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20251028101519-8c79bb06de65 h1:9HDaoQXzP2EcSL7JML3j6qQ18tDvpKRuonFe1DEKvb8=
 github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20251028101519-8c79bb06de65/go.mod h1:qGHIijD2doUdFaRFRhudtCmlt0ENDaBvM3dnUClpmHc=
-github.com/jfrog/jfrog-cli-evidence v0.8.3-0.20251102110334-bfa53029fcab h1:8q6PvejGveKbMQerWLzRmL5lmpfeLn3YN9n6F4F3KjE=
-github.com/jfrog/jfrog-cli-evidence v0.8.3-0.20251102110334-bfa53029fcab/go.mod h1:6KohlDOtLswaJ4YYi/FqflJEZTvt7yP7SA1cjGG0If4=
+github.com/jfrog/jfrog-cli-evidence v0.8.3-0.20251105224020-4f26eeff3736 h1:FRKNONnSsL4Uz0j0UcrZtqPTaNhSM3K5WJR8oEMeS0s=
+github.com/jfrog/jfrog-cli-evidence v0.8.3-0.20251105224020-4f26eeff3736/go.mod h1:6KohlDOtLswaJ4YYi/FqflJEZTvt7yP7SA1cjGG0If4=
 github.com/jfrog/jfrog-cli-platform-services v1.10.0 h1:O+N/VAF+QjFvq9xkHpmzKLcdl9aJu3IP204Su0L14rw=
 github.com/jfrog/jfrog-cli-platform-services v1.10.0/go.mod h1:qbu4iqBST9x8LgD8HhzUm91iOB3vHqtoGmaxOnmw0ok=
 github.com/jfrog/jfrog-cli-security v1.21.10 h1:g5wTAWXJE4V7Ly+AoxU6HzuBaxDj9U+z8aKmQasPOi0=

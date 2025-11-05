@@ -51,7 +51,6 @@ var (
 	JfrogAccessToken          *string
 	JfrogTargetUrl            *string
 	JfrogTargetAccessToken    *string
-	EvidenceAccessToken       *string
 	JfrogHome                 *string
 	TestArtifactoryProject    *bool
 	TestArtifactory           *bool
@@ -90,7 +89,6 @@ func init() {
 	JfrogAccessToken = flag.String("jfrog.adminToken", tests.GetLocalArtifactoryTokenIfNeeded(*JfrogUrl), "JFrog platform admin token")
 	JfrogTargetUrl = flag.String("jfrog.targetUrl", "", "JFrog target platform url for transfer tests")
 	JfrogTargetAccessToken = flag.String("jfrog.targetAdminToken", "", "JFrog target platform admin token for transfer tests")
-	EvidenceAccessToken = flag.String("jfrog.evidenceToken", "", "JFrog Evidence service access token")
 	JfrogHome = flag.String("jfrog.home", "", "The JFrog home directory of the local Artifactory installation")
 	TestArtifactory = flag.Bool("test.artifactory", false, "Test Artifactory")
 	TestArtifactoryProject = flag.Bool("test.artifactoryProject", false, "Test Artifactory project")
