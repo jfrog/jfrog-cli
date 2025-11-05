@@ -5792,10 +5792,14 @@ var buildAqlSearchQueryDataProvider = []struct {
 // by creating test repositories, uploading files, and verifying that searches return correct results.
 // This test validates the unit test functionality of CreateAqlBodyForSpecWithPattern.
 func TestArtifactorySearchByPattern(t *testing.T) {
+	// Initialize Artifactory CLI to ensure authentication is set up
+	initArtifactoryCli()
+
 	// Initialize Artifactory test environment
 	initArtifactoryTest(t, "")
 	defer cleanArtifactoryTest()
 
+	// Set up test repositories and files
 	testRepos := []string{"repo-local", "repo-wildcard", "repo-local2", "repo-local3"}
 	for _, repoName := range testRepos {
 		if !isRepoExist(repoName) {
@@ -5817,7 +5821,7 @@ func TestArtifactorySearchByPattern(t *testing.T) {
 
 		t.Run(testName, func(t *testing.T) {
 			// Execute search command via CLI
-			args := []string{"rt", "search", searchSample.pattern}
+			args := []string{"search", searchSample.pattern}
 			if searchSample.recursive {
 				args = append(args, "--recursive")
 			}
