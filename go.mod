@@ -8,7 +8,7 @@ replace (
 
 	github.com/jfrog/jfrog-cli-artifactory => github.com/reshmifrog/jfrog-cli-artifactory v0.0.0-20251105043403-7b1cf6289c03
 
-    github.com/jfrog/jfrog-client-go => github.com/reshmifrog/jfrog-client-go v1.52.1-0.20251028102546-27ae405f7592
+	github.com/jfrog/jfrog-client-go => github.com/reshmifrog/jfrog-client-go v1.52.1-0.20251028102546-27ae405f7592
 
 	// Should not be updated to 0.2.0-beta.2 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
 	github.com/pkg/term => github.com/pkg/term v1.1.0
@@ -251,5 +251,7 @@ require (
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20250907205057-2bfe50c014b7
 
 // replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.59.2-0.20250804083101-9cf424ecc926
+
+// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20250812100044-b52afcc698c1
 
 //replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.17.2-0.20250511132918-d9cc4cd50020

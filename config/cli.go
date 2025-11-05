@@ -165,9 +165,8 @@ func createOidcParamsFromFlags(c *cli.Context) (*token.OidcParams, error) {
 		VcsBranch:      os.Getenv(coreutils.CIVcsBranch),
 		VcsRevision:    os.Getenv(coreutils.CIVcsRevision),
 		// Values from the CI environment
-		JobId:      os.Getenv(coreutils.CIJobID),
-		RunId:      os.Getenv(coreutils.CIRunID),
-		Repository: os.Getenv(coreutils.SourceCodeRepository),
+		JobId: os.Getenv(coreutils.CIJobID),
+		RunId: os.Getenv(coreutils.CIRunID),
 	}, nil
 }
 

@@ -23,10 +23,10 @@ import (
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/gradle"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/mvn"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/npm"
+	containerutils "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/ocicontainer"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/terraform"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/yarn"
 	commandsUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
-	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
 	"github.com/jfrog/jfrog-cli-core/v2/common/build"
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
@@ -66,6 +66,7 @@ import (
 	yarndocs "github.com/jfrog/jfrog-cli/docs/buildtools/yarn"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/yarnconfig"
 	"github.com/jfrog/jfrog-cli/docs/common"
+	"github.com/jfrog/jfrog-cli/utils/buildinfo"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -514,6 +515,20 @@ func captureUserFlagsForMetrics(c *cli.Context, skipFlagParsing bool) {
 func MvnCmd(c *cli.Context) (err error) {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
+	}
+
+	// FlexPack bypasses all config file requirements
+	if os.Getenv("JFROG_RUN_NATIVE") == "true" {
+		log.Debug("Routing to Maven native implementation")
+		// Extract build configuration for FlexPack
+		args := cliutils.ExtractCommand(c)
+		filteredMavenArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
+		if err != nil {
+			return err
+		}
+		// Create Maven command with empty config for FlexPack
+		mvnCmd := mvn.NewMvnCommand().SetConfigPath("").SetGoals(filteredMavenArgs).SetConfiguration(buildConfiguration)
+		return commands.Exec(mvnCmd)
 	}
 
 	configFilePath, err := getProjectConfigPathOrThrow(project.Maven, "mvn", "mvn-config")
@@ -1100,17 +1115,15 @@ func NpmPublishCmd(c *cli.Context) (err error) {
 	if npmCmd.GetXrayScan() {
 		commandsUtils.ConditionalUploadScanFunc = scan.ConditionalUploadDefaultScanFunc
 	}
-	printDeploymentView, detailedSummary := log.IsStdErrTerminal(), npmCmd.IsDetailedSummary()
+	// deployment view are not available for native npm commands
+	printDeploymentView, detailedSummary := log.IsStdErrTerminal() && !npmCmd.UseNative(), npmCmd.IsDetailedSummary()
 	if !detailedSummary {
 		npmCmd.SetDetailedSummary(printDeploymentView)
 	}
 	err = commands.Exec(npmCmd)
 	result := npmCmd.Result()
 	defer cliutils.CleanupResult(result, &err)
-	// command summary and deployment view are not available for native npm commands
-	if !npmCmd.UseNative() {
-		err = cliutils.PrintCommandSummary(npmCmd.Result(), detailedSummary, printDeploymentView, false, err)
-	}
+	err = cliutils.PrintCommandSummary(npmCmd.Result(), detailedSummary, printDeploymentView, false, err)
 	return
 }
 
@@ -1198,6 +1211,48 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 	}
 	if c.NArg() < 1 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	// FlexPack native mode for Poetry (bypasses config file requirements)
+	if os.Getenv("JFROG_RUN_NATIVE") == "true" && projectType == project.Poetry {
+		log.Debug("Routing to Poetry native implementation")
+		args := cliutils.ExtractCommand(c)
+		filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
+		if err != nil {
+			return err
+		}
+		cmdName, poetryArgs := getCommandName(filteredArgs)
+
+		// Execute native poetry command directly (similar to Maven FlexPack)
+		log.Info(fmt.Sprintf("Running Poetry %s.", cmdName))
+		poetryCmd := exec.Command("poetry", append([]string{cmdName}, poetryArgs...)...)
+		poetryCmd.Stdout = os.Stdout
+		poetryCmd.Stderr = os.Stderr
+		if err := poetryCmd.Run(); err != nil {
+			return fmt.Errorf("poetry %s failed: %w", cmdName, err)
+		}
+
+		// Collect build info if build parameters provided
+		if buildConfiguration != nil {
+			buildName, err := buildConfiguration.GetBuildName()
+			if err == nil && buildName != "" {
+				workingDir, err := os.Getwd()
+				if err != nil {
+					log.Warn("Failed to get working directory, skipping build info collection: " + err.Error())
+				} else if err := buildinfo.GetPoetryBuildInfo(workingDir, buildConfiguration); err != nil {
+					log.Warn("Failed to collect Poetry build info: " + err.Error())
+				} else {
+					buildNumber, err := buildConfiguration.GetBuildNumber()
+					if err != nil {
+						log.Warn("Failed to get build number: " + err.Error())
+					} else {
+						log.Info(fmt.Sprintf("Poetry build info collected. Use 'jf rt bp %s %s' to publish it to Artifactory.", buildName, buildNumber))
+					}
+				}
+			}
+		}
+
+		return nil
 	}
 
 	// Get python configuration.

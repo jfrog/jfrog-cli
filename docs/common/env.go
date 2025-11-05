@@ -107,6 +107,10 @@ const (
 	JfrogCliGithubToken = `    JFROG_CLI_GITHUB_TOKEN
 		[Default: None]
 		Specifies the GitHub token to be used for cli version check on Github repository.`
+
+	JfrogCliHideSurvey = `    JFROG_CLI_HIDE_SURVEY
+		[Default: false]
+		Set to true to hide the survey link that appears after successful command execution.`
 )
 
 var (
@@ -148,7 +152,8 @@ func GetGlobalEnvVars() string {
 		JfrogCliAvoidNewVersionWarning,
 		JfrogCliCommandSummaryOutputDirectory,
 		JfrogSecurityCliAnalyzerManagerVersion,
-		JfrogCliGithubToken)
+		JfrogCliGithubToken,
+		JfrogCliHideSurvey)
 }
 
 func CreateEnvVars(envVars ...string) string {
