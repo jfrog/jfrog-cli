@@ -5796,7 +5796,6 @@ func TestArtifactorySearchByPattern(t *testing.T) {
 	initArtifactoryTest(t, "")
 	defer cleanArtifactoryTest()
 
-	// Set up test repositories and files
 	testRepos := []string{"repo-local", "repo-wildcard", "repo-local2", "repo-local3"}
 	for _, repoName := range testRepos {
 		if !isRepoExist(repoName) {
