@@ -865,8 +865,7 @@ github.com/felixge/httpsnoop v1.0.4 h1:NFTV2Zj1bL4mc9sqWACXbQFVBBg2W3GPvqp8/ESS2
 github.com/felixge/httpsnoop v1.0.4/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSwevea8zH2U=
 github.com/fogleman/gg v1.2.1-0.20190220221249-0403632d5b90/go.mod h1:R/bRT+9gY/C5z7JzPU0zXsXHKM4/ayA+zqcVNZzPa1k=
 github.com/fogleman/gg v1.3.0/go.mod h1:R/bRT+9gY/C5z7JzPU0zXsXHKM4/ayA+zqcVNZzPa1k=
-github.com/forPelevin/gomoji v1.4.0 h1:RwrT+GimxEtFnGqq4ep1upwR54J5FP84aVAYJA+p8BQ=
-github.com/forPelevin/gomoji v1.4.0/go.mod h1:mM6GtmCgpoQP2usDArc6GjbXrti5+FffolyQfGgPboQ=
+github.com/forPelevin/gomoji v1.4.1 h1:7U+Bl8o6RV/dOQz7coQFWj/jX6Ram6/cWFOuFDEPEUo=
 github.com/forPelevin/gomoji v1.4.1/go.mod h1:mM6GtmCgpoQP2usDArc6GjbXrti5+FffolyQfGgPboQ=
 github.com/frankban/quicktest v1.14.6 h1:7Xjx+VpznH+oBnejlPUj8oUpdxnVs4f8XU8WnHkI4W8=
 github.com/frankban/quicktest v1.14.6/go.mod h1:4ptaffx2x8+WTWXmUCuVU6aPUX1/Mz7zb5vbUoiM6w0=
@@ -1163,8 +1162,7 @@ github.com/jellydator/ttlcache/v3 v3.4.0 h1:YS4P125qQS0tNhtL6aeYkheEaB/m8HCqdMMP
 github.com/jellydator/ttlcache/v3 v3.4.0/go.mod h1:Hw9EgjymziQD3yGsQdf1FqFdpp7YjFMd4Srg5EJlgD4=
 github.com/jfrog/archiver/v3 v3.6.1 h1:LOxnkw9pOn45DzCbZNFV6K0+6dCsQ0L8mR3ZcujO5eI=
 github.com/jfrog/archiver/v3 v3.6.1/go.mod h1:VgR+3WZS4N+i9FaDwLZbq+jeU4B4zctXL+gL4EMzfLw=
-github.com/jfrog/build-info-go v1.12.1 h1:pXyx2F3MzrdbLPhYU8om+RHl87yEDYW+UwAUw3f40fQ=
-github.com/jfrog/build-info-go v1.12.1/go.mod h1:szdz9+WzB7+7PGnILLUgyY+OF5qD5geBT7UGNIxibyw=
+github.com/jfrog/build-info-go v1.12.2 h1:eWA96kXqRk0jnD55bsvFfRZNHE+/BT2ASg7S5LEi0Oo=
 github.com/jfrog/build-info-go v1.12.2/go.mod h1:szdz9+WzB7+7PGnILLUgyY+OF5qD5geBT7UGNIxibyw=
 github.com/jfrog/froggit-go v1.20.3 h1:U3HHT0+AEHUVSSyQBbagQR4fLRqGqzSptPujDZuuDTk=
 github.com/jfrog/froggit-go v1.20.3/go.mod h1:obSG1SlsWjktkuqmKtpq7MNTTL63e0ot+ucTnlOMV88=
@@ -1372,11 +1370,9 @@ github.com/prometheus/common v0.65.0/go.mod h1:0gZns+BLRQ3V6NdaerOhMbwwRbNh9hkGI
 github.com/prometheus/procfs v0.17.0 h1:FuLQ+05u4ZI+SS/w9+BWEM2TXiHKsUQ9TADiRH7DuK0=
 github.com/prometheus/procfs v0.17.0/go.mod h1:oPQLaDAMRbA+u8H5Pbfq+dl3VDAvHxMUOVhe0wYB2zw=
 github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0/go.mod h1:qqbHyh8v60DhA7CoWK5oRCqLrMHRGoxYCSS9EjAz6Eo=
-github.com/reshmifrog/jfrog-cli-artifactory v0.0.0-20251105051638-8a9f275f6020 h1:2gjYdRTOysLeFMDc/dASjVeWGe6+7zqBVN6kNBj1izY=
-github.com/reshmifrog/jfrog-cli-artifactory v0.0.0-20251105051638-8a9f275f6020/go.mod h1:xQMlfxAAJyhl1Oy5+u7kaygJnAPCJ6lt2WuOCNfHZdo=
+github.com/reshmifrog/jfrog-cli-artifactory v0.0.0-20251105115853-5f717e64a95a h1:CgIK/aBrzFM1+CYPLomwGGmBS0k50nYFore6F/lw8ZA=
 github.com/reshmifrog/jfrog-cli-artifactory v0.0.0-20251105115853-5f717e64a95a/go.mod h1:YUzOSMGupZv8OXPXblpM9Dc6WJLjb8fZKquxJ+TuVAQ=
-github.com/reshmifrog/jfrog-client-go v1.52.1-0.20251028102546-27ae405f7592 h1:NYEfOTYDbj3hCSOneX3m/04PtP0idOhaUEgUEz+yggc=
-github.com/reshmifrog/jfrog-client-go v1.52.1-0.20251028102546-27ae405f7592/go.mod h1:jrODQbAbCt97F24d/0bYpqpdc0PFMuBxNJOTfTdW+Fk=
+github.com/reshmifrog/jfrog-client-go v1.52.1-0.20251105115658-499e4a130d17 h1:Ifg7RwmuUJgKyVkHv943ekvYopaBMsgh+8txvZspHsw=
 github.com/reshmifrog/jfrog-client-go v1.52.1-0.20251105115658-499e4a130d17/go.mod h1:wsMEtoyAu/1bARUHxFdmgz83g96ml7ZWcFioIPiuz/U=
 github.com/rivo/uniseg v0.2.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=
 github.com/rivo/uniseg v0.4.7 h1:WUdvkW8uEhrYfLC4ZzdpI2ztxP1I582+49Oc5Mq64VQ=
