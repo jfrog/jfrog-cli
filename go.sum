@@ -1370,6 +1370,7 @@ github.com/prometheus/common v0.65.0/go.mod h1:0gZns+BLRQ3V6NdaerOhMbwwRbNh9hkGI
 github.com/prometheus/procfs v0.17.0 h1:FuLQ+05u4ZI+SS/w9+BWEM2TXiHKsUQ9TADiRH7DuK0=
 github.com/prometheus/procfs v0.17.0/go.mod h1:oPQLaDAMRbA+u8H5Pbfq+dl3VDAvHxMUOVhe0wYB2zw=
 github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0/go.mod h1:qqbHyh8v60DhA7CoWK5oRCqLrMHRGoxYCSS9EjAz6Eo=
+github.com/reshmifrog/jfrog-cli-artifactory v0.0.0-20251105051638-8a9f275f6020 h1:2gjYdRTOysLeFMDc/dASjVeWGe6+7zqBVN6kNBj1izY=
 github.com/reshmifrog/jfrog-cli-artifactory v0.0.0-20251105051638-8a9f275f6020/go.mod h1:xQMlfxAAJyhl1Oy5+u7kaygJnAPCJ6lt2WuOCNfHZdo=
 github.com/reshmifrog/jfrog-client-go v1.52.1-0.20251028102546-27ae405f7592 h1:NYEfOTYDbj3hCSOneX3m/04PtP0idOhaUEgUEz+yggc=
 github.com/reshmifrog/jfrog-client-go v1.52.1-0.20251028102546-27ae405f7592/go.mod h1:jrODQbAbCt97F24d/0bYpqpdc0PFMuBxNJOTfTdW+Fk=
