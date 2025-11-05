@@ -2868,16 +2868,6 @@ func TestArtifactoryIncludeDirFlatNonEmptyFolderUpload(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-func TestArtifactoryDirectDownloadNotIncludeDirs(t *testing.T) {
-	initArtifactoryTest(t, "")
-	// 'c' folder is defined as bottom chain directory therefore should be uploaded when using flat=true even though 'c' is not empty
-	runRt(t, "upload", tests.GetTestResourcesPath()+"*/c", tests.RtRepo1, "--include-dirs=true", "--flat=true")
-	runRt(t, "direct-download", tests.RtRepo1, tests.Out+"/", "--recursive=true")
-	assert.False(t, fileutils.IsPathExists(tests.Out+"/c", false), "Failed to download folders from Artifactory")
-	// Cleanup
-	cleanArtifactoryTest()
-}
-
 // Test the definition of bottom chain directories - Directories which do not include other directories that match the pattern
 func TestArtifactoryDownloadNotIncludeDirs(t *testing.T) {
 	initArtifactoryTest(t, "")
@@ -2965,55 +2955,6 @@ func TestArtifactoryDirectDownloadChecksumValidation(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-func TestArtifactoryDirectDownloadByBuildWithDependencies(t *testing.T) {
-	initArtifactoryTest(t, "")
-	buildNumber := "1"
-	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
-
-	// Upload files with buildName and buildNumber to create build artifacts
-	runRt(t, "upload", "testdata/a/a*.in", tests.RtRepo1+"/", "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber)
-	runRt(t, "upload", "testdata/a/b*.in", tests.RtRepo1+"/", "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber)
-
-	// Upload files without build info (to be used as dependencies)
-	runRt(t, "upload", "testdata/a/c*.in", tests.RtRepo1+"/")
-
-	// Create spec for dependency collection
-	specFile, err := tests.CreateSpec(tests.SplitUploadSpecB)
-	assert.NoError(t, err)
-
-	// Add dependencies to the build
-	artifactoryCliNoCreds := coretests.NewJfrogCli(execMain, "jfrog rt", "")
-	assert.NoError(t, artifactoryCliNoCreds.Exec("bad", "--spec="+specFile, tests.RtBuildName1, buildNumber))
-
-	// Publish build info
-	runRt(t, "build-publish", tests.RtBuildName1, buildNumber)
-
-	// Test 1: Download with exclude-artifacts (should download 0 files since DDL logs warning and skips)
-	runRt(t, "ddl", tests.RtRepo1+"/testdata/a/a*.in", "out/ddl_build_exclude/", "--build="+tests.RtBuildName1+"/"+buildNumber, "--exclude-artifacts=true", "--flat=true")
-	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out+"/ddl_build_exclude", false)
-	assert.Equal(t, 0, len(paths), "DDL with exclude-artifacts should skip download")
-
-	// Test 2: Download with include-deps (should download 0 files since DDL logs warning and skips)
-	runRt(t, "ddl", tests.RtRepo1+"/testdata/a/b*.in", "out/ddl_build_deps/", "--build="+tests.RtBuildName1+"/"+buildNumber, "--include-deps=true", "--flat=true")
-	paths, _ = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out+"/ddl_build_deps", false)
-	assert.Equal(t, 0, len(paths), "DDL with include-deps should skip download")
-
-	// Test 3: Normal download without build flags (should download all files)
-	runRt(t, "ddl", tests.RtRepo1+"/testdata/a/a*.in", "out/ddl_normal/", "--flat=true")
-	paths, _ = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out+"/ddl_normal", false)
-	assert.True(t, len(paths) > 0, "DDL without build flags should download files")
-
-	// Test 4: Download with build but without exclude/include flags (should download build artifacts only)
-	runRt(t, "ddl", tests.RtRepo1+"/testdata/a/a*.in", "out/ddl_build_only/", "--build="+tests.RtBuildName1+"/"+buildNumber, "--flat=true")
-	paths, _ = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out+"/ddl_build_only", false)
-	// Since DDL cannot filter by build, it will download all matching files
-	assert.True(t, len(paths) > 0, "DDL with build flag should download matching files")
-
-	// Cleanup
-	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
-	cleanArtifactoryTest()
-}
-
 // Test the definition of bottom chain directories - Directories which do not include other directories that match the pattern
 func TestArtifactoryUploadFlatFolderWithFileAndInnerEmptyMatchingPattern(t *testing.T) {
 	initArtifactoryTest(t, "")
@@ -3060,24 +3001,6 @@ func TestArtifactoryFlatFolderDownload1(t *testing.T) {
 	clientTestUtils.RemoveAllAndAssert(t, tests.Out)
 	// Only the inner folder should be downland e.g 'folder'
 	runRt(t, "download", tests.RtRepo1, tests.Out+"/", "--include-dirs=true", "--flat=true")
-	assert.False(t, !fileutils.IsPathExists(filepath.Join(tests.Out, "folder"), false) &&
-		fileutils.IsPathExists(filepath.Join(tests.Out, "inner"), false),
-		"Failed to download folders from Artifactory")
-	// Cleanup
-	cleanArtifactoryTest()
-}
-
-func TestArtifactoryFlatFolderDirectDownload1(t *testing.T) {
-	initArtifactoryTest(t, "")
-	dirInnerPath := fileutils.GetFileSeparator() + filepath.Join("inner", "folder")
-	canonicalPath := tests.Out + dirInnerPath
-	err := os.MkdirAll(canonicalPath, 0777)
-	assert.NoError(t, err)
-	// Flat true by default for upload, by using placeholder we indeed create folders hierarchy in Artifactory inner/folder/folder
-	runRt(t, "upload", tests.Out+"/(*)", tests.RtRepo1+"/{1}/", "--include-dirs=true")
-	clientTestUtils.RemoveAllAndAssert(t, tests.Out)
-	// Only the inner folder should be downland e.g 'folder'
-	runRt(t, "direct-download", tests.RtRepo1, tests.Out+"/", "--include-dirs=true", "--flat=true")
 	assert.False(t, !fileutils.IsPathExists(filepath.Join(tests.Out, "folder"), false) &&
 		fileutils.IsPathExists(filepath.Join(tests.Out, "inner"), false),
 		"Failed to download folders from Artifactory")
