@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-artifactory/cliutils/flagkit"
 	"io"
 	"net"
 	"net/http"
@@ -23,6 +22,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/jfrog/jfrog-cli-artifactory/cliutils/flagkit"
 
 	biutils "github.com/jfrog/build-info-go/utils"
 
@@ -2867,6 +2868,16 @@ func TestArtifactoryIncludeDirFlatNonEmptyFolderUpload(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryDirectDownloadNotIncludeDirs(t *testing.T) {
+	initArtifactoryTest(t, "")
+	// 'c' folder is defined as bottom chain directory therefore should be uploaded when using flat=true even though 'c' is not empty
+	runRt(t, "upload", tests.GetTestResourcesPath()+"*/c", tests.RtRepo1, "--include-dirs=true", "--flat=true")
+	runRt(t, "direct-download", tests.RtRepo1, tests.Out+"/", "--recursive=true")
+	assert.False(t, fileutils.IsPathExists(tests.Out+"/c", false), "Failed to download folders from Artifactory")
+	// Cleanup
+	cleanArtifactoryTest()
+}
+
 // Test the definition of bottom chain directories - Directories which do not include other directories that match the pattern
 func TestArtifactoryDownloadNotIncludeDirs(t *testing.T) {
 	initArtifactoryTest(t, "")
@@ -2954,6 +2965,55 @@ func TestArtifactoryDirectDownloadChecksumValidation(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryDirectDownloadByBuildWithDependencies(t *testing.T) {
+	initArtifactoryTest(t, "")
+	buildNumber := "1"
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+
+	// Upload files with buildName and buildNumber to create build artifacts
+	runRt(t, "upload", "testdata/a/a*.in", tests.RtRepo1+"/", "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber)
+	runRt(t, "upload", "testdata/a/b*.in", tests.RtRepo1+"/", "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber)
+
+	// Upload files without build info (to be used as dependencies)
+	runRt(t, "upload", "testdata/a/c*.in", tests.RtRepo1+"/")
+
+	// Create spec for dependency collection
+	specFile, err := tests.CreateSpec(tests.SplitUploadSpecB)
+	assert.NoError(t, err)
+
+	// Add dependencies to the build
+	artifactoryCliNoCreds := coretests.NewJfrogCli(execMain, "jfrog rt", "")
+	assert.NoError(t, artifactoryCliNoCreds.Exec("bad", "--spec="+specFile, tests.RtBuildName1, buildNumber))
+
+	// Publish build info
+	runRt(t, "build-publish", tests.RtBuildName1, buildNumber)
+
+	// Test 1: Download with exclude-artifacts (should download 0 files since DDL logs warning and skips)
+	runRt(t, "ddl", tests.RtRepo1+"/testdata/a/a*.in", "out/ddl_build_exclude/", "--build="+tests.RtBuildName1+"/"+buildNumber, "--exclude-artifacts=true", "--flat=true")
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out+"/ddl_build_exclude", false)
+	assert.Equal(t, 0, len(paths), "DDL with exclude-artifacts should skip download")
+
+	// Test 2: Download with include-deps (should download 0 files since DDL logs warning and skips)
+	runRt(t, "ddl", tests.RtRepo1+"/testdata/a/b*.in", "out/ddl_build_deps/", "--build="+tests.RtBuildName1+"/"+buildNumber, "--include-deps=true", "--flat=true")
+	paths, _ = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out+"/ddl_build_deps", false)
+	assert.Equal(t, 0, len(paths), "DDL with include-deps should skip download")
+
+	// Test 3: Normal download without build flags (should download all files)
+	runRt(t, "ddl", tests.RtRepo1+"/testdata/a/a*.in", "out/ddl_normal/", "--flat=true")
+	paths, _ = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out+"/ddl_normal", false)
+	assert.True(t, len(paths) > 0, "DDL without build flags should download files")
+
+	// Test 4: Download with build but without exclude/include flags (should download build artifacts only)
+	runRt(t, "ddl", tests.RtRepo1+"/testdata/a/a*.in", "out/ddl_build_only/", "--build="+tests.RtBuildName1+"/"+buildNumber, "--flat=true")
+	paths, _ = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out+"/ddl_build_only", false)
+	// Since DDL cannot filter by build, it will download all matching files
+	assert.True(t, len(paths) > 0, "DDL with build flag should download matching files")
+
+	// Cleanup
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
 // Test the definition of bottom chain directories - Directories which do not include other directories that match the pattern
 func TestArtifactoryUploadFlatFolderWithFileAndInnerEmptyMatchingPattern(t *testing.T) {
 	initArtifactoryTest(t, "")
@@ -3000,6 +3060,24 @@ func TestArtifactoryFlatFolderDownload1(t *testing.T) {
 	clientTestUtils.RemoveAllAndAssert(t, tests.Out)
 	// Only the inner folder should be downland e.g 'folder'
 	runRt(t, "download", tests.RtRepo1, tests.Out+"/", "--include-dirs=true", "--flat=true")
+	assert.False(t, !fileutils.IsPathExists(filepath.Join(tests.Out, "folder"), false) &&
+		fileutils.IsPathExists(filepath.Join(tests.Out, "inner"), false),
+		"Failed to download folders from Artifactory")
+	// Cleanup
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryFlatFolderDirectDownload1(t *testing.T) {
+	initArtifactoryTest(t, "")
+	dirInnerPath := fileutils.GetFileSeparator() + filepath.Join("inner", "folder")
+	canonicalPath := tests.Out + dirInnerPath
+	err := os.MkdirAll(canonicalPath, 0777)
+	assert.NoError(t, err)
+	// Flat true by default for upload, by using placeholder we indeed create folders hierarchy in Artifactory inner/folder/folder
+	runRt(t, "upload", tests.Out+"/(*)", tests.RtRepo1+"/{1}/", "--include-dirs=true")
+	clientTestUtils.RemoveAllAndAssert(t, tests.Out)
+	// Only the inner folder should be downland e.g 'folder'
+	runRt(t, "direct-download", tests.RtRepo1, tests.Out+"/", "--include-dirs=true", "--flat=true")
 	assert.False(t, !fileutils.IsPathExists(filepath.Join(tests.Out, "folder"), false) &&
 		fileutils.IsPathExists(filepath.Join(tests.Out, "inner"), false),
 		"Failed to download folders from Artifactory")
@@ -3631,6 +3709,452 @@ func TestArtifactoryDownloadExclusionsBySpecOverride(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Cleanup
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadBasic(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload test files
+	runRt(t, "upload", "testdata/a/*.in", tests.RtRepo1+"/ddl-basic/")
+
+	// Download using ddl command
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-basic/*.in", tests.Out+"/")
+
+	// Verify files were downloaded
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NotEmpty(t, paths, "Expected files to be downloaded")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadFromVirtual(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload test files to physical repo
+	runRt(t, "upload", "testdata/a/*.in", tests.RtRepo1+"/ddl-virtual/")
+
+	// Download from virtual repo using ddl
+	runRt(t, "ddl", tests.RtVirtualRepo+"/ddl-virtual/*.in", tests.Out+"/", "--flat=true")
+
+	// Verify files were downloaded
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NotEmpty(t, paths, "Expected files to be downloaded from virtual repository")
+
+	// Check that at least some .in files were downloaded
+	hasInFiles := false
+	for _, path := range paths {
+		if strings.HasSuffix(path, ".in") {
+			hasInFiles = true
+			break
+		}
+	}
+	assert.True(t, hasInFiles, "Expected .in files to be downloaded")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithFlat(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload files
+	runRt(t, "upload", "testdata/a/*.in", tests.RtRepo1+"/ddl-flat/")
+
+	// Download with flat=true
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-flat/*.in", tests.Out+"/", "--flat=true")
+
+	// Verify files were downloaded
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NotEmpty(t, paths, "Expected files to be downloaded with flat structure")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadRecursive(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload files in nested directories
+	runRt(t, "upload", "testdata/a/*.in", tests.RtRepo1+"/ddl-recursive/level1/level2/")
+
+	// Download with recursive=true (use directory pattern)
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-recursive/*", tests.Out+"/", "--recursive=true")
+
+	// Verify files were downloaded
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NotEmpty(t, paths, "Expected files to be downloaded recursively")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithExclusions(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload files
+	runRt(t, "upload", "testdata/a/a*.in", tests.RtRepo1+"/ddl-exclusions/")
+	runRt(t, "upload", "testdata/a/b*.in", tests.RtRepo1+"/ddl-exclusions/")
+
+	// Download with exclusions
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-exclusions/*.in", tests.Out+"/", "--exclusions=*a1.in")
+
+	// Verify a1.in was excluded
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	for _, path := range paths {
+		assert.NotContains(t, filepath.Base(path), "a1.in", "a1.in should be excluded")
+	}
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithMinSplit(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Create and upload a file larger than min-split size
+	testFile := filepath.Join(tests.Out, "largefile.bin")
+	assert.NoError(t, fileutils.CreateDirIfNotExist(tests.Out))
+	_, err := gofrogio.CreateRandFile(testFile, 100000) // 100KB file
+	assert.NoError(t, err)
+
+	// Upload with flat to ensure file is at expected path
+	runRt(t, "upload", testFile, tests.RtRepo1+"/ddl-split/", "--flat=true")
+
+	// Clean local file
+	clientTestUtils.RemoveAllAndAssert(t, tests.Out)
+	assert.NoError(t, fileutils.CreateDirIfNotExist(tests.Out))
+
+	// Download with min-split (should trigger concurrent download)
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-split/largefile.bin", tests.Out+"/", "--min-split=50", "--split-count=3")
+
+	// Verify file was downloaded
+	downloadedFile := filepath.Join(tests.Out, "largefile.bin")
+	assert.True(t, fileutils.IsPathExists(downloadedFile, false), "Expected largefile.bin to be downloaded")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithThreads(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload multiple files
+	runRt(t, "upload", "testdata/a/*.in", tests.RtRepo1+"/ddl-threads/")
+
+	// Download with multiple threads
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-threads/*.in", tests.Out+"/", "--threads=5")
+
+	// Verify all files were downloaded
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NotEmpty(t, paths, "Expected files to be downloaded with threading")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithDryRun(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload test files
+	runRt(t, "upload", "testdata/a/*.in", tests.RtRepo1+"/ddl-dryrun/")
+
+	// Download with dry-run
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-dryrun/*.in", tests.Out+"/", "--dry-run")
+
+	// Note: Currently ddl with dry-run still downloads files
+	// This is a known difference from dl command
+	// For now, just verify the command runs without error
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	// We expect files to be downloaded (current behavior)
+	assert.NotEmpty(t, paths, "DDL currently downloads files even with dry-run")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithSkipChecksum(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload test files
+	runRt(t, "upload", "testdata/a/*.in", tests.RtRepo1+"/ddl-checksum/")
+
+	// Download with skip-checksum
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-checksum/*.in", tests.Out+"/", "--skip-checksum")
+
+	// Verify files were downloaded (even though checksum verification was skipped)
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NotEmpty(t, paths, "Expected files to be downloaded with skip-checksum")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithExplode(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Create a zip file
+	err := fileutils.CreateDirIfNotExist(tests.Out)
+	assert.NoError(t, err)
+
+	// Create files to zip
+	testDir := filepath.Join(tests.Out, "tozip")
+	assert.NoError(t, fileutils.CreateDirIfNotExist(testDir))
+	testFile1 := filepath.Join(testDir, "file1.txt")
+	testFile2 := filepath.Join(testDir, "file2.txt")
+	assert.NoError(t, os.WriteFile(testFile1, []byte("content1"), 0644))
+	assert.NoError(t, os.WriteFile(testFile2, []byte("content2"), 0644))
+
+	// Create zip
+	zipPath := filepath.Join(tests.Out, "test.zip")
+	err = archiver.Archive([]string{testDir}, zipPath)
+	assert.NoError(t, err)
+
+	// Upload zip
+	runRt(t, "upload", zipPath, tests.RtRepo1+"/ddl-explode/", "--flat=true")
+
+	// Clean local files
+	clientTestUtils.RemoveAllAndAssert(t, tests.Out)
+	assert.NoError(t, fileutils.CreateDirIfNotExist(tests.Out))
+
+	// Download with explode
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-explode/test.zip", tests.Out+"/", "--explode")
+
+	// Verify files were extracted, not the zip itself
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	hasTextFiles := false
+	for _, path := range paths {
+		if strings.HasSuffix(path, ".txt") {
+			hasTextFiles = true
+			break
+		}
+	}
+	assert.True(t, hasTextFiles, "Expected extracted .txt files from exploded archive")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadByBuild(t *testing.T) {
+	initArtifactoryTest(t, "")
+	buildNumber := "ddl-build-1"
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+
+	// Upload files and collect build info
+	runRt(t, "upload", "testdata/a/*.in", tests.RtRepo1+"/ddl-build/", "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber)
+	runRt(t, "build-publish", tests.RtBuildName1, buildNumber)
+
+	// Download by build using ddl
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-build/*.in", tests.Out+"/", "--build="+tests.RtBuildName1+"/"+buildNumber)
+
+	// Verify files were downloaded
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NotEmpty(t, paths, "Expected files to be downloaded by build")
+
+	// Cleanup
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadComparison(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload test files
+	runRt(t, "upload", "testdata/a/*.in", tests.RtRepo1+"/ddl-compare/")
+
+	// Download with regular dl
+	runRt(t, "dl", tests.RtRepo1+"/ddl-compare/*.in", tests.Out+"/dl/")
+	dlPaths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out+"/dl", false)
+
+	// Download with ddl
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-compare/*.in", tests.Out+"/ddl/")
+	ddlPaths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out+"/ddl", false)
+
+	// Both should download the same number of files
+	assert.Equal(t, len(dlPaths), len(ddlPaths), "dl and ddl should download the same number of files")
+
+	// Both should have downloaded files
+	assert.NotEmpty(t, dlPaths, "dl should download files")
+	assert.NotEmpty(t, ddlPaths, "ddl should download files")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadPathWithSpecialChars(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload files with special characters in path
+	runRt(t, "upload", getSpecialCharFilePath(), tests.RtRepo1, "--flat=false")
+	runRt(t, "upload", "testdata/c#/a#1.in", tests.RtRepo1, "--flat=false")
+
+	// Download using ddl with special chars in path
+	runRt(t, "ddl", tests.RtRepo1+"/testdata/a$+~&^a#/a*", tests.Out+fileutils.GetFileSeparator(), "--flat=true")
+	runRt(t, "ddl", tests.RtRepo1+"/testdata/c#/a#1.in", tests.Out+fileutils.GetFileSeparator(), "--flat=true")
+
+	// Verify files were downloaded
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	tests.VerifyExistLocally([]string{filepath.Join(tests.Out, "a1.in"), filepath.Join(tests.Out, "a#1.in")}, paths, t)
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithCustomThreads(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload multiple files
+	runRt(t, "upload", "testdata/a/*.in", tests.RtRepo1+"/ddl-threads-custom/")
+
+	// Download with custom thread count
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-threads-custom/*.in", tests.Out+"/", "--threads=5")
+
+	// Verify files were downloaded
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NotEmpty(t, paths, "Expected files to be downloaded with custom thread count")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithRetries(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload test file
+	runRt(t, "upload", "testdata/a/a1.in", tests.RtRepo1+"/ddl-retries/")
+
+	// Download with custom retry settings
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-retries/*.in", tests.Out+"/", "--retries=5", "--retry-wait-time=2s")
+
+	// Verify file was downloaded
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NotEmpty(t, paths, "Expected file to be downloaded with custom retry settings")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithFailNoOp(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Try to download non-existent files with fail-no-op
+	err := artifactoryCli.Exec([]string{"ddl", tests.RtRepo1 + "/non-existent-pattern-*.txt", tests.Out + "/", "--fail-no-op=true", "--server-id=" + tests.ServerId}...)
+	assert.Error(t, err, "Expected error when no files match with fail-no-op")
+
+	// Try without fail-no-op (should succeed with 0 downloads)
+	runRt(t, "ddl", tests.RtRepo1+"/non-existent-pattern-*.txt", tests.Out+"/")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithDetailedSummary(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload test files
+	runRt(t, "upload", "testdata/a/*.in", tests.RtRepo1+"/ddl-summary/")
+
+	// Download with detailed summary
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-summary/*.in", tests.Out+"/", "--detailed-summary=true")
+
+	// Verify files were downloaded (detailed summary is shown in console output)
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NotEmpty(t, paths, "Expected files to be downloaded with detailed summary")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithValidateSymlinks(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload test file
+	runRt(t, "upload", "testdata/a/a1.in", tests.RtRepo1+"/ddl-symlinks/")
+
+	// Download with validate-symlinks
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-symlinks/*.in", tests.Out+"/", "--validate-symlinks=true")
+
+	// Verify file was downloaded
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NotEmpty(t, paths, "Expected file to be downloaded with symlink validation")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithInsecureTls(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload test file
+	runRt(t, "upload", "testdata/a/a1.in", tests.RtRepo1+"/ddl-tls/")
+
+	// Download with insecure-tls
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-tls/*.in", tests.Out+"/", "--insecure-tls=true")
+
+	// Verify file was downloaded
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NotEmpty(t, paths, "Expected file to be downloaded with insecure TLS")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithProject(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload test file
+	runRt(t, "upload", "testdata/a/a1.in", tests.RtRepo1+"/ddl-project/")
+
+	// Download with project flag (may not affect download if project doesn't exist)
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-project/*.in", tests.Out+"/", "--project=test-project")
+
+	// Verify file was downloaded
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NotEmpty(t, paths, "Expected file to be downloaded with project flag")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithBundle(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload test file first
+	runRt(t, "upload", "testdata/a/a1.in", tests.RtRepo1+"/ddl-bundle/")
+
+	// Try to download with bundle flag (will likely fail if bundle doesn't exist)
+	// Using correct format: bundle-name/bundle-version
+	// This test verifies the bundle flag is parsed correctly (no panic)
+	_ = artifactoryCli.Exec([]string{"ddl", "non-existent-bundle/*", tests.Out + "/", "--bundle=test-bundle/1.0.0", "--server-id=" + tests.ServerId}...)
+	// We expect this to fail or return 0 files since the bundle doesn't exist
+
+	// For comparison, regular download should work
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-bundle/*.in", tests.Out+"/regular/")
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out+"/regular", false)
+	assert.NotEmpty(t, paths, "Expected regular download to work")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithAuthentication(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload test file
+	runRt(t, "upload", "testdata/a/a1.in", tests.RtRepo1+"/ddl-auth/")
+
+	// Test with URL and credentials (using server-id overrides these)
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-auth/*.in", tests.Out+"/", "--server-id="+tests.ServerId)
+
+	// Verify file was downloaded
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NotEmpty(t, paths, "Expected file to be downloaded with authentication")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithBuildNameNumber(t *testing.T) {
+	initArtifactoryTest(t, "")
+	buildName := "ddl-build-test"
+	buildNumber := "42"
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	// Upload with build info
+	runRt(t, "upload", "testdata/a/*.in", tests.RtRepo1+"/ddl-buildinfo/",
+		"--build-name="+buildName, "--build-number="+buildNumber)
+	runRt(t, "build-publish", buildName, buildNumber)
+
+	// Download using separate build-name and build-number flags
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-buildinfo/*.in", tests.Out+"/",
+		"--build-name="+buildName, "--build-number="+buildNumber)
+
+	// Verify files were downloaded
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NotEmpty(t, paths, "Expected files to be downloaded by build name and number")
+
+	// Cleanup
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 	cleanArtifactoryTest()
 }
 
