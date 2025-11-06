@@ -6,7 +6,7 @@ replace (
 	// Should not be updated to 0.2.6 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
 	github.com/c-bata/go-prompt => github.com/c-bata/go-prompt v0.2.5
 
-	github.com/jfrog/jfrog-cli-artifactory => github.com/reshmifrog/jfrog-cli-artifactory v0.0.0-20251105115853-5f717e64a95a
+	github.com/jfrog/jfrog-cli-artifactory => github.com/reshmifrog/jfrog-cli-artifactory v0.0.0-20251106070733-5e3d6b325694
 
 	github.com/jfrog/jfrog-client-go => github.com/reshmifrog/jfrog-client-go v1.52.1-0.20251105115658-499e4a130d17
 

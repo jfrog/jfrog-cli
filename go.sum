@@ -1362,8 +1362,8 @@ github.com/prometheus/common v0.65.0/go.mod h1:0gZns+BLRQ3V6NdaerOhMbwwRbNh9hkGI
 github.com/prometheus/procfs v0.17.0 h1:FuLQ+05u4ZI+SS/w9+BWEM2TXiHKsUQ9TADiRH7DuK0=
 github.com/prometheus/procfs v0.17.0/go.mod h1:oPQLaDAMRbA+u8H5Pbfq+dl3VDAvHxMUOVhe0wYB2zw=
 github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0/go.mod h1:qqbHyh8v60DhA7CoWK5oRCqLrMHRGoxYCSS9EjAz6Eo=
-github.com/reshmifrog/jfrog-cli-artifactory v0.0.0-20251105115853-5f717e64a95a h1:CgIK/aBrzFM1+CYPLomwGGmBS0k50nYFore6F/lw8ZA=
-github.com/reshmifrog/jfrog-cli-artifactory v0.0.0-20251105115853-5f717e64a95a/go.mod h1:YUzOSMGupZv8OXPXblpM9Dc6WJLjb8fZKquxJ+TuVAQ=
+github.com/reshmifrog/jfrog-cli-artifactory v0.0.0-20251106070733-5e3d6b325694 h1:xW/xZ98zM+QO6ywfmBKJwfHKavLeOxR/bOij/Vmn0x4=
+github.com/reshmifrog/jfrog-cli-artifactory v0.0.0-20251106070733-5e3d6b325694/go.mod h1:YUzOSMGupZv8OXPXblpM9Dc6WJLjb8fZKquxJ+TuVAQ=
 github.com/reshmifrog/jfrog-client-go v1.52.1-0.20251105115658-499e4a130d17 h1:Ifg7RwmuUJgKyVkHv943ekvYopaBMsgh+8txvZspHsw=
 github.com/reshmifrog/jfrog-client-go v1.52.1-0.20251105115658-499e4a130d17/go.mod h1:wsMEtoyAu/1bARUHxFdmgz83g96ml7ZWcFioIPiuz/U=
 github.com/rivo/uniseg v0.2.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=
