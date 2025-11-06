@@ -3780,15 +3780,15 @@ func TestDirectDownloadWithDryRun(t *testing.T) {
 	// Upload test files
 	runRt(t, "upload", "testdata/a/*.in", tests.RtRepo1+"/ddl-dryrun/")
 
-	// Download with dry-run
-	runRt(t, "ddl", tests.RtRepo1+"/ddl-dryrun/*.in", tests.Out+"/", "--dry-run")
+	// Use a separate output directory for dry-run test
+	dryRunOut := tests.Out + "/dry-run-test"
 
-	// Note: Currently ddl with dry-run still downloads files
-	// This is a known difference from dl command
-	// For now, just verify the command runs without error
-	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	// We expect files to be downloaded (current behavior)
-	assert.NotEmpty(t, paths, "DDL currently downloads files even with dry-run")
+	// Download with dry-run
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-dryrun/*.in", dryRunOut+"/", "--dry-run")
+
+	exists, err := fileutils.IsDirExists(dryRunOut, false)
+	assert.NoError(t, err)
+	assert.False(t, exists, "DDL with dry-run should not create output directory")
 
 	cleanArtifactoryTest()
 }
@@ -3906,8 +3906,8 @@ func TestDirectDownloadPathWithSpecialChars(t *testing.T) {
 	runRt(t, "upload", "testdata/c#/a#1.in", tests.RtRepo1, "--flat=false")
 
 	// Download using ddl with special chars in path
-	runRt(t, "ddl", tests.RtRepo1+"/testdata/a$+~&^a#/a*", tests.Out+fileutils.GetFileSeparator(), "--flat=true")
-	runRt(t, "ddl", tests.RtRepo1+"/testdata/c#/a#1.in", tests.Out+fileutils.GetFileSeparator(), "--flat=true")
+	runRt(t, "ddl", tests.RtRepo1+"/testdata/a$+~&^a#/a*", tests.Out+"/", "--flat=true")
+	runRt(t, "ddl", tests.RtRepo1+"/testdata/c#/a#1.in", tests.Out+"/", "--flat=true")
 
 	// Verify files were downloaded
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
