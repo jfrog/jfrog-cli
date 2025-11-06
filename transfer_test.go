@@ -415,12 +415,8 @@ func TestTransferConfigMerge(t *testing.T) {
 
 	rtVersion, err := getArtifactoryVersion()
 	assert.NoError(t, err)
-	projectsSupported := false
-	if rtVersion.AtLeast("7.0.0") {
-		// The module type only exist in Artifactory 7
-		projectsSupported = true
-	}
-
+	projectsSupported := rtVersion.AtLeast("7.0.0")
+	// The module type only exist in Artifactory 7
 	if projectsSupported {
 		// Create project on Source server
 		deleteProject := createTestProject(t)
@@ -508,10 +504,7 @@ func updateDockerRepoParams(t *testing.T, targetServicesManager artifactory.Arti
 }
 
 func inverseBooleanPointer(boolPtr *bool) *bool {
-	boolValue := true
-	if boolPtr != nil && *boolPtr {
-		boolValue = false
-	}
+	boolValue := boolPtr == nil || !*boolPtr
 	return &boolValue
 }
 

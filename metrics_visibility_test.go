@@ -43,7 +43,9 @@ func startMockServer(t *testing.T) (*httptest.Server, chan capturedRequest) {
 		_, _ = w.Write([]byte("OK"))
 	})
 	handler.HandleFunc("/jfconnect/api/v1/backoffice/metrics/log", func(w http.ResponseWriter, r *http.Request) {
-		defer r.Body.Close()
+		defer func() {
+			_ = r.Body.Close()
+		}()
 		body, _ := io.ReadAll(r.Body)
 		ch <- capturedRequest{Method: r.Method, Path: r.URL.Path, Body: body}
 		w.WriteHeader(http.StatusCreated)
@@ -67,7 +69,9 @@ func startVisMockServer(t *testing.T) (*httptest.Server, chan visReq) {
 		_, _ = w.Write([]byte("OK"))
 	})
 	mux.HandleFunc("/jfconnect/api/v1/backoffice/metrics/log", func(w http.ResponseWriter, r *http.Request) {
-		defer r.Body.Close()
+		defer func() {
+			_ = r.Body.Close()
+		}()
 		b, _ := io.ReadAll(r.Body)
 		ch <- visReq{Method: r.Method, Path: r.URL.Path, Body: b}
 		w.WriteHeader(http.StatusCreated)
