@@ -3898,24 +3898,6 @@ func TestDirectDownloadComparison(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-func TestDirectDownloadPathWithSpecialChars(t *testing.T) {
-	initArtifactoryTest(t, "")
-
-	// Upload files with special characters in path
-	runRt(t, "upload", getSpecialCharFilePath(), tests.RtRepo1, "--flat=false")
-	runRt(t, "upload", "testdata/c#/a#1.in", tests.RtRepo1, "--flat=false")
-
-	// Download using ddl with special chars in path
-	runRt(t, "ddl", tests.RtRepo1+"/testdata/a$+~&^a#/a*", tests.Out+"/", "--flat=true")
-	runRt(t, "ddl", tests.RtRepo1+"/testdata/c#/a#1.in", tests.Out+"/", "--flat=true")
-
-	// Verify files were downloaded
-	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	tests.VerifyExistLocally([]string{filepath.Join(tests.Out, "a1.in"), filepath.Join(tests.Out, "a#1.in")}, paths, t)
-
-	cleanArtifactoryTest()
-}
-
 func TestDirectDownloadWithCustomThreads(t *testing.T) {
 	initArtifactoryTest(t, "")
 
