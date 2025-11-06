@@ -4315,6 +4315,128 @@ func TestDirectDownloadVirtualRepoPatterns(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestDirectDownloadVirtualRepoPriority(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Create 4 local repositories for testing priority resolution
+	// repo-local1 will have highest priority, then repo-local2, repo-local3, repo-local4
+	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, 0, false)
+	assert.NoError(t, err)
+
+	// Create 4 local repositories
+	localRepos := []string{"repo-local1", "repo-local2", "repo-local3", "repo-local4"}
+	for _, repoName := range localRepos {
+		localRepoConfig := services.NewGenericLocalRepositoryParams()
+		localRepoConfig.Key = repoName
+		err = servicesManager.CreateLocalRepository().Generic(localRepoConfig)
+		assert.NoError(t, err, "Failed to create local repository: "+repoName)
+		defer func(repo string) {
+			// Clean up the local repo
+			err := servicesManager.DeleteRepository(repo)
+			if err != nil {
+				log.Error("Failed to delete repository:", repo, err)
+			}
+		}(repoName)
+	}
+
+	// Create virtual repository with repo-local1 having highest priority
+	virtualRepoName := "test-vr-priority"
+	virtualRepoConfig := services.NewGenericVirtualRepositoryParams()
+	virtualRepoConfig.Key = virtualRepoName
+	virtualRepoConfig.PackageType = "generic"
+	// repo-local1 is first (highest priority), then 2, 3, 4
+	virtualRepoConfig.Repositories = []string{"repo-local1", "repo-local2", "repo-local3", "repo-local4"}
+
+	err = servicesManager.CreateVirtualRepository().Generic(virtualRepoConfig)
+	assert.NoError(t, err, "Failed to create virtual repository")
+	defer func() {
+		// Clean up the virtual repo
+		err := servicesManager.DeleteRepository(virtualRepoName)
+		if err != nil {
+			log.Error("Failed to delete virtual repository:", err)
+		}
+	}()
+
+	// Create a test file with unique content for each repository
+	// This will help us identify which repo the file was downloaded from
+	testFileName := "priority-test.txt"
+	repoContents := map[string]string{
+		"repo-local1": "CONTENT_FROM_REPO_LOCAL1_HIGHEST_PRIORITY",
+		"repo-local2": "content_from_repo_local2",
+		"repo-local3": "content_from_repo_local3",
+		"repo-local4": "content_from_repo_local4",
+	}
+
+	// Upload the same file with different content to all 4 repos
+	for repoName, content := range repoContents {
+		tempFile := filepath.Join(tests.GetTestResourcesPath(), "temp-"+repoName+".txt")
+		assert.NoError(t, os.WriteFile(tempFile, []byte(content), 0644))
+		defer os.Remove(tempFile)
+
+		// Upload to each repo
+		runRt(t, "upload", tempFile, repoName+"/priority-test/"+testFileName, "--flat=true")
+	}
+
+	// Get the virtual repository configuration to verify the order
+	var virtualRepoDetails services.VirtualRepositoryBaseParams
+	err = servicesManager.GetRepository(virtualRepoName, &virtualRepoDetails)
+	assert.NoError(t, err)
+
+	// Log the repository priority order for debugging
+	log.Info("Virtual repository", virtualRepoName, "has repositories in priority order:", virtualRepoDetails.Repositories)
+
+	// Download from virtual repo using ONLY DDL command
+	runRt(t, "ddl", virtualRepoName+"/priority-test/"+testFileName, tests.Out+"/", "--flat=true")
+
+	// Read the downloaded file
+	downloadedFile := filepath.Join(tests.Out, testFileName)
+	content, err := os.ReadFile(downloadedFile)
+	assert.NoError(t, err)
+
+	// The content should be from repo-local1 since it has the highest priority
+	expectedContent := repoContents["repo-local1"]
+	assert.Equal(t, expectedContent, string(content),
+		"DDL should download from the highest priority repository (repo-local1). "+
+			"Expected: %s, Got: %s", expectedContent, string(content))
+
+	// Verify it's really from repo-local1 and not from other repos
+	assert.Contains(t, string(content), "REPO_LOCAL1_HIGHEST_PRIORITY",
+		"Downloaded content should contain identifier from highest priority repo (repo-local1)")
+
+	// Test 2: Create another virtual repo with different priority order (repo-local3 first)
+	clientTestUtils.RemoveAllAndAssert(t, tests.Out)
+	virtualRepoName2 := "test-vr-priority2"
+	virtualRepoConfig2 := services.NewGenericVirtualRepositoryParams()
+	virtualRepoConfig2.Key = virtualRepoName2
+	virtualRepoConfig2.PackageType = "generic"
+	// Different order: repo-local3 has highest priority now
+	virtualRepoConfig2.Repositories = []string{"repo-local3", "repo-local1", "repo-local2", "repo-local4"}
+
+	err = servicesManager.CreateVirtualRepository().Generic(virtualRepoConfig2)
+	assert.NoError(t, err, "Failed to create second virtual repository")
+	defer func() {
+		// Clean up the second virtual repo
+		err := servicesManager.DeleteRepository(virtualRepoName2)
+		if err != nil {
+			log.Error("Failed to delete second virtual repository:", err)
+		}
+	}()
+
+	// Download from the second virtual repo using DDL - should get content from repo-local3 now
+	runRt(t, "ddl", virtualRepoName2+"/priority-test/"+testFileName, tests.Out+"/", "--flat=true")
+
+	content2, err := os.ReadFile(downloadedFile)
+	assert.NoError(t, err)
+
+	// This time it should be from repo-local3 since it has highest priority in virtualRepoName2
+	expectedContent2 := repoContents["repo-local3"]
+	assert.Equal(t, expectedContent2, string(content2),
+		"DDL should download from the highest priority repository (repo-local3) in the second virtual repo. "+
+			"Expected: %s, Got: %s", expectedContent2, string(content2))
+
+	cleanArtifactoryTest()
+}
+
 func TestDirectDownloadErrorScenarios(t *testing.T) {
 	initArtifactoryTest(t, "")
 
