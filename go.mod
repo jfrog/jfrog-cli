@@ -283,4 +283,4 @@ replace github.com/docker/docker => github.com/docker/docker v27.5.1+incompatibl
 
 replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.55.1-0.20251105113517-240001d43730
 
-//replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.17.2-0.20250511132918-d9cc4cd50020
+replace github.com/jfrog/jfrog-cli-security => github.com/naveenku-jfrog/jfrog-cli-security v1.21.11-0.20251106092301-ffb024a1c054
