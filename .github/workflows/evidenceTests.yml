@@ -1,6 +1,4 @@
 name: Evidence Tests
-env:
-  JFROG_CLI_LOG_LEVEL: DEBUG
 on:
   workflow_dispatch:
   push:
