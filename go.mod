@@ -27,8 +27,8 @@ require (
 	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20251023084247-a56afca52451
 	github.com/jfrog/jfrog-cli-evidence v0.8.2
 	github.com/jfrog/jfrog-cli-platform-services v1.10.0
-	github.com/jfrog/jfrog-cli-security v1.21.10
-	github.com/jfrog/jfrog-client-go v1.55.1-0.20251023073119-78f187c9afbf
+	github.com/jfrog/jfrog-cli-security v1.21.11-0.20251104145133-898cae80671f
+	github.com/jfrog/jfrog-client-go v1.55.1-0.20251103081126-15edfe03d6e5
 	github.com/jszwec/csvutil v1.10.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/stretchr/testify v1.11.1
@@ -51,6 +51,7 @@ require (
 	cloud.google.com/go/spanner v1.82.0 // indirect
 	cloud.google.com/go/storage v1.55.0 // indirect
 	dario.cat/mergo v1.0.2 // indirect
+	github.com/AdaLogics/go-fuzz-headers v0.0.0-20240806141605-e8a1dd7889d6 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/BurntSushi/toml v1.5.0 // indirect
 	github.com/CycloneDX/cyclonedx-go v0.9.3 // indirect
@@ -75,8 +76,6 @@ require (
 	github.com/chzyer/readline v1.5.1 // indirect
 	github.com/cloudflare/circl v1.6.1 // indirect
 	github.com/cncf/xds/go v0.0.0-20250326154945-ae57f3c0d45f // indirect
-	github.com/containerd/errdefs v1.0.0 // indirect
-	github.com/containerd/errdefs/pkg v0.3.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/platforms v0.2.1 // indirect
 	github.com/cpuguy83/dockercfg v0.3.2 // indirect
@@ -172,7 +171,6 @@ require (
 	github.com/minio/sha256-simd v1.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
-	github.com/moby/go-archive v0.1.0 // indirect
 	github.com/moby/patternmatcher v0.6.0 // indirect
 	github.com/moby/sys/sequential v0.6.0 // indirect
 	github.com/moby/sys/user v0.4.0 // indirect
@@ -281,6 +279,7 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	gotest.tools/v3 v3.5.2 // indirect
 	k8s.io/api v0.33.4 // indirect
 	k8s.io/apimachinery v0.33.4 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
@@ -292,9 +291,11 @@ require (
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
 
-// replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20250907205057-2bfe50c014b7
+replace github.com/docker/docker => github.com/docker/docker v27.5.1+incompatible
 
-// replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.59.2-0.20250804083101-9cf424ecc926
+//replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20251006061821-8b1be6a65215
+
+//replace github.com/jfrog/jfrog-cli-core/v2 => github.com/fluxxBot/jfrog-cli-core/v2 v2.58.1-0.20251008152439-da488ef26725
 
 // replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20250812100044-b52afcc698c1
 
