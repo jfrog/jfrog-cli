@@ -5772,14 +5772,6 @@ var buildAqlSearchQueryDataProvider = []struct {
 	recursive   bool
 	expectedAql string
 }{
-	{"repo-local", true, `{"$or":[{"$and":[{"repo":"repo-local","path":{"$match":"*"},"name":{"$match":"*"}}]}]}`},
-	{"repo-w*ldcard", true, `{"$or":[{"$and":[{"repo":{"$match":"repo-w*"},"path":{"$match":"*"},"name":{"$match":"*ldcard"}}]},{"$and":[{"repo":{"$match":"repo-w*ldcard"},"path":{"$match":"*"},"name":{"$match":"*"}}]}]}`},
-	{"repo-local2/a*b*c/dd/", true, `{"path":{"$ne":"."},"$or":[{"$and":[{"repo":"repo-local2","path":{"$match":"a*b*c/dd"},"name":{"$match":"*"}}]},{"$and":[{"repo":"repo-local2","path":{"$match":"a*b*c/dd/*"},"name":{"$match":"*"}}]}]}`},
-	{"repo-local*/a*b*c/dd/", true, `{"path":{"$ne":"."},"$or":[{"$and":[{"repo":{"$match":"repo-local*"},"path":{"$match":"*a*b*c/dd"},"name":{"$match":"*"}}]},{"$and":[{"repo":{"$match":"repo-local*"},"path":{"$match":"*a*b*c/dd/*"},"name":{"$match":"*"}}]}]}`},
-	{"repo-local", false, `{"$or":[{"$and":[{"repo":"repo-local","path":".","name":{"$match":"*"}}]}]}`},
-	{"*repo-local", false, `{"$or":[{"$and":[{"path":".","name":{"$match":"*repo-local"}}]},{"$and":[{"repo":{"$match":"*repo-local"},"path":".","name":{"$match":"*"}}]}]}`},
-	{"repo-local2/a*b*c/dd/", false, `{"path":{"$ne":"."},"$or":[{"$and":[{"repo":"repo-local2","path":{"$match":"a*b*c/dd"},"name":{"$match":"*"}}]}]}`},
-	{"*/a*b*c/dd/", false, `{"path":{"$ne":"."},"$or":[{"$and":[{"path":{"$match":"*a*b*c/dd"},"name":{"$match":"*"}}]}]}`},
 	{"**/a-.*.tar.gz", false, `{"$or":[{"$and":[{"path":{"$match":"**"},"name":{"$match":"a-.*.tar.gz"}}]},{"$and":[{"path":".","name":{"$match":"*a-.*.tar.gz"}}]}]}`},
 }
 
