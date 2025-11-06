@@ -8,6 +8,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
+	e2e "github.com/jfrog/jfrog-cli-evidence/tests/e2e"
 	evidenceTests "github.com/jfrog/jfrog-cli-evidence/tests/e2e/tests"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/access"
@@ -128,6 +129,9 @@ func initEvidenceProjectCli() {
 		fmt.Printf("Project key not provided - project-based tests will be skipped\n")
 		return
 	}
+
+	// Set the global e2e.ProjectKey so tests can use it
+	e2e.ProjectKey = *evidenceProjectKey
 
 	// Build authentication flags for project CLI
 	authFlags := fmt.Sprintf("--url=%s --access-token=%s --project=%s",
