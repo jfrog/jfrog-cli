@@ -23,7 +23,7 @@ require (
 	github.com/jfrog/jfrog-cli-application v1.0.1
 	github.com/jfrog/jfrog-cli-artifactory v0.7.3-0.20251029093809-3aaa4e93a359
 	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20251028101519-8c79bb06de65
-	github.com/jfrog/jfrog-cli-evidence v0.8.3-0.20251106075726-ab2d2ab4bc56
+	github.com/jfrog/jfrog-cli-evidence v0.8.3-0.20251106084458-d4e9fa400ff8
 	github.com/jfrog/jfrog-cli-platform-services v1.10.0
 	github.com/jfrog/jfrog-cli-security v1.21.10
 	github.com/jfrog/jfrog-client-go v1.55.1-0.20251028101538-d0d16f019d67
