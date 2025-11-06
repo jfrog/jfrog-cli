@@ -5822,8 +5822,14 @@ func setupTestFilesForSearchPatterns(t *testing.T) {
 	tmpFile, err := os.CreateTemp("", "test-file-*.txt")
 	assert.NoError(t, err)
 	defer os.Remove(tmpFile.Name())
-	tmpFile.WriteString("test content")
-	tmpFile.Close()
+	_, err = tmpFile.WriteString("test content")
+	if err != nil {
+		return
+	}
+	err = tmpFile.Close()
+	if err != nil {
+		return
+	}
 	runRt(t, "upload", tmpFile.Name(), "repo-local/test-file.txt")
 	runRt(t, "upload", tmpFile.Name(), "repo-local/subdir/nested-file.txt")
 	runRt(t, "upload", tmpFile.Name(), "repo-wildcard/test-file.txt")
@@ -5879,7 +5885,7 @@ func validateSearchPatternWithAPI(t *testing.T, pattern string, recursive bool) 
 		resultItems = append(resultItems, *resultItem)
 	}
 	if strings.HasPrefix(pattern, "repo-local") && !strings.Contains(pattern, "*repo-local") {
-		assert.True(t, len(resultItems) >= 0, "Pattern %s should return results", pattern)
+		assert.True(t, len(resultItems) > 0, "Pattern %s should return results", pattern)
 	}
 	readerGetErrorAndAssert(t, readerNoDate)
 	readerCloseAndAssert(t, readerNoDate)
