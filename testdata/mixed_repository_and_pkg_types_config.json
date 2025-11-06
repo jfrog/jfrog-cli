@@ -15,8 +15,8 @@
     "key": "${DOCKER_VIRTUAL_REPO}",
     "rclass": "virtual",
     "packageType": "docker",
-    "repositories": ["${REPO1}", "${DEBIAN_REPO}"],
-    "defaultDeploymentRepo": "${REPO1}",
+    "repositories": ["${DOCKER_REMOTE_REPO}", "${DEBIAN_REPO}"],
+    "defaultDeploymentRepo": "${DEBIAN_REPO}",
     "blockPushingSchema1": "false"
   }
 ]
