@@ -6,10 +6,6 @@ replace (
 	// Should not be updated to 0.2.6 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
 	github.com/c-bata/go-prompt => github.com/c-bata/go-prompt v0.2.5
 
-	github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory v0.7.3-0.20251106115525-8406b55d8593
-
-	github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.55.1-0.20251106114658-e01e86b037c8
-
 	// Should not be updated to 0.2.0-beta.2 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
 	github.com/pkg/term => github.com/pkg/term v1.1.0
 )
@@ -23,12 +19,12 @@ require (
 	github.com/jfrog/build-info-go v1.12.2
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-application v1.0.1
-	github.com/jfrog/jfrog-cli-artifactory v0.7.3-0.20251021143342-49bab7f38cec
+	github.com/jfrog/jfrog-cli-artifactory v0.7.3-0.20251106115525-8406b55d8593
 	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20251023084247-a56afca52451
 	github.com/jfrog/jfrog-cli-evidence v0.8.2
 	github.com/jfrog/jfrog-cli-platform-services v1.10.0
 	github.com/jfrog/jfrog-cli-security v1.22.0
-	github.com/jfrog/jfrog-client-go v1.55.1-0.20251103081126-15edfe03d6e5
+	github.com/jfrog/jfrog-client-go v1.55.1-0.20251106114658-e01e86b037c8
 	github.com/jszwec/csvutil v1.10.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/stretchr/testify v1.11.1
