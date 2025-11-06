@@ -1169,8 +1169,8 @@ github.com/jfrog/jfrog-cli-platform-services v1.10.0 h1:O+N/VAF+QjFvq9xkHpmzKLcd
 github.com/jfrog/jfrog-cli-platform-services v1.10.0/go.mod h1:qbu4iqBST9x8LgD8HhzUm91iOB3vHqtoGmaxOnmw0ok=
 github.com/jfrog/jfrog-cli-security v1.21.10 h1:g5wTAWXJE4V7Ly+AoxU6HzuBaxDj9U+z8aKmQasPOi0=
 github.com/jfrog/jfrog-cli-security v1.21.10/go.mod h1:XoJ6YBf/TrwkqC/r9+x/WKDIwnZogTF6+2wos1PJBUs=
-github.com/jfrog/jfrog-client-go v1.55.1-0.20251028101538-d0d16f019d67 h1:SpzS1xdPY/N0a4KYlQoyA9UVC3o57vj7mbq7EJTYsD8=
-github.com/jfrog/jfrog-client-go v1.55.1-0.20251028101538-d0d16f019d67/go.mod h1:wsMEtoyAu/1bARUHxFdmgz83g96ml7ZWcFioIPiuz/U=
+github.com/jfrog/jfrog-client-go v1.55.1-0.20251105113517-240001d43730 h1:2ZUwEee3/08QezpF/ar22O2bvSKinHuQoS2IJf4pQ5I=
+github.com/jfrog/jfrog-client-go v1.55.1-0.20251105113517-240001d43730/go.mod h1:wsMEtoyAu/1bARUHxFdmgz83g96ml7ZWcFioIPiuz/U=
 github.com/jhump/protoreflect v1.17.0 h1:qOEr613fac2lOuTgWN4tPAtLL7fUSbuJL5X5XumQh94=
 github.com/jhump/protoreflect v1.17.0/go.mod h1:h9+vUUL38jiBzck8ck+6G/aeMX8Z4QUY/NiJPwPNi+8=
 github.com/jmespath/go-jmespath v0.4.1-0.20220621161143-b0104c826a24 h1:liMMTbpW34dhU4az1GN0pTPADwNmvoRSeoZ6PItiqnY=
