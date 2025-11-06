@@ -17,8 +17,8 @@
     "key": "${DOCKER_VIRTUAL_REPO}",
     "rclass": "virtual",
     "packageType": "docker",
-    "repositories": ["${DOCKER_REMOTE_REPO}", "${DEBIAN_REPO}"],
-    "defaultDeploymentRepo": "${DEBIAN_REPO}",
+    "repositories": ["${REPO1}", "${DEBIAN_REPO}"],
+    "defaultDeploymentRepo": "${REPO1}",
     "blockPushingSchema1": "false",
     "description": "UPDATED: Virtual docker repo for batch ops"
   }
