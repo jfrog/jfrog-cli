@@ -145,7 +145,7 @@ func testPoetryCmd(t *testing.T, projectPath, buildNumber, module string, expect
 	for _, dep := range buildInfoModules[0].Dependencies {
 		if dep.Type == "pypi" {
 			// Main dependencies should have checksums
-			assert.NotEmpty(t, dep.Checksum.Sha1, "SHA1 checksum should be present for %s", dep.Id)
+			assert.NotEmpty(t, dep.Sha1, "SHA1 checksum should be present for %s", dep.Id)
 		}
 	}
 }
@@ -224,8 +224,8 @@ func testPoetryPublishCmd(t *testing.T, projectPath, buildNumber, expectedModule
 
 	// Validate artifacts have checksums
 	for _, artifact := range buildInfoModules[0].Artifacts {
-		assert.NotEmpty(t, artifact.Checksum.Sha1, "SHA1 checksum should be present for artifact %s", artifact.Name)
-		assert.NotEmpty(t, artifact.Checksum.Sha256, "SHA256 checksum should be present for artifact %s", artifact.Name)
+		assert.NotEmpty(t, artifact.Sha1, "SHA1 checksum should be present for artifact %s", artifact.Name)
+		assert.NotEmpty(t, artifact.Sha256, "SHA256 checksum should be present for artifact %s", artifact.Name)
 	}
 }
 
@@ -288,7 +288,7 @@ func TestPoetryBuildInfoCollection(t *testing.T) {
 		// Validate FlexPack-specific features
 		for _, dep := range module.Dependencies {
 			if dep.Type == "pypi" {
-				t.Logf("Dependency: %s (SHA1: %s)", dep.Id, dep.Checksum.Sha1)
+				t.Logf("Dependency: %s (SHA1: %s)", dep.Id, dep.Sha1)
 			}
 		}
 	}
@@ -408,9 +408,9 @@ func TestPoetryFlexPackFeatures(t *testing.T) {
 		if found && len(publishedBuildInfo.BuildInfo.Modules) > 0 {
 			checksumCount := 0
 			for _, dep := range publishedBuildInfo.BuildInfo.Modules[0].Dependencies {
-				if dep.Checksum.Sha1 != "" {
+				if dep.Sha1 != "" {
 					checksumCount++
-					t.Logf("Dependency %s has checksum: %s", dep.Id, dep.Checksum.Sha1)
+					t.Logf("Dependency %s has checksum: %s", dep.Id, dep.Sha1)
 				}
 			}
 			assert.Greater(t, checksumCount, 0, "At least some dependencies should have checksums")

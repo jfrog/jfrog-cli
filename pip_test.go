@@ -106,11 +106,11 @@ func TestPipDepsCacheOutput(t *testing.T) {
 			pkgName, expectedDep.Id, generatedDep.Id)
 
 		// Compare checksums
-		assert.Equal(t, expectedDep.Checksum.Sha1, generatedDep.Checksum.Sha1,
+		assert.Equal(t, expectedDep.Sha1, generatedDep.Sha1,
 			"Package %s SHA1 mismatch", pkgName)
-		assert.Equal(t, expectedDep.Checksum.Sha256, generatedDep.Checksum.Sha256,
+		assert.Equal(t, expectedDep.Sha256, generatedDep.Sha256,
 			"Package %s SHA256 mismatch", pkgName)
-		assert.Equal(t, expectedDep.Checksum.Md5, generatedDep.Checksum.Md5,
+		assert.Equal(t, expectedDep.Md5, generatedDep.Md5,
 			"Package %s MD5 mismatch", pkgName)
 	}
 
