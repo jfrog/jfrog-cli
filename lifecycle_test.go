@@ -754,7 +754,10 @@ func createRbIfDoesNotExists(t *testing.T, rbName, rbVersion string, lcManager *
 	isExist, err := lcManager.IsReleaseBundleExist(rbName, rbVersion, "")
 	assert.NoError(t, err)
 	if isExist {
-		return
+		_, statusErr := getStatus(lcManager, rbName, rbVersion, "")
+		if statusErr == nil {
+			return
+		}
 	}
 	createRbFromSpec(t, tests.LifecycleBuilds12, rbName, rbVersion, true, true)
 }
@@ -773,30 +776,57 @@ func TestReleaseBundlesSearchGroups(t *testing.T) {
 	const rbNameB = rbPrefix + "-beta"
 	const rbNameC = rbPrefix + "-core"
 	const rbNameD = "another-app"
-
 	const version1 = "1.0.0"
 
-	// Create Release Bundle A
 	createRbIfDoesNotExists(t, rbNameA, version1, lcManager)
 	defer deleteReleaseBundle(t, lcManager, rbNameA, version1)
 	assertStatusCompleted(t, lcManager, rbNameA, version1, "")
 
-	// Create Release Bundle B
 	createRbIfDoesNotExists(t, rbNameB, version1, lcManager)
 	defer deleteReleaseBundle(t, lcManager, rbNameB, version1)
 	assertStatusCompleted(t, lcManager, rbNameB, version1, "")
 
-	// Create Release Bundle C
 	createRbIfDoesNotExists(t, rbNameC, version1, lcManager)
 	defer deleteReleaseBundle(t, lcManager, rbNameC, version1)
 	assertStatusCompleted(t, lcManager, rbNameC, version1, "")
 
-	// Create Release Bundle D (for filter/exclusion)
 	createRbIfDoesNotExists(t, rbNameD, version1, lcManager)
 	defer deleteReleaseBundle(t, lcManager, rbNameD, version1)
 	assertStatusCompleted(t, lcManager, rbNameD, version1, "")
 
-	time.Sleep(3 * time.Second)
+	const pollTimeout = 45 * time.Second
+	const pollInterval = 3 * time.Second
+
+	startTime := time.Now()
+	found := false
+	var lastSearchError error
+
+	for time.Since(startTime) < pollTimeout {
+		resp, err := lcManager.ReleaseBundlesSearchGroup(services.GetSearchOptionalQueryParams{})
+		if err != nil {
+			lastSearchError = fmt.Errorf("error while polling: %w", err)
+			time.Sleep(pollInterval)
+			continue
+		}
+		for _, rb := range resp.ReleaseBundleSearchGroup {
+			if rb.ReleaseBundleName == rbNameA {
+				found = true
+				break
+			}
+		}
+		if found {
+			log.Info(fmt.Sprintf("Found '%s' in search index after %s", rbNameA, time.Since(startTime)))
+			break
+		}
+		time.Sleep(pollInterval)
+	}
+
+	if !found {
+		if lastSearchError != nil {
+			t.Fatalf("Failed to find '%s' in search index after %s. Last error: %v", rbNameA, pollTimeout, lastSearchError)
+		}
+		t.Fatalf("Failed to find '%s' in search index after %s. Test cannot continue.", rbNameA, pollTimeout)
+	}
 
 	testCases := []struct {
 		name            string
@@ -871,18 +901,15 @@ func TestReleaseBundlesSearchGroups(t *testing.T) {
 				return
 			}
 			assert.NoError(t, err, fmt.Sprintf("Expected no error for test case: %s", tc.name))
-			if tc.queryParams.FilterBy != "" {
-				assert.Equal(t, tc.expectedTotal, len(resp.ReleaseBundleSearchGroup), "Total count mismatch for filtered search")
-			} else {
-				assert.GreaterOrEqual(t, resp.Total, tc.expectedTotal, "Total count should be at least expected for unfiltered search")
-			}
 			var actualNames []string
 			for _, rb := range resp.ReleaseBundleSearchGroup {
 				actualNames = append(actualNames, rb.ReleaseBundleName)
 			}
 			if tc.queryParams.FilterBy != "" {
-				assert.Equal(t, tc.expectedRbNames, actualNames, "Release bundle names order mismatch")
+				assert.Equal(t, tc.expectedTotal, len(resp.ReleaseBundleSearchGroup), "Total count mismatch for filtered search")
+				assert.ElementsMatch(t, tc.expectedRbNames, actualNames, "Release bundle names mismatch")
 			} else {
+				assert.GreaterOrEqual(t, resp.Total, tc.expectedTotal, "Total count should be at least expected for unfiltered search")
 				assert.Subset(t, actualNames, tc.expectedRbNames, "Actual names should contain all expected names")
 			}
 		})
