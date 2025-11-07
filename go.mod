@@ -23,8 +23,8 @@ require (
 	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20251028101519-8c79bb06de65
 	github.com/jfrog/jfrog-cli-evidence v0.8.2
 	github.com/jfrog/jfrog-cli-platform-services v1.10.0
-	github.com/jfrog/jfrog-cli-security v1.21.10
-	github.com/jfrog/jfrog-client-go v1.55.1-0.20251028101538-d0d16f019d67
+	github.com/jfrog/jfrog-cli-security v1.22.0
+	github.com/jfrog/jfrog-client-go v1.55.1-0.20251103081126-15edfe03d6e5
 	github.com/jszwec/csvutil v1.10.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/stretchr/testify v1.11.1
@@ -281,6 +281,6 @@ replace github.com/docker/docker => github.com/docker/docker v27.5.1+incompatibl
 
 //replace github.com/jfrog/jfrog-cli-core/v2 => github.com/fluxxBot/jfrog-cli-core/v2 v2.58.1-0.20251008152439-da488ef26725
 
-replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.55.1-0.20251105113517-240001d43730
+//replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.54.2-0.20251007084958-5eeaa42c31a6
 
-replace github.com/jfrog/jfrog-cli-security => github.com/naveenku-jfrog/jfrog-cli-security v1.21.11-0.20251106092301-ffb024a1c054
+//replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.17.2-0.20250511132918-d9cc4cd50020
