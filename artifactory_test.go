@@ -4568,9 +4568,9 @@ func CleanArtifactoryTests() {
 }
 
 func initArtifactoryTest(t *testing.T, minVersion string) {
-	if !*tests.TestArtifactory {
-		t.Skip("Skipping artifactory test. To run artifactory test add the '-test.artifactory=true' option.")
-	}
+	//if !*tests.TestArtifactory {
+	//	t.Skip("Skipping artifactory test. To run artifactory test add the '-test.artifactory=true' option.")
+	//}
 	if minVersion != "" {
 		validateArtifactoryVersion(t, minVersion)
 	}
@@ -5813,7 +5813,12 @@ func TestArtifactorySearchByPattern(t *testing.T) {
 func setupTestFilesForSearchPatterns(t *testing.T) {
 	tmpFile, err := os.CreateTemp("", "test-file-*.txt")
 	assert.NoError(t, err)
-	defer os.Remove(tmpFile.Name())
+	defer func(name string) {
+		err := os.Remove(name)
+		if err != nil {
+
+		}
+	}(tmpFile.Name())
 	_, err = tmpFile.WriteString("test content")
 	if err != nil {
 		return
