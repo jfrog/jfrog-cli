@@ -754,7 +754,10 @@ func createRbIfDoesNotExists(t *testing.T, rbName, rbVersion string, lcManager *
 	isExist, err := lcManager.IsReleaseBundleExist(rbName, rbVersion, "")
 	assert.NoError(t, err)
 	if isExist {
-		return
+		_, statusErr := getStatus(lcManager, rbName, rbVersion, "")
+		if statusErr == nil {
+			return
+		}
 	}
 	createRbFromSpec(t, tests.LifecycleBuilds12, rbName, rbVersion, true, true)
 }
