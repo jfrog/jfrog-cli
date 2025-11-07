@@ -148,7 +148,7 @@ func prepareHomeDir(t *testing.T) (string, string) {
 }
 
 func cleanTestsHomeEnv() {
-	os.Unsetenv(coreutils.HomeDir)
+	_ = os.Unsetenv(coreutils.HomeDir)
 	tests.CleanFileSystem()
 }
 
