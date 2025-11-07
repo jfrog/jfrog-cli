@@ -4568,9 +4568,9 @@ func CleanArtifactoryTests() {
 }
 
 func initArtifactoryTest(t *testing.T, minVersion string) {
-	//if !*tests.TestArtifactory {
-	//	t.Skip("Skipping artifactory test. To run artifactory test add the '-test.artifactory=true' option.")
-	//}
+	if !*tests.TestArtifactory {
+		t.Skip("Skipping artifactory test. To run artifactory test add the '-test.artifactory=true' option.")
+	}
 	if minVersion != "" {
 		validateArtifactoryVersion(t, minVersion)
 	}
