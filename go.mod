@@ -23,8 +23,8 @@ require (
 	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20251028101519-8c79bb06de65
 	github.com/jfrog/jfrog-cli-evidence v0.8.2
 	github.com/jfrog/jfrog-cli-platform-services v1.10.0
-	github.com/jfrog/jfrog-cli-security v1.21.10
-	github.com/jfrog/jfrog-client-go v1.55.1-0.20251028101538-d0d16f019d67
+	github.com/jfrog/jfrog-cli-security v1.22.0
+	github.com/jfrog/jfrog-client-go v1.55.1-0.20251103081126-15edfe03d6e5
 	github.com/jszwec/csvutil v1.10.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/stretchr/testify v1.11.1
