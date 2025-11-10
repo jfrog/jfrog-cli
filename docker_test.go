@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"os"
 	"path"
 	"path/filepath"
@@ -83,9 +82,11 @@ func initNativeDockerWithArtTest(t *testing.T) func() {
 	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, tests.HttpsProxyEnvVar, httpsProxyPort)
 	defer setEnvCallBack()
 
-	// Store original Artifactory URL
+	// Store original values
 	originalArtifactoryUrl := serverDetails.ArtifactoryUrl
+	originalUrl := serverDetails.Url
 	originalJfrogUrl := *tests.JfrogUrl
+	originalInsecureTls := serverDetails.InsecureTls
 
 	// Start HTTPS reverse proxy
 	go cliproxy.StartLocalReverseHttpProxy(serverDetails.ArtifactoryUrl, false)
@@ -94,22 +95,28 @@ func initNativeDockerWithArtTest(t *testing.T) func() {
 	err = checkIfServerIsUp(cliproxy.GetProxyHttpsPort(), "https", false)
 	require.NoError(t, err, "Failed to start HTTPS reverse proxy")
 
-	// Update serverDetails to use HTTPS URL
-	parsedUrl, err := url.Parse(serverDetails.ArtifactoryUrl)
-	require.NoError(t, err)
-	httpsUrl := "https://127.0.0.1:" + cliproxy.GetProxyHttpsPort() + parsedUrl.RequestURI()
-	serverDetails.ArtifactoryUrl = httpsUrl
+	// Construct base HTTPS URL (without /artifactory path)
+	httpsBaseUrl := "https://127.0.0.1:" + cliproxy.GetProxyHttpsPort() + "/"
+	// Construct full Artifactory HTTPS URL
+	httpsArtifactoryUrl := httpsBaseUrl + tests.ArtifactoryEndpoint
 
-	// Temporarily update JfrogUrl to HTTPS URL for config creation
-	*tests.JfrogUrl = httpsUrl
+	// Update serverDetails with HTTPS URLs
+	serverDetails.Url = httpsBaseUrl
+	serverDetails.ArtifactoryUrl = httpsArtifactoryUrl
+	// Enable insecure TLS to skip certificate verification for self-signed certs
+	serverDetails.InsecureTls = true
+
+	// Temporarily update JfrogUrl to HTTPS base URL for config creation
+	*tests.JfrogUrl = httpsBaseUrl
 
 	// Create server config to use with the command (using HTTPS URL)
 	createJfrogHomeConfig(t, true)
 
 	return func() {
-		// Restore original Artifactory URL
+		// Restore original values
 		serverDetails.ArtifactoryUrl = originalArtifactoryUrl
-		// Restore original JfrogUrl
+		serverDetails.Url = originalUrl
+		serverDetails.InsecureTls = originalInsecureTls
 		*tests.JfrogUrl = originalJfrogUrl
 		// Clean up certificate files
 		clientTestUtils.RemoveAndAssert(t, certificate.KeyFile)
