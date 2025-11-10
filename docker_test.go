@@ -3,16 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
+	tests2 "github.com/jfrog/jfrog-cli-artifactory/utils/tests"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
-
-	tests2 "github.com/jfrog/jfrog-cli-artifactory/utils/tests"
 
 	"github.com/docker/docker/api/types/mount"
 
@@ -33,7 +31,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/auth"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -593,25 +590,20 @@ func TestNativeDockerPushPull(t *testing.T) {
 	image, err := inttestutils.BuildTestImage(tests.DockerImageName+":"+pushBuildNumber, "", tests.DockerLocalRepo, container.DockerClient)
 	assert.NoError(t, err)
 	// Add docker cli flag '-D' to check we ignore them
-	// Disable detailed summary and manifest verification to avoid TLS errors with localhost:8082
-	// The detailed summary changes in jfrog-cli-artifactory cause manifest verification to use HTTPS instead of HTTP
-	// Explicitly disable validate-sha to prevent RemoteAgentBuildInfoBuilder from doing manifest verification
-	runCmdWithRetries(t, jfCliTask("docker", "-D", "push", image, "--module="+module, "--validate-sha=false"))
-	inttestutils.ValidateGeneratedBuildInfoModule(t, "", "", "", []string{module}, entities.Docker)
-	runRt(t, "build-publish", "", "")
-	imagePath := path.Join(tests.DockerLocalRepo, "", "") + "/"
-	validateContainerBuild("", "", imagePath, module, 7, 5, 7, t)
+	runCmdWithRetries(t, jfCliTask("docker", "-D", "push", image, "--build-name="+tests.DockerBuildName, "--build-number="+pushBuildNumber, "--module="+module))
+	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.DockerBuildName, pushBuildNumber, "", []string{module}, entities.Docker)
+	runRt(t, "build-publish", tests.DockerBuildName, pushBuildNumber)
+	imagePath := path.Join(tests.DockerLocalRepo, tests.DockerImageName, pushBuildNumber) + "/"
+	validateContainerBuild(tests.DockerBuildName, pushBuildNumber, imagePath, module, 7, 5, 7, t)
 	tests2.DeleteTestImage(t, image, container.DockerClient)
 
-	// Disable detailed summary and manifest verification to avoid TLS errors with localhost:8082
-	// Explicitly disable validate-sha to prevent RemoteAgentBuildInfoBuilder from doing manifest verification
-	runCmdWithRetries(t, jfCliTask("docker", "-D", "pull", image, "--module="+module, "--validate-sha=false"))
-	runRt(t, "build-publish", "", "")
+	runCmdWithRetries(t, jfCliTask("docker", "-D", "pull", image, "--build-name="+tests.DockerBuildName, "--build-number="+pullBuildNumber, "--module="+module))
+	runRt(t, "build-publish", tests.DockerBuildName, pullBuildNumber)
 	imagePath = path.Join(tests.DockerLocalRepo, tests.DockerImageName, pullBuildNumber) + "/"
-	validateContainerBuild("", "", imagePath, module, 0, 7, 0, t)
+	validateContainerBuild(tests.DockerBuildName, pullBuildNumber, imagePath, module, 0, 7, 0, t)
 	tests2.DeleteTestImage(t, image, container.DockerClient)
 
-	inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, tests.DockerImageName, "", tests.DockerLocalRepo)
+	inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName, tests.DockerLocalRepo)
 }
 
 func TestNativeDockerFlagParsing(t *testing.T) {
@@ -753,18 +745,7 @@ func runCmdWithRetries(t *testing.T, task func() error) {
 		ErrorMessage:             fmt.Sprintf("failed to run the command with %d retries.\n", maxRetries),
 		ExecutionHandler: func() (bool, error) {
 			err := task()
-			if err != nil {
-				errStr := err.Error()
-				// Ignore TLS errors for localhost:8082 manifest verification
-				// This is a known bug in jfrog-cli-artifactory where manifest verification
-				// uses HTTPS instead of HTTP for localhost:8082, even when validate-sha=false
-				if strings.Contains(errStr, "localhost:8082") && strings.Contains(errStr, "tls: unrecognized name") {
-					log.Info("Ignoring TLS error for localhost:8082 manifest verification (known bug in jfrog-cli-artifactory)")
-					return false, nil // Don't retry, treat as success
-				}
-				return true, err // Retry on other errors
-			}
-			return false, nil
+			return err != nil, err
 		},
 	}
 	assert.NoError(t, executor.Execute())
