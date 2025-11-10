@@ -3,13 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
+	tests2 "github.com/jfrog/jfrog-cli-artifactory/utils/tests"
 	"os"
 	"path"
 	"path/filepath"
 	"testing"
 	"time"
-
-	tests2 "github.com/jfrog/jfrog-cli-artifactory/utils/tests"
 
 	"github.com/docker/docker/api/types/mount"
 
@@ -26,8 +25,6 @@ import (
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
-	cliproxy "github.com/jfrog/jfrog-cli/utils/tests/proxy/server"
-	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
 	"github.com/jfrog/jfrog-client-go/auth"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
@@ -76,52 +73,9 @@ func initNativeDockerWithArtTest(t *testing.T) func() {
 	if !version.NewVersion(rtVersion).AtLeast(coreContainer.MinRtVersionForRepoFetching) {
 		t.Skip("Skipping native docker test. Artifactory version " + coreContainer.MinRtVersionForRepoFetching + " or higher is required (actual is'" + rtVersion + "').")
 	}
-
-	// Set up HTTPS reverse proxy
-	httpsProxyPort := "1027"
-	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, tests.HttpsProxyEnvVar, httpsProxyPort)
-	defer setEnvCallBack()
-
-	// Store original values
-	originalArtifactoryUrl := serverDetails.ArtifactoryUrl
-	originalUrl := serverDetails.Url
-	originalJfrogUrl := *tests.JfrogUrl
-	originalInsecureTls := serverDetails.InsecureTls
-
-	// Start HTTPS reverse proxy
-	go cliproxy.StartLocalReverseHttpProxy(serverDetails.ArtifactoryUrl, false)
-
-	// Wait for the reverse proxy to start up
-	err = checkIfServerIsUp(cliproxy.GetProxyHttpsPort(), "https", false)
-	require.NoError(t, err, "Failed to start HTTPS reverse proxy")
-
-	// Construct base HTTPS URL (without /artifactory path)
-	httpsBaseUrl := "https://127.0.0.1:" + cliproxy.GetProxyHttpsPort() + "/"
-	// Construct full Artifactory HTTPS URL
-	httpsArtifactoryUrl := httpsBaseUrl + tests.ArtifactoryEndpoint
-
-	// Update serverDetails with HTTPS URLs
-	serverDetails.Url = httpsBaseUrl
-	serverDetails.ArtifactoryUrl = httpsArtifactoryUrl
-	// Enable insecure TLS to skip certificate verification for self-signed certs
-	serverDetails.InsecureTls = true
-
-	// Temporarily update JfrogUrl to HTTPS base URL for config creation
-	*tests.JfrogUrl = httpsBaseUrl
-
-	// Create server config to use with the command (using HTTPS URL)
+	// Create server config to use with the command.
 	createJfrogHomeConfig(t, true)
-
 	return func() {
-		// Restore original values
-		serverDetails.ArtifactoryUrl = originalArtifactoryUrl
-		serverDetails.Url = originalUrl
-		serverDetails.InsecureTls = originalInsecureTls
-		*tests.JfrogUrl = originalJfrogUrl
-		// Clean up certificate files
-		clientTestUtils.RemoveAndAssert(t, certificate.KeyFile)
-		clientTestUtils.RemoveAndAssert(t, certificate.CertFile)
-		// Restore home directory
 		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
 	}
 }
