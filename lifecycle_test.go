@@ -757,33 +757,6 @@ func deleteReleaseBundleProperties(t *testing.T, lcManager *lifecycle.LifecycleS
 	time.Sleep(5 * time.Second)
 }
 
-//nolint:unparam // rbName parameter is kept for flexibility across different test contexts, even though it currently always receives "my-versioned-app"
-func createRbIfDoesNotExists(t *testing.T, rbName, rbVersion string, lcManager *lifecycle.LifecycleServicesManager) {
-	isExist, err := lcManager.IsReleaseBundleExist(rbName, rbVersion, "")
-	assert.NoError(t, err)
-	if isExist {
-		_, statusErr := getStatus(lcManager, rbName, rbVersion, "")
-		if statusErr == nil {
-			return
-		}
-		// If release bundle exists but status check fails, delete it first to ensure fresh creation
-		rbDetails := services.ReleaseBundleDetails{
-			ReleaseBundleName:    rbName,
-			ReleaseBundleVersion: rbVersion,
-		}
-		err := lcManager.DeleteReleaseBundleVersion(rbDetails, services.CommonOptionalQueryParams{Async: false})
-		if err != nil {
-			// Ignore 404 errors as the release bundle may have been deleted already
-			if !strings.Contains(err.Error(), "404") && !strings.Contains(err.Error(), "not found") {
-				t.Logf("Warning: Failed to delete release bundle %s/%s before recreation: %v", rbName, rbVersion, err)
-			}
-		} else {
-			time.Sleep(5 * time.Second)
-		}
-	}
-	createRbFromSpec(t, tests.LifecycleBuilds12, rbName, rbVersion, true, true)
-}
-
 func TestReleaseBundlesSearchGroups(t *testing.T) {
 	cleanCallback := initLifecycleTest(t, artifactoryLifecycleSetTagMinVersion)
 	defer cleanCallback()
