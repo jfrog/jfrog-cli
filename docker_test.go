@@ -591,8 +591,9 @@ func TestNativeDockerPushPull(t *testing.T) {
 	image, err := inttestutils.BuildTestImage(tests.DockerImageName+":"+pushBuildNumber, "", tests.DockerLocalRepo, container.DockerClient)
 	assert.NoError(t, err)
 	// Add docker cli flag '-D' to check we ignore them
-	// Disable manifest verification to avoid TLS errors with localhost:8082
-	runCmdWithRetries(t, jfCliTask("docker", "-D", "push", image, "--build-name="+tests.DockerBuildName, "--build-number="+pushBuildNumber, "--module="+module, "--validate-sha=false"))
+	// Disable detailed summary and manifest verification to avoid TLS errors with localhost:8082
+	// The detailed summary changes in jfrog-cli-artifactory cause manifest verification to use HTTPS instead of HTTP
+	runCmdWithRetries(t, jfCliTask("docker", "-D", "push", image, "--build-name="+tests.DockerBuildName, "--build-number="+pushBuildNumber, "--module="+module, "--detailed-summary=false", "--validate-sha=false"))
 
 	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.DockerBuildName, pushBuildNumber, "", []string{module}, entities.Docker)
 	runRt(t, "build-publish", tests.DockerBuildName, pushBuildNumber)
@@ -600,7 +601,8 @@ func TestNativeDockerPushPull(t *testing.T) {
 	validateContainerBuild(tests.DockerBuildName, pushBuildNumber, imagePath, module, 7, 5, 7, t)
 	tests2.DeleteTestImage(t, image, container.DockerClient)
 
-	runCmdWithRetries(t, jfCliTask("docker", "-D", "pull", image, "--build-name="+tests.DockerBuildName, "--build-number="+pullBuildNumber, "--module="+module))
+	// Disable detailed summary and manifest verification to avoid TLS errors with localhost:8082
+	runCmdWithRetries(t, jfCliTask("docker", "-D", "pull", image, "--build-name="+tests.DockerBuildName, "--build-number="+pullBuildNumber, "--module="+module, "--detailed-summary=false", "--validate-sha=false"))
 	runRt(t, "build-publish", tests.DockerBuildName, pullBuildNumber)
 	imagePath = path.Join(tests.DockerLocalRepo, tests.DockerImageName, pullBuildNumber) + "/"
 	validateContainerBuild(tests.DockerBuildName, pullBuildNumber, imagePath, module, 0, 7, 0, t)
