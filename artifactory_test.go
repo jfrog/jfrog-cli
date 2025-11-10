@@ -3735,7 +3735,11 @@ func TestDirectDownloadWithMinSplit(t *testing.T) {
 	// Create and upload a file larger than min-split size
 	tempDir := filepath.Join(os.TempDir(), "temp-ddl-test-"+strconv.FormatInt(time.Now().Unix(), 10))
 	assert.NoError(t, fileutils.CreateDirIfNotExist(tempDir))
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Logf("Failed to remove temp dir: %v", err)
+		}
+	}()
 
 	testFile := filepath.Join(tempDir, "largefile.bin")
 	_, err := gofrogio.CreateRandFile(testFile, 100000) // 100KB file
@@ -4103,7 +4107,11 @@ func TestDirectDownloadWithBypassArchiveInspection(t *testing.T) {
 	// Create files to zip in temp directory to avoid path issues
 	testDir := filepath.Join(os.TempDir(), "tozip-"+strconv.FormatInt(time.Now().Unix(), 10))
 	assert.NoError(t, fileutils.CreateDirIfNotExist(testDir))
-	defer os.RemoveAll(testDir)
+	defer func() {
+		if err := os.RemoveAll(testDir); err != nil {
+			t.Logf("Failed to remove test dir: %v", err)
+		}
+	}()
 	testFile := filepath.Join(testDir, "test.txt")
 	assert.NoError(t, os.WriteFile(testFile, []byte("test content"), 0644))
 
@@ -4353,7 +4361,11 @@ func TestDirectDownloadVirtualRepoPriority(t *testing.T) {
 	for repoName, content := range repoContents {
 		tempFile := filepath.Join(tests.GetTestResourcesPath(), "temp-"+repoName+".txt")
 		assert.NoError(t, os.WriteFile(tempFile, []byte(content), 0644))
-		defer os.Remove(tempFile)
+		defer func(file string) {
+			if err := os.Remove(file); err != nil {
+				t.Logf("Failed to remove temp file: %v", err)
+			}
+		}(tempFile)
 
 		// Upload to each repo
 		runRt(t, "upload", tempFile, repoName+"/priority-test/"+testFileName, "--flat=true")
