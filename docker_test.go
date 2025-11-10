@@ -596,22 +596,22 @@ func TestNativeDockerPushPull(t *testing.T) {
 	// Disable detailed summary and manifest verification to avoid TLS errors with localhost:8082
 	// The detailed summary changes in jfrog-cli-artifactory cause manifest verification to use HTTPS instead of HTTP
 	// Explicitly disable validate-sha to prevent RemoteAgentBuildInfoBuilder from doing manifest verification
-	runCmdWithRetries(t, jfCliTask("docker", "-D", "push", image, "--build-name="+tests.DockerBuildName, "--build-number="+pushBuildNumber, "--module="+module, "--validate-sha=false"))
-	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.DockerBuildName, pushBuildNumber, "", []string{module}, entities.Docker)
-	runRt(t, "build-publish", tests.DockerBuildName, pushBuildNumber)
-	imagePath := path.Join(tests.DockerLocalRepo, tests.DockerImageName, pushBuildNumber) + "/"
-	validateContainerBuild(tests.DockerBuildName, pushBuildNumber, imagePath, module, 7, 5, 7, t)
+	runCmdWithRetries(t, jfCliTask("docker", "-D", "push", image, "--module="+module, "--validate-sha=false"))
+	inttestutils.ValidateGeneratedBuildInfoModule(t, "", "", "", []string{module}, entities.Docker)
+	runRt(t, "build-publish", "", "")
+	imagePath := path.Join(tests.DockerLocalRepo, "", "") + "/"
+	validateContainerBuild("", "", imagePath, module, 7, 5, 7, t)
 	tests2.DeleteTestImage(t, image, container.DockerClient)
 
 	// Disable detailed summary and manifest verification to avoid TLS errors with localhost:8082
 	// Explicitly disable validate-sha to prevent RemoteAgentBuildInfoBuilder from doing manifest verification
-	runCmdWithRetries(t, jfCliTask("docker", "-D", "pull", image, "--build-name="+tests.DockerBuildName, "--build-number="+pullBuildNumber, "--module="+module, "--validate-sha=false"))
-	runRt(t, "build-publish", tests.DockerBuildName, pullBuildNumber)
+	runCmdWithRetries(t, jfCliTask("docker", "-D", "pull", image, "--module="+module, "--validate-sha=false"))
+	runRt(t, "build-publish", "", "")
 	imagePath = path.Join(tests.DockerLocalRepo, tests.DockerImageName, pullBuildNumber) + "/"
-	validateContainerBuild(tests.DockerBuildName, pullBuildNumber, imagePath, module, 0, 7, 0, t)
+	validateContainerBuild("", "", imagePath, module, 0, 7, 0, t)
 	tests2.DeleteTestImage(t, image, container.DockerClient)
 
-	inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName, tests.DockerLocalRepo)
+	inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, tests.DockerImageName, "", tests.DockerLocalRepo)
 }
 
 func TestNativeDockerFlagParsing(t *testing.T) {
