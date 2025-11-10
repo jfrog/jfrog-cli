@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	tests2 "github.com/jfrog/jfrog-cli-artifactory/utils/tests"
 	"os"
 	"os/exec"
 	"path"
@@ -11,6 +10,8 @@ import (
 	"strconv"
 	"testing"
 	"time"
+
+	tests2 "github.com/jfrog/jfrog-cli-artifactory/utils/tests"
 
 	"github.com/docker/docker/api/types/mount"
 
@@ -590,7 +591,8 @@ func TestNativeDockerPushPull(t *testing.T) {
 	image, err := inttestutils.BuildTestImage(tests.DockerImageName+":"+pushBuildNumber, "", tests.DockerLocalRepo, container.DockerClient)
 	assert.NoError(t, err)
 	// Add docker cli flag '-D' to check we ignore them
-	runCmdWithRetries(t, jfCliTask("docker", "-D", "push", image, "--build-name="+tests.DockerBuildName, "--build-number="+pushBuildNumber, "--module="+module))
+	// Disable manifest verification to avoid TLS errors with localhost:8082
+	runCmdWithRetries(t, jfCliTask("docker", "-D", "push", image, "--build-name="+tests.DockerBuildName, "--build-number="+pushBuildNumber, "--module="+module, "--validate-sha=false"))
 
 	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.DockerBuildName, pushBuildNumber, "", []string{module}, entities.Docker)
 	runRt(t, "build-publish", tests.DockerBuildName, pushBuildNumber)
