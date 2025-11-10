@@ -653,46 +653,16 @@ func deleteReleaseBundle(t *testing.T, lcManager *lifecycle.LifecycleServicesMan
 		ReleaseBundleVersion: rbVersion,
 	}
 
-	assert.NoError(t, lcManager.DeleteReleaseBundleVersion(rbDetails, services.CommonOptionalQueryParams{Async: false}))
+	err := lcManager.DeleteReleaseBundleVersion(rbDetails, services.CommonOptionalQueryParams{Async: false})
+	if err != nil {
+		// Ignore 404 errors during cleanup as the release bundle may have already been deleted
+		if strings.Contains(err.Error(), "404") || strings.Contains(err.Error(), "not found") {
+			return
+		}
+		assert.NoError(t, err)
+	}
 	// Wait after remote deleting. Can be removed once remote deleting supports sync.
 	time.Sleep(5 * time.Second)
-}
-
-func deleteReleaseBundleIfExists(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion string) {
-	isExist, err := lcManager.IsReleaseBundleExist(rbName, rbVersion, "")
-	if err != nil {
-		// If there's an error checking existence, try to delete anyway
-		// Ignore errors if the release bundle doesn't exist
-		rbDetails := services.ReleaseBundleDetails{
-			ReleaseBundleName:    rbName,
-			ReleaseBundleVersion: rbVersion,
-		}
-		err := lcManager.DeleteReleaseBundleVersion(rbDetails, services.CommonOptionalQueryParams{Async: false})
-		if err != nil {
-			// Ignore 404 errors as the release bundle may not exist
-			if !strings.Contains(err.Error(), "404") && !strings.Contains(err.Error(), "not found") {
-				t.Logf("Warning: Failed to delete release bundle %s/%s: %v", rbName, rbVersion, err)
-			}
-		} else {
-			time.Sleep(5 * time.Second)
-		}
-		return
-	}
-	if isExist {
-		rbDetails := services.ReleaseBundleDetails{
-			ReleaseBundleName:    rbName,
-			ReleaseBundleVersion: rbVersion,
-		}
-		err := lcManager.DeleteReleaseBundleVersion(rbDetails, services.CommonOptionalQueryParams{Async: false})
-		if err != nil {
-			// Ignore 404 errors as the release bundle may have been deleted already
-			if !strings.Contains(err.Error(), "404") && !strings.Contains(err.Error(), "not found") {
-				t.Logf("Warning: Failed to delete release bundle %s/%s: %v", rbName, rbVersion, err)
-			}
-		} else {
-			time.Sleep(5 * time.Second)
-		}
-	}
 }
 
 func deleteReleaseBundleWithProject(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion, projectKey string) {
@@ -787,6 +757,7 @@ func deleteReleaseBundleProperties(t *testing.T, lcManager *lifecycle.LifecycleS
 	time.Sleep(5 * time.Second)
 }
 
+//nolint:unparam // rbName parameter is kept for flexibility across different test contexts, even though it currently always receives "my-versioned-app"
 func createRbIfDoesNotExists(t *testing.T, rbName, rbVersion string, lcManager *lifecycle.LifecycleServicesManager) {
 	isExist, err := lcManager.IsReleaseBundleExist(rbName, rbVersion, "")
 	assert.NoError(t, err)
@@ -794,6 +765,20 @@ func createRbIfDoesNotExists(t *testing.T, rbName, rbVersion string, lcManager *
 		_, statusErr := getStatus(lcManager, rbName, rbVersion, "")
 		if statusErr == nil {
 			return
+		}
+		// If release bundle exists but status check fails, delete it first to ensure fresh creation
+		rbDetails := services.ReleaseBundleDetails{
+			ReleaseBundleName:    rbName,
+			ReleaseBundleVersion: rbVersion,
+		}
+		err := lcManager.DeleteReleaseBundleVersion(rbDetails, services.CommonOptionalQueryParams{Async: false})
+		if err != nil {
+			// Ignore 404 errors as the release bundle may have been deleted already
+			if !strings.Contains(err.Error(), "404") && !strings.Contains(err.Error(), "not found") {
+				t.Logf("Warning: Failed to delete release bundle %s/%s before recreation: %v", rbName, rbVersion, err)
+			}
+		} else {
+			time.Sleep(5 * time.Second)
 		}
 	}
 	createRbFromSpec(t, tests.LifecycleBuilds12, rbName, rbVersion, true, true)
@@ -817,10 +802,24 @@ func TestReleaseBundlesSearchGroups(t *testing.T) {
 
 	// Delete existing release bundles to ensure fresh creation and indexing
 	// This is important for search groups test as stale bundles may not be indexed
-	deleteReleaseBundleIfExists(t, lcManager, rbNameA, version1)
-	deleteReleaseBundleIfExists(t, lcManager, rbNameB, version1)
-	deleteReleaseBundleIfExists(t, lcManager, rbNameC, version1)
-	deleteReleaseBundleIfExists(t, lcManager, rbNameD, version1)
+	for _, rbName := range []string{rbNameA, rbNameB, rbNameC, rbNameD} {
+		isExist, err := lcManager.IsReleaseBundleExist(rbName, version1, "")
+		if err == nil && isExist {
+			rbDetails := services.ReleaseBundleDetails{
+				ReleaseBundleName:    rbName,
+				ReleaseBundleVersion: version1,
+			}
+			err := lcManager.DeleteReleaseBundleVersion(rbDetails, services.CommonOptionalQueryParams{Async: false})
+			if err != nil {
+				// Ignore 404 errors as the release bundle may not exist
+				if !strings.Contains(err.Error(), "404") && !strings.Contains(err.Error(), "not found") {
+					t.Logf("Warning: Failed to delete release bundle %s/%s: %v", rbName, version1, err)
+				}
+			} else {
+				time.Sleep(5 * time.Second)
+			}
+		}
+	}
 
 	createRbFromSpec(t, tests.LifecycleBuilds12, rbNameA, version1, true, true)
 	defer deleteReleaseBundle(t, lcManager, rbNameA, version1)
