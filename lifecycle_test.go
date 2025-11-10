@@ -974,25 +974,46 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 	const versionC = "1.1.0-rc"
 	const versionD = "2.0.0"
 
-	createRbIfDoesNotExists(t, rbName, versionA, lcManager)
+	// Delete existing release bundle versions to ensure fresh creation and indexing
+	// This is important for search versions test as stale bundles may not be indexed
+	for _, version := range []string{versionA, versionB, versionC, versionD} {
+		isExist, err := lcManager.IsReleaseBundleExist(rbName, version, "")
+		if err == nil && isExist {
+			rbDetails := services.ReleaseBundleDetails{
+				ReleaseBundleName:    rbName,
+				ReleaseBundleVersion: version,
+			}
+			err := lcManager.DeleteReleaseBundleVersion(rbDetails, services.CommonOptionalQueryParams{Async: false})
+			if err != nil {
+				// Ignore 404 errors as the release bundle may not exist
+				if !strings.Contains(err.Error(), "404") && !strings.Contains(err.Error(), "not found") {
+					t.Logf("Warning: Failed to delete release bundle %s/%s: %v", rbName, version, err)
+				}
+			} else {
+				time.Sleep(5 * time.Second)
+			}
+		}
+	}
+
+	createRbFromSpec(t, tests.LifecycleBuilds12, rbName, versionA, true, true)
 	defer deleteReleaseBundle(t, lcManager, rbName, versionA)
 	assertStatusCompleted(t, lcManager, rbName, versionA, "")
 
 	time.Sleep(1 * time.Second)
 
-	createRbIfDoesNotExists(t, rbName, versionB, lcManager)
+	createRbFromSpec(t, tests.LifecycleBuilds12, rbName, versionB, true, true)
 	defer deleteReleaseBundle(t, lcManager, rbName, versionB)
 	assertStatusCompleted(t, lcManager, rbName, versionB, "")
 
 	time.Sleep(1 * time.Second)
 
-	createRbIfDoesNotExists(t, rbName, versionC, lcManager)
+	createRbFromSpec(t, tests.LifecycleBuilds12, rbName, versionC, true, true)
 	defer deleteReleaseBundle(t, lcManager, rbName, versionC)
 	assertStatusCompleted(t, lcManager, rbName, versionC, "")
 
 	time.Sleep(1 * time.Second)
 
-	createRbIfDoesNotExists(t, rbName, versionD, lcManager)
+	createRbFromSpec(t, tests.LifecycleBuilds12, rbName, versionD, true, true)
 	defer deleteReleaseBundle(t, lcManager, rbName, versionD)
 	assertStatusCompleted(t, lcManager, rbName, versionD, "")
 
