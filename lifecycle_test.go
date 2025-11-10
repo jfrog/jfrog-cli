@@ -653,7 +653,20 @@ func deleteReleaseBundle(t *testing.T, lcManager *lifecycle.LifecycleServicesMan
 		ReleaseBundleVersion: rbVersion,
 	}
 
-	assert.NoError(t, lcManager.DeleteReleaseBundleVersion(rbDetails, services.CommonOptionalQueryParams{Async: false}))
+	err := lcManager.DeleteReleaseBundleVersion(rbDetails, services.CommonOptionalQueryParams{Async: false})
+	if err != nil {
+		errStr := err.Error()
+		// Ignore errors for release bundles that are already being deleted or don't exist
+		// This can happen when multiple deferred cleanup functions run concurrently
+		if strings.Contains(errStr, "Invalid status: DELETING") ||
+			strings.Contains(errStr, "Record not found") ||
+			strings.Contains(errStr, "404") {
+			log.Info(fmt.Sprintf("Release bundle %s/%s is already deleted or being deleted, skipping: %v", rbName, rbVersion, err))
+			return
+		}
+		// For other errors, fail the test
+		assert.NoError(t, err)
+	}
 	// Wait after remote deleting. Can be removed once remote deleting supports sync.
 	time.Sleep(5 * time.Second)
 }
@@ -664,7 +677,20 @@ func deleteReleaseBundleWithProject(t *testing.T, lcManager *lifecycle.Lifecycle
 		ReleaseBundleVersion: rbVersion,
 	}
 
-	assert.NoError(t, lcManager.DeleteReleaseBundleVersion(rbDetails, services.CommonOptionalQueryParams{Async: false, ProjectKey: projectKey}))
+	err := lcManager.DeleteReleaseBundleVersion(rbDetails, services.CommonOptionalQueryParams{Async: false, ProjectKey: projectKey})
+	if err != nil {
+		errStr := err.Error()
+		// Ignore errors for release bundles that are already being deleted or don't exist
+		// This can happen when multiple deferred cleanup functions run concurrently
+		if strings.Contains(errStr, "Invalid status: DELETING") ||
+			strings.Contains(errStr, "Record not found") ||
+			strings.Contains(errStr, "404") {
+			log.Info(fmt.Sprintf("Release bundle %s/%s is already deleted or being deleted, skipping: %v", rbName, rbVersion, err))
+			return
+		}
+		// For other errors, fail the test
+		assert.NoError(t, err)
+	}
 	// Wait after remote deleting. Can be removed once remote deleting supports sync.
 	time.Sleep(5 * time.Second)
 }
