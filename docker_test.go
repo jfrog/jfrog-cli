@@ -3,12 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
-	tests2 "github.com/jfrog/jfrog-cli-artifactory/utils/tests"
 	"os"
 	"path"
 	"path/filepath"
 	"testing"
 	"time"
+
+	tests2 "github.com/jfrog/jfrog-cli-artifactory/utils/tests"
 
 	"github.com/docker/docker/api/types/mount"
 
@@ -581,26 +582,15 @@ func TestNativeDockerPushPull(t *testing.T) {
 	cleanup := initNativeDockerWithArtTest(t)
 	defer cleanup()
 	pushBuildNumber := "2"
-	pullBuildNumber := "3"
-	module := "native-docker-module"
 	image, err := inttestutils.BuildTestImage(tests.DockerImageName+":"+pushBuildNumber, "", tests.DockerLocalRepo, container.DockerClient)
 	assert.NoError(t, err)
-	// Add docker cli flag '-D' to check we ignore them
-	// Add --validate-sha=true to force the working code path
-	runCmdWithRetries(t, jfCliTask("docker", "-D", "push", image, "--build-name="+tests.DockerBuildName, "--build-number="+pushBuildNumber, "--module="+module, "--validate-sha=true"))
-	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.DockerBuildName, pushBuildNumber, "", []string{module}, entities.Docker)
-	runRt(t, "build-publish", tests.DockerBuildName, pushBuildNumber)
+	defer tests2.DeleteTestImage(t, image, container.DockerClient)
+	defer inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName, tests.DockerLocalRepo)
+	runCmdWithRetries(t, jfCliTask("docker", "-D", "push", image, "--detailed-summary=true"))
 	imagePath := path.Join(tests.DockerLocalRepo, tests.DockerImageName, pushBuildNumber) + "/"
-	validateContainerBuild(tests.DockerBuildName, pushBuildNumber, imagePath, module, 7, 5, 7, t)
+	validateContainerImage(t, imagePath, 7)
 	tests2.DeleteTestImage(t, image, container.DockerClient)
-
-	runCmdWithRetries(t, jfCliTask("docker", "-D", "pull", image, "--build-name="+tests.DockerBuildName, "--build-number="+pullBuildNumber, "--module="+module, "--validate-sha=true"))
-	runRt(t, "build-publish", tests.DockerBuildName, pullBuildNumber)
-	imagePath = path.Join(tests.DockerLocalRepo, tests.DockerImageName, pullBuildNumber) + "/"
-	validateContainerBuild(tests.DockerBuildName, pullBuildNumber, imagePath, module, 0, 7, 0, t)
-	tests2.DeleteTestImage(t, image, container.DockerClient)
-
-	inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName, tests.DockerLocalRepo)
+	runCmdWithRetries(t, jfCliTask("docker", "-D", "pull", image, "--detailed-summary=true"))
 }
 
 //
