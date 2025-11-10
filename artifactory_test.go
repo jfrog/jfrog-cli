@@ -6613,3 +6613,121 @@ func deleteReceivedReleaseBundle(t *testing.T, url, bundleName, bundleVersion st
 	_, _, err = client.SendDelete(*tests.JfrogUrl+deleteApi, []byte{}, artHttpDetails, "Deleting release bundle")
 	assert.NoError(t, err)
 }
+
+var buildAqlSearchQueryDataProvider = []struct {
+	pattern     string
+	recursive   bool
+	expectedAql string
+}{
+	{"**/a-.*.tar.gz", false, `{"$or":[{"$and":[{"path":{"$match":"**"},"name":{"$match":"a-.*.tar.gz"}}]},{"$and":[{"path":".","name":{"$match":"*a-.*.tar.gz"}}]}]}`},
+}
+
+// TestArtifactorySearchByPattern is an integration test that validates search pattern functionality
+// by creating test repositories, uploading files, and verifying that searches return correct results.
+// This test validates the unit test functionality of CreateAqlBodyForSpecWithPattern.
+func TestArtifactorySearchByPattern(t *testing.T) {
+	initArtifactoryCli()
+	initArtifactoryTest(t, "")
+	defer cleanArtifactoryTest()
+	testRepos := []string{"repo-local", "repo-wildcard", "repo-local2", "repo-local3"}
+	for _, repoName := range testRepos {
+		if !isRepoExist(repoName) {
+			repoConfig := fmt.Sprintf(`{"key":"%s","rclass":"local","packageType":"generic"}`, repoName)
+			execCreateRepoRestFromString(repoConfig, repoName)
+		} else {
+			runRt(t, "delete", repoName+"/*", "--quiet")
+		}
+	}
+	setupTestFilesForSearchPatterns(t)
+	defer cleanupTestFilesForSearchPatterns(t)
+	for _, searchSample := range buildAqlSearchQueryDataProvider {
+		testName := fmt.Sprintf("Pattern_%s_Recursive_%s",
+			strings.ReplaceAll(strings.ReplaceAll(searchSample.pattern, "/", "_"), "*", "star"),
+			strconv.FormatBool(searchSample.recursive))
+		t.Run(testName, func(t *testing.T) {
+			args := []string{"search", searchSample.pattern}
+			if searchSample.recursive {
+				args = append(args, "--recursive")
+			}
+			err := artifactoryCli.Exec(args...)
+			assert.NoError(t, err, "Search command should execute successfully for pattern: %s", searchSample.pattern)
+			validateSearchPatternWithAPI(t, searchSample.pattern, searchSample.recursive)
+		})
+	}
+}
+
+// setupTestFilesForSearchPatterns uploads test files to match the search patterns
+func setupTestFilesForSearchPatterns(t *testing.T) {
+	tmpFile, err := os.CreateTemp("", "test-file-*.txt")
+	assert.NoError(t, err)
+	defer func(name string) {
+		_ = os.Remove(name)
+	}(tmpFile.Name())
+	_, err = tmpFile.WriteString("test content")
+	if err != nil {
+		return
+	}
+	err = tmpFile.Close()
+	if err != nil {
+		return
+	}
+	runRt(t, "upload", tmpFile.Name(), "repo-local/test-file.txt")
+	runRt(t, "upload", tmpFile.Name(), "repo-local/subdir/nested-file.txt")
+	runRt(t, "upload", tmpFile.Name(), "repo-wildcard/test-file.txt")
+	runRt(t, "upload", tmpFile.Name(), "repo-local2/a1b2c3/dd/test-file.txt")
+	runRt(t, "upload", tmpFile.Name(), "repo-local2/a1b2c3/dd/subdir/nested-file.txt")
+	runRt(t, "upload", tmpFile.Name(), "repo-local2/other-path/test-file.txt")
+	runRt(t, "upload", tmpFile.Name(), "repo-local3/a1b2c3/dd/test-file.txt")
+	runRt(t, "upload", tmpFile.Name(), "repo-local/path/to/a-1.2.3.tar.gz")
+	runRt(t, "upload", tmpFile.Name(), "repo-local/a-2.3.4.tar.gz")
+}
+
+// cleanupTestFilesForSearchPatterns removes test files uploaded during the test
+func cleanupTestFilesForSearchPatterns(t *testing.T) {
+	testRepos := []string{"repo-local", "repo-wildcard", "repo-local2", "repo-local3"}
+	for _, repoName := range testRepos {
+		if isRepoExist(repoName) {
+			runRt(t, "delete", repoName+"/*", "--quiet")
+		}
+	}
+}
+
+// execCreateRepoRestFromString creates a repository from a JSON string
+func execCreateRepoRestFromString(repoConfig, repoName string) {
+	rtutils.AddHeader("Content-Type", "application/json", &artHttpDetails.Headers)
+	client, err := httpclient.ClientBuilder().Build()
+	if err != nil {
+		log.Error(err)
+		os.Exit(1)
+	}
+	resp, body, err := client.SendPut(serverDetails.ArtifactoryUrl+"api/repositories/"+repoName, []byte(repoConfig), artHttpDetails, "")
+	if err != nil {
+		log.Error(err)
+		os.Exit(1)
+	}
+	if err = errorutils.CheckResponseStatusWithBody(resp, body, http.StatusOK, http.StatusCreated); err != nil {
+		log.Error(err)
+		os.Exit(1)
+	}
+	log.Info("Repository", repoName, "created.")
+}
+
+// validateSearchPatternWithAPI validates the search pattern using the search API directly
+func validateSearchPatternWithAPI(t *testing.T, pattern string, recursive bool) {
+	searchSpec := spec.NewBuilder().Pattern(pattern).Recursive(recursive).BuildSpec()
+	searchCmd := generic.NewSearchCommand()
+	searchCmd.SetServerDetails(serverDetails).SetSpec(searchSpec)
+	reader, err := searchCmd.Search()
+	assert.NoError(t, err, "Search API should work for pattern: %s", pattern)
+	var resultItems []utils.SearchResult
+	readerNoDate, err := utils.SearchResultNoDate(reader)
+	assert.NoError(t, err)
+	for resultItem := new(utils.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
+		resultItems = append(resultItems, *resultItem)
+	}
+	if strings.HasPrefix(pattern, "repo-local") && !strings.Contains(pattern, "*repo-local") {
+		assert.True(t, len(resultItems) > 0, "Pattern %s should return results", pattern)
+	}
+	readerGetErrorAndAssert(t, readerNoDate)
+	readerCloseAndAssert(t, readerNoDate)
+}

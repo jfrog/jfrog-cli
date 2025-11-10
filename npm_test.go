@@ -295,7 +295,9 @@ func addNpmScopeRegistryToNpmRc(t *testing.T, projectPath string, packageJsonPat
 	npmrcFilePath := filepath.Join(projectPath, ".npmrc")
 	npmrcFile, err := os.OpenFile(npmrcFilePath, os.O_APPEND|os.O_WRONLY, 0644)
 	assert.NoError(t, err)
-	defer npmrcFile.Close()
+	defer func() {
+		_ = npmrcFile.Close()
+	}()
 	_, err = npmrcFile.WriteString(scopedRegistry)
 	assert.NoError(t, err)
 }

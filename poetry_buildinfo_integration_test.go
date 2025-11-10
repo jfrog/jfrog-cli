@@ -21,7 +21,9 @@ func TestPoetryBuildInfoCLIIntegration(t *testing.T) {
 
 	// Setup test environment
 	tempDir := setupPoetryTestProject(t)
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		_ = os.RemoveAll(tempDir)
+	}()
 
 	// Change to test directory
 	originalDir, err := os.Getwd()
@@ -61,7 +63,9 @@ func TestPoetryBuildInfoCLIIntegration(t *testing.T) {
 			// Set environment for native implementation
 			err := os.Setenv("JFROG_RUN_NATIVE", "true")
 			require.NoError(t, err)
-			defer os.Unsetenv("JFROG_RUN_NATIVE")
+			defer func() {
+				_ = os.Unsetenv("JFROG_RUN_NATIVE")
+			}()
 
 			// Test build info collection (simulating jf poetry publish --build-name --build-number)
 			buildInfo := collectPoetryBuildInfoForTest(t, tc.buildName, tc.buildNumber)
@@ -85,7 +89,9 @@ func TestPoetryBuildInfoWithoutNativeFlag(t *testing.T) {
 	}
 
 	tempDir := setupPoetryTestProject(t)
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		_ = os.RemoveAll(tempDir)
+	}()
 
 	originalDir, err := os.Getwd()
 	require.NoError(t, err)
@@ -99,7 +105,7 @@ func TestPoetryBuildInfoWithoutNativeFlag(t *testing.T) {
 	require.NoError(t, err)
 
 	// Ensure JFROG_RUN_NATIVE is not set
-	os.Unsetenv("JFROG_RUN_NATIVE")
+	_ = os.Unsetenv("JFROG_RUN_NATIVE")
 
 	// Test that Poetry commands still work (fallback to existing implementation)
 	// This ensures we don't break existing functionality
@@ -118,7 +124,9 @@ func TestPoetryTreeParsingRobustness(t *testing.T) {
 	}
 
 	tempDir := setupPoetryTestProject(t)
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		_ = os.RemoveAll(tempDir)
+	}()
 
 	originalDir, err := os.Getwd()
 	require.NoError(t, err)
@@ -133,7 +141,9 @@ func TestPoetryTreeParsingRobustness(t *testing.T) {
 
 	err = os.Setenv("JFROG_RUN_NATIVE", "true")
 	require.NoError(t, err)
-	defer os.Unsetenv("JFROG_RUN_NATIVE")
+	defer func() {
+		_ = os.Unsetenv("JFROG_RUN_NATIVE")
+	}()
 
 	buildInfo := collectPoetryBuildInfoForTest(t, "tree-parsing-test", "1")
 
@@ -154,7 +164,9 @@ func TestPoetryRequestedByRelationships(t *testing.T) {
 	}
 
 	tempDir := setupPoetryTestProject(t)
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		_ = os.RemoveAll(tempDir)
+	}()
 
 	originalDir, err := os.Getwd()
 	require.NoError(t, err)
@@ -169,7 +181,9 @@ func TestPoetryRequestedByRelationships(t *testing.T) {
 
 	err = os.Setenv("JFROG_RUN_NATIVE", "true")
 	require.NoError(t, err)
-	defer os.Unsetenv("JFROG_RUN_NATIVE")
+	defer func() {
+		_ = os.Unsetenv("JFROG_RUN_NATIVE")
+	}()
 
 	buildInfo := collectPoetryBuildInfoForTest(t, "requested-by-test", "1")
 

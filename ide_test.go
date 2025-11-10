@@ -119,7 +119,9 @@ func TestVscodeAutoDetection(t *testing.T) {
 
 	// Set environment to point to our mock installation
 	originalPATH := os.Getenv("PATH")
-	defer os.Setenv("PATH", originalPATH)
+	defer func() {
+		_ = os.Setenv("PATH", originalPATH)
+	}()
 
 	// Note: This is a simplified test - real auto-detection would need more complex mocking
 	// The actual command would attempt auto-detection, but we're testing with an explicit path

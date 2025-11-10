@@ -331,8 +331,8 @@ func TestBuildAppend(t *testing.T) {
 	assert.Equal(t, buildinfo.Build, partials[0].ModuleType)
 	assert.NotZero(t, partials[0].Timestamp)
 	assert.NotNil(t, partials[0].Checksum)
-	assert.NotZero(t, partials[0].Checksum.Md5)
-	assert.NotZero(t, partials[0].Checksum.Sha1)
+	assert.NotZero(t, partials[0].Md5)
+	assert.NotZero(t, partials[0].Sha1)
 
 	// Publish build RtBuildName2/buildNumber2
 	runRt(t, "bp", tests.RtBuildName2, buildNumber2)
