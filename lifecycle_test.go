@@ -753,7 +753,6 @@ func deleteReleaseBundleProperties(t *testing.T, lcManager *lifecycle.LifecycleS
 	annotateParams := buildAnnotateParams("", "", delProps, false, false,
 		true, rbDetails, queryParams)
 	assert.NoError(t, lcManager.AnnotateReleaseBundle(annotateParams))
-	// Wait after remote deleting. Can be removed once remote deleting supports sync.
 	time.Sleep(5 * time.Second)
 }
 
