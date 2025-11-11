@@ -251,7 +251,7 @@ func TestPoetryPublishTraditionalFlowWithBuildInfo(t *testing.T) {
 	}()
 
 	// Ensure JFROG_RUN_NATIVE is NOT set (test traditional flow)
-	os.Unsetenv("JFROG_RUN_NATIVE")
+	assert.NoError(t, os.Unsetenv("JFROG_RUN_NATIVE"))
 
 	buildName := "poetry-traditional-buildinfo-test"
 	buildNumber := "1"
@@ -390,7 +390,7 @@ func TestPoetryPublishBothFlowsComparison(t *testing.T) {
 				setEnvCallback := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_RUN_NATIVE", "true")
 				defer setEnvCallback()
 			} else {
-				os.Unsetenv("JFROG_RUN_NATIVE")
+				assert.NoError(t, os.Unsetenv("JFROG_RUN_NATIVE"))
 			}
 
 			buildNumber := "1"
