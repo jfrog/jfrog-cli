@@ -237,6 +237,215 @@ func validatePoetryPublishProperties(t *testing.T, repo, buildName, buildNumber 
 	verifyExistInArtifactoryByProps([]string{}, repo+"/*", expectedProps, t)
 }
 
+// TestPoetryPublishTraditionalFlowWithBuildInfo tests the traditional flow with build-info flags
+// Ensures traditional flow publishes artifacts when --build-name and --build-number are provided
+// This validates the fix for bug introduced in v2.79.0 where FlexPack code caused early return
+func TestPoetryPublishTraditionalFlowWithBuildInfo(t *testing.T) {
+	initPoetryTest(t)
+
+	// Populate cli config with 'default' server
+	oldHomeDir, newHomeDir := prepareHomeDir(t)
+	defer func() {
+		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
+		clientTestUtils.RemoveAllAndAssert(t, newHomeDir)
+	}()
+
+	// Ensure JFROG_RUN_NATIVE is NOT set (test traditional flow)
+	os.Unsetenv("JFROG_RUN_NATIVE")
+
+	buildName := "poetry-traditional-buildinfo-test"
+	buildNumber := "1"
+	projectPath := createPoetryProject(t, "traditional-buildinfo-test", "poetryproject")
+
+	// Change to project directory
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+
+	// Build the package
+	buildCmd := exec.Command("poetry", "build")
+	buildCmd.Dir = projectPath
+	assert.NoError(t, buildCmd.Run(), "Failed to build Poetry package")
+
+	// Publish with build-info flags (this would fail in v2.79.0-v2.82.0)
+	args := []string{
+		"poetry", "publish",
+		"--build-name=" + buildName,
+		"--build-number=" + buildNumber,
+		"--repository=" + tests.PoetryLocalRepo,
+	}
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	assert.NoError(t, jfrogCli.Exec(args...))
+
+	// Publish build info
+	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	// CRITICAL: Validate artifacts were uploaded
+	// In buggy versions (v2.79.0-v2.82.0), this would fail with 0 artifacts
+	validatePoetryPublishProperties(t, tests.PoetryLocalRepo, buildName, buildNumber)
+
+	// Validate build info has artifacts
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	assert.NoError(t, err)
+	assert.True(t, found, "build info was expected to be found")
+
+	// Validate 2 artifacts exist (.whl and .tar.gz)
+	assert.Len(t, publishedBuildInfo.BuildInfo.Modules, 1)
+	assert.Len(t, publishedBuildInfo.BuildInfo.Modules[0].Artifacts, 2,
+		"Expected 2 artifacts (.whl and .tar.gz), validates fix for v2.79.0-v2.82.0 bug")
+
+	// Clean up
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+}
+
+// TestPoetryPublishFlexPackFlow tests the FlexPack flow for poetry publish
+// Ensures FlexPack flow continues to work correctly with JFROG_RUN_NATIVE=true
+func TestPoetryPublishFlexPackFlow(t *testing.T) {
+	initPoetryTest(t)
+
+	// Set JFROG_RUN_NATIVE=true for FlexPack flow
+	setEnvCallback := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_RUN_NATIVE", "true")
+	defer setEnvCallback()
+
+	// Populate cli config with 'default' server
+	oldHomeDir, newHomeDir := prepareHomeDir(t)
+	defer func() {
+		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
+		clientTestUtils.RemoveAllAndAssert(t, newHomeDir)
+	}()
+
+	buildName := "poetry-flexpack-test"
+	buildNumber := "1"
+	projectPath := createPoetryProject(t, "flexpack-test", "poetryproject")
+
+	// Change to project directory
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+
+	// Build the package
+	buildCmd := exec.Command("poetry", "build")
+	buildCmd.Dir = projectPath
+	assert.NoError(t, buildCmd.Run(), "Failed to build Poetry package")
+
+	// Publish with FlexPack flow
+	args := []string{
+		"poetry", "publish",
+		"--build-name=" + buildName,
+		"--build-number=" + buildNumber,
+		"--repository=" + tests.PoetryLocalRepo,
+	}
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	assert.NoError(t, jfrogCli.Exec(args...))
+
+	// Publish build info
+	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	// Validate artifacts were uploaded
+	validatePoetryPublishProperties(t, tests.PoetryLocalRepo, buildName, buildNumber)
+
+	// Validate build info has artifacts
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	assert.NoError(t, err)
+	assert.True(t, found, "build info was expected to be found")
+
+	// Validate 2 artifacts exist
+	assert.Len(t, publishedBuildInfo.BuildInfo.Modules, 1)
+	assert.Len(t, publishedBuildInfo.BuildInfo.Modules[0].Artifacts, 2,
+		"Expected 2 artifacts (.whl and .tar.gz) in FlexPack flow")
+
+	// Clean up
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+}
+
+// TestPoetryPublishBothFlowsComparison tests both traditional and FlexPack flows
+// Ensures both flows produce the same results (feature parity)
+func TestPoetryPublishBothFlowsComparison(t *testing.T) {
+	initPoetryTest(t)
+
+	// Populate cli config with 'default' server
+	oldHomeDir, newHomeDir := prepareHomeDir(t)
+	defer func() {
+		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
+		clientTestUtils.RemoveAllAndAssert(t, newHomeDir)
+	}()
+
+	flows := []struct {
+		name      string
+		useNative bool
+		buildName string
+	}{
+		{"Traditional", false, "poetry-flow-traditional"},
+		{"FlexPack", true, "poetry-flow-flexpack"},
+	}
+
+	for _, flow := range flows {
+		t.Run(flow.name, func(t *testing.T) {
+			// Set up environment for FlexPack if needed
+			if flow.useNative {
+				setEnvCallback := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_RUN_NATIVE", "true")
+				defer setEnvCallback()
+			} else {
+				os.Unsetenv("JFROG_RUN_NATIVE")
+			}
+
+			buildNumber := "1"
+			projectPath := createPoetryProject(t, "flow-comparison-"+flow.name, "poetryproject")
+
+			// Change to project directory
+			wd, err := os.Getwd()
+			assert.NoError(t, err)
+			chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+			defer chdirCallback()
+
+			// Build the package
+			buildCmd := exec.Command("poetry", "build")
+			buildCmd.Dir = projectPath
+			assert.NoError(t, buildCmd.Run(), "Failed to build Poetry package")
+
+			// Publish
+			args := []string{
+				"poetry", "publish",
+				"--build-name=" + flow.buildName,
+				"--build-number=" + buildNumber,
+				"--repository=" + tests.PoetryLocalRepo,
+			}
+
+			jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+			assert.NoError(t, jfrogCli.Exec(args...))
+
+			// Publish build info
+			assert.NoError(t, artifactoryCli.Exec("bp", flow.buildName, buildNumber))
+
+			// Validate artifacts were uploaded (both flows should upload same artifacts)
+			validatePoetryPublishProperties(t, tests.PoetryLocalRepo, flow.buildName, buildNumber)
+
+			// Validate build info
+			publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, flow.buildName, buildNumber)
+			assert.NoError(t, err)
+			assert.True(t, found, "build info was expected to be found for %s flow", flow.name)
+
+			// Both flows should produce 2 artifacts
+			assert.Len(t, publishedBuildInfo.BuildInfo.Modules, 1)
+			assert.Len(t, publishedBuildInfo.BuildInfo.Modules[0].Artifacts, 2,
+				"%s flow should upload 2 artifacts (.whl and .tar.gz)", flow.name)
+
+			// Validate artifacts have checksums
+			for _, artifact := range publishedBuildInfo.BuildInfo.Modules[0].Artifacts {
+				assert.NotEmpty(t, artifact.Sha1, "SHA1 checksum should be present in %s flow", flow.name)
+				assert.NotEmpty(t, artifact.Sha256, "SHA256 checksum should be present in %s flow", flow.name)
+			}
+
+			// Clean up
+			inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, flow.buildName, artHttpDetails)
+		})
+	}
+}
+
 func TestPoetryBuildInfoCollection(t *testing.T) {
 	// Test the FlexPack build info collection functionality
 	initPoetryTest(t)
