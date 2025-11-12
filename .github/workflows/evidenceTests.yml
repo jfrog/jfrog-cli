@@ -1,0 +1,45 @@
+name: Evidence Tests
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "master"
+  # Triggers the workflow on PRs to master branch only.
+  pull_request_target:
+    types: [labeled]
+    branches:
+      - "master"
+
+# Ensures that only the latest commit is running for each PR at a time.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  Evidence-Tests:
+    name: Evidence tests (${{ matrix.os }})
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'safe to test')
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu, windows, macos]
+    runs-on: ${{ matrix.os }}-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
+
+      - name: Setup Go with cache
+        uses: jfrog/.github/actions/install-go-with-cache@main
+
+      - name: Setup JFrog CLI
+        uses: jfrog/setup-jfrog-cli@v4
+        with:
+          version: latest
+        env:
+          JF_URL: ${{ secrets.PLATFORM_URL }}
+          JF_ACCESS_TOKEN: ${{ secrets.PLATFORM_ADMIN_TOKEN }}
+
+      - name: Run Evidence tests
+        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.evidence --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --jfrog.evidenceToken=${{ secrets.EVIDENCE_USER_TOKEN }} --jfrog.projectKey=${{ secrets.EVIDENCE_PROJECT_KEY }} --jfrog.projectToken=${{ secrets.EVIDENCE_PROJECT_TOKEN }} --ci.runId=${{ runner.os }}-evidence
+
