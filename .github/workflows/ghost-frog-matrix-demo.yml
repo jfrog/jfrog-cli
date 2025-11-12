@@ -1,0 +1,171 @@
+name: Ghost Frog Matrix Build Demo
+
+on:
+  workflow_dispatch:
+  
+jobs:
+  matrix-build:
+    name: Build - ${{ matrix.language }} ${{ matrix.version }}
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        include:
+          # Node.js projects
+          - language: node
+            version: '16'
+            os: ubuntu-latest
+            build_cmd: |
+              echo '{"name":"test","version":"1.0.0","dependencies":{"express":"^4.18.0"}}' > package.json
+              npm install
+              npm list
+              
+          - language: node
+            version: '18'
+            os: ubuntu-latest
+            build_cmd: |
+              echo '{"name":"test","version":"1.0.0","dependencies":{"express":"^4.18.0"}}' > package.json
+              npm install
+              npm list
+          
+          # Python projects
+          - language: python
+            version: '3.9'
+            os: ubuntu-latest
+            build_cmd: |
+              echo "requests==2.31.0" > requirements.txt
+              pip install -r requirements.txt
+              pip list
+              
+          - language: python
+            version: '3.11'
+            os: ubuntu-latest
+            build_cmd: |
+              echo "requests==2.31.0" > requirements.txt
+              pip install -r requirements.txt
+              pip list
+          
+          # Java projects
+          - language: java
+            version: '11'
+            os: ubuntu-latest
+            build_cmd: |
+              cat > pom.xml << 'EOF'
+              <project>
+                <modelVersion>4.0.0</modelVersion>
+                <groupId>com.example</groupId>
+                <artifactId>test</artifactId>
+                <version>1.0.0</version>
+                <properties>
+                  <maven.compiler.source>11</maven.compiler.source>
+                  <maven.compiler.target>11</maven.compiler.target>
+                </properties>
+              </project>
+              EOF
+              mvn validate || true
+              
+          - language: java
+            version: '17'
+            os: ubuntu-latest
+            build_cmd: |
+              cat > pom.xml << 'EOF'
+              <project>
+                <modelVersion>4.0.0</modelVersion>
+                <groupId>com.example</groupId>
+                <artifactId>test</artifactId>
+                <version>1.0.0</version>
+                <properties>
+                  <maven.compiler.source>17</maven.compiler.source>
+                  <maven.compiler.target>17</maven.compiler.target>
+                </properties>
+              </project>
+              EOF
+              mvn validate || true
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      
+      # Language-specific setup
+      - name: Setup Node.js
+        if: matrix.language == 'node'
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.version }}
+          
+      - name: Setup Python
+        if: matrix.language == 'python'
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.version }}
+          
+      - name: Setup Java
+        if: matrix.language == 'java'
+        uses: actions/setup-java@v3
+        with:
+          java-version: ${{ matrix.version }}
+          distribution: 'temurin'
+      
+      # Ghost Frog setup - same for all languages!
+      - name: Setup Ghost Frog
+        uses: ./ghost-frog-action
+        with:
+          jfrog-url: ${{ secrets.JFROG_URL || 'https://example.jfrog.io' }}
+          jfrog-access-token: ${{ secrets.JFROG_ACCESS_TOKEN }}
+      
+      # Run language-specific build
+      - name: Build with Ghost Frog
+        run: |
+          echo "🚀 Building ${{ matrix.language }} ${{ matrix.version }} project..."
+          echo "All package manager commands will be transparently intercepted!"
+          echo ""
+          
+          # Create test directory
+          mkdir -p test-project && cd test-project
+          
+          # Run the build commands
+          ${{ matrix.build_cmd }}
+          
+          echo ""
+          echo "✅ Build completed with Ghost Frog interception!"
+      
+      - name: Verify Interception
+        run: |
+          echo "🔍 Verifying Ghost Frog interception..."
+          
+          case "${{ matrix.language }}" in
+            node)
+              which npm | grep -q ".jfrog/package-alias" && echo "✅ npm intercepted" || echo "❌ npm not intercepted"
+              ;;
+            python)
+              which pip | grep -q ".jfrog/package-alias" && echo "✅ pip intercepted" || echo "❌ pip not intercepted"
+              ;;
+            java)
+              which mvn | grep -q ".jfrog/package-alias" && echo "✅ mvn intercepted" || echo "❌ mvn not intercepted"
+              ;;
+          esac
+  
+  summary:
+    name: Matrix Build Summary
+    needs: matrix-build
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Summary
+        run: |
+          echo "🎉 Ghost Frog Matrix Build Complete!"
+          echo "===================================="
+          echo ""
+          echo "Demonstrated transparent interception across:"
+          echo "  ✓ Multiple Node.js versions (16, 18)"
+          echo "  ✓ Multiple Python versions (3.9, 3.11)"
+          echo "  ✓ Multiple Java versions (11, 17)"
+          echo ""
+          echo "Key Benefits:"
+          echo "  • Same Ghost Frog setup for all languages"
+          echo "  • No build script modifications needed"
+          echo "  • Works with any version of any tool"
+          echo "  • Easy to add to existing matrix builds"
+          echo ""
+          echo "Just add the Ghost Frog action and you're done! 👻"

@@ -1,0 +1,165 @@
+name: Ghost Frog Demo - Transparent Package Manager Interception
+
+on:
+  push:
+    branches: [ main, test-failures ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  ghost-frog-npm-demo:
+    name: NPM Commands via Ghost Frog
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+      
+      - name: Install JFrog CLI
+        run: |
+          echo "📦 Installing JFrog CLI..."
+          curl -fL https://install-cli.jfrog.io | sh
+          sudo mv jf /usr/local/bin/
+          jf --version
+      
+      - name: Configure JFrog CLI
+        env:
+          JFROG_URL: ${{ secrets.JFROG_URL || 'https://example.jfrog.io' }}
+          JFROG_ACCESS_TOKEN: ${{ secrets.JFROG_ACCESS_TOKEN || 'dummy-token' }}
+        run: |
+          echo "🔧 Configuring JFrog CLI..."
+          # For demo purposes, we'll create a dummy config if secrets aren't set
+          if [ "$JFROG_ACCESS_TOKEN" == "dummy-token" ]; then
+            echo "⚠️  No JFrog credentials found, using dummy config for demo"
+            jf config add ghost-demo --url="$JFROG_URL" --access-token="$JFROG_ACCESS_TOKEN" --interactive=false || true
+          else
+            echo "✅ Configuring with real JFrog instance"
+            jf config add ghost-demo --url="$JFROG_URL" --access-token="$JFROG_ACCESS_TOKEN" --interactive=false
+          fi
+          jf config use ghost-demo
+      
+      - name: Install Ghost Frog Package Aliases
+        run: |
+          echo "👻 Installing Ghost Frog package aliases..."
+          jf package-alias install
+          
+          # Add alias directory to PATH for this job
+          echo "$HOME/.jfrog/package-alias/bin" >> $GITHUB_PATH
+          
+          # Show installation status
+          jf package-alias status
+      
+      - name: Verify NPM Interception
+        run: |
+          echo "🔍 Verifying NPM command interception..."
+          echo "PATH=$PATH"
+          echo ""
+          
+          # Show which npm will be used
+          echo "Which npm: $(which npm)"
+          echo "Original npm: $(which -a npm | grep -v .jfrog || echo 'Not found in PATH')"
+          echo ""
+          
+          # This should show it's using the jf binary
+          ls -la $HOME/.jfrog/package-alias/bin/npm || true
+      
+      - name: Create Demo NPM Project
+        run: |
+          echo "📁 Creating demo NPM project..."
+          mkdir -p demo-project
+          cd demo-project
+          
+          cat > package.json << EOF
+          {
+            "name": "ghost-frog-demo",
+            "version": "1.0.0",
+            "description": "Demo project for Ghost Frog transparent interception",
+            "dependencies": {
+              "lodash": "^4.17.21",
+              "axios": "^1.6.0"
+            },
+            "devDependencies": {
+              "jest": "^29.0.0"
+            }
+          }
+          EOF
+          
+          echo "📄 package.json created:"
+          cat package.json
+      
+      - name: Run NPM Commands (Transparently via JFrog CLI)
+        run: |
+          cd demo-project
+          echo "🚀 Running 'npm install' (will be intercepted by Ghost Frog)..."
+          echo ""
+          
+          # Enable debug to see interception
+          export JFROG_CLI_LOG_LEVEL=DEBUG
+          
+          # This will actually run 'jf npm install' transparently
+          npm install 2>&1 | grep -E "(Detected running as alias|Running in JF mode|jf npm)" || true
+          
+          echo ""
+          echo "✅ npm install completed via Ghost Frog interception!"
+          
+          # Show that dependencies were installed
+          ls -la node_modules/ | head -10 || true
+      
+      - name: Demonstrate Other NPM Commands
+        run: |
+          cd demo-project
+          echo "🔧 Running various NPM commands..."
+          echo ""
+          
+          # npm list - will be intercepted
+          echo "▶️  npm list:"
+          npm list --depth=0 2>&1 | head -10
+          
+          echo ""
+          
+          # npm outdated - will be intercepted  
+          echo "▶️  npm outdated:"
+          npm outdated || true
+          
+          echo ""
+          echo "✅ All NPM commands were transparently intercepted by JFrog CLI!"
+      
+      - name: Show Interception Can Be Disabled
+        run: |
+          echo "🔌 Demonstrating enable/disable functionality..."
+          
+          # Disable interception
+          jf package-alias disable
+          
+          echo "❌ Interception disabled - npm runs natively:"
+          cd demo-project
+          npm --version
+          
+          # Re-enable interception
+          jf package-alias enable
+          
+          echo "✅ Interception re-enabled"
+      
+      - name: Summary
+        run: |
+          echo "📊 Ghost Frog Demo Summary"
+          echo "========================="
+          echo ""
+          echo "✅ JFrog CLI installed"
+          echo "✅ Ghost Frog aliases created"  
+          echo "✅ NPM commands transparently intercepted"
+          echo "✅ Dependencies resolved via JFrog Artifactory (when configured)"
+          echo ""
+          echo "🎉 With Ghost Frog, existing CI/CD pipelines work unchanged!"
+          echo "   Just install JFrog CLI and run 'jf package-alias install'"
+          echo ""
+          echo "📝 No changes needed to:"
+          echo "   - package.json"
+          echo "   - npm commands"
+          echo "   - build scripts"

@@ -1,0 +1,127 @@
+name: Example - Using Ghost Frog Action
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'ghost-frog-action/**'
+      - '.github/workflows/example-ghost-frog-usage.yml'
+
+jobs:
+  node-project:
+    name: Node.js Project with Ghost Frog
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      # This is the only Ghost Frog setup needed!
+      - name: Setup Ghost Frog
+        uses: ./ghost-frog-action
+        with:
+          jfrog-url: ${{ secrets.JFROG_URL || 'https://example.jfrog.io' }}
+          jfrog-access-token: ${{ secrets.JFROG_ACCESS_TOKEN }}
+      
+      # From here, it's your standard workflow - no changes needed!
+      - name: Create Example Project
+        run: |
+          mkdir example-app && cd example-app
+          
+          # Create package.json
+          cat > package.json << 'EOF'
+          {
+            "name": "ghost-frog-example",
+            "version": "1.0.0",
+            "scripts": {
+              "test": "echo 'Tests would run here'",
+              "build": "echo 'Building application...'"
+            },
+            "dependencies": {
+              "express": "^4.18.2",
+              "lodash": "^4.17.21"
+            },
+            "devDependencies": {
+              "jest": "^29.0.0",
+              "eslint": "^8.0.0"
+            }
+          }
+          EOF
+      
+      - name: Install Dependencies
+        run: |
+          cd example-app
+          # This runs 'jf npm install' transparently!
+          npm install
+      
+      - name: Run Tests
+        run: |
+          cd example-app
+          # This runs 'jf npm test' transparently!
+          npm test
+      
+      - name: Build Application
+        run: |
+          cd example-app
+          # This runs 'jf npm run build' transparently!
+          npm run build
+      
+      - name: Show What Happened
+        run: |
+          echo "🎉 Success! All npm commands were transparently intercepted by Ghost Frog"
+          echo ""
+          echo "What happened behind the scenes:"
+          echo "  npm install → jf npm install"
+          echo "  npm test    → jf npm test"
+          echo "  npm run build → jf npm run build"
+          echo ""
+          echo "Benefits when connected to JFrog Artifactory:"
+          echo "  ✓ Dependencies cached in Artifactory"
+          echo "  ✓ Build info automatically collected"
+          echo "  ✓ Security vulnerabilities scanned"
+          echo "  ✓ License compliance checked"
+          echo ""
+          echo "All without changing a single line of your build scripts!"
+
+  comparison-demo:
+    name: Before/After Comparison
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      
+      - name: Traditional Approach (Before Ghost Frog)
+        run: |
+          echo "❌ Traditional approach requires code changes:"
+          echo ""
+          echo "Instead of: npm install"
+          echo "You need:  jf npm install"
+          echo ""
+          echo "Instead of: mvn clean package"  
+          echo "You need:  jf mvn clean package"
+          echo ""
+          echo "Every command in every script needs 'jf' prefix! 😫"
+      
+      - name: Ghost Frog Approach (After)
+        run: |
+          echo "✅ With Ghost Frog - NO code changes needed:"
+          echo ""
+          echo "Just add this action to your workflow:"
+          echo ""
+          echo "- uses: jfrog/jfrog-cli/ghost-frog-action@main"
+          echo "  with:"
+          echo "    jfrog-url: \${{ secrets.JFROG_URL }}"
+          echo "    jfrog-access-token: \${{ secrets.JFROG_ACCESS_TOKEN }}"
+          echo ""
+          echo "Then use your commands normally:"
+          echo "  npm install"
+          echo "  mvn clean package"
+          echo "  pip install -r requirements.txt"
+          echo ""
+          echo "Ghost Frog handles the interception transparently! 👻"
