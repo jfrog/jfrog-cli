@@ -285,7 +285,6 @@ func TestOidcExchangeToken(t *testing.T) {
 	assert.NoError(t, err, "Output should be valid JSON")
 	assert.NotEmpty(t, result.AccessToken, "AccessToken should not be empty")
 	assert.NotEmpty(t, result.Username, "Username should not be empty")
-
 }
 
 func assertNotEmptyIfExpected(t *testing.T, expected bool, output string) {
