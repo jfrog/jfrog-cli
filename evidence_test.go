@@ -22,8 +22,8 @@ var (
 	evidenceAccessToken  = flag.String("jfrog.evidenceToken", "", "JFrog Evidence service access token")
 	evidenceProjectKey   = flag.String("jfrog.projectKey", "", "JFrog project key for Evidence project-based tests")
 	evidenceProjectToken = flag.String("jfrog.projectToken", "", "JFrog project-scoped access token for Evidence tests")
-	jfrog_token = flag.String("jfrog.adminToken")
-	jfrog_url = flag.String("jfrog.url")
+	jfrog_token = flag.String("jfrog.adminToken", "", "JFrog project-scoped access token for Evidence tests")
+	jfrog_url = flag.String("jfrog.url", "", "JFrog project-scoped access token for Evidence tests")
 )
 
 var (
