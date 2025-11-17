@@ -15,22 +15,22 @@ require (
 	github.com/docker/docker v28.2.2+incompatible
 	github.com/gocarina/gocsv v0.0.0-20240520201108-78e41c74b4b1
 	github.com/jfrog/archiver/v3 v3.6.1
-	github.com/jfrog/build-info-go v1.12.2
+	github.com/jfrog/build-info-go v1.12.4
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-application v1.0.1
-	github.com/jfrog/jfrog-cli-artifactory v0.7.3-0.20251111104049-14f72d73276a
-	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20251113080140-6faea9bbe1a0
+	github.com/jfrog/jfrog-cli-artifactory v0.7.3-0.20251114091016-341890e1669f
+	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20251114091511-68e2c162c1af
 	github.com/jfrog/jfrog-cli-evidence v0.8.3-0.20251116083852-12dc534b4d13
-	github.com/jfrog/jfrog-cli-platform-services v1.10.0
+	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20251114155350-7ea4c8e32d5a
 	github.com/jfrog/jfrog-cli-security v1.22.0
-	github.com/jfrog/jfrog-client-go v1.55.1-0.20251106114658-e01e86b037c8
+	github.com/jfrog/jfrog-client-go v1.55.1-0.20251114091332-c0f6f8481855
 	github.com/jszwec/csvutil v1.10.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.35.0
 	github.com/urfave/cli v1.22.17
 	github.com/xeipuuv/gojsonschema v1.2.0
-	golang.org/x/exp v0.0.0-20250911091902-df9299821621
+	golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -250,12 +250,12 @@ require (
 	go.uber.org/zap v1.27.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.43.0 // indirect
-	golang.org/x/mod v0.28.0 // indirect
+	golang.org/x/mod v0.29.0 // indirect
 	golang.org/x/net v0.45.0 // indirect
 	golang.org/x/oauth2 v0.31.0 // indirect
-	golang.org/x/sync v0.17.0 // indirect
-	golang.org/x/sys v0.37.0 // indirect
-	golang.org/x/term v0.36.0 // indirect
+	golang.org/x/sync v0.18.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
+	golang.org/x/term v0.37.0 // indirect
 	golang.org/x/text v0.30.0 // indirect
 	golang.org/x/time v0.12.0 // indirect
 	google.golang.org/api v0.242.0 // indirect
