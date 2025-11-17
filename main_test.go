@@ -80,6 +80,9 @@ func setupIntegrationTests() {
 	if *tests.TestLifecycle {
 		InitLifecycleTests()
 	}
+	if *tests.TestEvidence {
+		InitEvidenceTests()
+	}
 }
 
 func tearDownIntegrationTests() {
@@ -100,6 +103,9 @@ func tearDownIntegrationTests() {
 	}
 	if *tests.TestLifecycle {
 		CleanLifecycleTests()
+	}
+	if *tests.TestEvidence {
+		CleanEvidenceTests()
 	}
 }
 
