@@ -37,9 +37,9 @@ jobs:
         with:
           version: latest
         env:
-          JF_URL: ${{ secrets.PLATFORM_URL }}
-          JF_ACCESS_TOKEN: ${{ secrets.PLATFORM_ADMIN_TOKEN }}
+          JF_URL: ${{ secrets.EPLUS_PLATFORM_URL }}
+          JF_ACCESS_TOKEN: ${{ secrets.EPLUS_ADMIN_TOKEN }}
 
       - name: Run Evidence tests
-        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.evidence --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --jfrog.evidenceToken=${{ secrets.EVIDENCE_USER_TOKEN }} --jfrog.projectKey=${{ secrets.EVIDENCE_PROJECT_KEY }} --jfrog.projectToken=${{ secrets.EVIDENCE_PROJECT_TOKEN }} --ci.runId=${{ runner.os }}-evidence
+        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.evidence --jfrog.url=${{ secrets.EPLUS_PLATFORM_URL }} --jfrog.adminToken=${{ secrets.EPLUS_ADMIN_TOKEN }} --jfrog.evidenceToken=${{ secrets.EVIDENCE_USER_TOKEN }} --jfrog.projectKey=${{ secrets.EVIDENCE_PROJECT_KEY }} --jfrog.projectToken=${{ secrets.EVIDENCE_PROJECT_TOKEN }} --ci.runId=${{ runner.os }}-evidence
 
