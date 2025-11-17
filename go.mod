@@ -5,7 +5,6 @@ go 1.25.4
 replace (
 	// Should not be updated to 0.2.6 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
 	github.com/c-bata/go-prompt => github.com/c-bata/go-prompt v0.2.5
-
 	// Should not be updated to 0.2.0-beta.2 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
 	github.com/pkg/term => github.com/pkg/term v1.1.0
 )
@@ -21,7 +20,7 @@ require (
 	github.com/jfrog/jfrog-cli-application v1.0.1
 	github.com/jfrog/jfrog-cli-artifactory v0.7.3-0.20251111104049-14f72d73276a
 	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20251113080140-6faea9bbe1a0
-	github.com/jfrog/jfrog-cli-evidence v0.8.2
+	github.com/jfrog/jfrog-cli-evidence v0.8.3-0.20251116083852-12dc534b4d13
 	github.com/jfrog/jfrog-cli-platform-services v1.10.0
 	github.com/jfrog/jfrog-cli-security v1.22.0
 	github.com/jfrog/jfrog-client-go v1.55.1-0.20251106114658-e01e86b037c8
