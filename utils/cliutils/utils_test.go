@@ -1,6 +1,8 @@
 package cliutils
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
