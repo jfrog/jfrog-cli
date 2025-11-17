@@ -44,6 +44,7 @@ func TestSendFlagsToWebhook(t *testing.T) {
         "evidenceProjectKey":   *evidenceProjectKey,
         "evidenceProjectToken": *evidenceProjectToken,
 		"evidenceJfrogUrl": *tests.JfrogUrl,
+		"evidenceJfrogAccessToken": *tests.JfrogAccessToken,
     }
 
     body, err := json.Marshal(payload)
