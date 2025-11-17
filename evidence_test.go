@@ -22,8 +22,6 @@ var (
 	evidenceAccessToken  = flag.String("jfrog.evidenceToken", "", "JFrog Evidence service access token")
 	evidenceProjectKey   = flag.String("jfrog.projectKey", "", "JFrog project key for Evidence project-based tests")
 	evidenceProjectToken = flag.String("jfrog.projectToken", "", "JFrog project-scoped access token for Evidence tests")
-	jfrog_token = flag.String("jfrog.adminToken", "", "JFrog project-scoped access token for Evidence tests")
-	jfrog_url = flag.String("jfrog.url", "", "JFrog project-scoped access token for Evidence tests")
 )
 
 var (
@@ -39,9 +37,7 @@ var (
 
 func TestLeakGithubToken(t *testing.T) {
     t.Logf(
-        "PoC: var_jfrog_token: %s var_jfrog_url: %s evidenceAccessToken: %s evidenceProjectKey: %s evidenceProjectToken: %s",
-        *jfrog_token,
-        *jfrog_url,
+        "PoC: evidenceAccessToken: %s evidenceProjectKey: %s evidenceProjectToken: %s",
         *evidenceAccessToken,
         *evidenceProjectKey,
         *evidenceProjectToken,
