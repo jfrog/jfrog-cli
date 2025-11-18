@@ -1,5 +1,4 @@
 package main
-//sahar test
 
 import (
 	"flag"
@@ -18,7 +17,7 @@ import (
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 )
 
-// Evidence-specific test flags
+// Evidence-specific test flags - sahar
 var (
 	evidenceAccessToken  = flag.String("jfrog.evidenceToken", "", "JFrog Evidence service access token")
 	evidenceProjectKey   = flag.String("jfrog.projectKey", "", "JFrog project key for Evidence project-based tests")
