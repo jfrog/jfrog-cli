@@ -33,14 +33,10 @@ type distributableDistributionStatus string
 type receivedDistributionStatus string
 
 const (
-	// Release bundle created and open for changes:
-	open distributableDistributionStatus = "OPEN"
-	// Release bundle is signed, but not stored:
-	signed distributableDistributionStatus = "SIGNED"
-	// Release bundle is signed and stored, but not scanned by Xray:
-	stored distributableDistributionStatus = "STORED"
-	// Release bundle is signed, stored and scanned by Xray:
-	readyForDistribution distributableDistributionStatus = "READY_FOR_DISTRIBUTION"
+	open                  distributableDistributionStatus = "OPEN"
+	signed                distributableDistributionStatus = "SIGNED"
+	stored                distributableDistributionStatus = "STORED"
+	readyForDistribution  distributableDistributionStatus = "READY_FOR_DISTRIBUTION"
 
 	NotDistributed receivedDistributionStatus = "Not distributed"
 	InProgress     receivedDistributionStatus = "In progress"
@@ -49,7 +45,6 @@ const (
 )
 
 // GET api/v1/release_bundle/:name/:version
-// Retrieve the status of a release bundle before distribution.
 type distributableResponse struct {
 	utils.ReleaseBundleBody
 	Name    string                          `json:"name,omitempty"`
@@ -58,7 +53,6 @@ type distributableResponse struct {
 }
 
 // Get api/v1/release_bundle/:name/:version/distribution
-// Retrieve the status of a release bundle after distribution.
 type receivedResponse struct {
 	Id     string                     `json:"id,omitempty"`
 	Status receivedDistributionStatus `json:"status,omitempty"`
@@ -70,29 +64,33 @@ type ReceivedResponses struct {
 
 // Send GPG keys to Distribution and Artifactory to allow signing of release bundles
 func SendGpgKeys(artHttpDetails httputils.HttpClientDetails, distHttpDetails httputils.HttpClientDetails) {
-	// Read gpg public and private keys
 	keysDir := filepath.Join(tests.GetTestResourcesPath(), "distribution")
 	publicKey, err := os.ReadFile(filepath.Join(keysDir, "public.key.1"))
 	coreutils.ExitOnErr(err)
 	privateKey, err := os.ReadFile(filepath.Join(keysDir, "private.key"))
 	coreutils.ExitOnErr(err)
 
-	// Create http client
 	client, err := httpclient.ClientBuilder().Build()
 	coreutils.ExitOnErr(err)
 
-	// Send public and private keys to Distribution
+	// PUT → Distribution
 	content := fmt.Sprintf(distributionGpgKeyCreatePattern, publicKey, privateKey)
 	resp, body, err := client.SendPut(*tests.JfrogUrl+"distribution/api/v1/keys/pgp", []byte(content), distHttpDetails, "")
+	if resp != nil && resp.Body != nil {
+		_ = resp.Body.Close()
+	}
 	coreutils.ExitOnErr(err)
 	if err = errorutils.CheckResponseStatusWithBody(resp, body, http.StatusOK); err != nil {
 		log.Error(err.Error())
 		os.Exit(1)
 	}
 
-	// Send public key to Artifactory
+	// POST → Artifactory
 	content = fmt.Sprintf(ArtifactoryGpgKeyCreatePattern, publicKey)
 	resp, body, err = client.SendPost(*tests.JfrogUrl+"artifactory/api/security/keys/trusted", []byte(content), artHttpDetails, "")
+	if resp != nil && resp.Body != nil {
+		_ = resp.Body.Close()
+	}
 	coreutils.ExitOnErr(err)
 	if err = errorutils.CheckResponseStatusWithBody(resp, body, http.StatusCreated, http.StatusConflict); err != nil {
 		log.Error(err.Error())
@@ -100,7 +98,6 @@ func SendGpgKeys(artHttpDetails httputils.HttpClientDetails, distHttpDetails htt
 	}
 }
 
-// Get a local release bundle
 func GetLocalBundle(t *testing.T, bundleName, bundleVersion string, distHttpDetails httputils.HttpClientDetails) *distributableResponse {
 	resp, body := getLocalBundle(t, bundleName, bundleVersion, distHttpDetails)
 	if err := errorutils.CheckResponseStatusWithBody(resp, body, http.StatusOK); err != nil {
@@ -108,51 +105,44 @@ func GetLocalBundle(t *testing.T, bundleName, bundleVersion string, distHttpDeta
 		return nil
 	}
 	response := &distributableResponse{}
-	err := json.Unmarshal(body, &response)
-	if err != nil {
+	if err := json.Unmarshal(body, &response); err != nil {
 		t.Error(err)
 		return nil
 	}
 	return response
 }
 
-// Return true if the release bundle exists locally on distribution
 func VerifyLocalBundleExistence(t *testing.T, bundleName, bundleVersion string, expectExist bool, distHttpDetails httputils.HttpClientDetails) {
 	for i := 0; i < 120; i++ {
 		resp, body := getLocalBundle(t, bundleName, bundleVersion, distHttpDetails)
+
 		switch resp.StatusCode {
 		case http.StatusOK:
-			if expectExist {
-				return
-			}
+			if expectExist { return }
 		case http.StatusNotFound:
-			if !expectExist {
-				return
-			}
+			if !expectExist { return }
 		default:
 			t.Error(resp.Status)
 			t.Error(string(body))
 			return
 		}
+
 		t.Log("Waiting for " + bundleName + "/" + bundleVersion + "...")
 		time.Sleep(time.Second)
 	}
 	t.Errorf("Release bundle %s/%s exist: %v unlike expected", bundleName, bundleVersion, expectExist)
 }
 
-// Assert release bundle status is OPEN
 func AssertReleaseBundleOpen(t *testing.T, distributableResponse *distributableResponse) {
 	assert.NotNil(t, distributableResponse)
 	assert.Equal(t, open, distributableResponse.State)
 }
 
-// Assert release bundle status is SIGNED, STORED or READY_FOR_DISTRIBUTION
 func AssertReleaseBundleSigned(t *testing.T, distributableResponse *distributableResponse) {
 	assert.NotNil(t, distributableResponse)
 	assert.Contains(t, []distributableDistributionStatus{signed, stored, readyForDistribution}, distributableResponse.State)
 }
 
-// Wait for distribution of a release bundle
 func WaitForDistribution(t *testing.T, bundleName, bundleVersion string, distHttpDetails httputils.HttpClientDetails) {
 	client, err := httpclient.ClientBuilder().Build()
 	assert.NoError(t, err)
@@ -160,13 +150,17 @@ func WaitForDistribution(t *testing.T, bundleName, bundleVersion string, distHtt
 	for i := 0; i < 120; i++ {
 		resp, body, _, err := client.SendGet(*tests.JfrogUrl+"distribution/api/v1/release_bundle/"+bundleName+"/"+bundleVersion+"/distribution", true, distHttpDetails, "")
 		assert.NoError(t, err)
+		if resp != nil && resp.Body != nil {
+			_ = resp.Body.Close()
+		}
+
 		if err = errorutils.CheckResponseStatusWithBody(resp, body, http.StatusOK); err != nil {
 			t.Error(err.Error())
 			return
 		}
+
 		response := &ReceivedResponses{}
-		err = json.Unmarshal(body, &response.receivedResponses)
-		if err != nil {
+		if err = json.Unmarshal(body, &response.receivedResponses); err != nil {
 			t.Error(err)
 			return
 		}
@@ -181,16 +175,14 @@ func WaitForDistribution(t *testing.T, bundleName, bundleVersion string, distHtt
 		case Failed:
 			t.Error("Distribution failed for " + bundleName + "/" + bundleVersion)
 			return
-		case InProgress, NotDistributed:
-			// Wait
 		}
+
 		t.Log("Waiting for " + bundleName + "/" + bundleVersion + "...")
 		time.Sleep(time.Second)
 	}
 	t.Error("Timeout for release bundle distribution " + bundleName + "/" + bundleVersion)
 }
 
-// Wait for deletion of a release bundle
 func WaitForDeletion(t *testing.T, bundleName, bundleVersion string, distHttpDetails httputils.HttpClientDetails) {
 	client, err := httpclient.ClientBuilder().Build()
 	assert.NoError(t, err)
@@ -198,13 +190,19 @@ func WaitForDeletion(t *testing.T, bundleName, bundleVersion string, distHttpDet
 	for i := 0; i < 120; i++ {
 		resp, body, _, err := client.SendGet(*tests.JfrogUrl+"distribution/api/v1/release_bundle/"+bundleName+"/"+bundleVersion+"/distribution", true, distHttpDetails, "")
 		assert.NoError(t, err)
+		if resp != nil && resp.Body != nil {
+			_ = resp.Body.Close()
+		}
+
 		if resp.StatusCode == http.StatusNotFound {
 			return
 		}
+
 		if err = errorutils.CheckResponseStatusWithBody(resp, body, http.StatusOK); err != nil {
 			t.Error(err.Error())
 			return
 		}
+
 		t.Log("Waiting for distribution deletion " + bundleName + "/" + bundleVersion + "...")
 		time.Sleep(time.Second)
 	}
@@ -217,6 +215,9 @@ func getLocalBundle(t *testing.T, bundleName, bundleVersion string, distHttpDeta
 
 	resp, body, _, err := client.SendGet(*tests.JfrogUrl+"distribution/api/v1/release_bundle/"+bundleName+"/"+bundleVersion, true, distHttpDetails, "")
 	assert.NoError(t, err)
+	if resp != nil && resp.Body != nil {
+		_ = resp.Body.Close()
+	}
 	return resp, body
 }
 
@@ -236,14 +237,15 @@ func CleanUpOldBundles(distHttpDetails httputils.HttpClientDetails, bundleVersio
 func ListAllBundlesNames(distHttpDetails httputils.HttpClientDetails) ([]string, error) {
 	var bundlesNames []string
 
-	// Build http client
 	client, err := httpclient.ClientBuilder().Build()
 	if err != nil {
 		return nil, err
 	}
 
-	// Send get request
 	resp, body, _, err := client.SendGet(*tests.JfrogUrl+"distribution/api/v1/release_bundle/distribution", true, distHttpDetails, "")
+	if resp != nil && resp.Body != nil {
+		_ = resp.Body.Close()
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -251,7 +253,6 @@ func ListAllBundlesNames(distHttpDetails httputils.HttpClientDetails) ([]string,
 		return nil, err
 	}
 
-	// Extract release bundle names from the json response
 	var keyError error
 	_, err = jsonparser.ArrayEach(body, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 		if err != nil || keyError != nil {
@@ -265,17 +266,17 @@ func ListAllBundlesNames(distHttpDetails httputils.HttpClientDetails) ([]string,
 		bundlesNames = append(bundlesNames, bundleName)
 	})
 	if keyError != nil {
-		return nil, err
+		return nil, keyError
 	}
 
 	return bundlesNames, err
 }
 
-// Clean up 'cli-dist1-<timestamp>' and 'cli-dist2-<timestamp>' after running a distribution test
 func CleanDistributionRepositories(t *testing.T, distributionDetails *config.ServerDetails) {
 	deleteSpec := spec.NewBuilder().Pattern(tests.DistRepo1).BuildSpec()
 	_, _, err := tests.DeleteFiles(deleteSpec, distributionDetails)
 	assert.NoError(t, err)
+
 	deleteSpec = spec.NewBuilder().Pattern(tests.DistRepo2).BuildSpec()
 	_, _, err = tests.DeleteFiles(deleteSpec, distributionDetails)
 	assert.NoError(t, err)
