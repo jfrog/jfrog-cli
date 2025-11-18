@@ -34,10 +34,16 @@ func DeleteBuild(artifactoryUrl, buildName string, artHttpDetails httputils.Http
 	}
 
 	resp, body, err := client.SendDelete(requestFullUrl, nil, artHttpDetails, "")
+	// CLOSE RESPONSE BODY (SAST FIX)
+	if resp != nil && resp.Body != nil {
+		_ = resp.Body.Close()
+	}
+
 	if err != nil {
 		log.Error(err)
 		return
 	}
+
 	if err = errorutils.CheckResponseStatusWithBody(resp, body, http.StatusOK, http.StatusNotFound); err != nil {
 		log.Error(err)
 		return
@@ -53,6 +59,7 @@ func ValidateGeneratedBuildInfoModule(t *testing.T, buildName, buildNumber, proj
 	if len(builds) < 1 {
 		return
 	}
+
 	for _, module := range builds[0].Modules {
 		for _, moduleName := range moduleNames {
 			if moduleName == module.Id {
