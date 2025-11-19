@@ -51,7 +51,7 @@ jobs:
         run: ./build/apple_release/scripts/darwin-sign-and-notarize.sh
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ env.binaryFileName }}-darwin-v${{ env.releaseVersion }}-${{ matrix.goarch }}
           path: ./${{ env.binaryFileName }}
