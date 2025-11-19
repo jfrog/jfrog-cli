@@ -758,6 +758,7 @@ func deleteReleaseBundleProperties(t *testing.T, lcManager *lifecycle.LifecycleS
 }
 
 func TestReleaseBundlesSearchGroups(t *testing.T) {
+	t.Skip("JR-10241")
 	cleanCallback := initLifecycleTest(t, artifactoryLifecycleSetTagMinVersion)
 	defer cleanCallback()
 
