@@ -76,6 +76,7 @@ const (
 	PipenvInstall          = "pipenv-install"
 	PoetryConfig           = "poetry-config"
 	Poetry                 = "poetry"
+	Helm                   = "helm"
 	RubyConfig             = "ruby-config"
 	Ping                   = "ping"
 	RtCurl                 = "rt-curl"
