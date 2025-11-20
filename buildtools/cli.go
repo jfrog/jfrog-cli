@@ -911,6 +911,10 @@ func pushCmd(c *cli.Context, image string) (err error) {
 }
 
 func buildCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "dockerbuildhelp"); show || err != nil {
+		return err
+	}
+
 	// Extract build configuration and arguments
 	_, rtDetails, _, _, _, cleanArgs, buildConfiguration, err := extractDockerOptionsFromArgs(c.Args())
 	if err != nil {

@@ -8,6 +8,7 @@ func GetDescription() string {
 
 func GetArguments() string {
 	return `	login                       Login to a artifactory Docker registry.
+	build                       Run docker build.
 	push                        Run docker push.
 	pull                        Run docker pull.
 	scan                        Scan a local Docker image for security vulnerabilities with JFrog Xray.`
