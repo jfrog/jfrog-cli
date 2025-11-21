@@ -76,6 +76,7 @@ const (
 	PipenvInstall          = "pipenv-install"
 	PoetryConfig           = "poetry-config"
 	Poetry                 = "poetry"
+	Helm                   = "helm"
 	RubyConfig             = "ruby-config"
 	Ping                   = "ping"
 	RtCurl                 = "rt-curl"
@@ -1962,6 +1963,9 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, repoResolve,
 	},
 	Poetry: {
+		BuildName, BuildNumber, module, Project,
+	},
+	Helm: {
 		BuildName, BuildNumber, module, Project,
 	},
 	RubyConfig: {

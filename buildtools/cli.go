@@ -3,6 +3,7 @@ package buildtools
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/helmcommand"
 	"os"
 	"os/exec"
 	"sort"
@@ -335,6 +336,18 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
 			Action:          PoetryCmd,
+		},
+		{
+			Name:            "helm",
+			Flags:           cliutils.GetCommandFlags(cliutils.Helm),
+			Usage:           helmcommand.GetDescription(),
+			HelpName:        corecommon.CreateUsage("helm", helmcommand.GetDescription(), helmcommand.Usage),
+			UsageText:       helmcommand.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Category:        buildToolsCategory,
+			Action:          HelmCmd,
 		},
 		{
 			Name:         "ruby-config",
@@ -1203,6 +1216,29 @@ func PipenvCmd(c *cli.Context) error {
 
 func PoetryCmd(c *cli.Context) error {
 	return pythonCmd(c, project.Poetry)
+}
+
+func HelmCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+	if c.NArg() < 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	args := cliutils.ExtractCommand(c)
+	cmdName, helmArgs := getCommandName(args)
+
+	// Execute native helm command directly
+	log.Info(fmt.Sprintf("Running Helm %s.", cmdName))
+	helmCmd := exec.Command("helm", append([]string{cmdName}, helmArgs...)...) // Pass helmArgs to the command
+	helmCmd.Stdout = os.Stdout
+	helmCmd.Stderr = os.Stderr
+	if err := helmCmd.Run(); err != nil {
+		return fmt.Errorf("helm %s failed: %w", cmdName, err)
+	}
+
+	return nil
 }
 
 func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
