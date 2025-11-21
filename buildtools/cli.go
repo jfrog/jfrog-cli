@@ -42,6 +42,7 @@ import (
 	terraformdocs "github.com/jfrog/jfrog-cli/docs/artifactory/terraform"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/terraformconfig"
 	twinedocs "github.com/jfrog/jfrog-cli/docs/artifactory/twine"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/conan"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/docker"
 	dotnetdocs "github.com/jfrog/jfrog-cli/docs/buildtools/dotnet"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/dotnetconfig"
@@ -335,6 +336,18 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
 			Action:          PoetryCmd,
+		},
+		{
+			Name:            "conan",
+			Flags:           cliutils.GetCommandFlags(cliutils.Conan),
+			Usage:           conan.GetDescription(),
+			HelpName:        corecommon.CreateUsage("conan", conan.GetDescription(), conan.Usage),
+			UsageText:       conan.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Category:        buildToolsCategory,
+			Action:          ConanCmd,
 		},
 		{
 			Name:         "ruby-config",
@@ -1203,6 +1216,53 @@ func PipenvCmd(c *cli.Context) error {
 
 func PoetryCmd(c *cli.Context) error {
 	return pythonCmd(c, project.Poetry)
+}
+
+func ConanCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+	if c.NArg() < 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	args := cliutils.ExtractCommand(c)
+	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
+	if err != nil {
+		return err
+	}
+	cmdName, conanArgs := getCommandName(filteredArgs)
+
+	// Execute native conan command directly
+	log.Info(fmt.Sprintf("Running Conan %s.", cmdName))
+	conanCmd := exec.Command("poetry", append([]string{cmdName}, conanArgs...)...)
+	conanCmd.Stdout = os.Stdout
+	conanCmd.Stderr = os.Stderr
+	if err := conanCmd.Run(); err != nil {
+		return fmt.Errorf("conanArgs %s failed: %w", cmdName, err)
+	}
+
+	// Collect build info if build parameters provided
+	if buildConfiguration != nil {
+		buildName, err := buildConfiguration.GetBuildName()
+		if err == nil && buildName != "" {
+			workingDir, err := os.Getwd()
+			if err != nil {
+				log.Warn("Failed to get working directory, skipping build info collection: " + err.Error())
+			} else if err := buildinfo.GetPoetryBuildInfo(workingDir, buildConfiguration); err != nil {
+				log.Warn("Failed to collect Conan build info: " + err.Error())
+			} else {
+				buildNumber, err := buildConfiguration.GetBuildNumber()
+				if err != nil {
+					log.Warn("Failed to get build number: " + err.Error())
+				} else {
+					log.Info(fmt.Sprintf("Conan build info collected. Use 'jf rt bp %s %s' to publish it to Artifactory.", buildName, buildNumber))
+				}
+			}
+		}
+	}
+
+	return nil
 }
 
 func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
