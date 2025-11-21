@@ -3,7 +3,7 @@ package helmcommand
 var Usage = []string{"helm <helm arguments> [command options]"}
 
 func GetDescription() string {
-	return "Run native Helm command."
+	return "Run native Helm command"
 }
 
 func GetArguments() string {
@@ -16,4 +16,3 @@ func GetArguments() string {
 	dependency               Manage a chart's dependencies.
 	help, h                  Show help for any command.`
 }
-
