@@ -1970,6 +1970,9 @@ var commandFlags = map[string][]string{
 	Poetry: {
 		BuildName, BuildNumber, module, Project,
 	},
+	Helm: {
+		BuildName, BuildNumber, module, Project,
+	},
 	RubyConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
