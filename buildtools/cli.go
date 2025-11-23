@@ -3,12 +3,13 @@ package buildtools
 import (
 	"errors"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/container/strategies"
 	"os"
 	"os/exec"
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/container/strategies"
 
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/python"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/setup"
@@ -981,8 +982,8 @@ func loginCmd(c *cli.Context) error {
 			return errors.New("you need to specify a registry for login using username and password")
 		}
 		cmd := exec.Command("docker", "login", registry, "-u", user, "-p", password)
-		_, err := cmd.CombinedOutput()
-		return err
+		output, err := cmd.CombinedOutput()
+		return errorutils.CheckErrorf("%s, %s", output, err)
 	}
 
 	// if registry is not provided use the default from the server details
@@ -991,12 +992,13 @@ func loginCmd(c *cli.Context) error {
 	}
 
 	loginCommand := container.NewContainerManagerCommand(containerutils.DockerClient)
+	loginCommand.SetPrintConsoleError(true)
 	loginCommand.SetServerDetails(rtDetails).SetLoginRegistry(registry)
 	// Perform login
 	if err := loginCommand.PerformLogin(rtDetails, containerutils.DockerClient); err != nil {
 		return err
 	}
-	log.Info("Login Succeeded.")
+	// here docker itself returns the login success message, so no need to print it again
 	return nil
 }
 
@@ -1079,7 +1081,7 @@ func extractDockerLoginOptionsFromArgs(args []string) (user, password string, er
 }
 
 func extractDockerBuildOptionsFromArgs(args []string) (pushOption bool, dockerfilePath string, imageTag string, err error) {
-	// check for --push flag or output=type=registry flag, first is the shorthand operator of the later
+	// check for --push flag or output=type=registry or output=push=true flag, first is the shorthand operator of the later
 	_, pushOption, err = coreutils.FindBooleanFlag("--push", args)
 	if err != nil {
 		return
@@ -1088,7 +1090,8 @@ func extractDockerBuildOptionsFromArgs(args []string) (pushOption bool, dockerfi
 	if err != nil {
 		return
 	}
-	if !pushOption && strings.Contains(outputOption, "type=registry") {
+	if !pushOption && outputOption != "" &&
+		(strings.Contains(outputOption, "type=registry") || strings.Contains(outputOption, "push=true")) {
 		pushOption = true
 	}
 
@@ -1111,7 +1114,6 @@ func extractDockerBuildOptionsFromArgs(args []string) (pushOption bool, dockerfi
 	if imageTag == "" {
 		err = errors.New("could not find image tag in the command arguments. Please provide an image tag using the '-t' or '--tag' flag")
 	}
-
 	return
 }
 
