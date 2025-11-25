@@ -606,7 +606,7 @@ func TestNativeDockerFlagParsing(t *testing.T) {
 	}{
 		{"docker", []string{"docker"}},
 		{"docker version", []string{"docker", "version"}},
-		{"docker scan", []string{"docker", "scan"}},
+		{"docker scan", []string{"docker", "scan", path.Join(*tests.ContainerRegistry, tests.DockerLocalRepo, fmt.Sprintf("%s:latest", tests.DockerImageName))}},
 		{"cli flags after args", []string{"docker", "version", "--build-name=d", "--build-number=1", "--module=1"}},
 		{"cli flags before args", []string{"docker", "--build-name=d", "--build-number=1", "--module=1", "version"}},
 	}
