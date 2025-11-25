@@ -1227,39 +1227,15 @@ func ConanCmd(c *cli.Context) error {
 	}
 
 	args := cliutils.ExtractCommand(c)
-	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
-	if err != nil {
-		return err
-	}
-	cmdName, conanArgs := getCommandName(filteredArgs)
+	cmdName, conanArgs := getCommandName(args)
 
 	// Execute native conan command directly
 	log.Info(fmt.Sprintf("Running Conan %s.", cmdName))
-	conanCmd := exec.Command("poetry", append([]string{cmdName}, conanArgs...)...)
+	conanCmd := exec.Command("conan", append([]string{cmdName}, conanArgs...)...)
 	conanCmd.Stdout = os.Stdout
 	conanCmd.Stderr = os.Stderr
 	if err := conanCmd.Run(); err != nil {
 		return fmt.Errorf("conanArgs %s failed: %w", cmdName, err)
-	}
-
-	// Collect build info if build parameters provided
-	if buildConfiguration != nil {
-		buildName, err := buildConfiguration.GetBuildName()
-		if err == nil && buildName != "" {
-			workingDir, err := os.Getwd()
-			if err != nil {
-				log.Warn("Failed to get working directory, skipping build info collection: " + err.Error())
-			} else if err := buildinfo.GetPoetryBuildInfo(workingDir, buildConfiguration); err != nil {
-				log.Warn("Failed to collect Conan build info: " + err.Error())
-			} else {
-				buildNumber, err := buildConfiguration.GetBuildNumber()
-				if err != nil {
-					log.Warn("Failed to get build number: " + err.Error())
-				} else {
-					log.Info(fmt.Sprintf("Conan build info collected. Use 'jf rt bp %s %s' to publish it to Artifactory.", buildName, buildNumber))
-				}
-			}
-		}
 	}
 
 	return nil
