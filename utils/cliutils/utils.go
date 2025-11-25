@@ -21,7 +21,6 @@ import (
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	buildUtils "github.com/jfrog/jfrog-cli-core/v2/common/build"
-	"github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	commonCommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/project"
@@ -398,23 +397,23 @@ func overrideIntIfSet(field *int, c *cli.Context, fieldName string) {
 
 // Exclude refreshable tokens parameter should be true when working with external tools (build tools, curl, etc)
 // or when sending requests not via ArtifactoryHttpClient.
-func CreateServerDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens bool, domain cliutils.CommandDomain) (*coreConfig.ServerDetails, error) {
-	return cliutils.CreateServerDetailsWithConfigOffer(func() (*coreConfig.ServerDetails, error) { return createServerDetailsFromFlags(c, domain) }, excludeRefreshableTokens)
+func CreateServerDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens bool, domain commonCliUtils.CommandDomain) (*coreConfig.ServerDetails, error) {
+	return commonCliUtils.CreateServerDetailsWithConfigOffer(func() (*coreConfig.ServerDetails, error) { return createServerDetailsFromFlags(c, domain) }, excludeRefreshableTokens)
 }
 
-func createServerDetailsFromFlags(c *cli.Context, domain cliutils.CommandDomain) (details *coreConfig.ServerDetails, err error) {
+func createServerDetailsFromFlags(c *cli.Context, domain commonCliUtils.CommandDomain) (details *coreConfig.ServerDetails, err error) {
 	details, err = CreateServerDetailsFromFlags(c)
 	if err != nil {
 		return
 	}
 	switch domain {
-	case cliutils.Rt:
+	case commonCliUtils.Rt:
 		details.ArtifactoryUrl = details.Url
-	case cliutils.Xr:
+	case commonCliUtils.Xr:
 		details.XrayUrl = details.Url
-	case cliutils.Ds:
+	case commonCliUtils.Ds:
 		details.DistributionUrl = details.Url
-	case cliutils.Platform:
+	case commonCliUtils.Platform:
 		return
 	}
 	details.Url = ""
@@ -485,7 +484,7 @@ func CreateConfigCmd(c *cli.Context, confType project.ProjectType) error {
 }
 
 func RunNativeCmdWithDeprecationWarning(cmdName string, projectType project.ProjectType, c *cli.Context, cmd func(c *cli.Context) error) error {
-	if cliutils.ShouldLogWarning() {
+	if commonCliUtils.ShouldLogWarning() {
 		LogNativeCommandDeprecation(cmdName, projectType.String())
 	}
 	return cmd(c)
@@ -534,7 +533,7 @@ func CreateBuildConfigurationWithModule(c *cli.Context) (buildConfigConfiguratio
 }
 
 func CreateArtifactoryDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, error) {
-	artDetails, err := CreateServerDetailsWithConfigOffer(c, false, cliutils.Rt)
+	artDetails, err := CreateServerDetailsWithConfigOffer(c, false, commonCliUtils.Rt)
 	if err != nil {
 		return nil, err
 	}

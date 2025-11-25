@@ -132,7 +132,7 @@ func TestMavenBuildWithFlexPackBuildInfo(t *testing.T) {
 			assert.NotEmpty(t, dep.Type, "Dependency should have type")
 			assert.NotEmpty(t, dep.Scopes, "Dependency should have scopes")
 			// FlexPack should provide checksums
-			hasChecksum := dep.Checksum.Sha1 != "" || dep.Checksum.Sha256 != "" || dep.Checksum.Md5 != ""
+			hasChecksum := dep.Sha1 != "" || dep.Sha256 != "" || dep.Md5 != ""
 			assert.True(t, hasChecksum, "Dependency %s should have at least one checksum", dep.Id)
 		}
 

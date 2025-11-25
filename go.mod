@@ -1,11 +1,10 @@
 module github.com/jfrog/jfrog-cli
 
-go 1.24.6
+go 1.25.4
 
 replace (
 	// Should not be updated to 0.2.6 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
 	github.com/c-bata/go-prompt => github.com/c-bata/go-prompt v0.2.5
-
 	// Should not be updated to 0.2.0-beta.2 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
 	github.com/pkg/term => github.com/pkg/term v1.1.0
 )
@@ -16,22 +15,22 @@ require (
 	github.com/docker/docker v28.2.2+incompatible
 	github.com/gocarina/gocsv v0.0.0-20240520201108-78e41c74b4b1
 	github.com/jfrog/archiver/v3 v3.6.1
-	github.com/jfrog/build-info-go v1.12.2
+	github.com/jfrog/build-info-go v1.12.4
 	github.com/jfrog/gofrog v1.7.6
-	github.com/jfrog/jfrog-cli-application v1.0.1
-	github.com/jfrog/jfrog-cli-artifactory v0.7.3-0.20251029093809-3aaa4e93a359
-	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20251028101519-8c79bb06de65
-	github.com/jfrog/jfrog-cli-evidence v0.8.2
-	github.com/jfrog/jfrog-cli-platform-services v1.10.0
-	github.com/jfrog/jfrog-cli-security v1.21.10
-	github.com/jfrog/jfrog-client-go v1.55.1-0.20251030113529-d87ecf28ffb6
+	github.com/jfrog/jfrog-cli-application v1.0.2-0.20251120093802-1c39a37efcae
+	github.com/jfrog/jfrog-cli-artifactory v0.7.3-0.20251118100843-ac34330a70d3
+	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20251120025936-6dba15f12343
+	github.com/jfrog/jfrog-cli-evidence v0.8.3-0.20251116083852-12dc534b4d13
+	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20251114155350-7ea4c8e32d5a
+	github.com/jfrog/jfrog-cli-security v1.22.0
+	github.com/jfrog/jfrog-client-go v1.55.1-0.20251119183924-d765eb708cec
 	github.com/jszwec/csvutil v1.10.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.35.0
 	github.com/urfave/cli v1.22.17
 	github.com/xeipuuv/gojsonschema v1.2.0
-	golang.org/x/exp v0.0.0-20250911091902-df9299821621
+	golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -250,14 +249,14 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/crypto v0.43.0 // indirect
-	golang.org/x/mod v0.28.0 // indirect
-	golang.org/x/net v0.45.0 // indirect
+	golang.org/x/crypto v0.45.0 // indirect
+	golang.org/x/mod v0.29.0 // indirect
+	golang.org/x/net v0.47.0 // indirect
 	golang.org/x/oauth2 v0.31.0 // indirect
-	golang.org/x/sync v0.17.0 // indirect
-	golang.org/x/sys v0.37.0 // indirect
-	golang.org/x/term v0.36.0 // indirect
-	golang.org/x/text v0.30.0 // indirect
+	golang.org/x/sync v0.18.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
+	golang.org/x/term v0.37.0 // indirect
+	golang.org/x/text v0.31.0 // indirect
 	golang.org/x/time v0.12.0 // indirect
 	google.golang.org/api v0.242.0 // indirect
 	google.golang.org/genproto v0.0.0-20250505200425-f936aa4a68b2 // indirect
@@ -277,7 +276,7 @@ replace github.com/docker/docker => github.com/docker/docker v27.5.1+incompatibl
 
 //replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20251006061821-8b1be6a65215
 
-//replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory v0.7.3-0.20251028101529-5692ba8863fe
+// replace github.com/jfrog/jfrog-cli-core/v2 => github.com/reshmifrog/jfrog-cli-core/v2 v2.58.5-0.20251110095124-ab9a4102ec5a
 
 // attiasas:usage_command_name
 replace github.com/jfrog/jfrog-cli-core/v2 => github.com/attiasas/jfrog-cli-core/v2 v2.0.0-20251104113958-abd9de5958c4

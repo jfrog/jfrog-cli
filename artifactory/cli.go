@@ -70,7 +70,6 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
-	utilsForLC "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/jszwec/csvutil"
@@ -561,7 +560,7 @@ func prepareDownloadCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	if c.NArg() > 0 && c.IsSet("spec") {
 		return nil, cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
 	}
-	if !(c.NArg() == 1 || c.NArg() == 2 || (c.NArg() == 0 && (c.IsSet("spec") || c.IsSet("build") || c.IsSet("bundle")))) {
+	if c.NArg() != 1 && c.NArg() != 2 && (c.NArg() != 0 || (!c.IsSet("spec") && !c.IsSet("build") && !c.IsSet("bundle"))) {
 		return nil, cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
@@ -620,16 +619,16 @@ func createLifecycleDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, e
 func PlatformToLifecycleUrls(lcDetails *coreConfig.ServerDetails) {
 	// For tests only. in prod - this "if" will always return false
 	if strings.Contains(lcDetails.Url, "artifactory/") {
-		lcDetails.ArtifactoryUrl = utilsForLC.AddTrailingSlashIfNeeded(lcDetails.Url)
+		lcDetails.ArtifactoryUrl = clientutils.AddTrailingSlashIfNeeded(lcDetails.Url)
 		lcDetails.LifecycleUrl = strings.Replace(
-			utilsForLC.AddTrailingSlashIfNeeded(lcDetails.Url),
+			clientutils.AddTrailingSlashIfNeeded(lcDetails.Url),
 			"artifactory/",
 			"lifecycle/",
 			1,
 		)
 	} else {
-		lcDetails.ArtifactoryUrl = utilsForLC.AddTrailingSlashIfNeeded(lcDetails.Url) + "artifactory/"
-		lcDetails.LifecycleUrl = utilsForLC.AddTrailingSlashIfNeeded(lcDetails.Url) + "lifecycle/"
+		lcDetails.ArtifactoryUrl = clientutils.AddTrailingSlashIfNeeded(lcDetails.Url) + "artifactory/"
+		lcDetails.LifecycleUrl = clientutils.AddTrailingSlashIfNeeded(lcDetails.Url) + "lifecycle/"
 	}
 	lcDetails.Url = ""
 }
@@ -638,7 +637,7 @@ func prepareCopyMoveCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	if c.NArg() > 0 && c.IsSet("spec") {
 		return nil, cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
 	}
-	if !(c.NArg() == 2 || (c.NArg() == 0 && (c.IsSet("spec")))) {
+	if c.NArg() != 2 && (c.NArg() != 0 || !c.IsSet("spec")) {
 		return nil, cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
@@ -663,7 +662,7 @@ func prepareDeleteCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	if c.NArg() > 0 && c.IsSet("spec") {
 		return nil, cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
 	}
-	if !(c.NArg() == 1 || (c.NArg() == 0 && (c.IsSet("spec") || c.IsSet("build") || c.IsSet("bundle")))) {
+	if c.NArg() != 1 && (c.NArg() != 0 || (!c.IsSet("spec") && !c.IsSet("build") && !c.IsSet("bundle"))) {
 		return nil, cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
@@ -688,7 +687,7 @@ func prepareSearchCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	if c.NArg() > 0 && c.IsSet("spec") {
 		return nil, cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
 	}
-	if !(c.NArg() == 1 || (c.NArg() == 0 && (c.IsSet("spec") || c.IsSet("build") || c.IsSet("bundle")))) {
+	if c.NArg() != 1 && (c.NArg() != 0 || (!c.IsSet("spec") && !c.IsSet("build") && !c.IsSet("bundle"))) {
 		return nil, cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
@@ -713,7 +712,7 @@ func preparePropsCmd(c *cli.Context) (*generic.PropsCommand, error) {
 	if c.NArg() > 1 && c.IsSet("spec") {
 		return nil, cliutils.PrintHelpAndReturnError("Only the 'artifact properties' argument should be sent when the spec option is used.", c)
 	}
-	if !(c.NArg() == 2 || (c.NArg() == 1 && (c.IsSet("spec") || c.IsSet("build") || c.IsSet("bundle")))) {
+	if c.NArg() != 2 && (c.NArg() != 1 || (!c.IsSet("spec") && !c.IsSet("build") && !c.IsSet("bundle"))) {
 		return nil, cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 

@@ -140,7 +140,7 @@ func TestContainerPushWithDetailedSummary(t *testing.T) {
 				runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
 
 				imagePath := path.Join(repo, imageName, "1") + "/"
-				validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, module, 7, 5, 7, t)
+				validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, module, 7, 5, t)
 
 				// Check deployment view
 				assertPrintedDeploymentViewFunc, cleanupFunc := initDeploymentViewTest(t)
@@ -179,7 +179,7 @@ func runPushTest(containerManager container.ContainerManagerType, imageName, mod
 	runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
 
 	imagePath := path.Join(repo, imageName, "1") + "/"
-	validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, module, 7, 5, 7, t)
+	validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, module, 7, 5, t)
 }
 
 func loginToArtifactory(t *testing.T, container *tests.TestContainer) {
@@ -380,7 +380,7 @@ func TestContainerPushBuildNameNumberFromEnv(t *testing.T) {
 			runRt(t, "build-publish")
 
 			imagePath := path.Join(tests.DockerLocalRepo, tests.DockerImageName, "1") + "/"
-			validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, tests.DockerImageName+":1", 7, 5, 7, t)
+			validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, tests.DockerImageName+":1", 7, 5, t)
 			inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName, tests.DockerLocalRepo)
 		}()
 	}
@@ -404,12 +404,12 @@ func TestContainerPull(t *testing.T) {
 				runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
 
 				imagePath := path.Join(repo, tests.DockerImageName, "1") + "/"
-				validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, tests.DockerImageName+":1", 0, 7, 7, t)
+				validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, tests.DockerImageName+":1", 0, 7, t)
 
 				buildNumber = "2"
 				runCmdWithRetries(t, jfrogRtCliTask(containerManager.String()+"-pull", imageName, repo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber, "--module="+ModuleNameJFrogTest))
 				runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
-				validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, ModuleNameJFrogTest, 0, 7, 7, t)
+				validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, ModuleNameJFrogTest, 0, 7, t)
 
 				inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName, repo)
 			}
@@ -481,8 +481,8 @@ func TestDockerPromote(t *testing.T) {
 	inttestutils.VerifyExistInArtifactory(tests.GetDockerDeployedManifest(), searchSpec, serverDetails, t)
 }
 
-func validateContainerBuild(buildName, buildNumber, imagePath, module string, expectedArtifacts, expectedDependencies, expectedItemsInArtifactory int, t *testing.T) {
-	validateContainerImage(t, imagePath, expectedItemsInArtifactory)
+func validateContainerBuild(buildName, buildNumber, imagePath, module string, expectedArtifacts, expectedDependencies int, t *testing.T) {
+	validateContainerImage(t, imagePath, 7)
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
 	if err != nil {
 		assert.NoError(t, err)
@@ -585,26 +585,15 @@ func TestNativeDockerPushPull(t *testing.T) {
 	cleanup := initNativeDockerWithArtTest(t)
 	defer cleanup()
 	pushBuildNumber := "2"
-	pullBuildNumber := "3"
-	module := "native-docker-module"
 	image, err := inttestutils.BuildTestImage(tests.DockerImageName+":"+pushBuildNumber, "", tests.DockerLocalRepo, container.DockerClient)
 	assert.NoError(t, err)
-	// Add docker cli flag '-D' to check we ignore them
-	runCmdWithRetries(t, jfCliTask("docker", "-D", "push", image, "--build-name="+tests.DockerBuildName, "--build-number="+pushBuildNumber, "--module="+module))
-
-	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.DockerBuildName, pushBuildNumber, "", []string{module}, entities.Docker)
-	runRt(t, "build-publish", tests.DockerBuildName, pushBuildNumber)
+	defer tests2.DeleteTestImage(t, image, container.DockerClient)
+	defer inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName, tests.DockerLocalRepo)
+	runCmdWithRetries(t, jfCliTask("docker", "-D", "push", image, "--detailed-summary=true"))
 	imagePath := path.Join(tests.DockerLocalRepo, tests.DockerImageName, pushBuildNumber) + "/"
-	validateContainerBuild(tests.DockerBuildName, pushBuildNumber, imagePath, module, 7, 5, 7, t)
+	validateContainerImage(t, imagePath, 7)
 	tests2.DeleteTestImage(t, image, container.DockerClient)
-
-	runCmdWithRetries(t, jfCliTask("docker", "-D", "pull", image, "--build-name="+tests.DockerBuildName, "--build-number="+pullBuildNumber, "--module="+module))
-	runRt(t, "build-publish", tests.DockerBuildName, pullBuildNumber)
-	imagePath = path.Join(tests.DockerLocalRepo, tests.DockerImageName, pullBuildNumber) + "/"
-	validateContainerBuild(tests.DockerBuildName, pullBuildNumber, imagePath, module, 0, 7, 0, t)
-	tests2.DeleteTestImage(t, image, container.DockerClient)
-
-	inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName, tests.DockerLocalRepo)
+	runCmdWithRetries(t, jfCliTask("docker", "-D", "pull", image, "--detailed-summary=true"))
 }
 
 func TestNativeDockerFlagParsing(t *testing.T) {

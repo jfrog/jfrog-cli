@@ -1103,7 +1103,7 @@ func npmGenericCmd(c *cli.Context, cmdName string, collectBuildInfoIfRequested b
 	if err != nil {
 		return err
 	}
-	npmCmd.SetConfigFilePath(configFilePath).CommonArgs.SetNpmArgs(args)
+	npmCmd.SetConfigFilePath(configFilePath).SetNpmArgs(args)
 	if err = npmCmd.Init(); err != nil {
 		return err
 	}

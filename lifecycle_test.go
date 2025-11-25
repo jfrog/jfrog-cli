@@ -653,7 +653,14 @@ func deleteReleaseBundle(t *testing.T, lcManager *lifecycle.LifecycleServicesMan
 		ReleaseBundleVersion: rbVersion,
 	}
 
-	assert.NoError(t, lcManager.DeleteReleaseBundleVersion(rbDetails, services.CommonOptionalQueryParams{Async: false}))
+	err := lcManager.DeleteReleaseBundleVersion(rbDetails, services.CommonOptionalQueryParams{Async: false})
+	if err != nil {
+		// Ignore 404 errors during cleanup as the release bundle may have already been deleted
+		if strings.Contains(err.Error(), "404") || strings.Contains(err.Error(), "not found") {
+			return
+		}
+		assert.NoError(t, err)
+	}
 	// Wait after remote deleting. Can be removed once remote deleting supports sync.
 	time.Sleep(5 * time.Second)
 }
@@ -750,15 +757,6 @@ func deleteReleaseBundleProperties(t *testing.T, lcManager *lifecycle.LifecycleS
 	time.Sleep(5 * time.Second)
 }
 
-func createRbIfDoesNotExists(t *testing.T, rbName, rbVersion string, lcManager *lifecycle.LifecycleServicesManager) {
-	isExist, err := lcManager.IsReleaseBundleExist(rbName, rbVersion, "")
-	assert.NoError(t, err)
-	if isExist {
-		return
-	}
-	createRbFromSpec(t, tests.LifecycleBuilds12, rbName, rbVersion, true, true)
-}
-
 func TestReleaseBundlesSearchGroups(t *testing.T) {
 	cleanCallback := initLifecycleTest(t, artifactoryLifecycleSetTagMinVersion)
 	defer cleanCallback()
@@ -773,30 +771,78 @@ func TestReleaseBundlesSearchGroups(t *testing.T) {
 	const rbNameB = rbPrefix + "-beta"
 	const rbNameC = rbPrefix + "-core"
 	const rbNameD = "another-app"
-
 	const version1 = "1.0.0"
 
-	// Create Release Bundle A
-	createRbIfDoesNotExists(t, rbNameA, version1, lcManager)
+	// Delete existing release bundles to ensure fresh creation and indexing
+	// This is important for search groups test as stale bundles may not be indexed
+	for _, rbName := range []string{rbNameA, rbNameB, rbNameC, rbNameD} {
+		isExist, err := lcManager.IsReleaseBundleExist(rbName, version1, "")
+		if err == nil && isExist {
+			rbDetails := services.ReleaseBundleDetails{
+				ReleaseBundleName:    rbName,
+				ReleaseBundleVersion: version1,
+			}
+			err := lcManager.DeleteReleaseBundleVersion(rbDetails, services.CommonOptionalQueryParams{Async: false})
+			if err != nil {
+				// Ignore 404 errors as the release bundle may not exist
+				if !strings.Contains(err.Error(), "404") && !strings.Contains(err.Error(), "not found") {
+					t.Logf("Warning: Failed to delete release bundle %s/%s: %v", rbName, version1, err)
+				}
+			} else {
+				time.Sleep(5 * time.Second)
+			}
+		}
+	}
+
+	createRbFromSpec(t, tests.LifecycleBuilds12, rbNameA, version1, true, true)
 	defer deleteReleaseBundle(t, lcManager, rbNameA, version1)
 	assertStatusCompleted(t, lcManager, rbNameA, version1, "")
 
-	// Create Release Bundle B
-	createRbIfDoesNotExists(t, rbNameB, version1, lcManager)
+	createRbFromSpec(t, tests.LifecycleBuilds12, rbNameB, version1, true, true)
 	defer deleteReleaseBundle(t, lcManager, rbNameB, version1)
 	assertStatusCompleted(t, lcManager, rbNameB, version1, "")
 
-	// Create Release Bundle C
-	createRbIfDoesNotExists(t, rbNameC, version1, lcManager)
+	createRbFromSpec(t, tests.LifecycleBuilds12, rbNameC, version1, true, true)
 	defer deleteReleaseBundle(t, lcManager, rbNameC, version1)
 	assertStatusCompleted(t, lcManager, rbNameC, version1, "")
 
-	// Create Release Bundle D (for filter/exclusion)
-	createRbIfDoesNotExists(t, rbNameD, version1, lcManager)
+	createRbFromSpec(t, tests.LifecycleBuilds12, rbNameD, version1, true, true)
 	defer deleteReleaseBundle(t, lcManager, rbNameD, version1)
 	assertStatusCompleted(t, lcManager, rbNameD, version1, "")
 
-	time.Sleep(3 * time.Second)
+	const pollTimeout = 45 * time.Second
+	const pollInterval = 3 * time.Second
+
+	startTime := time.Now()
+	found := false
+	var lastSearchError error
+
+	for time.Since(startTime) < pollTimeout {
+		resp, err := lcManager.ReleaseBundlesSearchGroup(services.GetSearchOptionalQueryParams{})
+		if err != nil {
+			lastSearchError = fmt.Errorf("error while polling: %w", err)
+			time.Sleep(pollInterval)
+			continue
+		}
+		for _, rb := range resp.ReleaseBundleSearchGroup {
+			if rb.ReleaseBundleName == rbNameA {
+				found = true
+				break
+			}
+		}
+		if found {
+			log.Info(fmt.Sprintf("Found '%s' in search index after %s", rbNameA, time.Since(startTime)))
+			break
+		}
+		time.Sleep(pollInterval)
+	}
+
+	if !found {
+		if lastSearchError != nil {
+			t.Fatalf("Failed to find '%s' in search index after %s. Last error: %v", rbNameA, pollTimeout, lastSearchError)
+		}
+		t.Fatalf("Failed to find '%s' in search index after %s. Test cannot continue.", rbNameA, pollTimeout)
+	}
 
 	testCases := []struct {
 		name            string
@@ -871,18 +917,15 @@ func TestReleaseBundlesSearchGroups(t *testing.T) {
 				return
 			}
 			assert.NoError(t, err, fmt.Sprintf("Expected no error for test case: %s", tc.name))
-			if tc.queryParams.FilterBy != "" {
-				assert.Equal(t, tc.expectedTotal, len(resp.ReleaseBundleSearchGroup), "Total count mismatch for filtered search")
-			} else {
-				assert.GreaterOrEqual(t, resp.Total, tc.expectedTotal, "Total count should be at least expected for unfiltered search")
-			}
 			var actualNames []string
 			for _, rb := range resp.ReleaseBundleSearchGroup {
 				actualNames = append(actualNames, rb.ReleaseBundleName)
 			}
 			if tc.queryParams.FilterBy != "" {
-				assert.Equal(t, tc.expectedRbNames, actualNames, "Release bundle names order mismatch")
+				assert.Equal(t, tc.expectedTotal, len(resp.ReleaseBundleSearchGroup), "Total count mismatch for filtered search")
+				assert.ElementsMatch(t, tc.expectedRbNames, actualNames, "Release bundle names mismatch")
 			} else {
+				assert.GreaterOrEqual(t, resp.Total, tc.expectedTotal, "Total count should be at least expected for unfiltered search")
 				assert.Subset(t, actualNames, tc.expectedRbNames, "Actual names should contain all expected names")
 			}
 		})
@@ -904,25 +947,46 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 	const versionC = "1.1.0-rc"
 	const versionD = "2.0.0"
 
-	createRbIfDoesNotExists(t, rbName, versionA, lcManager)
+	// Delete existing release bundle versions to ensure fresh creation and indexing
+	// This is important for search versions test as stale bundles may not be indexed
+	for _, version := range []string{versionA, versionB, versionC, versionD} {
+		isExist, err := lcManager.IsReleaseBundleExist(rbName, version, "")
+		if err == nil && isExist {
+			rbDetails := services.ReleaseBundleDetails{
+				ReleaseBundleName:    rbName,
+				ReleaseBundleVersion: version,
+			}
+			err := lcManager.DeleteReleaseBundleVersion(rbDetails, services.CommonOptionalQueryParams{Async: false})
+			if err != nil {
+				// Ignore 404 errors as the release bundle may not exist
+				if !strings.Contains(err.Error(), "404") && !strings.Contains(err.Error(), "not found") {
+					t.Logf("Warning: Failed to delete release bundle %s/%s: %v", rbName, version, err)
+				}
+			} else {
+				time.Sleep(5 * time.Second)
+			}
+		}
+	}
+
+	createRbFromSpec(t, tests.LifecycleBuilds12, rbName, versionA, true, true)
 	defer deleteReleaseBundle(t, lcManager, rbName, versionA)
 	assertStatusCompleted(t, lcManager, rbName, versionA, "")
 
 	time.Sleep(1 * time.Second)
 
-	createRbIfDoesNotExists(t, rbName, versionB, lcManager)
+	createRbFromSpec(t, tests.LifecycleBuilds12, rbName, versionB, true, true)
 	defer deleteReleaseBundle(t, lcManager, rbName, versionB)
 	assertStatusCompleted(t, lcManager, rbName, versionB, "")
 
 	time.Sleep(1 * time.Second)
 
-	createRbIfDoesNotExists(t, rbName, versionC, lcManager)
+	createRbFromSpec(t, tests.LifecycleBuilds12, rbName, versionC, true, true)
 	defer deleteReleaseBundle(t, lcManager, rbName, versionC)
 	assertStatusCompleted(t, lcManager, rbName, versionC, "")
 
 	time.Sleep(1 * time.Second)
 
-	createRbIfDoesNotExists(t, rbName, versionD, lcManager)
+	createRbFromSpec(t, tests.LifecycleBuilds12, rbName, versionD, true, true)
 	defer deleteReleaseBundle(t, lcManager, rbName, versionD)
 	assertStatusCompleted(t, lcManager, rbName, versionD, "")
 

@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-artifactory/cliutils/flagkit"
 	"io"
 	"net"
 	"net/http"
@@ -18,11 +17,14 @@ import (
 	"path"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/jfrog/jfrog-cli-artifactory/cliutils/flagkit"
 
 	biutils "github.com/jfrog/build-info-go/utils"
 
@@ -2916,6 +2918,44 @@ func TestArtifactoryIncludeDirFlatNonEmptyFolderUploadMatchingPattern(t *testing
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryDirectDownload(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	runRt(t, "upload", "testdata/a/a1.in", tests.RtRepo1)
+	runRt(t, "ddl", tests.RtRepo1+"/testdata/a/a1.in", tests.Out+"/")
+
+	assert.True(t, fileutils.IsPathExists(filepath.Join(tests.Out, "testdata", "a", "a1.in"), false))
+
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryDirectDownloadFlat(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	runRt(t, "upload", "testdata/a/a2.in", tests.RtRepo1+"/path/to/", "--flat=true")
+
+	runRt(t, "ddl", tests.RtRepo1+"/path/to/a2.in", tests.Out+"/", "--flat=true")
+
+	assert.True(t, fileutils.IsPathExists(filepath.Join(tests.Out, "a2.in"), false))
+	assert.False(t, fileutils.IsPathExists(filepath.Join(tests.Out, "path", "to", "a2.in"), false))
+
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryDirectDownloadChecksumValidation(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	runRt(t, "upload", "testdata/a/a1.in", tests.RtRepo1, "--flat=true")
+	runRt(t, "ddl", tests.RtRepo1+"/a1.in", tests.Out+"/")
+
+	assert.True(t, fileutils.IsPathExists(filepath.Join(tests.Out, "a1.in"), false))
+
+	runRt(t, "ddl", tests.RtRepo1+"/a1.in", tests.Out+"/skip/", "--skip-checksum")
+	assert.True(t, fileutils.IsPathExists(filepath.Join(tests.Out, "skip", "a1.in"), false))
+
+	cleanArtifactoryTest()
+}
+
 // Test the definition of bottom chain directories - Directories which do not include other directories that match the pattern
 func TestArtifactoryUploadFlatFolderWithFileAndInnerEmptyMatchingPattern(t *testing.T) {
 	initArtifactoryTest(t, "")
@@ -3593,6 +3633,825 @@ func TestArtifactoryDownloadExclusionsBySpecOverride(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Cleanup
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadBasic(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload test files
+	runRt(t, "upload", "testdata/a/*.in", tests.RtRepo1+"/ddl-basic/")
+
+	// Download using ddl command
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-basic/*.in", tests.Out+"/")
+
+	// Verify files were downloaded
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NotEmpty(t, paths, "Expected files to be downloaded")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadFromVirtual(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload test files to physical repo
+	runRt(t, "upload", "testdata/a/*.in", tests.RtRepo1+"/ddl-virtual/")
+
+	// Download from virtual repo using ddl
+	runRt(t, "ddl", tests.RtVirtualRepo+"/ddl-virtual/*.in", tests.Out+"/", "--flat=true")
+
+	// Verify files were downloaded
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NotEmpty(t, paths, "Expected files to be downloaded from virtual repository")
+
+	// Check that at least some .in files were downloaded
+	hasInFiles := false
+	for _, path := range paths {
+		if strings.HasSuffix(path, ".in") {
+			hasInFiles = true
+			break
+		}
+	}
+	assert.True(t, hasInFiles, "Expected .in files to be downloaded")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithFlat(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload files
+	runRt(t, "upload", "testdata/a/*.in", tests.RtRepo1+"/ddl-flat/")
+
+	// Download with flat=true
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-flat/*.in", tests.Out+"/", "--flat=true")
+
+	// Verify files were downloaded
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NotEmpty(t, paths, "Expected files to be downloaded with flat structure")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadRecursive(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload files in nested directories
+	runRt(t, "upload", "testdata/a/*.in", tests.RtRepo1+"/ddl-recursive/level1/level2/")
+
+	// Download with recursive=true (use directory pattern)
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-recursive/*", tests.Out+"/", "--recursive=true")
+
+	// Verify files were downloaded
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NotEmpty(t, paths, "Expected files to be downloaded recursively")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithExclusions(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload files
+	runRt(t, "upload", "testdata/a/a*.in", tests.RtRepo1+"/ddl-exclusions/")
+	runRt(t, "upload", "testdata/a/b*.in", tests.RtRepo1+"/ddl-exclusions/")
+
+	// Download with exclusions
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-exclusions/*.in", tests.Out+"/", "--exclusions=*a1.in")
+
+	// Verify a1.in was excluded
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	for _, path := range paths {
+		assert.NotContains(t, filepath.Base(path), "a1.in", "a1.in should be excluded")
+	}
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithMinSplit(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Create and upload a file larger than min-split size
+	tempDir := filepath.Join(os.TempDir(), "temp-ddl-test-"+strconv.FormatInt(time.Now().Unix(), 10))
+	assert.NoError(t, fileutils.CreateDirIfNotExist(tempDir))
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Logf("Failed to remove temp dir: %v", err)
+		}
+	}()
+
+	testFile := filepath.Join(tempDir, "largefile.bin")
+	_, err := gofrogio.CreateRandFile(testFile, 100000) // 100KB file
+	assert.NoError(t, err)
+
+	// Upload with flat to ensure file is at expected path
+	runRt(t, "upload", testFile, tests.RtRepo1+"/ddl-split/", "--flat=true")
+
+	// Clean local file
+	clientTestUtils.RemoveAllAndAssert(t, tests.Out)
+	assert.NoError(t, fileutils.CreateDirIfNotExist(tests.Out))
+
+	// Download with min-split (should trigger concurrent download)
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-split/largefile.bin", tests.Out+"/", "--min-split=50", "--split-count=3")
+
+	// Verify file was downloaded (DDL preserves directory structure)
+	downloadedFile := filepath.Join(tests.Out, "ddl-split", "largefile.bin")
+	assert.True(t, fileutils.IsPathExists(downloadedFile, false), "Expected largefile.bin to be downloaded")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithThreads(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload multiple files
+	runRt(t, "upload", "testdata/a/*.in", tests.RtRepo1+"/ddl-threads/")
+
+	// Download with multiple threads
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-threads/*.in", tests.Out+"/", "--threads=5")
+
+	// Verify all files were downloaded
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NotEmpty(t, paths, "Expected files to be downloaded with threading")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithDryRun(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload test files
+	runRt(t, "upload", "testdata/a/*.in", tests.RtRepo1+"/ddl-dryrun/")
+
+	// Use a separate output directory for dry-run test
+	dryRunOut := tests.Out + "/dry-run-test"
+
+	// Download with dry-run
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-dryrun/*.in", dryRunOut+"/", "--dry-run")
+
+	exists, err := fileutils.IsDirExists(dryRunOut, false)
+	assert.NoError(t, err)
+	assert.False(t, exists, "DDL with dry-run should not create output directory")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithSkipChecksum(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload test files
+	runRt(t, "upload", "testdata/a/*.in", tests.RtRepo1+"/ddl-checksum/")
+
+	// Download with skip-checksum
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-checksum/*.in", tests.Out+"/", "--skip-checksum")
+
+	// Verify files were downloaded (even though checksum verification was skipped)
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NotEmpty(t, paths, "Expected files to be downloaded with skip-checksum")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithExplode(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Create a zip file
+	err := fileutils.CreateDirIfNotExist(tests.Out)
+	assert.NoError(t, err)
+
+	// Create files to zip
+	testDir := filepath.Join(tests.Out, "tozip")
+	assert.NoError(t, fileutils.CreateDirIfNotExist(testDir))
+	testFile1 := filepath.Join(testDir, "file1.txt")
+	testFile2 := filepath.Join(testDir, "file2.txt")
+	assert.NoError(t, os.WriteFile(testFile1, []byte("content1"), 0644))
+	assert.NoError(t, os.WriteFile(testFile2, []byte("content2"), 0644))
+
+	// Create zip
+	zipPath := filepath.Join(tests.Out, "test.zip")
+	err = archiver.Archive([]string{testDir}, zipPath)
+	assert.NoError(t, err)
+
+	// Upload zip
+	runRt(t, "upload", zipPath, tests.RtRepo1+"/ddl-explode/", "--flat=true")
+
+	// Clean local files
+	clientTestUtils.RemoveAllAndAssert(t, tests.Out)
+	assert.NoError(t, fileutils.CreateDirIfNotExist(tests.Out))
+
+	// Download with explode
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-explode/test.zip", tests.Out+"/", "--explode")
+
+	// Verify files were extracted, not the zip itself
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	hasTextFiles := false
+	for _, path := range paths {
+		if strings.HasSuffix(path, ".txt") {
+			hasTextFiles = true
+			break
+		}
+	}
+	assert.True(t, hasTextFiles, "Expected extracted .txt files from exploded archive")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadByBuild(t *testing.T) {
+	initArtifactoryTest(t, "")
+	buildNumber := "ddl-build-1"
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+
+	// Upload files and collect build info
+	runRt(t, "upload", "testdata/a/*.in", tests.RtRepo1+"/ddl-build/", "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber)
+	runRt(t, "build-publish", tests.RtBuildName1, buildNumber)
+
+	// Download by build using ddl
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-build/*.in", tests.Out+"/", "--build="+tests.RtBuildName1+"/"+buildNumber)
+
+	// Verify files were downloaded
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NotEmpty(t, paths, "Expected files to be downloaded by build")
+
+	// Cleanup
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadComparison(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload test files
+	runRt(t, "upload", "testdata/a/*.in", tests.RtRepo1+"/ddl-compare/")
+
+	// Download with regular dl
+	runRt(t, "dl", tests.RtRepo1+"/ddl-compare/*.in", tests.Out+"/dl/")
+	dlPaths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out+"/dl", false)
+
+	// Download with ddl
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-compare/*.in", tests.Out+"/ddl/")
+	ddlPaths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out+"/ddl", false)
+
+	// Both should download the same number of files
+	assert.Equal(t, len(dlPaths), len(ddlPaths), "dl and ddl should download the same number of files")
+
+	// Both should have downloaded files
+	assert.NotEmpty(t, dlPaths, "dl should download files")
+	assert.NotEmpty(t, ddlPaths, "ddl should download files")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithCustomThreads(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload multiple files
+	runRt(t, "upload", "testdata/a/*.in", tests.RtRepo1+"/ddl-threads-custom/")
+
+	// Download with custom thread count
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-threads-custom/*.in", tests.Out+"/", "--threads=5")
+
+	// Verify files were downloaded
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NotEmpty(t, paths, "Expected files to be downloaded with custom thread count")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithRetries(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload test file
+	runRt(t, "upload", "testdata/a/a1.in", tests.RtRepo1+"/ddl-retries/")
+
+	// Download with custom retry settings
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-retries/*.in", tests.Out+"/", "--retries=5", "--retry-wait-time=2s")
+
+	// Verify file was downloaded
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NotEmpty(t, paths, "Expected file to be downloaded with custom retry settings")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithFailNoOp(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Try to download non-existent files with fail-no-op
+	err := artifactoryCli.Exec([]string{"ddl", tests.RtRepo1 + "/non-existent-pattern-*.txt", tests.Out + "/", "--fail-no-op=true", "--server-id=" + tests.ServerId}...)
+	assert.Error(t, err, "Expected error when no files match with fail-no-op")
+
+	// Try without fail-no-op (should succeed with 0 downloads)
+	runRt(t, "ddl", tests.RtRepo1+"/non-existent-pattern-*.txt", tests.Out+"/")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithDetailedSummary(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload test files
+	runRt(t, "upload", "testdata/a/*.in", tests.RtRepo1+"/ddl-summary/")
+
+	// Download with detailed summary
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-summary/*.in", tests.Out+"/", "--detailed-summary=true")
+
+	// Verify files were downloaded (detailed summary is shown in console output)
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NotEmpty(t, paths, "Expected files to be downloaded with detailed summary")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithValidateSymlinks(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload test file
+	runRt(t, "upload", "testdata/a/a1.in", tests.RtRepo1+"/ddl-symlinks/")
+
+	// Download with validate-symlinks
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-symlinks/*.in", tests.Out+"/", "--validate-symlinks=true")
+
+	// Verify file was downloaded
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NotEmpty(t, paths, "Expected file to be downloaded with symlink validation")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithInsecureTls(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload test file
+	runRt(t, "upload", "testdata/a/a1.in", tests.RtRepo1+"/ddl-tls/")
+
+	// Download with insecure-tls
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-tls/*.in", tests.Out+"/", "--insecure-tls=true")
+
+	// Verify file was downloaded
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NotEmpty(t, paths, "Expected file to be downloaded with insecure TLS")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithProject(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload test file
+	runRt(t, "upload", "testdata/a/a1.in", tests.RtRepo1+"/ddl-project/")
+
+	// Download with project flag (may not affect download if project doesn't exist)
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-project/*.in", tests.Out+"/", "--project=test-project")
+
+	// Verify file was downloaded
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NotEmpty(t, paths, "Expected file to be downloaded with project flag")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithBundle(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload test file first
+	runRt(t, "upload", "testdata/a/a1.in", tests.RtRepo1+"/ddl-bundle/")
+
+	// Try to download with bundle flag (will likely fail if bundle doesn't exist)
+	// Using correct format: bundle-name/bundle-version
+	// This test verifies the bundle flag is parsed correctly (no panic)
+	_ = artifactoryCli.Exec([]string{"ddl", "non-existent-bundle/*", tests.Out + "/", "--bundle=test-bundle/1.0.0", "--server-id=" + tests.ServerId}...)
+	// We expect this to fail or return 0 files since the bundle doesn't exist
+
+	// For comparison, regular download should work
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-bundle/*.in", tests.Out+"/regular/")
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out+"/regular", false)
+	assert.NotEmpty(t, paths, "Expected regular download to work")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithAuthentication(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload test file
+	runRt(t, "upload", "testdata/a/a1.in", tests.RtRepo1+"/ddl-auth/")
+
+	// Test with URL and credentials (using server-id overrides these)
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-auth/*.in", tests.Out+"/", "--server-id="+tests.ServerId)
+
+	// Verify file was downloaded
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NotEmpty(t, paths, "Expected file to be downloaded with authentication")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithBuildNameNumber(t *testing.T) {
+	initArtifactoryTest(t, "")
+	buildName := "ddl-build-test"
+	buildNumber := "42"
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	// Upload with build info
+	runRt(t, "upload", "testdata/a/*.in", tests.RtRepo1+"/ddl-buildinfo/",
+		"--build-name="+buildName, "--build-number="+buildNumber)
+	runRt(t, "build-publish", buildName, buildNumber)
+
+	// Download using separate build-name and build-number flags
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-buildinfo/*.in", tests.Out+"/",
+		"--build-name="+buildName, "--build-number="+buildNumber)
+
+	// Verify files were downloaded
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NotEmpty(t, paths, "Expected files to be downloaded by build name and number")
+
+	// Cleanup
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithSyncDeletes(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Create a local file that should be deleted during sync
+	assert.NoError(t, fileutils.CreateDirIfNotExist(tests.Out))
+	localFile := filepath.Join(tests.Out, "delete-me.txt")
+	err := os.WriteFile(localFile, []byte("delete me"), 0644)
+	assert.NoError(t, err)
+
+	// Upload test files
+	runRt(t, "upload", "testdata/a/*.in", tests.RtRepo1+"/ddl-sync/")
+
+	// Download with sync-deletes (add server-id for ddl)
+	outDirPath := filepath.Clean(tests.Out) + string(os.PathSeparator)
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-sync/*.in", outDirPath, "--sync-deletes="+outDirPath, "--server-id="+tests.ServerId)
+
+	// Verify the local file was deleted
+	assert.False(t, fileutils.IsPathExists(localFile, false), "Local file should be deleted with sync-deletes")
+
+	// Verify downloaded files exist
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NotEmpty(t, paths, "Expected files to be downloaded")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithBypassArchiveInspection(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Create a zip file
+	err := fileutils.CreateDirIfNotExist(tests.Out)
+	assert.NoError(t, err)
+
+	// Create files to zip in temp directory to avoid path issues
+	testDir := filepath.Join(os.TempDir(), "tozip-"+strconv.FormatInt(time.Now().Unix(), 10))
+	assert.NoError(t, fileutils.CreateDirIfNotExist(testDir))
+	defer func() {
+		if err := os.RemoveAll(testDir); err != nil {
+			t.Logf("Failed to remove test dir: %v", err)
+		}
+	}()
+	testFile := filepath.Join(testDir, "test.txt")
+	assert.NoError(t, os.WriteFile(testFile, []byte("test content"), 0644))
+
+	// Create zip
+	zipPath := filepath.Join(tests.Out, "test.zip")
+	err = archiver.Archive([]string{testFile}, zipPath)
+	assert.NoError(t, err)
+
+	// Upload the zip file
+	runRt(t, "upload", zipPath, tests.RtRepo1+"/ddl-bypass/", "--flat=true")
+
+	// Download with bypass-archive-inspection
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-bypass/*.zip", tests.Out+"/bypass/", "--bypass-archive-inspection")
+
+	// Verify file was downloaded
+	// DDL doesn't use --flat so file will be in subdirectory
+	// On Windows, check both possible paths due to path separator differences
+	downloadedZip1 := filepath.Join(tests.Out, "bypass", "ddl-bypass", "test.zip")
+	downloadedZip2 := filepath.Join(tests.Out, "bypass", "test.zip")
+	assert.True(t, fileutils.IsPathExists(downloadedZip1, false) || fileutils.IsPathExists(downloadedZip2, false), "Zip file should be downloaded")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithBuildDependencies(t *testing.T) {
+	initArtifactoryTest(t, "")
+	buildName := "ddl-build-deps"
+	buildNumber := "1"
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	// Upload artifacts with build info
+	runRt(t, "upload", "testdata/a/*.in", tests.RtRepo1+"/ddl-deps/artifacts/", "--build-name="+buildName, "--build-number="+buildNumber)
+
+	// Upload dependencies - use files from testdata/a/b/c/
+	runRt(t, "upload", "testdata/a/b/c/*.in", tests.RtRepo1+"/ddl-deps/dependencies/", "--build-name="+buildName, "--build-number="+buildNumber)
+
+	// Publish build
+	runRt(t, "build-publish", buildName, buildNumber)
+
+	// Test exclude-artifacts (DDL requires --build flag format)
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-deps/artifacts/*.in", tests.Out+"/exclude-artifacts/",
+		"--build="+buildName+"/"+buildNumber, "--exclude-artifacts=true")
+
+	// Check if directory exists first
+	if fileutils.IsPathExists(tests.Out+"/exclude-artifacts", false) {
+		paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out+"/exclude-artifacts", false)
+		// Filter out directories
+		var files []string
+		for _, path := range paths {
+			if isDir, _ := fileutils.IsDirExists(path, false); !isDir {
+				files = append(files, path)
+			}
+		}
+		assert.Empty(t, files, "Expected 0 files when exclude-artifacts is true")
+	} else {
+		// Directory doesn't exist, which is also fine when no files are downloaded
+		assert.True(t, true, "No files downloaded as expected")
+	}
+
+	// Test include-deps (DDL requires --build flag format)
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-deps/dependencies/*.in", tests.Out+"/include-deps/",
+		"--build="+buildName+"/"+buildNumber, "--include-deps=true")
+
+	paths2, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out+"/include-deps", false)
+	files2 := []string{}
+	for _, path := range paths2 {
+		if isDir, _ := fileutils.IsDirExists(path, false); !isDir {
+			files2 = append(files2, path)
+		}
+	}
+	assert.NotEmpty(t, files2, "Expected files when include-deps is true")
+
+	// Cleanup
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadWithSpecVars(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload test files
+	runRt(t, "upload", "testdata/a/*.in", tests.RtRepo1+"/ddl-spec-vars/")
+
+	// Create spec file with variables
+	assert.NoError(t, fileutils.CreateDirIfNotExist(tests.Out))
+	// Use forward slashes for JSON spec (Artifactory expects forward slashes)
+	targetPath := strings.ReplaceAll(tests.Out, "\\", "/")
+	specContent := fmt.Sprintf(`{
+		"files": [{
+			"pattern": "%s/ddl-spec-vars/${var1}",
+			"target": "%s/"
+		}]
+	}`, tests.RtRepo1, targetPath)
+
+	specFile := filepath.Join(tests.Out, "ddl-spec.json")
+	err := os.WriteFile(specFile, []byte(specContent), 0644)
+	assert.NoError(t, err)
+
+	// Download with spec vars
+	runRt(t, "ddl", "--spec="+specFile, "--spec-vars=var1=a*.in")
+
+	// Verify files were downloaded
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NotEmpty(t, paths, "Expected files to be downloaded with spec vars")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadPatternMatching(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload files with different patterns
+	runRt(t, "upload", "testdata/a/a*.in", tests.RtRepo1+"/ddl-pattern/")
+	runRt(t, "upload", "testdata/a/b/*.in", tests.RtRepo1+"/ddl-pattern/b/")
+
+	// Test various pattern matching
+	// Test 1: Star pattern
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-pattern/a*.in", tests.Out+"/star/")
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out+"/star", false)
+	// Filter out directories
+	var files []string
+	for _, path := range paths {
+		if isDir, _ := fileutils.IsDirExists(path, false); !isDir {
+			files = append(files, path)
+		}
+	}
+	assert.Equal(t, 3, len(files), "Expected 3 files matching a*.in")
+
+	// Test 2: Question mark pattern
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-pattern/a?.in", tests.Out+"/question/")
+	paths, _ = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out+"/question", false)
+	files = []string{}
+	for _, path := range paths {
+		if isDir, _ := fileutils.IsDirExists(path, false); !isDir {
+			files = append(files, path)
+		}
+	}
+	assert.Equal(t, 3, len(files), "Expected 3 files matching a?.in")
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadCombinedFlags(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload test files
+	runRt(t, "upload", "testdata/a/*.in", tests.RtRepo1+"/ddl-combined/")
+
+	// Download with multiple flags combined
+	runRt(t, "ddl", tests.RtRepo1+"/ddl-combined/*.in", tests.Out+"/",
+		"--flat=true", "--threads=5", "--skip-checksum", "--detailed-summary")
+
+	// Verify files were downloaded with flat structure
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NotEmpty(t, paths, "Expected files to be downloaded")
+
+	// Check flat structure (no subdirectories)
+	for _, path := range paths {
+		relPath, _ := filepath.Rel(tests.Out, path)
+		assert.NotContains(t, relPath, string(os.PathSeparator), "Files should be flat (no subdirectories)")
+	}
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadVirtualRepoPatterns(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload to physical repo that's part of the virtual repo
+	runRt(t, "upload", "testdata/a/*.in", tests.RtRepo1+"/ddl-virt-pattern/")
+
+	// Test pattern matching through virtual repo (use wildcard for DDL)
+	runRt(t, "ddl", tests.RtVirtualRepo+"/ddl-virt-pattern/a?.in", tests.Out+"/")
+
+	// Verify specific files were downloaded (a1.in and a2.in and a3.in)
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	// Filter out directories and count only a1.in and a2.in
+	var matchingFiles []string
+	for _, path := range paths {
+		if isDir, _ := fileutils.IsDirExists(path, false); !isDir {
+			baseName := filepath.Base(path)
+			if baseName == "a1.in" || baseName == "a2.in" {
+				matchingFiles = append(matchingFiles, path)
+			}
+		}
+	}
+	assert.Equal(t, 2, len(matchingFiles), "Expected 2 files matching a1.in or a2.in")
+
+	// Removed - logic moved above
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadVirtualRepoPriority(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Create 4 local repositories for testing priority resolution
+	// repo-local1 will have highest priority, then repo-local2, repo-local3, repo-local4
+	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, 0, false)
+	assert.NoError(t, err)
+
+	// Create 4 local repositories
+	localRepos := []string{"repo-local1", "repo-local2", "repo-local3", "repo-local4"}
+	for _, repoName := range localRepos {
+		localRepoConfig := services.NewGenericLocalRepositoryParams()
+		localRepoConfig.Key = repoName
+		err = servicesManager.CreateLocalRepository().Generic(localRepoConfig)
+		assert.NoError(t, err, "Failed to create local repository: "+repoName)
+		defer func(repo string) {
+			// Clean up the local repo
+			err := servicesManager.DeleteRepository(repo)
+			if err != nil {
+				log.Error("Failed to delete repository:", repo, err)
+			}
+		}(repoName)
+	}
+
+	// Create virtual repository with repo-local1 having highest priority
+	virtualRepoName := "test-vr-priority"
+	virtualRepoConfig := services.NewGenericVirtualRepositoryParams()
+	virtualRepoConfig.Key = virtualRepoName
+	virtualRepoConfig.PackageType = "generic"
+	// repo-local1 is first (highest priority), then 2, 3, 4
+	virtualRepoConfig.Repositories = []string{"repo-local1", "repo-local2", "repo-local3", "repo-local4"}
+
+	err = servicesManager.CreateVirtualRepository().Generic(virtualRepoConfig)
+	assert.NoError(t, err, "Failed to create virtual repository")
+	defer func() {
+		// Clean up the virtual repo
+		err := servicesManager.DeleteRepository(virtualRepoName)
+		if err != nil {
+			log.Error("Failed to delete virtual repository:", err)
+		}
+	}()
+
+	// Create a test file with unique content for each repository
+	// This will help us identify which repo the file was downloaded from
+	testFileName := "priority-test.txt"
+	repoContents := map[string]string{
+		"repo-local1": "CONTENT_FROM_REPO_LOCAL1_HIGHEST_PRIORITY",
+		"repo-local2": "content_from_repo_local2",
+		"repo-local3": "content_from_repo_local3",
+		"repo-local4": "content_from_repo_local4",
+	}
+
+	// Upload the same file with different content to all 4 repos
+	for repoName, content := range repoContents {
+		tempFile := filepath.Join(tests.GetTestResourcesPath(), "temp-"+repoName+".txt")
+		assert.NoError(t, os.WriteFile(tempFile, []byte(content), 0644))
+		defer func(file string) {
+			if err := os.Remove(file); err != nil {
+				t.Logf("Failed to remove temp file: %v", err)
+			}
+		}(tempFile)
+
+		// Upload to each repo
+		runRt(t, "upload", tempFile, repoName+"/priority-test/"+testFileName, "--flat=true")
+	}
+
+	// Get the virtual repository configuration to verify the order
+	var virtualRepoDetails services.VirtualRepositoryBaseParams
+	err = servicesManager.GetRepository(virtualRepoName, &virtualRepoDetails)
+	assert.NoError(t, err)
+
+	// Log the repository priority order for debugging
+	log.Info("Virtual repository", virtualRepoName, "has repositories in priority order:", virtualRepoDetails.Repositories)
+
+	// Download from virtual repo using ONLY DDL command
+	runRt(t, "ddl", virtualRepoName+"/priority-test/"+testFileName, tests.Out+"/", "--flat=true")
+
+	// Read the downloaded file
+	downloadedFile := filepath.Join(tests.Out, testFileName)
+	content, err := os.ReadFile(downloadedFile)
+	assert.NoError(t, err)
+
+	// The content should be from repo-local1 since it has the highest priority
+	expectedContent := repoContents["repo-local1"]
+	assert.Equal(t, expectedContent, string(content),
+		"DDL should download from the highest priority repository (repo-local1). "+
+			"Expected: %s, Got: %s", expectedContent, string(content))
+
+	// Verify it's really from repo-local1 and not from other repos
+	assert.Contains(t, string(content), "REPO_LOCAL1_HIGHEST_PRIORITY",
+		"Downloaded content should contain identifier from highest priority repo (repo-local1)")
+
+	// Test 2: Create another virtual repo with different priority order (repo-local3 first)
+	clientTestUtils.RemoveAllAndAssert(t, tests.Out)
+	virtualRepoName2 := "test-vr-priority2"
+	virtualRepoConfig2 := services.NewGenericVirtualRepositoryParams()
+	virtualRepoConfig2.Key = virtualRepoName2
+	virtualRepoConfig2.PackageType = "generic"
+	// Different order: repo-local3 has highest priority now
+	virtualRepoConfig2.Repositories = []string{"repo-local3", "repo-local1", "repo-local2", "repo-local4"}
+
+	err = servicesManager.CreateVirtualRepository().Generic(virtualRepoConfig2)
+	assert.NoError(t, err, "Failed to create second virtual repository")
+	defer func() {
+		// Clean up the second virtual repo
+		err := servicesManager.DeleteRepository(virtualRepoName2)
+		if err != nil {
+			log.Error("Failed to delete second virtual repository:", err)
+		}
+	}()
+
+	// Download from the second virtual repo using DDL - should get content from repo-local3 now
+	runRt(t, "ddl", virtualRepoName2+"/priority-test/"+testFileName, tests.Out+"/", "--flat=true")
+
+	content2, err := os.ReadFile(downloadedFile)
+	assert.NoError(t, err)
+
+	// This time it should be from repo-local3 since it has highest priority in virtualRepoName2
+	expectedContent2 := repoContents["repo-local3"]
+	assert.Equal(t, expectedContent2, string(content2),
+		"DDL should download from the highest priority repository (repo-local3) in the second virtual repo. "+
+			"Expected: %s, Got: %s", expectedContent2, string(content2))
+
+	cleanArtifactoryTest()
+}
+
+func TestDirectDownloadErrorScenarios(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Test 1: Non-existent repository
+	err := artifactoryCli.Exec([]string{"ddl", "non-existent-repo/file.txt", tests.Out + "/", "--server-id=" + tests.ServerId}...)
+	assert.Error(t, err, "Expected error for non-existent repository")
+
+	// Test 2: Invalid pattern - DDL will try to download literally named file
+	// This is different from DL which would fail on invalid regex
+	// Skip this test on Windows as [ character has special meaning in Windows paths
+	if runtime.GOOS != "windows" {
+		err = artifactoryCli.Exec([]string{"ddl", tests.RtRepo1 + "/[invalid-pattern", tests.Out + "/", "--server-id=" + tests.ServerId}...)
+		// DDL tries to download a file named "[invalid-pattern" which doesn't exist, so it fails
+		assert.Error(t, err, "Expected error for non-existent file pattern")
+	}
+
+	// Test 3: Missing target directory in command - DDL downloads to current directory
+	err = artifactoryCli.Exec([]string{"ddl", tests.RtRepo1 + "/file.txt", "--server-id=" + tests.ServerId}...)
+	// DDL tries to download file.txt which doesn't exist, so it fails
+	assert.Error(t, err, "Expected error for non-existent file")
+
 	cleanArtifactoryTest()
 }
 
@@ -5765,4 +6624,122 @@ func deleteReceivedReleaseBundle(t *testing.T, url, bundleName, bundleVersion st
 	deleteApi := path.Join(url, bundleName, bundleVersion)
 	_, _, err = client.SendDelete(*tests.JfrogUrl+deleteApi, []byte{}, artHttpDetails, "Deleting release bundle")
 	assert.NoError(t, err)
+}
+
+var buildAqlSearchQueryDataProvider = []struct {
+	pattern     string
+	recursive   bool
+	expectedAql string
+}{
+	{"**/a-.*.tar.gz", false, `{"$or":[{"$and":[{"path":{"$match":"**"},"name":{"$match":"a-.*.tar.gz"}}]},{"$and":[{"path":".","name":{"$match":"*a-.*.tar.gz"}}]}]}`},
+}
+
+// TestArtifactorySearchByPattern is an integration test that validates search pattern functionality
+// by creating test repositories, uploading files, and verifying that searches return correct results.
+// This test validates the unit test functionality of CreateAqlBodyForSpecWithPattern.
+func TestArtifactorySearchByPattern(t *testing.T) {
+	initArtifactoryCli()
+	initArtifactoryTest(t, "")
+	defer cleanArtifactoryTest()
+	testRepos := []string{"repo-local", "repo-wildcard", "repo-local2", "repo-local3"}
+	for _, repoName := range testRepos {
+		if !isRepoExist(repoName) {
+			repoConfig := fmt.Sprintf(`{"key":"%s","rclass":"local","packageType":"generic"}`, repoName)
+			execCreateRepoRestFromString(repoConfig, repoName)
+		} else {
+			runRt(t, "delete", repoName+"/*", "--quiet")
+		}
+	}
+	setupTestFilesForSearchPatterns(t)
+	defer cleanupTestFilesForSearchPatterns(t)
+	for _, searchSample := range buildAqlSearchQueryDataProvider {
+		testName := fmt.Sprintf("Pattern_%s_Recursive_%s",
+			strings.ReplaceAll(strings.ReplaceAll(searchSample.pattern, "/", "_"), "*", "star"),
+			strconv.FormatBool(searchSample.recursive))
+		t.Run(testName, func(t *testing.T) {
+			args := []string{"search", searchSample.pattern}
+			if searchSample.recursive {
+				args = append(args, "--recursive")
+			}
+			err := artifactoryCli.Exec(args...)
+			assert.NoError(t, err, "Search command should execute successfully for pattern: %s", searchSample.pattern)
+			validateSearchPatternWithAPI(t, searchSample.pattern, searchSample.recursive)
+		})
+	}
+}
+
+// setupTestFilesForSearchPatterns uploads test files to match the search patterns
+func setupTestFilesForSearchPatterns(t *testing.T) {
+	tmpFile, err := os.CreateTemp("", "test-file-*.txt")
+	assert.NoError(t, err)
+	defer func(name string) {
+		_ = os.Remove(name)
+	}(tmpFile.Name())
+	_, err = tmpFile.WriteString("test content")
+	if err != nil {
+		return
+	}
+	err = tmpFile.Close()
+	if err != nil {
+		return
+	}
+	runRt(t, "upload", tmpFile.Name(), "repo-local/test-file.txt")
+	runRt(t, "upload", tmpFile.Name(), "repo-local/subdir/nested-file.txt")
+	runRt(t, "upload", tmpFile.Name(), "repo-wildcard/test-file.txt")
+	runRt(t, "upload", tmpFile.Name(), "repo-local2/a1b2c3/dd/test-file.txt")
+	runRt(t, "upload", tmpFile.Name(), "repo-local2/a1b2c3/dd/subdir/nested-file.txt")
+	runRt(t, "upload", tmpFile.Name(), "repo-local2/other-path/test-file.txt")
+	runRt(t, "upload", tmpFile.Name(), "repo-local3/a1b2c3/dd/test-file.txt")
+	runRt(t, "upload", tmpFile.Name(), "repo-local/path/to/a-1.2.3.tar.gz")
+	runRt(t, "upload", tmpFile.Name(), "repo-local/a-2.3.4.tar.gz")
+}
+
+// cleanupTestFilesForSearchPatterns removes test files uploaded during the test
+func cleanupTestFilesForSearchPatterns(t *testing.T) {
+	testRepos := []string{"repo-local", "repo-wildcard", "repo-local2", "repo-local3"}
+	for _, repoName := range testRepos {
+		if isRepoExist(repoName) {
+			runRt(t, "delete", repoName+"/*", "--quiet")
+		}
+	}
+}
+
+// execCreateRepoRestFromString creates a repository from a JSON string
+func execCreateRepoRestFromString(repoConfig, repoName string) {
+	rtutils.AddHeader("Content-Type", "application/json", &artHttpDetails.Headers)
+	client, err := httpclient.ClientBuilder().Build()
+	if err != nil {
+		log.Error(err)
+		os.Exit(1)
+	}
+	resp, body, err := client.SendPut(serverDetails.ArtifactoryUrl+"api/repositories/"+repoName, []byte(repoConfig), artHttpDetails, "")
+	if err != nil {
+		log.Error(err)
+		os.Exit(1)
+	}
+	if err = errorutils.CheckResponseStatusWithBody(resp, body, http.StatusOK, http.StatusCreated); err != nil {
+		log.Error(err)
+		os.Exit(1)
+	}
+	log.Info("Repository", repoName, "created.")
+}
+
+// validateSearchPatternWithAPI validates the search pattern using the search API directly
+func validateSearchPatternWithAPI(t *testing.T, pattern string, recursive bool) {
+	searchSpec := spec.NewBuilder().Pattern(pattern).Recursive(recursive).BuildSpec()
+	searchCmd := generic.NewSearchCommand()
+	searchCmd.SetServerDetails(serverDetails).SetSpec(searchSpec)
+	reader, err := searchCmd.Search()
+	assert.NoError(t, err, "Search API should work for pattern: %s", pattern)
+	var resultItems []utils.SearchResult
+	readerNoDate, err := utils.SearchResultNoDate(reader)
+	assert.NoError(t, err)
+	for resultItem := new(utils.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
+		resultItems = append(resultItems, *resultItem)
+	}
+	if strings.HasPrefix(pattern, "repo-local") && !strings.Contains(pattern, "*repo-local") {
+		assert.True(t, len(resultItems) > 0, "Pattern %s should return results", pattern)
+	}
+	readerGetErrorAndAssert(t, readerNoDate)
+	readerCloseAndAssert(t, readerNoDate)
 }
