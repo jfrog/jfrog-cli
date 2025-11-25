@@ -974,8 +974,13 @@ func loginCmd(c *cli.Context) error {
 }
 
 func dockerScanCmd(c *cli.Context, imageTag string) error {
-	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "dockerscan"); show || err != nil {
+	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), securityCLI.DockerScanCmdHiddenName); show || err != nil {
 		return err
+	}
+	if imageTag == "" {
+		return commonCliUtils.PrintHelpAndReturnError("a docker image name must be provided", func() error {
+			return cli.ShowCommandHelp(c, securityCLI.DockerScanCmdHiddenName)
+		})
 	}
 	convertedCtx, err := components.ConvertContext(c, securityDocs.GetCommandFlags(securityDocs.DockerScan)...)
 	if err != nil {
