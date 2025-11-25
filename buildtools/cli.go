@@ -393,23 +393,15 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:      "docker",
-			Flags:     cliutils.GetCommandFlags(cliutils.Docker),
-			Usage:     docker.GetDescription(),
-			HelpName:  corecommon.CreateUsage("docker", docker.GetDescription(), docker.Usage),
-			UsageText: docker.GetArguments(),
-			SkipFlagParsing: func() bool {
-				for i, arg := range os.Args {
-					// 'docker scan' isn't a docker client command. We won't skip its flags.
-					if arg == "docker" && len(os.Args) > i+1 && os.Args[i+1] == "scan" {
-						return false
-					}
-				}
-				return true
-			}(),
-			BashComplete: corecommon.CreateBashCompletionFunc("login", "push", "pull", "scan"),
-			Category:     buildToolsCategory,
-			Action:       dockerCmd,
+			Name:            "docker",
+			Flags:           cliutils.GetCommandFlags(cliutils.Docker),
+			Usage:           docker.GetDescription(),
+			HelpName:        corecommon.CreateUsage("docker", docker.GetDescription(), docker.Usage),
+			UsageText:       docker.GetArguments(),
+			SkipFlagParsing: skipFlagParsingForDockerCmd(),
+			BashComplete:    corecommon.CreateBashCompletionFunc("login", "push", "pull", "scan"),
+			Category:        buildToolsCategory,
+			Action:          dockerCmd,
 		},
 		{
 			Name:         "terraform-config",
@@ -451,6 +443,24 @@ func GetCommands() []cli.Command {
 		},
 	})
 	return decorateWithFlagCapture(cmds)
+}
+
+func skipFlagParsingForDockerCmd() bool {
+	isDockerScan := false
+	hasHelpFlag := false
+	for i, arg := range os.Args {
+		if arg == "docker" && len(os.Args) > i+1 && os.Args[i+1] == "scan" {
+			isDockerScan = true
+		}
+		if arg == "--help" || arg == "-h" {
+			hasHelpFlag = true
+		}
+	}
+	// 'docker scan' isn't a docker client command. We won't skip its flags.
+	if isDockerScan {
+		return hasHelpFlag
+	}
+	return true
 }
 
 // decorateWithFlagCapture injects a Before hook into every command returned from this package,
@@ -964,6 +974,9 @@ func loginCmd(c *cli.Context) error {
 }
 
 func dockerScanCmd(c *cli.Context, imageTag string) error {
+	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), securityCLI.DockerScanCmdHiddenName); show || err != nil {
+		return err
+	}
 	convertedCtx, err := components.ConvertContext(c, securityDocs.GetCommandFlags(securityDocs.DockerScan)...)
 	if err != nil {
 		return err
