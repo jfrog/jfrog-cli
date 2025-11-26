@@ -77,6 +77,7 @@ const (
 	PoetryConfig           = "poetry-config"
 	Poetry                 = "poetry"
 	RubyConfig             = "ruby-config"
+	Conan                  = "conan"
 	Ping                   = "ping"
 	RtCurl                 = "rt-curl"
 	TemplateConsumer       = "template-consumer"
@@ -1966,6 +1967,9 @@ var commandFlags = map[string][]string{
 	},
 	RubyConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
+	},
+	Conan: {
+		BuildName, BuildNumber, module, Project,
 	},
 	Stats: {
 		xrOutput, accessToken, serverId,

@@ -42,6 +42,7 @@ import (
 	terraformdocs "github.com/jfrog/jfrog-cli/docs/artifactory/terraform"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/terraformconfig"
 	twinedocs "github.com/jfrog/jfrog-cli/docs/artifactory/twine"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/conan"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/docker"
 	dotnetdocs "github.com/jfrog/jfrog-cli/docs/buildtools/dotnet"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/dotnetconfig"
@@ -335,6 +336,18 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
 			Action:          PoetryCmd,
+		},
+		{
+			Name:            "conan",
+			Flags:           cliutils.GetCommandFlags(cliutils.Conan),
+			Usage:           conan.GetDescription(),
+			HelpName:        corecommon.CreateUsage("conan", conan.GetDescription(), conan.Usage),
+			UsageText:       conan.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Category:        buildToolsCategory,
+			Action:          ConanCmd,
 		},
 		{
 			Name:         "ruby-config",
@@ -1216,6 +1229,29 @@ func PipenvCmd(c *cli.Context) error {
 
 func PoetryCmd(c *cli.Context) error {
 	return pythonCmd(c, project.Poetry)
+}
+
+func ConanCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+	if c.NArg() < 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	args := cliutils.ExtractCommand(c)
+	cmdName, conanArgs := getCommandName(args)
+
+	// Execute native conan command directly
+	log.Info(fmt.Sprintf("Running Conan %s.", cmdName))
+	conanCmd := exec.Command("conan", append([]string{cmdName}, conanArgs...)...)
+	conanCmd.Stdout = os.Stdout
+	conanCmd.Stderr = os.Stderr
+	if err := conanCmd.Run(); err != nil {
+		return fmt.Errorf("conan %s failed: %w", cmdName, err)
+	}
+
+	return nil
 }
 
 func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
