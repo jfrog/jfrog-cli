@@ -19,7 +19,7 @@ help:
 	@echo "  build                    - Build the project"
 
 # Update all JFrog dependencies
-update-all: update-build-info-go update-client-go update-gofrog update-core update-artifactory update-platform-services update-security update-apptrust
+update-all: update-build-info-go update-client-go update-gofrog update-core update-artifactory update-platform-services update-security update-apptrust update-evidence
 	@echo "All JFrog dependencies updated successfully!"
 	@GOPROXY=direct go mod tidy
 
@@ -70,6 +70,12 @@ update-apptrust:
 	@echo "Updating jfrog-cli-application to latest main branch..."
 	@GOPROXY=direct go get github.com/jfrog/jfrog-cli-application@main
 	@echo "jfrog-cli-application updated successfully!"
+
+# Update jfrog-cli-evidence to latest main branch
+update-evidence:
+	@echo "Updating jfrog-cli-evidence to latest main branch..."
+	@GOPROXY=direct go get github.com/jfrog/jfrog-cli-evidence@main
+	@echo "jfrog-cli-evidence updated successfully!"
 
 
 # Clean build artifacts
