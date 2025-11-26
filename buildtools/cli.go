@@ -348,6 +348,7 @@ func GetCommands() []cli.Command {
 			UsageText:       conan.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
+			Hidden:          true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
 			Action:          ConanCmd,
