@@ -1455,6 +1455,29 @@ func ConanCmd(c *cli.Context) error {
 	return nil
 }
 
+func ConanCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+	if c.NArg() < 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	args := cliutils.ExtractCommand(c)
+	cmdName, conanArgs := getCommandName(args)
+
+	// Execute native conan command directly
+	log.Info(fmt.Sprintf("Running Conan %s.", cmdName))
+	conanCmd := exec.Command("conan", append([]string{cmdName}, conanArgs...)...)
+	conanCmd.Stdout = os.Stdout
+	conanCmd.Stderr = os.Stderr
+	if err := conanCmd.Run(); err != nil {
+		return fmt.Errorf("conan %s failed: %w", cmdName, err)
+	}
+
+	return nil
+}
+
 func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
