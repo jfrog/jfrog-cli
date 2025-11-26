@@ -14,13 +14,11 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-security/utils/techutils"
-	"github.com/jfrog/jfrog-cli/docs/buildtools/helmcommand"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/rubyconfig"
 	setupdocs "github.com/jfrog/jfrog-cli/docs/buildtools/setup"
 
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/container"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/dotnet"
-	helmflexpack "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/flexpack"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/golang"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/gradle"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/mvn"
@@ -44,6 +42,7 @@ import (
 	terraformdocs "github.com/jfrog/jfrog-cli/docs/artifactory/terraform"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/terraformconfig"
 	twinedocs "github.com/jfrog/jfrog-cli/docs/artifactory/twine"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/conan"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/docker"
 	dotnetdocs "github.com/jfrog/jfrog-cli/docs/buildtools/dotnet"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/dotnetconfig"
@@ -339,16 +338,16 @@ func GetCommands() []cli.Command {
 			Action:          PoetryCmd,
 		},
 		{
-			Name:            "helm",
-			Flags:           cliutils.GetCommandFlags(cliutils.Helm),
-			Usage:           helmcommand.GetDescription(),
-			HelpName:        corecommon.CreateUsage("helm", helmcommand.GetDescription(), helmcommand.Usage),
-			UsageText:       helmcommand.GetArguments(),
+			Name:            "conan",
+			Flags:           cliutils.GetCommandFlags(cliutils.Conan),
+			Usage:           conan.GetDescription(),
+			HelpName:        corecommon.CreateUsage("conan", conan.GetDescription(), conan.Usage),
+			UsageText:       conan.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action:          HelmCmd,
+			Action:          ConanCmd,
 		},
 		{
 			Name:         "ruby-config",
@@ -1232,7 +1231,7 @@ func PoetryCmd(c *cli.Context) error {
 	return pythonCmd(c, project.Poetry)
 }
 
-func HelmCmd(c *cli.Context) error {
+func ConanCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
@@ -1241,185 +1240,18 @@ func HelmCmd(c *cli.Context) error {
 	}
 
 	args := cliutils.ExtractCommand(c)
-	cmdName, helmArgs := getCommandName(args)
+	cmdName, conanArgs := getCommandName(args)
 
-	// Extract build configuration and filter out build flags (--build-name, --build-number, etc.)
-	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(helmArgs)
-	if err != nil {
-		return err
+	// Execute native conan command directly
+	log.Info(fmt.Sprintf("Running Conan %s.", cmdName))
+	conanCmd := exec.Command("conan", append([]string{cmdName}, conanArgs...)...)
+	conanCmd.Stdout = os.Stdout
+	conanCmd.Stderr = os.Stderr
+	if err := conanCmd.Run(); err != nil {
+		return fmt.Errorf("conan %s failed: %w", cmdName, err)
 	}
 
-	// Extract --repository-cache flag before filtering (needed for build info collection)
-	repositoryCachePath := extractRepositoryCacheFromArgs(helmArgs)
-
-	// Extract server-id and other JFrog flags and filter them out
-	filteredArgs, _, _, err = extractHelmOptionsFromArgs(filteredArgs)
-	if err != nil {
-		return err
-	}
-
-	// Execute native helm command with filtered arguments (no JFrog flags)
-	log.Info(fmt.Sprintf("Running Helm %s.", cmdName))
-	helmCmd := exec.Command("helm", append([]string{cmdName}, filteredArgs...)...)
-	helmCmd.Stdout = os.Stdout
-	helmCmd.Stderr = os.Stderr
-	if err := helmCmd.Run(); err != nil {
-		return fmt.Errorf("helm %s failed: %w", cmdName, err)
-	}
-
-	// Set or unset HELM_REPOSITORY_CACHE environment variable based on --repository-cache flag
-	originalCache := os.Getenv("HELM_REPOSITORY_CACHE")
-	if repositoryCachePath != "" {
-		err := os.Setenv("HELM_REPOSITORY_CACHE", repositoryCachePath)
-		if err != nil {
-			return err
-		}
-	} else {
-		err := os.Unsetenv("HELM_REPOSITORY_CACHE")
-		if err != nil {
-			return err
-		}
-	}
-	defer func() {
-		// Restore original value after build info collection
-		if originalCache != "" {
-			err := os.Setenv("HELM_REPOSITORY_CACHE", originalCache)
-			if err != nil {
-				return
-			}
-		} else {
-			err := os.Unsetenv("HELM_REPOSITORY_CACHE")
-			if err != nil {
-				return
-			}
-		}
-	}()
-	if err := collectHelmBuildInfo(buildConfiguration); err != nil {
-		log.Warn("Failed to collect Helm build info: " + err.Error())
-	}
 	return nil
-}
-
-// collectHelmBuildInfo collects Helm build info if build configuration is provided and valid
-func collectHelmBuildInfo(buildConfiguration *build.BuildConfiguration) error {
-	if buildConfiguration == nil {
-		return nil
-	}
-
-	isCollectedBuildInfo, err := buildConfiguration.IsCollectBuildInfo()
-	if err != nil || !isCollectedBuildInfo {
-		return nil
-	}
-
-	buildName, err := buildConfiguration.GetBuildName()
-	if err != nil || buildName == "" {
-		return nil
-	}
-
-	buildNumber, err := buildConfiguration.GetBuildNumber()
-	if err != nil || buildNumber == "" {
-		return nil
-	}
-
-	workingDir, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("failed to get working directory: %w", err)
-	}
-
-	// Use FlexPack to collect Helm build info directly
-	err = helmflexpack.CollectHelmBuildInfoWithFlexPack(
-		workingDir,
-		buildName,
-		buildNumber,
-		buildConfiguration,
-	)
-	if err != nil {
-		return fmt.Errorf("failed to collect Helm build info: %w", err)
-	}
-
-	log.Info(fmt.Sprintf("Helm build info collected. Use 'jf rt bp %s %s' to publish it to Artifactory.", buildName, buildNumber))
-	return nil
-}
-
-// extractHelmOptionsFromArgs extracts Helm-specific options from command arguments
-func extractHelmOptionsFromArgs(args []string) (cleanArgs []string, serverDetails *coreConfig.ServerDetails, skipLogin bool, err error) {
-	cleanArgs = append([]string(nil), args...)
-	var serverId string
-	cleanArgs, serverId, err = coreutils.ExtractServerIdFromCommand(cleanArgs)
-	if err != nil {
-		return
-	}
-
-	// Get server details if server-id is provided
-	if serverId != "" {
-		serverDetails, err = coreConfig.GetSpecificConfig(serverId, true, true)
-		if err != nil {
-			return
-		}
-	}
-
-	// Extract skip-login flag
-	cleanArgs, skipLogin, err = coreutils.ExtractSkipLoginFromArgs(cleanArgs)
-	if err != nil {
-		return
-	}
-
-	jfrogStringFlags := []string{
-		"user",
-		"url",
-		"access-token",
-		"ssh-key-path",
-		"ssh-passphrase",
-		"client-cert-path",
-		"client-cert-key-path",
-		"platform-url",
-		"project",
-	}
-
-	jfrogBoolFlags := []string{
-		"password-stdin",
-		"access-token-stdin",
-	}
-
-	// Extract string flags
-	for _, flagName := range jfrogStringFlags {
-		cleanArgs, _, err = coreutils.ExtractStringOptionFromArgs(cleanArgs, flagName)
-		if err != nil {
-			return
-		}
-	}
-
-	// Extract boolean flags
-	for _, flagName := range jfrogBoolFlags {
-		cleanArgs, _, err = coreutils.ExtractBoolFlagFromArgs(cleanArgs, flagName)
-		if err != nil {
-			return
-		}
-	}
-
-	// Extract insecure-tls flag
-	cleanArgs, _, err = coreutils.ExtractInsecureTlsFromArgs(cleanArgs)
-	if err != nil {
-		return
-	}
-
-	return
-}
-
-// extractRepositoryCacheFromArgs extracts the --repository-cache flag value from Helm command arguments
-// Returns the cache path if found, empty string otherwise
-func extractRepositoryCacheFromArgs(args []string) string {
-	for i, arg := range args {
-		// Check for --repository-cache=value format
-		if strings.HasPrefix(arg, "--repository-cache=") {
-			return strings.TrimPrefix(arg, "--repository-cache=")
-		}
-		// Check for --repository-cache value format
-		if arg == "--repository-cache" && i+1 < len(args) {
-			return args[i+1]
-		}
-	}
-	return ""
 }
 
 func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
