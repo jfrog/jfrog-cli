@@ -631,6 +631,24 @@ func GradleCmd(c *cli.Context) (err error) {
 		return err
 	}
 
+	// do we need to restrict it for the artifactoryPublish command?
+	// FlexPack native mode for Gradle (bypasses config file requirements)
+	if os.Getenv("JFROG_RUN_NATIVE") == "true" {
+		log.Debug("Routing to Gradle FlexPack implementation")
+		if c.NArg() < 1 {
+			return cliutils.WrongNumberOfArgumentsHandler(c)
+		}
+		args := cliutils.ExtractCommand(c)
+		filteredGradleArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
+		if err != nil {
+			return err
+		}
+
+		// Create Gradle command with FlexPack (no config file needed)
+		gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(filteredGradleArgs).SetConfigPath("")
+		return commands.Exec(gradleCmd)
+	}
+
 	configFilePath, err := getProjectConfigPathOrThrow(project.Gradle, "gradle", "gradle-config")
 	if err != nil {
 		return err
