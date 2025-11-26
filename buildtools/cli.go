@@ -1446,17 +1446,17 @@ func collectHelmBuildInfo(buildConfiguration *build.BuildConfiguration) error {
 
 	isCollectedBuildInfo, err := buildConfiguration.IsCollectBuildInfo()
 	if err != nil || !isCollectedBuildInfo {
-		return nil
+		return err
 	}
 
 	buildName, err := buildConfiguration.GetBuildName()
 	if err != nil || buildName == "" {
-		return nil
+		return err
 	}
 
 	buildNumber, err := buildConfiguration.GetBuildNumber()
 	if err != nil || buildNumber == "" {
-		return nil
+		return err
 	}
 
 	workingDir, err := os.Getwd()
