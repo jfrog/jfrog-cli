@@ -183,7 +183,7 @@ func TestHelmPushWithBuildInfo(t *testing.T) {
 	require.True(t, found, "build info should be found")
 
 	// Validate build info structure
-	validateHelmBuildInfo(t, publishedBuildInfo.BuildInfo, buildName, buildNumber, true, false)
+	validateHelmBuildInfo(t, publishedBuildInfo.BuildInfo, buildName, true, false)
 }
 
 // TestHelmPackageWithBuildInfo tests helm package command with build info collection
@@ -243,7 +243,7 @@ func TestHelmPackageWithBuildInfo(t *testing.T) {
 	require.True(t, found, "build info should be found")
 
 	// Validate build info structure - package should include dependencies
-	validateHelmBuildInfo(t, publishedBuildInfo.BuildInfo, buildName, buildNumber, true, true)
+	validateHelmBuildInfo(t, publishedBuildInfo.BuildInfo, buildName, true, true)
 }
 
 // TestHelmDependencyUpdateWithBuildInfo tests helm dependency update command with build info
@@ -297,7 +297,7 @@ func TestHelmDependencyUpdateWithBuildInfo(t *testing.T) {
 	require.True(t, found, "build info should be found")
 
 	// Validate build info structure - dependency update should include dependencies
-	validateHelmBuildInfo(t, publishedBuildInfo.BuildInfo, buildName, buildNumber, false, true)
+	validateHelmBuildInfo(t, publishedBuildInfo.BuildInfo, buildName, false, true)
 }
 
 // TestHelmInstallWithBuildInfo tests helm install command with build info collection
@@ -352,7 +352,7 @@ func TestHelmInstallWithBuildInfo(t *testing.T) {
 	require.True(t, found, "build info should be found")
 
 	// Validate build info structure - install should include dependencies
-	validateHelmBuildInfo(t, publishedBuildInfo.BuildInfo, buildName, buildNumber, false, true)
+	validateHelmBuildInfo(t, publishedBuildInfo.BuildInfo, buildName, false, true)
 }
 
 // TestHelmTemplateWithBuildInfo tests helm template command with build info collection
@@ -406,7 +406,7 @@ func TestHelmTemplateWithBuildInfo(t *testing.T) {
 	require.True(t, found, "build info should be found")
 
 	// Validate build info structure
-	validateHelmBuildInfo(t, publishedBuildInfo.BuildInfo, buildName, buildNumber, false, true)
+	validateHelmBuildInfo(t, publishedBuildInfo.BuildInfo, buildName, false, true)
 }
 
 // loginHelmRegistry logs into the Helm OCI registry using credentials from serverDetails
@@ -550,9 +550,9 @@ func createTestHelmChartWithDependencies(t *testing.T, name, version string) str
 }
 
 // Helper function to validate Helm build info structure
-func validateHelmBuildInfo(t *testing.T, buildInfo buildinfo.BuildInfo, buildName, buildNumber string, expectArtifacts, expectDependencies bool) {
+func validateHelmBuildInfo(t *testing.T, buildInfo buildinfo.BuildInfo, buildName string, expectArtifacts, expectDependencies bool) {
 	assert.Equal(t, buildName, buildInfo.Name, "Build name should match")
-	assert.Equal(t, buildNumber, buildInfo.Number, "Build number should match")
+	assert.Equal(t, "1", buildInfo.Number, "Build number should match")
 	assert.NotNil(t, buildInfo.Agent, "Build info should have agent")
 	assert.NotNil(t, buildInfo.BuildAgent, "Build info should have build agent")
 	assert.NotEmpty(t, buildInfo.Started, "Build info should have start time")
