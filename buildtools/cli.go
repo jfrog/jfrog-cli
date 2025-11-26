@@ -1235,7 +1235,7 @@ func ConanCmd(c *cli.Context) error {
 	conanCmd.Stdout = os.Stdout
 	conanCmd.Stderr = os.Stderr
 	if err := conanCmd.Run(); err != nil {
-		return fmt.Errorf("conanArgs %s failed: %w", cmdName, err)
+		return fmt.Errorf("conan %s failed: %w", cmdName, err)
 	}
 
 	return nil
