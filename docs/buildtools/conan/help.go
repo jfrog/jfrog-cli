@@ -12,6 +12,5 @@ func GetArguments() string {
 		
 		Examples:
 		- jf conan install . --build=missing
-		- jf conan create . --name=hello --version=1.0
-		- jf conan art:build-info create create.json my_build 1 develop --server=myartifactory`
+		- jf conan create . --name=hello --version=1.0`
 }
