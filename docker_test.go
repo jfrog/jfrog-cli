@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	tests2 "github.com/jfrog/jfrog-cli-artifactory/utils/tests"
 	"os"
 	"os/exec"
 	"path"
@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"testing"
 	"time"
+
+	tests2 "github.com/jfrog/jfrog-cli-artifactory/utils/tests"
 
 	"github.com/docker/docker/api/types/mount"
 
@@ -601,17 +603,23 @@ func TestNativeDockerFlagParsing(t *testing.T) {
 	defer cleanup()
 
 	dockerTestCases := []struct {
-		name string
-		args []string
+		name        string
+		args        []string
+		expectedErr error
 	}{
-		{"docker", []string{"docker"}},
-		{"docker version", []string{"docker", "version"}},
-		{"docker scan", []string{"docker", "scan"}},
-		{"cli flags after args", []string{"docker", "version", "--build-name=d", "--build-number=1", "--module=1"}},
-		{"cli flags before args", []string{"docker", "--build-name=d", "--build-number=1", "--module=1", "version"}},
+		{"docker", []string{"docker"}, nil},
+		{"docker version", []string{"docker", "version"}, nil},
+		{"docker scan", []string{"docker", "scan", "--min-severity=low"}, errors.New("a docker image name must be provided")},
+		{"cli flags after args", []string{"docker", "version", "--build-name=d", "--build-number=1", "--module=1"}, nil},
+		{"cli flags before args", []string{"docker", "--build-name=d", "--build-number=1", "--module=1", "version"}, nil},
 	}
 	for _, testCase := range dockerTestCases {
 		t.Run(testCase.name, func(t *testing.T) {
+			if testCase.expectedErr != nil {
+				err := runJfrogCliWithoutAssertion(testCase.args...)
+				assert.EqualError(t, err, testCase.expectedErr.Error())
+				return
+			}
 			runCmdWithRetries(t, jfCliTask(testCase.args...))
 		})
 	}

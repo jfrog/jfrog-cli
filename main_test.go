@@ -398,6 +398,14 @@ func TestSurvey_NotDisplayedOnNonHelp(t *testing.T) {
 	assert.NotContains(t, string(contentErr), "https://")
 }
 
+func TestDockerScanHelp(t *testing.T) {
+	t.Setenv("CI", "false")
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+	content, _, err := tests.GetCmdOutput(t, jfrogCli, "docker", "scan", "--help")
+	require.NoError(t, err)
+	assert.Contains(t, string(content), "jfrog docker scan - Scan local docker image using the docker client and Xray.")
+}
+
 func TestSurvey_DisplayedOnHelp(t *testing.T) {
 	t.Setenv("CI", "false")
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
