@@ -345,6 +345,7 @@ func GetCommands() []cli.Command {
 			UsageText:       helmcommand.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
+			Hidden:          true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
 			Action:          HelmCmd,
