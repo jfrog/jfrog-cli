@@ -23,6 +23,12 @@ func DispatchIfAlias() error {
 	log.Debug(fmt.Sprintf("Detected running as alias: %s", tool))
 
 	// CRITICAL: Remove alias directory from PATH to prevent recursion
+	// When jf mvn internally needs to execute the real mvn command, it will use
+	// exec.LookPath("mvn") or exec.Command("mvn", ...). These functions use the
+	// current process's PATH environment variable. By filtering out the alias
+	// directory from PATH here (in the same process), we ensure that subsequent
+	// lookups will find the real mvn binary, not our alias, preventing infinite
+	// recursion: mvn → jf mvn → mvn → jf mvn → ...
 	if err := DisableAliasesForThisProcess(); err != nil {
 		log.Warn(fmt.Sprintf("Failed to filter PATH: %v", err))
 	}
@@ -102,10 +108,21 @@ func getToolMode(tool string) AliasMode {
 
 // runJFMode runs the tool through JFrog CLI integration
 func runJFMode(tool string, args []string) error {
-	// Simply adjust os.Args to look like "jf <tool> <args>"
-	// and return to continue normal jf execution
-	newArgs := []string{"jf", tool}
-	newArgs = append(newArgs, args...)
+	// Transform os.Args to look like "jf <tool> <args>"
+	// Use os.Executable() to get the actual executable path (handles symlinks)
+	// Original: ["mvn", "clean", "install"] or ["/path/to/mvn", "clean", "install"]
+	// Result:   ["/path/to/jf", "mvn", "clean", "install"]
+	execPath, err := os.Executable()
+	if err != nil {
+		// Fallback to os.Args[0] if Executable() fails
+		execPath = os.Args[0]
+	}
+
+	newArgs := make([]string, 0, len(os.Args)+1)
+	newArgs = append(newArgs, execPath) // Use actual executable path
+	newArgs = append(newArgs, tool)     // Add tool name as first argument
+	newArgs = append(newArgs, args...)  // Add remaining arguments
+
 	os.Args = newArgs
 
 	log.Debug(fmt.Sprintf("Running in JF mode: %v", os.Args))

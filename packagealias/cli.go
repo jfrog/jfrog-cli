@@ -61,6 +61,24 @@ func GetCommands() []cli.Command {
 			Action:       statusCmd,
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 		},
+		{
+			Name:         "exclude",
+			Usage:        "Exclude a tool from Ghost Frog interception (run natively)",
+			HelpName:     corecommon.CreateUsage("package-alias exclude <tool>", "Exclude a tool from Ghost Frog interception", []string{"tool"}),
+			ArgsUsage:    "<tool>",
+			Category:     packageAliasCategory,
+			Action:       excludeCmd,
+			BashComplete: corecommon.CreateBashCompletionFunc(SupportedTools...),
+		},
+		{
+			Name:         "include",
+			Usage:        "Include a tool in Ghost Frog interception (run via JFrog CLI)",
+			HelpName:     corecommon.CreateUsage("package-alias include <tool>", "Include a tool in Ghost Frog interception", []string{"tool"}),
+			ArgsUsage:    "<tool>",
+			Category:     packageAliasCategory,
+			Action:       includeCmd,
+			BashComplete: corecommon.CreateBashCompletionFunc(SupportedTools...),
+		},
 	})
 }
 
@@ -87,4 +105,22 @@ func disableCmd(c *cli.Context) error {
 func statusCmd(c *cli.Context) error {
 	statusCmd := NewStatusCommand()
 	return commands.Exec(statusCmd)
+}
+
+func excludeCmd(c *cli.Context) error {
+	if c.NArg() < 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+	tool := c.Args().Get(0)
+	excludeCmd := NewExcludeCommand(tool)
+	return commands.Exec(excludeCmd)
+}
+
+func includeCmd(c *cli.Context) error {
+	if c.NArg() < 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+	tool := c.Args().Get(0)
+	includeCmd := NewIncludeCommand(tool)
+	return commands.Exec(includeCmd)
 }

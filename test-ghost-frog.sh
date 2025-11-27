@@ -112,3 +112,4 @@ echo "3. All package manager commands will be intercepted!"
 echo ""
 echo "To use in CI/CD, see the GitHub Action examples in:"
 echo "  .github/workflows/ghost-frog-*.yml"
+

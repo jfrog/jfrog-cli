@@ -125,3 +125,4 @@ jobs:
           echo "  pip install -r requirements.txt"
           echo ""
           echo "Ghost Frog handles the interception transparently! 👻"
+
