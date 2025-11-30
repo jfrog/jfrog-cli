@@ -10,6 +10,7 @@ replace (
 )
 
 require (
+	github.com/BurntSushi/toml v1.5.0
 	github.com/agnivade/levenshtein v1.2.1
 	github.com/buger/jsonparser v1.1.1
 	github.com/docker/docker v28.2.2+incompatible
@@ -26,6 +27,7 @@ require (
 	github.com/jfrog/jfrog-client-go v1.55.1-0.20251119183924-d765eb708cec
 	github.com/jszwec/csvutil v1.10.0
 	github.com/manifoldco/promptui v0.9.0
+	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.35.0
 	github.com/urfave/cli v1.22.17
@@ -48,7 +50,6 @@ require (
 	dario.cat/mergo v1.0.2 // indirect
 	github.com/AdaLogics/go-fuzz-headers v0.0.0-20240806141605-e8a1dd7889d6 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
-	github.com/BurntSushi/toml v1.5.0 // indirect
 	github.com/CycloneDX/cyclonedx-go v0.9.3 // indirect
 	github.com/GoogleCloudPlatform/grpc-gcp-go/grpcgcp v1.5.2 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.27.0 // indirect
@@ -211,7 +212,6 @@ require (
 	github.com/spf13/cast v1.10.0 // indirect
 	github.com/spf13/cobra v1.10.1 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
-	github.com/spf13/viper v1.21.0 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.5.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
@@ -283,3 +283,6 @@ replace github.com/docker/docker => github.com/docker/docker v27.5.1+incompatibl
 //replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.54.2-0.20251007084958-5eeaa42c31a6
 
 // replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security dev
+replace github.com/jfrog/jfrog-cli-artifactory => github.com/agrasth/jfrog-cli-artifactory v0.2.2-0.20251130203331-bc8ad308ec7c
+
+replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.12.5-0.20251130202703-a9722c92bc52

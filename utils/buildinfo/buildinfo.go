@@ -2,7 +2,9 @@ package buildinfo
 
 import (
 	"fmt"
+	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -19,6 +21,7 @@ import (
 	specutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/content"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/spf13/viper"
 )
 
 const (
@@ -39,7 +42,7 @@ func GetBuildInfoForPackageManager(pkgManager, workingDir string, buildConfigura
 
 	switch pkgManager {
 	case "poetry":
-		return GetPoetryBuildInfo(workingDir, buildConfiguration)
+		return GetPoetryBuildInfo(workingDir, buildConfiguration, "") // Empty deployer repo - will use from pyproject.toml
 	case "mvn", "maven":
 		// Maven FlexPack is handled directly in jfrog-cli-artifactory Maven command
 		return GetBuildInfoForUploadedArtifacts("", buildConfiguration)
@@ -57,8 +60,9 @@ func GetBuildInfoForPackageManager(pkgManager, workingDir string, buildConfigura
 }
 
 // GetPoetryBuildInfo collects build info for Poetry projects
-func GetPoetryBuildInfo(workingDir string, buildConfiguration *buildUtils.BuildConfiguration) error {
+func GetPoetryBuildInfo(workingDir string, buildConfiguration *buildUtils.BuildConfiguration, deployerRepo string) error {
 	log.Debug("Collecting Poetry build info from directory: " + workingDir)
+	log.Debug("Deployer repository: " + deployerRepo)
 
 	buildName, err := buildConfiguration.GetBuildName()
 	if err != nil {
@@ -89,10 +93,17 @@ func GetPoetryBuildInfo(workingDir string, buildConfiguration *buildUtils.BuildC
 		return fmt.Errorf("ServerDetails extraction failed: %w", err)
 	}
 
-	err = collectPoetryBuildInfo(workingDir, buildName, buildNumber, serverDetails, repoConfig.TargetRepo(), buildConfiguration)
+	// Use deployerRepo if provided, otherwise use resolver repo from config
+	artifactRepo := deployerRepo
+	if artifactRepo == "" {
+		artifactRepo = repoConfig.TargetRepo()
+	}
+	log.Info(fmt.Sprintf("Using repository for artifacts: %s", artifactRepo))
+
+	err = collectPoetryBuildInfo(workingDir, buildName, buildNumber, serverDetails, repoConfig.TargetRepo(), artifactRepo, buildConfiguration)
 	if err != nil {
 		log.Warn("Enhanced Poetry collection failed, falling back to standard method: " + err.Error())
-		err = saveBuildInfo(serverDetails, repoConfig.TargetRepo(), "", buildConfiguration)
+		err = saveBuildInfo(serverDetails, artifactRepo, "", buildConfiguration)
 		if err != nil {
 			log.Error("Failed to save Poetry build info: ", err)
 			return fmt.Errorf("saveBuildInfo failed: %w", err)
@@ -289,6 +300,13 @@ func extractRepositoryConfig() (*project.RepositoryConfig, error) {
 // extractRepositoryConfigForProject extracts repository configuration for a specific project type
 func extractRepositoryConfigForProject(projectType project.ProjectType) (*project.RepositoryConfig, error) {
 	log.Debug("Extracting repository config for project type")
+
+	// In native mode, completely ignore YAML and infer from pyproject.toml
+	if os.Getenv("JFROG_RUN_NATIVE") == "true" {
+		log.Info("Native mode enabled: inferring Poetry config from pyproject.toml")
+		return inferPoetryConfigFromToml(projectType)
+	}
+
 	prefix := project.ProjectConfigDeployerPrefix
 
 	// Handle invalid project types gracefully
@@ -298,8 +316,8 @@ func extractRepositoryConfigForProject(projectType project.ProjectType) (*projec
 
 	configFilePath, exists, err := project.GetProjectConfFilePath(projectType)
 	if !exists {
-		log.Warn("Project configuration file not found")
-		return nil, fmt.Errorf("project configuration file not found")
+		log.Warn("Project configuration file not found, attempting to infer from pyproject.toml...")
+		return inferPoetryConfigFromToml(projectType) // Fallback to TOML
 	}
 	if err != nil {
 		log.Error("Failed to get project config file path: ", err)
@@ -340,7 +358,7 @@ func CreateAqlQueryForSearch(repo, file string) string {
 }
 
 // collectPoetryBuildInfo collects Poetry dependencies and artifacts for build info
-func collectPoetryBuildInfo(workingDir, buildName, buildNumber string, serverDetails *config.ServerDetails, targetRepo string, buildConfiguration *buildUtils.BuildConfiguration) error {
+func collectPoetryBuildInfo(workingDir, buildName, buildNumber string, serverDetails *config.ServerDetails, _ string, artifactRepo string, buildConfiguration *buildUtils.BuildConfiguration) error {
 	log.Debug("Initializing Poetry dependency collection...")
 
 	// Create Poetry configuration
@@ -369,14 +387,14 @@ func collectPoetryBuildInfo(workingDir, buildName, buildNumber string, serverDet
 	}
 
 	// Collect artifacts and add them to the build info with proper repository paths
-	err = addArtifactsToBuildInfo(buildInfo, serverDetails, targetRepo, workingDir)
+	err = addArtifactsToBuildInfo(buildInfo, serverDetails, artifactRepo, workingDir)
 	if err != nil {
 		log.Warn("Failed to add artifacts to build info: " + err.Error())
 		// Continue anyway - dependencies are more important than artifacts for now
 	}
 
 	// Then set build properties on uploaded artifacts (this tags them with build info)
-	err = setPoetryBuildProperties(serverDetails, targetRepo, buildName, buildNumber, buildConfiguration.GetProject(), buildInfo)
+	err = setPoetryBuildProperties(serverDetails, artifactRepo, buildName, buildNumber, buildConfiguration.GetProject(), buildInfo)
 	if err != nil {
 		log.Warn("Failed to set build properties on artifacts: " + err.Error())
 	}
@@ -659,4 +677,131 @@ func setPoetryBuildProperties(serverDetails *config.ServerDetails, targetRepo, b
 
 	log.Info(fmt.Sprintf("Successfully set build properties on %d Poetry artifacts", len(module.Artifacts)))
 	return nil
+}
+
+// inferPoetryConfigFromToml reads pyproject.toml and infers repository configuration
+func inferPoetryConfigFromToml(_ project.ProjectType) (*project.RepositoryConfig, error) {
+	workingDir, err := os.Getwd()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get working directory: %w", err)
+	}
+
+	tomlPath := filepath.Join(workingDir, "pyproject.toml")
+	viper.SetConfigType("toml")
+	viper.SetConfigFile(tomlPath)
+
+	if err := viper.ReadInConfig(); err != nil {
+		return nil, fmt.Errorf("failed to read pyproject.toml: %w", err)
+	}
+
+	sources := viper.Get("tool.poetry.source")
+	if sources == nil {
+		return nil, fmt.Errorf("no Poetry sources found in pyproject.toml")
+	}
+
+	// Get list of configured servers from jf config
+	cmd := exec.Command("jf", "config", "show")
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get jf config: %w", err)
+	}
+
+	sourcesList, ok := sources.([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("invalid Poetry sources format in pyproject.toml")
+	}
+
+	for _, source := range sourcesList {
+		sourceMap, ok := source.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		sourceName, _ := sourceMap["name"].(string)
+		sourceURL, _ := sourceMap["url"].(string)
+
+		if sourceURL == "" {
+			continue
+		}
+
+		// Parse the URL to extract host
+		parsedURL, err := url.Parse(sourceURL)
+		if err != nil {
+			continue
+		}
+
+		// Check if this URL matches any configured server
+		serverID := ""
+		lines := strings.Split(string(output), "\n")
+		for _, line := range lines {
+			if strings.Contains(line, "Server ID:") {
+				parts := strings.SplitN(line, ":", 2)
+				if len(parts) > 1 {
+					serverID = strings.TrimSpace(parts[1])
+				}
+			}
+			if strings.Contains(line, "JFrog Platform URL:") && serverID != "" {
+				// Extract URL after "JFrog Platform URL: " prefix
+				parts := strings.SplitN(line, "JFrog Platform URL:", 2)
+				if len(parts) < 2 {
+					continue
+				}
+				configURL := strings.TrimSpace(parts[1])
+				if strings.Contains(sourceURL, configURL) || strings.Contains(configURL, parsedURL.Host) {
+					log.Info(fmt.Sprintf("Matched source '%s' to server '%s'", sourceName, serverID))
+
+					// Extract repository name from URL
+					repoName := extractRepoNameFromPypiURL(sourceURL)
+					if repoName == "" {
+						repoName = sourceName // Fallback to source name
+					}
+
+					log.Info(fmt.Sprintf("Inferred repository: %s", repoName))
+
+					// Get server details from config
+					serverDetails, err := config.GetSpecificConfig(serverID, false, true)
+					if err != nil {
+						return nil, fmt.Errorf("failed to get server details for %s: %w", serverID, err)
+					}
+
+					// Create and return repository config
+					repoConfig := &project.RepositoryConfig{}
+					repoConfig.SetServerDetails(serverDetails)
+					repoConfig.SetTargetRepo(repoName)
+
+					log.Info("Successfully inferred Poetry config from pyproject.toml (native mode)")
+					return repoConfig, nil
+				}
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("no matching JFrog server found for Poetry sources in pyproject.toml")
+}
+
+// extractRepoNameFromPypiURL extracts repository name from PyPI-format Artifactory URL
+// Example: https://server.com/artifactory/api/pypi/poetry-local/simple -> poetry-local
+func extractRepoNameFromPypiURL(urlStr string) string {
+	// Remove trailing /simple or /simple/
+	urlStr = strings.TrimSuffix(urlStr, "/")
+	urlStr = strings.TrimSuffix(urlStr, "/simple")
+	urlStr = strings.TrimSuffix(urlStr, "/")
+
+	// Split by / and find "api/pypi/" pattern
+	parts := strings.Split(urlStr, "/")
+	for i := 0; i < len(parts)-1; i++ {
+		if parts[i] == "api" && i+1 < len(parts) && parts[i+1] == "pypi" {
+			// Repo name is after "pypi"
+			if i+2 < len(parts) {
+				return parts[i+2]
+			}
+		}
+	}
+
+	// Fallback: take the last meaningful part
+	if len(parts) > 0 {
+		return parts[len(parts)-1]
+	}
+
+	return ""
 }
