@@ -147,20 +147,26 @@ jobs:
           echo "🔧 Running various NPM commands (all intercepted by Ghost Frog)..."
           echo ""
           
+          # Enable debug logging to see Ghost Frog interception
+          export JFROG_CLI_LOG_LEVEL=DEBUG
+          
           # npm list - will be intercepted
           echo "▶️  npm list (intercepted by Ghost Frog):"
-          npm list --depth=0 2>&1 | head -15 || echo "   (Command failed, but Ghost Frog intercepted it - see logs above)"
+          echo "--- Full output (including JFrog CLI debug logs) ---"
+          npm list --depth=0 2>&1 || echo "   (Command failed, but Ghost Frog intercepted it)"
+          echo "--- End of npm list output ---"
           
           echo ""
           
           # npm outdated - will be intercepted  
           echo "▶️  npm outdated (intercepted by Ghost Frog):"
-          npm outdated 2>&1 | head -10 || echo "   (Command failed, but Ghost Frog intercepted it)"
+          echo "--- Full output (including JFrog CLI debug logs) ---"
+          npm outdated 2>&1 || echo "   (Command failed, but Ghost Frog intercepted it)"
+          echo "--- End of npm outdated output ---"
           
           echo ""
           echo "✅ All NPM commands were transparently intercepted by JFrog CLI!"
-          echo "   Note: Commands may fail due to missing dependencies or JFrog configuration,"
-          echo "   but the important part is that Ghost Frog intercepted them (see debug logs above)."
+          echo "   Look for JFrog CLI debug logs above showing 'Detected running as alias' or 'Running in JF mode'"
       
       - name: Show Interception Can Be Disabled
         run: |
