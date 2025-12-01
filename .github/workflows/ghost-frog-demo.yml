@@ -102,7 +102,7 @@ jobs:
           # This will fail gracefully if JFrog server isn't accessible
           echo ""
           echo "🔧 Configuring npm to use JFrog Artifactory..."
-          jf npmc --repo-deploy npm-local --repo-resolve npm-local --server-id-deploy ghost-demo --server-id-resolve ghost-demo || echo "⚠️  npm configuration skipped (JFrog may not be accessible)"
+          jf npmc --repo-deploy npm-local --repo-resolve npm --server-id-deploy ghost-demo --server-id-resolve ghost-demo || echo "⚠️  npm configuration skipped (JFrog may not be accessible)"
       
       - name: Run NPM Commands (Transparently via JFrog CLI)
         run: |
