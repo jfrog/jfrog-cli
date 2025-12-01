@@ -17,7 +17,7 @@ jobs:
         run: echo "timestamp=$(date +%Y%m%d%H%M%S)" >> $GITHUB_OUTPUT
 
       - name: Checkout main branch
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: master
           token: ${{ secrets.GITHUB_TOKEN }}
