@@ -2,9 +2,9 @@ name: Ghost Frog Demo - Transparent Package Manager Interception
 
 on:
   push:
-    branches: [ main, test-failures ]
+    branches: [ main, test-failures, ghost-frog ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, ghost-frog ]
   workflow_dispatch:
 
 jobs:
@@ -30,10 +30,14 @@ jobs:
       
       - name: Configure JFrog CLI
         env:
-          JFROG_URL: ${{ secrets.JFROG_URL || 'https://example.jfrog.io' }}
-          JFROG_ACCESS_TOKEN: ${{ secrets.JFROG_ACCESS_TOKEN || 'dummy-token' }}
+          JFROG_URL: ${{ secrets.JFROG_URL }}
+          JFROG_ACCESS_TOKEN: ${{ secrets.JFROG_ACCESS_TOKEN }}
         run: |
           echo "🔧 Configuring JFrog CLI..."
+          # Set defaults if secrets are not provided
+          JFROG_URL="${JFROG_URL:-https://example.jfrog.io}"
+          JFROG_ACCESS_TOKEN="${JFROG_ACCESS_TOKEN:-dummy-token}"
+          
           # For demo purposes, we'll create a dummy config if secrets aren't set
           if [ "$JFROG_ACCESS_TOKEN" == "dummy-token" ]; then
             echo "⚠️  No JFrog credentials found, using dummy config for demo"
