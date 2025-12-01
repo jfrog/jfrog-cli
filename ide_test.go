@@ -16,7 +16,6 @@ import (
 )
 
 func TestVscodeSetupCommand(t *testing.T) {
-	t.Skip("JGC-415 - Skipping VSCode setup command test")
 	initArtifactoryTest(t, "")
 	defer cleanArtifactoryTest()
 
