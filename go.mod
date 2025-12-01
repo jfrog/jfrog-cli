@@ -18,7 +18,7 @@ require (
 	github.com/jfrog/build-info-go v1.12.4
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-application v1.0.2-0.20251120093802-1c39a37efcae
-	github.com/jfrog/jfrog-cli-artifactory v0.7.3-0.20251118100843-ac34330a70d3
+	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20251201084635-893579793a3e
 	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20251125083543-e689762c4ff0
 	github.com/jfrog/jfrog-cli-evidence v0.8.3-0.20251116083852-12dc534b4d13
 	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20251114155350-7ea4c8e32d5a
@@ -32,7 +32,6 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546
 	gopkg.in/yaml.v2 v2.4.0
-	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -267,6 +266,7 @@ require (
 	google.golang.org/protobuf v1.36.8 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gotest.tools/v3 v3.5.2 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	sigs.k8s.io/yaml v1.6.0 // indirect
@@ -274,9 +274,9 @@ require (
 
 replace github.com/docker/docker => github.com/docker/docker v27.5.1+incompatible
 
-replace github.com/jfrog/build-info-go => github.com/naveenku-jfrog/build-info-go v1.12.1-0.20251126143612-aa523e62e51f
+//replace github.com/jfrog/jfrog-cli-artifactory => github.com/naveenku-jfrog/jfrog-cli-artifactory v0.0.0-20251129184826-6834d2c05c2e
 
-replace github.com/jfrog/jfrog-cli-artifactory => github.com/naveenku-jfrog/jfrog-cli-artifactory v0.0.0-20251126151859-be955d40d838
+//replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20251006061821-8b1be6a65215
 
 // replace github.com/jfrog/jfrog-cli-core/v2 => github.com/reshmifrog/jfrog-cli-core/v2 v2.58.5-0.20251110095124-ab9a4102ec5a
 
