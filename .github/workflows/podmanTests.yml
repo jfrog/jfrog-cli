@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - "master"
+      - "fix-podman-tests"
   # Triggers the workflow on PRs to master branch only.
   pull_request_target:
     types: [labeled]
