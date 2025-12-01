@@ -58,7 +58,6 @@ func initContainerTest(t *testing.T) (containerManagers []container.ContainerMan
 		containerManagers = append(containerManagers, container.DockerClient)
 	}
 	if *tests.TestPodman {
-		t.Skip("JGC-410 - Skipping podman tests")
 		containerManagers = append(containerManagers, container.Podman)
 	}
 	if len(containerManagers) == 0 {
