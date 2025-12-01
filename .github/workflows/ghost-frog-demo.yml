@@ -97,6 +97,7 @@ jobs:
           
           echo "📄 package.json created:"
           cat package.json
+          jf npmc --repo-deploy npm-local --repo-resolve npm-local --server-id-deploy ghost-demo --server-id-resolve ghost-demo
       
       - name: Run NPM Commands (Transparently via JFrog CLI)
         run: |
