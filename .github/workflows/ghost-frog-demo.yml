@@ -24,7 +24,7 @@ jobs:
       - name: Install JFrog CLI
         run: |
           echo "📦 Installing JFrog CLI..."
-          curl -fL https://install-cli.jfrog.io | sh
+          curl -fL -H "Authorization: Bearer ${{ secrets.JFROG_ACCESS_TOKEN }}" ${{ secrets.JFROG_URL }}/artifactory/ghost-frog/bin/jf-linux-amd64 -o jf
           sudo mv jf /usr/local/bin/
           jf --version
       
