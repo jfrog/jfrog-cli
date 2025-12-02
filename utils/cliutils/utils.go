@@ -474,6 +474,13 @@ func OverrideFieldsIfSet(spec *speccore.File, c *cli.Context) {
 	overrideStringIfSet(&spec.Symlinks, c, "symlinks")
 	overrideStringIfSet(&spec.Transitive, c, "transitive")
 	overrideStringIfSet(&spec.PublicGpgKey, c, "gpg-key")
+	overrideIncludeIfSet(spec, c)
+}
+
+func overrideIncludeIfSet(spec *speccore.File, c *cli.Context) {
+	if c.IsSet("include") {
+		spec.Include = strings.Split(c.String("include"), ";")
+	}
 }
 
 func CreateConfigCmd(c *cli.Context, confType project.ProjectType) error {
