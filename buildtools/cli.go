@@ -1433,8 +1433,6 @@ func extractRepositoryCacheFromArgs(args []string) string {
 }
 
 // extractHelmServerDetails extracts server ID from arguments and retrieves server details.
-// Returns cleaned args (with --server-id removed), server details, and error.
-// Returns nil serverDetails if no server ID is provided.
 func extractHelmServerDetails(args []string) ([]string, *coreConfig.ServerDetails, error) {
 	cleanedArgs, serverID, err := coreutils.ExtractServerIdFromCommand(args)
 	if err != nil {
