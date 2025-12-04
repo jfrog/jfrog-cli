@@ -920,8 +920,8 @@ CMD ["sh"]`, baseImage)
 	// clean build before test
 	runJfrogCli(t, "rt", "bc", buildName, buildNumber)
 
-	// Run docker build with build-info
-	runJfrogCli(t, "docker", "build", "-t", imageTag, "-f", dockerfilePath, "--build-name="+buildName, "--build-number="+buildNumber, workspace)
+	// Run docker build with build-info (--load to make image available locally for cleanup)
+	runJfrogCli(t, "docker", "build", "-t", imageTag, "-f", dockerfilePath, "--load", "--build-name="+buildName, "--build-number="+buildNumber, workspace)
 
 	// Publish build info
 	runJfrogCli(t, "rt", "build-publish", buildName, buildNumber)
@@ -973,8 +973,8 @@ CMD ["sh"]`, baseImage)
 	// clean build before test
 	runJfrogCli(t, "rt", "bc", buildName, buildNumber)
 
-	// Run docker build with build-info
-	runCmdWithRetries(t, jfCliTask("docker", "build", "-t", imageTag, "--push", "-f", dockerfilePath, "--build-name="+buildName, "--build-number="+buildNumber, workspace))
+	// Run docker build with build-info (--load to make image available locally for cleanup)
+	runCmdWithRetries(t, jfCliTask("docker", "build", "-t", imageTag, "--push", "--load", "-f", dockerfilePath, "--build-name="+buildName, "--build-number="+buildNumber, workspace))
 
 	// Publish build info
 	runRt(t, "build-publish", buildName, buildNumber)
@@ -1029,8 +1029,8 @@ CMD ["hello"]`, golangImage, alpineImage)
 	// clean build before test
 	runJfrogCli(t, "rt", "bc", buildName, buildNumber)
 
-	// Run docker build with build-info
-	runCmdWithRetries(t, jfCliTask("docker", "build", "-t", imageTag, "-f", dockerfilePath, "--build-name="+buildName, "--build-number="+buildNumber, workspace))
+	// Run docker build with build-info (--load to make image available locally for cleanup)
+	runCmdWithRetries(t, jfCliTask("docker", "build", "-t", imageTag, "-f", dockerfilePath, "--load", "--build-name="+buildName, "--build-number="+buildNumber, workspace))
 
 	// Publish build info
 	runRt(t, "build-publish", buildName, buildNumber)
@@ -1140,8 +1140,8 @@ CMD ["sh"]`, baseImage)
 	// clean build before test
 	runJfrogCli(t, "rt", "bc", buildName, buildNumber)
 
-	// Run docker build
-	runJfrogCli(t, "docker", "build", "-t", imageTag, "-f", dockerfilePath, "--push",
+	// Run docker build (--load to make image available locally for cleanup)
+	runJfrogCli(t, "docker", "build", "-t", imageTag, "-f", dockerfilePath, "--push", "--load",
 		"--build-name="+buildName, "--build-number="+buildNumber, workspace)
 
 	// Publish build info
