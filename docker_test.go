@@ -1097,7 +1097,7 @@ CMD ["echo", "Hello from buildx"]`, baseImage)
 
 	// Cleanup
 	// Extract just the image name (last part) for cleanup
-	imageNameOnly := "test-buildx"
+	imageNameOnly := "test-docker-build"
 	inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, imageNameOnly, buildName, tests.OciLocalRepo)
 }
 
