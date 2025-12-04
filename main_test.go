@@ -59,7 +59,8 @@ func setupIntegrationTests() {
 	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
 		InitArtifactoryTests()
 	}
-	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv || *tests.TestPoetry || *tests.TestHelm {
+
+	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv || *tests.TestPoetry || *tests.TestHelm || (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
 		InitBuildToolsTests()
 	}
 	if *tests.TestDocker || *tests.TestPodman || *tests.TestDockerScan {
@@ -92,7 +93,7 @@ func tearDownIntegrationTests() {
 	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
 		CleanArtifactoryTests()
 	}
-	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv || *tests.TestPoetry || *tests.TestHelm || *tests.TestDocker || *tests.TestPodman || *tests.TestDockerScan {
+	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv || *tests.TestPoetry || *tests.TestHelm || *tests.TestDocker || *tests.TestPodman || *tests.TestDockerScan || (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
 		CleanBuildToolsTests()
 	}
 	if *tests.TestDistribution {

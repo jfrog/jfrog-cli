@@ -23,9 +23,9 @@ import (
 
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/container"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/dotnet"
-	helmflexpack "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/flexpack"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/golang"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/gradle"
+	helmcmd "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/helm"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/mvn"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/npm"
 	containerutils "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/ocicontainer"
@@ -1370,6 +1370,8 @@ func PipenvCmd(c *cli.Context) error {
 func PoetryCmd(c *cli.Context) error {
 	return pythonCmd(c, project.Poetry)
 }
+
+// HelmCmd executes Helm commands with build info collection support
 func HelmCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
@@ -1381,180 +1383,99 @@ func HelmCmd(c *cli.Context) error {
 	args := cliutils.ExtractCommand(c)
 	cmdName, helmArgs := getCommandName(args)
 
-	// Extract build configuration and filter out build flags (--build-name, --build-number, etc.)
 	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(helmArgs)
 	if err != nil {
 		return err
 	}
 
-	// Extract --repository-cache flag before filtering (needed for build info collection)
 	repositoryCachePath := extractRepositoryCacheFromArgs(helmArgs)
-
-	// Extract server-id and other JFrog flags and filter them out
-	filteredArgs, _, _, err = extractHelmOptionsFromArgs(filteredArgs)
+	serverDetails, err := extractHelmServerDetails(filteredArgs)
 	if err != nil {
 		return err
 	}
 
-	// Execute native helm command with filtered arguments (no JFrog flags)
-	log.Info(fmt.Sprintf("Running Helm %s.", cmdName))
-	helmCmd := exec.Command("helm", append([]string{cmdName}, filteredArgs...)...)
-	helmCmd.Stdout = os.Stdout
-	helmCmd.Stderr = os.Stderr
-	if err := helmCmd.Run(); err != nil {
-		return fmt.Errorf("helm %s failed: %w", cmdName, err)
-	}
-
-	// Set or unset HELM_REPOSITORY_CACHE environment variable based on --repository-cache flag
-	originalCache := os.Getenv("HELM_REPOSITORY_CACHE")
-	if repositoryCachePath != "" {
-		err := os.Setenv("HELM_REPOSITORY_CACHE", repositoryCachePath)
-		if err != nil {
-			return err
-		}
-	} else {
-		err := os.Unsetenv("HELM_REPOSITORY_CACHE")
-		if err != nil {
-			return err
-		}
-	}
-	defer func() {
-		// Restore original value after build info collection
-		if originalCache != "" {
-			err := os.Setenv("HELM_REPOSITORY_CACHE", originalCache)
-			if err != nil {
-				return
-			}
-		} else {
-			err := os.Unsetenv("HELM_REPOSITORY_CACHE")
-			if err != nil {
-				return
-			}
-		}
-	}()
-	if err := collectHelmBuildInfo(buildConfiguration); err != nil {
-		log.Warn("Failed to collect Helm build info: " + err.Error())
-	}
-	return nil
-}
-
-// collectHelmBuildInfo collects Helm build info if build configuration is provided and valid
-func collectHelmBuildInfo(buildConfiguration *build.BuildConfiguration) error {
-	if buildConfiguration == nil {
-		return nil
-	}
-
-	isCollectedBuildInfo, err := buildConfiguration.IsCollectBuildInfo()
-	if err != nil || !isCollectedBuildInfo {
+	restoreEnv, err := setHelmRepositoryCache(repositoryCachePath)
+	if err != nil {
 		return err
 	}
-
-	buildName, err := buildConfiguration.GetBuildName()
-	if err != nil || buildName == "" {
-		return err
-	}
-
-	buildNumber, err := buildConfiguration.GetBuildNumber()
-	if err != nil || buildNumber == "" {
-		return err
-	}
+	defer restoreEnv()
 
 	workingDir, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("failed to get working directory: %w", err)
 	}
 
-	// Use FlexPack to collect Helm build info directly
-	err = helmflexpack.CollectHelmBuildInfoWithFlexPack(
-		workingDir,
-		buildName,
-		buildNumber,
-		buildConfiguration,
-	)
-	if err != nil {
-		return fmt.Errorf("failed to collect Helm build info: %w", err)
-	}
+	helmCmd := helmcmd.NewHelmCommand().
+		SetHelmArgs(filteredArgs).
+		SetBuildConfiguration(buildConfiguration).
+		SetServerDetails(serverDetails).
+		SetWorkingDirectory(workingDir).
+		SetHelmCmdName(cmdName)
 
-	log.Info(fmt.Sprintf("Helm build info collected. Use 'jf rt bp %s %s' to publish it to Artifactory.", buildName, buildNumber))
-	return nil
+	return commands.Exec(helmCmd)
 }
 
-// extractHelmOptionsFromArgs extracts Helm-specific options from command arguments
-func extractHelmOptionsFromArgs(args []string) (cleanArgs []string, serverDetails *coreConfig.ServerDetails, skipLogin bool, err error) {
-	cleanArgs = append([]string(nil), args...)
-	var serverId string
-	cleanArgs, serverId, err = coreutils.ExtractServerIdFromCommand(cleanArgs)
-	if err != nil {
-		return
-	}
-
-	// Get server details if server-id is provided
-	if serverId != "" {
-		serverDetails, err = coreConfig.GetSpecificConfig(serverId, true, true)
-		if err != nil {
-			return
-		}
-	}
-
-	// Extract skip-login flag
-	cleanArgs, skipLogin, err = coreutils.ExtractSkipLoginFromArgs(cleanArgs)
-	if err != nil {
-		return
-	}
-
-	jfrogStringFlags := []string{
-		"user",
-		"url",
-		"access-token",
-		"ssh-key-path",
-		"ssh-passphrase",
-		"client-cert-path",
-		"client-cert-key-path",
-		"platform-url",
-		"project",
-	}
-
-	jfrogBoolFlags := []string{
-		"password-stdin",
-		"access-token-stdin",
-	}
-
-	// Extract string flags
-	for _, flagName := range jfrogStringFlags {
-		cleanArgs, _, err = coreutils.ExtractStringOptionFromArgs(cleanArgs, flagName)
-		if err != nil {
-			return
-		}
-	}
-
-	// Extract boolean flags
-	for _, flagName := range jfrogBoolFlags {
-		cleanArgs, _, err = coreutils.ExtractBoolFlagFromArgs(cleanArgs, flagName)
-		if err != nil {
-			return
-		}
-	}
-
-	// Extract insecure-tls flag
-	cleanArgs, _, err = coreutils.ExtractInsecureTlsFromArgs(cleanArgs)
-	if err != nil {
-		return
-	}
-
-	return
-}
-
-// extractRepositoryCacheFromArgs extracts the --repository-cache flag value from Helm command arguments
+// extractRepositoryCacheFromArgs extracts the --repository-cache flag value from Helm command arguments.
+// It supports both --repository-cache=path and --repository-cache path formats.
 func extractRepositoryCacheFromArgs(args []string) string {
+	const flagName = "--repository-cache"
+	const flagPrefix = flagName + "="
+
 	for i, arg := range args {
-		if strings.HasPrefix(arg, "--repository-cache=") {
-			return strings.TrimPrefix(arg, "--repository-cache=")
+		if strings.HasPrefix(arg, flagPrefix) {
+			return strings.TrimPrefix(arg, flagPrefix)
 		}
-		if arg == "--repository-cache" && i+1 < len(args) {
+		if arg == flagName && i+1 < len(args) {
 			return args[i+1]
 		}
 	}
 	return ""
+}
+
+// extractHelmServerDetails extracts server ID from arguments and retrieves server details.
+// Returns nil serverDetails if no server ID is provided.
+func extractHelmServerDetails(args []string) (*coreConfig.ServerDetails, error) {
+	_, serverID, err := coreutils.ExtractServerIdFromCommand(args)
+	if err != nil {
+		return nil, fmt.Errorf("failed to extract server ID: %w", err)
+	}
+
+	if serverID == "" {
+		return nil, nil
+	}
+
+	serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, true)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get server configuration for ID '%s': %w", serverID, err)
+	}
+
+	return serverDetails, nil
+}
+
+// setHelmRepositoryCache sets or unsets HELM_REPOSITORY_CACHE environment variable.
+// Returns a restore function that should be called in a defer to restore the original value.
+func setHelmRepositoryCache(cachePath string) (func(), error) {
+	const envVarName = "HELM_REPOSITORY_CACHE"
+	originalValue := os.Getenv(envVarName)
+
+	if cachePath != "" {
+		if err := os.Setenv(envVarName, cachePath); err != nil {
+			return nil, fmt.Errorf("failed to set %s environment variable: %w", envVarName, err)
+		}
+	} else {
+		if err := os.Unsetenv(envVarName); err != nil {
+			return nil, fmt.Errorf("failed to unset %s environment variable: %w", envVarName, err)
+		}
+	}
+	restoreFunc := func() {
+		if originalValue != "" {
+			_ = os.Setenv(envVarName, originalValue)
+		} else {
+			_ = os.Unsetenv(envVarName)
+		}
+	}
+
+	return restoreFunc, nil
 }
 
 func ConanCmd(c *cli.Context) error {

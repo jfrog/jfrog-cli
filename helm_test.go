@@ -1,25 +1,8 @@
 package main
 
 // Helm Integration Tests
-//
-// IMPORTANT: These tests require Artifactory to be running and accessible.
-// The global test setup (InitBuildToolsTests) will attempt to connect to Artifactory
-// and create required repositories. If Artifactory is not accessible, the test setup
-// will fail with connection errors.
-//
-// Requirements:
-// 1. Helm CLI installed and available in PATH
-// 2. Artifactory instance running and accessible (default: http://localhost:8081/)
-// 3. Test flags: -test.helm=true
-// 4. Artifactory URL: -jfrog.url=http://localhost:8081/ (or your Artifactory URL)
-// 5. Artifactory credentials: -jfrog.user=admin -jfrog.password=password (or use -jfrog.adminToken)
-//
-// Example command to run tests:
-//   go test -v -test.helm=true -jfrog.url=http://localhost:8081/ -jfrog.user=admin -jfrog.password=password ./helm_test.go
-//
-// Note: If Artifactory is not running, the test setup will fail with connection errors.
-// Individual tests include connectivity checks and will skip gracefully, but the global
-// setup must complete successfully for tests to run.
+// These tests run automatically as part of Artifactory tests.
+// Run with: go test -v -test.artifactory -jfrog.url=http://localhost:8081/ -jfrog.user=admin -jfrog.password=password
 
 import (
 	"bytes"
@@ -44,46 +27,29 @@ import (
 )
 
 func initHelmTest(t *testing.T) {
-	if !*tests.TestHelm {
-		t.Skip("Skipping Helm test. To run Helm test add the '-test.helm=true' option.")
+	if !*tests.TestArtifactory && !*tests.TestArtifactoryProject {
+		t.Skip("Skipping Helm test. Helm tests run as part of Artifactory tests. Use '-test.artifactory' to run them.")
 	}
 
-	// Check if Helm is available
 	if _, err := exec.LookPath("helm"); err != nil {
 		t.Skip("Helm not found in PATH, skipping Helm test")
 	}
 
-	// Check Artifactory connectivity first, before any operations that require it
-	// This prevents test failures when Artifactory is not running
-	// Note: Global setup (InitBuildToolsTests) may have already tried to connect,
-	// but individual tests will skip gracefully if Artifactory is not accessible
 	if !isArtifactoryAccessible(t) {
 		t.Skip("Artifactory is not accessible. Please ensure Artifactory is running and accessible at the configured URL (default: http://localhost:8081/).")
 	}
-
-	// At this point, Artifactory should be accessible
-	// The global setup (InitBuildToolsTests) should have already initialized everything
-	// But we verify connectivity here to ensure the test can proceed
 }
 
-// isArtifactoryAccessible checks if Artifactory is accessible by attempting a simple API call
 func isArtifactoryAccessible(t *testing.T) bool {
-	// Try to ping Artifactory - if this fails, we'll skip the test
-	// This is a best-effort check to avoid failing tests when Artifactory isn't running
-	// We use a simple HTTP check instead of the CLI to avoid circular dependencies
 	artifactoryUrl := *tests.JfrogUrl
 	if artifactoryUrl == "" {
 		return false
 	}
 
-	// Ensure URL has trailing slash and add Artifactory endpoint
 	if !strings.HasSuffix(artifactoryUrl, "/") {
 		artifactoryUrl += "/"
 	}
-	artifactoryUrl += "artifactory/api/system/ping"
 
-	// Try a simple GET request to Artifactory's ping endpoint
-	// This is a lightweight check that doesn't require authentication
 	client := &http.Client{Timeout: 5 * time.Second}
 	resp, err := client.Get(artifactoryUrl)
 	if err != nil {
@@ -91,11 +57,11 @@ func isArtifactoryAccessible(t *testing.T) bool {
 	}
 	defer func() {
 		if closeErr := resp.Body.Close(); closeErr != nil {
-			// Log but don't fail on close errors
 			t.Logf("Warning: Failed to close response body: %v", closeErr)
 		}
 	}()
-	return resp.StatusCode == http.StatusOK
+
+	return resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusFound
 }
 
 func cleanHelmTest(t *testing.T) {
@@ -104,20 +70,13 @@ func cleanHelmTest(t *testing.T) {
 	tests.CleanFileSystem()
 }
 
-// TestHelmPushWithBuildInfo tests helm push command with build info collection
 func TestHelmPushWithBuildInfo(t *testing.T) {
 	initHelmTest(t)
 	defer cleanHelmTest(t)
 
-	// Check if Helm is available
-	if _, err := exec.LookPath("helm"); err != nil {
-		t.Skip("Helm not found in PATH, skipping Helm test")
-	}
-
 	buildName := tests.HelmBuildName + "-push"
 	buildNumber := "1"
 
-	// Create a test Helm chart
 	chartDir := createTestHelmChart(t, "test-chart", "0.1.0")
 	defer func() {
 		if err := os.RemoveAll(chartDir); err != nil {
@@ -136,34 +95,27 @@ func TestHelmPushWithBuildInfo(t *testing.T) {
 	err = os.Chdir(chartDir)
 	require.NoError(t, err)
 
-	// First, package the chart
 	helmCmd := exec.Command("helm", "package", ".")
 	helmCmd.Dir = chartDir
 	err = helmCmd.Run()
 	require.NoError(t, err, "helm package should succeed")
 
-	// Find the packaged chart file
 	chartFiles, err := filepath.Glob(filepath.Join(chartDir, "*.tgz"))
 	require.NoError(t, err)
 	require.Greater(t, len(chartFiles), 0, "Chart package file should be created")
 	chartFile := filepath.Base(chartFiles[0])
 
-	// Build OCI registry URL - Helm requires oci:// scheme
-	// Format: oci://<host>/artifactory/<repo>
 	parsedURL, err := url.Parse(serverDetails.ArtifactoryUrl)
 	require.NoError(t, err)
 	registryHost := parsedURL.Host
 	registryURL := fmt.Sprintf("oci://%s/artifactory/%s", registryHost, tests.HelmLocalRepo)
 
-	// Login to Helm OCI registry before pushing
-	// If login fails due to account lockout, skip the test with a helpful message
 	err = loginHelmRegistry(t, registryHost)
 	if err != nil && strings.Contains(err.Error(), "account temporarily locked") {
 		t.Skip("Artifactory account is temporarily locked due to recurrent login failures. Please wait and try again, or verify credentials are correct.")
 	}
 	require.NoError(t, err, "helm registry login should succeed")
 
-	// Run helm push with build info
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 	args := []string{
 		"helm", "push", chartFile,
@@ -174,32 +126,22 @@ func TestHelmPushWithBuildInfo(t *testing.T) {
 	err = jfrogCli.Exec(args...)
 	require.NoError(t, err, "helm push should succeed")
 
-	// Publish build info
 	assert.NoError(t, runJfrogCliWithoutAssertion("rt", "bp", buildName, buildNumber))
 
-	// Validate build info
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
 	require.NoError(t, err, "Failed to get build info")
 	require.True(t, found, "build info should be found")
 
-	// Validate build info structure
 	validateHelmBuildInfo(t, publishedBuildInfo.BuildInfo, buildName, buildNumber, true, false)
 }
 
-// TestHelmPackageWithBuildInfo tests helm package command with build info collection
 func TestHelmPackageWithBuildInfo(t *testing.T) {
 	initHelmTest(t)
 	defer cleanHelmTest(t)
 
-	// Check if Helm is available
-	if _, err := exec.LookPath("helm"); err != nil {
-		t.Skip("Helm not found in PATH, skipping Helm test")
-	}
-
 	buildName := tests.HelmBuildName + "-package"
 	buildNumber := "1"
 
-	// Create a test Helm chart with dependencies
 	chartDir := createTestHelmChartWithDependencies(t, "test-chart", "0.1.0")
 	defer func() {
 		if err := os.RemoveAll(chartDir); err != nil {
@@ -218,13 +160,11 @@ func TestHelmPackageWithBuildInfo(t *testing.T) {
 	err = os.Chdir(chartDir)
 	require.NoError(t, err)
 
-	// First, update dependencies to download them to charts/ directory
 	helmCmd := exec.Command("helm", "dependency", "update")
 	helmCmd.Dir = chartDir
 	err = helmCmd.Run()
 	require.NoError(t, err, "helm dependency update should succeed")
 
-	// Run helm package with build info
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 	args := []string{
 		"helm", "package", ".",
@@ -234,32 +174,22 @@ func TestHelmPackageWithBuildInfo(t *testing.T) {
 	err = jfrogCli.Exec(args...)
 	require.NoError(t, err, "helm package should succeed")
 
-	// Publish build info
 	assert.NoError(t, runJfrogCliWithoutAssertion("rt", "bp", buildName, buildNumber))
 
-	// Validate build info
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
 	require.NoError(t, err, "Failed to get build info")
 	require.True(t, found, "build info should be found")
 
-	// Validate build info structure - package should include dependencies
 	validateHelmBuildInfo(t, publishedBuildInfo.BuildInfo, buildName, buildNumber, true, true)
 }
 
-// TestHelmDependencyUpdateWithBuildInfo tests helm dependency update command with build info
 func TestHelmDependencyUpdateWithBuildInfo(t *testing.T) {
 	initHelmTest(t)
 	defer cleanHelmTest(t)
 
-	// Check if Helm is available
-	if _, err := exec.LookPath("helm"); err != nil {
-		t.Skip("Helm not found in PATH, skipping Helm test")
-	}
-
 	buildName := tests.HelmBuildName + "-dep-update"
 	buildNumber := "1"
 
-	// Create a test Helm chart with dependencies
 	chartDir := createTestHelmChartWithDependencies(t, "test-chart", "0.1.0")
 	defer func() {
 		if err := os.RemoveAll(chartDir); err != nil {
@@ -278,7 +208,6 @@ func TestHelmDependencyUpdateWithBuildInfo(t *testing.T) {
 	err = os.Chdir(chartDir)
 	require.NoError(t, err)
 
-	// Run helm dependency update with build info
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 	args := []string{
 		"helm", "dependency", "update",
@@ -288,32 +217,22 @@ func TestHelmDependencyUpdateWithBuildInfo(t *testing.T) {
 	err = jfrogCli.Exec(args...)
 	require.NoError(t, err, "helm dependency update should succeed")
 
-	// Publish build info
 	assert.NoError(t, runJfrogCliWithoutAssertion("rt", "bp", buildName, buildNumber))
 
-	// Validate build info
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
 	require.NoError(t, err, "Failed to get build info")
 	require.True(t, found, "build info should be found")
 
-	// Validate build info structure - dependency update should include dependencies
 	validateHelmBuildInfo(t, publishedBuildInfo.BuildInfo, buildName, buildNumber, false, true)
 }
 
-// TestHelmInstallWithBuildInfo tests helm install command with build info collection
 func TestHelmInstallWithBuildInfo(t *testing.T) {
 	initHelmTest(t)
 	defer cleanHelmTest(t)
 
-	// Check if Helm is available
-	if _, err := exec.LookPath("helm"); err != nil {
-		t.Skip("Helm not found in PATH, skipping Helm test")
-	}
-
 	buildName := tests.HelmBuildName + "-install"
 	buildNumber := "1"
 
-	// Create a test Helm chart
 	chartDir := createTestHelmChart(t, "test-chart", "0.1.0")
 	defer func() {
 		if err := os.RemoveAll(chartDir); err != nil {
@@ -332,7 +251,6 @@ func TestHelmInstallWithBuildInfo(t *testing.T) {
 	err = os.Chdir(chartDir)
 	require.NoError(t, err)
 
-	// Run helm install with build info (dry-run to avoid requiring Kubernetes)
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 	args := []string{
 		"helm", "install", "test-release", ".",
@@ -343,32 +261,22 @@ func TestHelmInstallWithBuildInfo(t *testing.T) {
 	err = jfrogCli.Exec(args...)
 	require.NoError(t, err, "helm install should succeed")
 
-	// Publish build info
 	assert.NoError(t, runJfrogCliWithoutAssertion("rt", "bp", buildName, buildNumber))
 
-	// Validate build info
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
 	require.NoError(t, err, "Failed to get build info")
 	require.True(t, found, "build info should be found")
 
-	// Validate build info structure - install should include dependencies
 	validateHelmBuildInfo(t, publishedBuildInfo.BuildInfo, buildName, buildNumber, false, true)
 }
 
-// TestHelmTemplateWithBuildInfo tests helm template command with build info collection
 func TestHelmTemplateWithBuildInfo(t *testing.T) {
 	initHelmTest(t)
 	defer cleanHelmTest(t)
 
-	// Check if Helm is available
-	if _, err := exec.LookPath("helm"); err != nil {
-		t.Skip("Helm not found in PATH, skipping Helm test")
-	}
-
 	buildName := tests.HelmBuildName + "-template"
 	buildNumber := "1"
 
-	// Create a test Helm chart
 	chartDir := createTestHelmChart(t, "test-chart", "0.1.0")
 	defer func() {
 		if err := os.RemoveAll(chartDir); err != nil {
@@ -387,7 +295,6 @@ func TestHelmTemplateWithBuildInfo(t *testing.T) {
 	err = os.Chdir(chartDir)
 	require.NoError(t, err)
 
-	// Run helm template with build info
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 	args := []string{
 		"helm", "template", "test-release", ".",
@@ -397,30 +304,22 @@ func TestHelmTemplateWithBuildInfo(t *testing.T) {
 	err = jfrogCli.Exec(args...)
 	require.NoError(t, err, "helm template should succeed")
 
-	// Publish build info
 	assert.NoError(t, runJfrogCliWithoutAssertion("rt", "bp", buildName, buildNumber))
 
-	// Validate build info
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
 	require.NoError(t, err, "Failed to get build info")
 	require.True(t, found, "build info should be found")
 
-	// Validate build info structure
 	validateHelmBuildInfo(t, publishedBuildInfo.BuildInfo, buildName, buildNumber, false, true)
 }
 
-// loginHelmRegistry logs into the Helm OCI registry using credentials from serverDetails
 func loginHelmRegistry(t *testing.T, registryHost string) error {
-	// Get credentials from serverDetails
 	user := serverDetails.User
 	pass := serverDetails.Password
 	if serverDetails.AccessToken != "" {
-		// If access token is provided, use it as password
 		pass = serverDetails.AccessToken
 		if user == "" {
-			// Extract username from token if not provided
-			// For simplicity, we'll use a default or extract from token
-			user = "admin" // Default fallback, or extract from token
+			user = "admin"
 		}
 	}
 
@@ -428,30 +327,25 @@ func loginHelmRegistry(t *testing.T, registryHost string) error {
 		return fmt.Errorf("credentials required for Helm registry login")
 	}
 
-	// Run helm registry login
 	cmd := exec.Command("helm", "registry", "login", registryHost, "--username", user, "--password-stdin")
 	cmd.Stdin = strings.NewReader(pass)
-	// Capture output to check for specific errors
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	err := cmd.Run()
 
 	if err != nil {
-		// Check if the error is due to account lockout
 		errorOutput := stderr.String()
 		if strings.Contains(errorOutput, "recurrent login failures") || strings.Contains(errorOutput, "blocked") {
 			t.Logf("Helm registry login failed due to account lockout. Please wait and try again, or verify credentials are correct.")
 			return fmt.Errorf("account temporarily locked: %w", err)
 		}
-		// For other errors, return as-is
 		return fmt.Errorf("helm registry login failed: %w (stderr: %s)", err, errorOutput)
 	}
 
 	return nil
 }
 
-// Helper function to create a test Helm chart
 func createTestHelmChart(t *testing.T, name, version string) string {
 	tempDir, err := os.MkdirTemp("", "helm-test-*")
 	require.NoError(t, err)
@@ -460,7 +354,6 @@ func createTestHelmChart(t *testing.T, name, version string) string {
 	err = os.MkdirAll(chartDir, 0755)
 	require.NoError(t, err)
 
-	// Create Chart.yaml
 	chartYaml := fmt.Sprintf(`apiVersion: v2
 name: %s
 description: A Helm chart for testing
@@ -472,7 +365,6 @@ appVersion: "1.0.0"
 	err = os.WriteFile(filepath.Join(chartDir, "Chart.yaml"), []byte(chartYaml), 0644)
 	require.NoError(t, err)
 
-	// Create values.yaml
 	valuesYaml := `replicaCount: 1
 image:
   repository: nginx
@@ -481,12 +373,10 @@ image:
 	err = os.WriteFile(filepath.Join(chartDir, "values.yaml"), []byte(valuesYaml), 0644)
 	require.NoError(t, err)
 
-	// Create templates directory
 	templatesDir := filepath.Join(chartDir, "templates")
 	err = os.MkdirAll(templatesDir, 0755)
 	require.NoError(t, err)
 
-	// Create a simple deployment template
 	deploymentYaml := `apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -511,11 +401,9 @@ spec:
 	return chartDir
 }
 
-// Helper function to create a test Helm chart with dependencies
 func createTestHelmChartWithDependencies(t *testing.T, name, version string) string {
 	chartDir := createTestHelmChart(t, name, version)
 
-	// Add dependencies to Chart.yaml
 	chartYamlPath := filepath.Join(chartDir, "Chart.yaml")
 	chartYamlContent, err := os.ReadFile(chartYamlPath)
 	require.NoError(t, err)
@@ -524,7 +412,6 @@ func createTestHelmChartWithDependencies(t *testing.T, name, version string) str
 	err = yaml.Unmarshal(chartYamlContent, &chartData)
 	require.NoError(t, err)
 
-	// Add dependencies (using common Helm charts for testing)
 	chartData["dependencies"] = []map[string]interface{}{
 		{
 			"name":       "postgresql",
@@ -549,7 +436,6 @@ func createTestHelmChartWithDependencies(t *testing.T, name, version string) str
 	return chartDir
 }
 
-// Helper function to validate Helm build info structure
 func validateHelmBuildInfo(t *testing.T, buildInfo buildinfo.BuildInfo, buildName, buildNumber string, expectArtifacts, expectDependencies bool) {
 	assert.Equal(t, buildName, buildInfo.Name, "Build name should match")
 	assert.Equal(t, buildNumber, buildInfo.Number, "Build number should match")
@@ -595,3 +481,136 @@ func validateHelmBuildInfo(t *testing.T, buildInfo buildinfo.BuildInfo, buildNam
 	}
 }
 
+func TestHelmPushWithRepositoryCache(t *testing.T) {
+	initHelmTest(t)
+	defer cleanHelmTest(t)
+
+	buildName := tests.HelmBuildName + "-push-cache"
+	buildNumber := "1"
+
+	cacheDir, err := os.MkdirTemp("", "helm-cache-*")
+	require.NoError(t, err)
+	defer func() {
+		if err := os.RemoveAll(cacheDir); err != nil {
+			t.Logf("Warning: Failed to remove cache directory %s: %v", cacheDir, err)
+		}
+	}()
+
+	chartDir := createTestHelmChart(t, "test-chart", "0.1.0")
+	defer func() {
+		if err := os.RemoveAll(chartDir); err != nil {
+			t.Logf("Warning: Failed to remove test chart directory %s: %v", chartDir, err)
+		}
+	}()
+
+	originalDir, err := os.Getwd()
+	require.NoError(t, err)
+	defer func() {
+		if err := os.Chdir(originalDir); err != nil {
+			t.Logf("Warning: Failed to change back to original directory: %v", err)
+		}
+	}()
+
+	err = os.Chdir(chartDir)
+	require.NoError(t, err)
+
+	helmCmd := exec.Command("helm", "package", ".")
+	helmCmd.Dir = chartDir
+	err = helmCmd.Run()
+	require.NoError(t, err, "helm package should succeed")
+
+	chartFiles, err := filepath.Glob(filepath.Join(chartDir, "*.tgz"))
+	require.NoError(t, err)
+	require.Greater(t, len(chartFiles), 0, "Chart package file should be created")
+	chartFile := filepath.Base(chartFiles[0])
+
+	parsedURL, err := url.Parse(serverDetails.ArtifactoryUrl)
+	require.NoError(t, err)
+	registryHost := parsedURL.Host
+	registryURL := fmt.Sprintf("oci://%s/artifactory/%s", registryHost, tests.HelmLocalRepo)
+
+	err = loginHelmRegistry(t, registryHost)
+	if err != nil && strings.Contains(err.Error(), "account temporarily locked") {
+		t.Skip("Artifactory account is temporarily locked due to recurrent login failures. Please wait and try again, or verify credentials are correct.")
+	}
+	require.NoError(t, err, "helm registry login should succeed")
+
+	originalCache := os.Getenv("HELM_REPOSITORY_CACHE")
+	defer func() {
+		if originalCache != "" {
+			os.Setenv("HELM_REPOSITORY_CACHE", originalCache)
+		} else {
+			os.Unsetenv("HELM_REPOSITORY_CACHE")
+		}
+	}()
+
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+	args := []string{
+		"helm", "push", chartFile,
+		registryURL,
+		"--build-name=" + buildName,
+		"--build-number=" + buildNumber,
+		"--repository-cache=" + cacheDir,
+	}
+	err = jfrogCli.Exec(args...)
+	require.NoError(t, err, "helm push with repository-cache should succeed")
+
+	currentCache := os.Getenv("HELM_REPOSITORY_CACHE")
+	assert.Equal(t, originalCache, currentCache, "HELM_REPOSITORY_CACHE should be restored to original value")
+
+	assert.NoError(t, runJfrogCliWithoutAssertion("rt", "bp", buildName, buildNumber))
+
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	require.NoError(t, err, "Failed to get build info")
+	require.True(t, found, "build info should be found")
+
+	validateHelmBuildInfo(t, publishedBuildInfo.BuildInfo, buildName, buildNumber, true, false)
+}
+
+func TestHelmCommandWithServerID(t *testing.T) {
+	initHelmTest(t)
+	defer cleanHelmTest(t)
+
+	buildName := tests.HelmBuildName + "-server-id"
+	buildNumber := "1"
+
+	chartDir := createTestHelmChart(t, "test-chart", "0.1.0")
+	defer func() {
+		if err := os.RemoveAll(chartDir); err != nil {
+			t.Logf("Warning: Failed to remove test chart directory %s: %v", chartDir, err)
+		}
+	}()
+
+	originalDir, err := os.Getwd()
+	require.NoError(t, err)
+	defer func() {
+		if err := os.Chdir(originalDir); err != nil {
+			t.Logf("Warning: Failed to change back to original directory: %v", err)
+		}
+	}()
+
+	err = os.Chdir(chartDir)
+	require.NoError(t, err)
+
+	serverID := "default"
+	if serverDetails != nil && serverDetails.ServerId != "" {
+		serverID = serverDetails.ServerId
+	}
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+	args := []string{
+		"helm", "package", ".",
+		"--build-name=" + buildName,
+		"--build-number=" + buildNumber,
+		"--server-id=" + serverID,
+	}
+	err = jfrogCli.Exec(args...)
+	require.NoError(t, err, "helm package with server-id should succeed")
+
+	assert.NoError(t, runJfrogCliWithoutAssertion("rt", "bp", buildName, buildNumber))
+
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	require.NoError(t, err, "Failed to get build info")
+	require.True(t, found, "build info should be found")
+
+	validateHelmBuildInfo(t, publishedBuildInfo.BuildInfo, buildName, buildNumber, true, true)
+}
