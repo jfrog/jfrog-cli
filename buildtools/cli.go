@@ -14,6 +14,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-security/utils/techutils"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/helmcommand"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/rubyconfig"
 	setupdocs "github.com/jfrog/jfrog-cli/docs/buildtools/setup"
 
@@ -21,6 +22,7 @@ import (
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/dotnet"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/golang"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/gradle"
+	helmcmd "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/helm"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/mvn"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/npm"
 	containerutils "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/ocicontainer"
@@ -338,6 +340,18 @@ func GetCommands() []cli.Command {
 			Action:          PoetryCmd,
 		},
 		{
+			Name:            "helm",
+			Flags:           cliutils.GetCommandFlags(cliutils.Helm),
+			Usage:           helmcommand.GetDescription(),
+			HelpName:        corecommon.CreateUsage("helm", helmcommand.GetDescription(), helmcommand.Usage),
+			UsageText:       helmcommand.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Category:        buildToolsCategory,
+			Action:          HelmCmd,
+		},
+		{
 			Name:            "conan",
 			Flags:           cliutils.GetCommandFlags(cliutils.Conan),
 			Usage:           conan.GetDescription(),
@@ -345,6 +359,7 @@ func GetCommands() []cli.Command {
 			UsageText:       conan.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
+			Hidden:          true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
 			Action:          ConanCmd,
@@ -1229,6 +1244,112 @@ func PipenvCmd(c *cli.Context) error {
 
 func PoetryCmd(c *cli.Context) error {
 	return pythonCmd(c, project.Poetry)
+}
+
+// HelmCmd executes Helm commands with build info collection support
+func HelmCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+	if c.NArg() < 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	args := cliutils.ExtractCommand(c)
+	cmdName, helmArgs := getCommandName(args)
+
+	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(helmArgs)
+	if err != nil {
+		return err
+	}
+
+	repositoryCachePath := extractRepositoryCacheFromArgs(helmArgs)
+	filteredArgs, serverDetails, err := extractHelmServerDetails(filteredArgs)
+	if err != nil {
+		return err
+	}
+
+	restoreEnv, err := setHelmRepositoryCache(repositoryCachePath)
+	if err != nil {
+		return err
+	}
+	defer restoreEnv()
+
+	workingDir, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("failed to get working directory: %w", err)
+	}
+
+	helmCmd := helmcmd.NewHelmCommand().
+		SetHelmArgs(filteredArgs).
+		SetBuildConfiguration(buildConfiguration).
+		SetServerDetails(serverDetails).
+		SetWorkingDirectory(workingDir).
+		SetHelmCmdName(cmdName)
+
+	return commands.Exec(helmCmd)
+}
+
+// extractRepositoryCacheFromArgs extracts the --repository-cache flag value from Helm command arguments.
+// It supports both --repository-cache=path and --repository-cache path formats.
+func extractRepositoryCacheFromArgs(args []string) string {
+	const flagName = "--repository-cache"
+	const flagPrefix = flagName + "="
+
+	for i, arg := range args {
+		if strings.HasPrefix(arg, flagPrefix) {
+			return strings.TrimPrefix(arg, flagPrefix)
+		}
+		if arg == flagName && i+1 < len(args) {
+			return args[i+1]
+		}
+	}
+	return ""
+}
+
+// extractHelmServerDetails extracts server ID from arguments and retrieves server details.
+func extractHelmServerDetails(args []string) ([]string, *coreConfig.ServerDetails, error) {
+	cleanedArgs, serverID, err := coreutils.ExtractServerIdFromCommand(args)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to extract server ID: %w", err)
+	}
+
+	if serverID == "" {
+		return cleanedArgs, nil, nil
+	}
+
+	serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, true)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get server configuration for ID '%s': %w", serverID, err)
+	}
+
+	return cleanedArgs, serverDetails, nil
+}
+
+// setHelmRepositoryCache sets or unsets HELM_REPOSITORY_CACHE environment variable.
+// Returns a restore function that should be called in a defer to restore the original value.
+func setHelmRepositoryCache(cachePath string) (func(), error) {
+	const envVarName = "HELM_REPOSITORY_CACHE"
+	originalValue := os.Getenv(envVarName)
+
+	if cachePath != "" {
+		if err := os.Setenv(envVarName, cachePath); err != nil {
+			return nil, fmt.Errorf("failed to set %s environment variable: %w", envVarName, err)
+		}
+	} else {
+		if err := os.Unsetenv(envVarName); err != nil {
+			return nil, fmt.Errorf("failed to unset %s environment variable: %w", envVarName, err)
+		}
+	}
+	restoreFunc := func() {
+		if originalValue != "" {
+			_ = os.Setenv(envVarName, originalValue)
+		} else {
+			_ = os.Unsetenv(envVarName)
+		}
+	}
+
+	return restoreFunc, nil
 }
 
 func ConanCmd(c *cli.Context) error {
