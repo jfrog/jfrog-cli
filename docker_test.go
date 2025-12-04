@@ -132,22 +132,31 @@ func setupInsecureBuildxBuilder(t *testing.T, builderName string) func() {
 `, registryHost)
 	require.NoError(t, os.WriteFile(configPath, []byte(configContent), 0644))
 
-	// Remove builder if it exists (ignore errors)
-	_ = exec.Command("docker", "buildx", "rm", builderName).Run()
+	// Remove builder if it exists (stop first, then remove)
+	_ = exec.Command("docker", "buildx", "stop", builderName).Run()
+	_ = exec.Command("docker", "buildx", "rm", "-f", builderName).Run()
+
+	// Also remove any leftover buildkit container
+	_ = exec.Command("docker", "rm", "-f", "buildx_buildkit_"+builderName+"0").Run()
 
 	// Create buildx builder with insecure config
+	// Pin to moby/buildkit:v0.12.2 as v0.12.3+ has issues with private HTTP insecure registries
 	createCmd := exec.Command("docker", "buildx", "create",
 		"--name", builderName,
+		"--driver", "docker-container",
 		"--driver-opt", "network=host",
+		"--driver-opt", "image=moby/buildkit:v0.12.2",
 		"--config", configPath,
+		"--bootstrap",
 		"--use")
 	output, err := createCmd.CombinedOutput()
 	require.NoError(t, err, "Failed to create buildx builder: %s", string(output))
 
-	// Bootstrap the builder
-	bootstrapCmd := exec.Command("docker", "buildx", "inspect", "--bootstrap")
-	output, err = bootstrapCmd.CombinedOutput()
-	require.NoError(t, err, "Failed to bootstrap buildx builder: %s", string(output))
+	// Verify builder is using our config
+	inspectCmd := exec.Command("docker", "buildx", "inspect", builderName)
+	output, err = inspectCmd.CombinedOutput()
+	require.NoError(t, err, "Failed to inspect buildx builder: %s", string(output))
+	log.Info("Builder inspect output: %s", string(output))
 
 	// Set BUILDX_BUILDER env var to force 'docker build' to use our builder
 	oldBuilder := os.Getenv("BUILDX_BUILDER")
