@@ -768,7 +768,7 @@ func runCmdWithRetries(t *testing.T, task func() error) {
 	assert.NoError(t, executor.Execute())
 }
 
-func validateDockerBuildInfo(t *testing.T, buildName, buildNumber string, expectedDeps, expectedArtifacts bool) {
+func validateDockerBuildInfo(t *testing.T, buildName, buildNumber string, expectedArtifacts bool) {
 	// Get and validate build-info
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
 	assert.NoError(t, err)
@@ -783,12 +783,8 @@ func validateDockerBuildInfo(t *testing.T, buildName, buildNumber string, expect
 	assert.Equal(t, entities.Docker, module.Type)
 
 	// Check dependencies count
-	if expectedDeps {
-		assert.NotEmpty(t, module.Dependencies)
-		assert.True(t, len(module.Dependencies) > 0, "expected dependencies but found none")
-	} else {
-		assert.Empty(t, module.Dependencies, "expected no dependencies but found some")
-	}
+	assert.NotEmpty(t, module.Dependencies)
+	assert.True(t, len(module.Dependencies) > 0, "expected dependencies but found none")
 
 	// Check artifacts count
 	if expectedArtifacts {
@@ -857,7 +853,7 @@ CMD ["sh"]`, baseImage)
 	runJfrogCli(t, "rt", "build-publish", buildName, buildNumber)
 
 	// Validate build info
-	validateDockerBuildInfo(t, buildName, buildNumber, true, false) // Should have dependencies from base image, no artifacts
+	validateDockerBuildInfo(t, buildName, buildNumber, false) // Should have dependencies from base image, no artifacts
 
 	// Cleanup
 	tests2.DeleteTestImage(t, imageTag, container.DockerClient)
@@ -910,7 +906,7 @@ CMD ["sh"]`, baseImage)
 	runRt(t, "build-publish", buildName, buildNumber)
 
 	// Validate build info - should have both dependencies and artifacts
-	validateDockerBuildInfo(t, buildName, buildNumber, true, true)
+	validateDockerBuildInfo(t, buildName, buildNumber, true)
 
 	// Cleanup
 	tests2.DeleteTestImage(t, imageTag, container.DockerClient)
@@ -967,7 +963,7 @@ CMD ["hello"]`, golangImage, alpineImage)
 	runRt(t, "build-publish", buildName, buildNumber)
 
 	// Validate build info - should have dependencies from golang:1.19-alpine and alpine:3.18
-	validateDockerBuildInfo(t, buildName, buildNumber, true, false)
+	validateDockerBuildInfo(t, buildName, buildNumber, false)
 
 	// Cleanup
 	tests2.DeleteTestImage(t, imageTag, container.DockerClient)
@@ -1026,7 +1022,7 @@ CMD ["echo", "Hello from buildx"]`, baseImage)
 	runJfrogCli(t, "rt", "build-publish", buildName, buildNumber)
 
 	// Validate build info - buildx with --push should have both dependencies and artifacts
-	validateDockerBuildInfo(t, buildName, buildNumber, true, true)
+	validateDockerBuildInfo(t, buildName, buildNumber, true)
 
 	// Cleanup
 	// Extract just the image name (last part) for cleanup
@@ -1079,7 +1075,7 @@ CMD ["sh"]`, baseImage)
 	runJfrogCli(t, "rt", "build-publish", buildName, buildNumber)
 
 	// Validate build info - virtual repo with push should have both dependencies and artifacts
-	validateDockerBuildInfo(t, buildName, buildNumber, true, true)
+	validateDockerBuildInfo(t, buildName, buildNumber, true)
 
 	// Cleanup
 	tests2.DeleteTestImage(t, imageTag, container.DockerClient)

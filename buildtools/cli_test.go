@@ -35,7 +35,7 @@ func TestExtractDockerBuildOptionsFromArgs(t *testing.T) {
 		},
 		{
 			name:               "Push option with --output push=true",
-			args:               []string{"build", "-t", "myimage:latest", "--output", "push=true"},
+			args:               []string{"build", "-t", "myimage:latest", "--output", "type=image,push=true"},
 			expectedPush:       true,
 			expectedDockerfile: "Dockerfile",
 			expectedTag:        "myimage:latest",
@@ -51,7 +51,7 @@ func TestExtractDockerBuildOptionsFromArgs(t *testing.T) {
 		},
 		{
 			name:               "Push option with --output containing push=true",
-			args:               []string{"build", "-t", "myimage:latest", "--output", "push=true,dest=/tmp"},
+			args:               []string{"build", "-t", "myimage:latest", "--output", "type=image,push=true,dest=/tmp"},
 			expectedPush:       true,
 			expectedDockerfile: "Dockerfile",
 			expectedTag:        "myimage:latest",
@@ -225,7 +225,7 @@ func TestExtractDockerBuildOptionsFromArgs(t *testing.T) {
 		},
 		{
 			name:               "Output with multiple values including push=true",
-			args:               []string{"build", "-t", "myimage:latest", "--output", "push=true,dest=/tmp,compression=gzip"},
+			args:               []string{"build", "-t", "myimage:latest", "--output", "type=image,push=true,dest=/tmp,compression=gzip"},
 			expectedPush:       true,
 			expectedDockerfile: "Dockerfile",
 			expectedTag:        "myimage:latest",
