@@ -1389,7 +1389,7 @@ func HelmCmd(c *cli.Context) error {
 	}
 
 	repositoryCachePath := extractRepositoryCacheFromArgs(helmArgs)
-	serverDetails, err := extractHelmServerDetails(filteredArgs)
+	filteredArgs, serverDetails, err := extractHelmServerDetails(filteredArgs)
 	if err != nil {
 		return err
 	}
@@ -1433,23 +1433,24 @@ func extractRepositoryCacheFromArgs(args []string) string {
 }
 
 // extractHelmServerDetails extracts server ID from arguments and retrieves server details.
+// Returns cleaned args (with --server-id removed), server details, and error.
 // Returns nil serverDetails if no server ID is provided.
-func extractHelmServerDetails(args []string) (*coreConfig.ServerDetails, error) {
-	_, serverID, err := coreutils.ExtractServerIdFromCommand(args)
+func extractHelmServerDetails(args []string) ([]string, *coreConfig.ServerDetails, error) {
+	cleanedArgs, serverID, err := coreutils.ExtractServerIdFromCommand(args)
 	if err != nil {
-		return nil, fmt.Errorf("failed to extract server ID: %w", err)
+		return nil, nil, fmt.Errorf("failed to extract server ID: %w", err)
 	}
 
 	if serverID == "" {
-		return nil, nil
+		return cleanedArgs, nil, nil
 	}
 
 	serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, true)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get server configuration for ID '%s': %w", serverID, err)
+		return nil, nil, fmt.Errorf("failed to get server configuration for ID '%s': %w", serverID, err)
 	}
 
-	return serverDetails, nil
+	return cleanedArgs, serverDetails, nil
 }
 
 // setHelmRepositoryCache sets or unsets HELM_REPOSITORY_CACHE environment variable.
