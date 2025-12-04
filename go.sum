@@ -1277,8 +1277,8 @@ github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
 github.com/naveenku-jfrog/build-info-go v1.12.1-0.20251204140510-1d49e7aa4a2b h1:vnTnpR/NmvEHR/qrpIjGsX3yWPPLHR/fIdjodeTlTck=
 github.com/naveenku-jfrog/build-info-go v1.12.1-0.20251204140510-1d49e7aa4a2b/go.mod h1:NEJwH1HxzhtWuiT8eR/anbjT0A3OyLBWpZZrDJs+hWQ=
-github.com/naveenku-jfrog/jfrog-cli-artifactory v0.0.0-20251204143351-223f75b6e9f9 h1:yR4sfZ/fAdb8Kc3XTOPwsfPCQ7g2/1mJZwU0Mn7lPqs=
-github.com/naveenku-jfrog/jfrog-cli-artifactory v0.0.0-20251204143351-223f75b6e9f9/go.mod h1:fJZtE3CQRryejrlrCA00jDaTeDKEA/7zi/40lYnDbbA=
+github.com/naveenku-jfrog/jfrog-cli-artifactory v0.0.0-20251204162445-3b9e1fabd7ab h1:B1JGzsdbYC5ZSv4pMWRFmaxCzO3mo1+1zaXbDjPC+Yk=
+github.com/naveenku-jfrog/jfrog-cli-artifactory v0.0.0-20251204162445-3b9e1fabd7ab/go.mod h1:fJZtE3CQRryejrlrCA00jDaTeDKEA/7zi/40lYnDbbA=
 github.com/nwaples/rardecode v1.1.3 h1:cWCaZwfM5H7nAD6PyEdcVnczzV8i/JtotnyW/dD9lEc=
 github.com/nwaples/rardecode v1.1.3/go.mod h1:5DzqNKiOdpKKBH87u8VlvAnPZMXcGRhxWkRpHbbfGS0=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
