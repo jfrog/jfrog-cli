@@ -149,10 +149,20 @@ func setupInsecureBuildxBuilder(t *testing.T, builderName string) func() {
 	output, err = bootstrapCmd.CombinedOutput()
 	require.NoError(t, err, "Failed to bootstrap buildx builder: %s", string(output))
 
+	// Set BUILDX_BUILDER env var to force 'docker build' to use our builder
+	oldBuilder := os.Getenv("BUILDX_BUILDER")
+	require.NoError(t, os.Setenv("BUILDX_BUILDER", builderName))
+
 	log.Info("Created buildx builder '%s' with insecure registry config for '%s'", builderName, registryHost)
 
 	// Return cleanup function
 	return func() {
+		// Restore original BUILDX_BUILDER env var
+		if oldBuilder == "" {
+			_ = os.Unsetenv("BUILDX_BUILDER")
+		} else {
+			_ = os.Setenv("BUILDX_BUILDER", oldBuilder)
+		}
 		// Remove the builder
 		_ = exec.Command("docker", "buildx", "rm", builderName).Run()
 		// Cleanup temp directory
