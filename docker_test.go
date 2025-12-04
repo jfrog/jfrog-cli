@@ -948,7 +948,7 @@ func TestDockerBuildAndPushWithBuildInfo(t *testing.T) {
 	}
 	// Construct image name for Docker (hostname/repo/image:tag format, no protocol)
 	imageName := path.Join(registryHost, tests.OciLocalRepo, "test-docker-build")
-	imageTag := imageName + ":v1"
+	imageTag := imageName + ":v2"
 
 	log.Info("Building image with oci", imageTag)
 
@@ -999,7 +999,7 @@ func TestDockerBuildMultiStageDockerfile(t *testing.T) {
 	}
 	// Construct image name for Docker (hostname/repo/image:tag format, no protocol)
 	imageName := path.Join(registryHost, tests.OciLocalRepo, "test-docker-build")
-	imageTag := imageName + ":v1"
+	imageTag := imageName + ":v3"
 
 	log.Info("Building image with oci", imageTag)
 
@@ -1055,7 +1055,7 @@ func TestDockerBuildxWithBuildInfo(t *testing.T) {
 	}
 	// Construct image name for Docker (hostname/repo/image:tag format, no protocol)
 	imageName := path.Join(registryHost, tests.OciLocalRepo, "test-docker-build")
-	imageTag := imageName + ":v1"
+	imageTag := imageName + ":v4"
 
 	log.Info("Building image with oci", imageTag)
 	fullImageName := imageTag
@@ -1115,7 +1115,7 @@ func TestDockerBuildWithVirtualRepo(t *testing.T) {
 	}
 	// Construct image name for Docker (hostname/repo/image:tag format, no protocol)
 	imageName := path.Join(registryHost, tests.OciLocalRepo, "test-docker-build")
-	imageTag := imageName + ":v1"
+	imageTag := imageName + ":v5"
 
 	log.Info("Building image with oci", imageTag)
 
