@@ -973,8 +973,8 @@ CMD ["sh"]`, baseImage)
 	// clean build before test
 	runJfrogCli(t, "rt", "bc", buildName, buildNumber)
 
-	// Run docker build with build-info (--load to make image available locally for cleanup)
-	runCmdWithRetries(t, jfCliTask("docker", "build", "-t", imageTag, "--push", "--load", "-f", dockerfilePath, "--build-name="+buildName, "--build-number="+buildNumber, workspace))
+	// Run docker build with build-info (--push only, image stays in registry not local)
+	runJfrogCli(t, "docker", "build", "-t", imageTag, "--push", "-f", dockerfilePath, "--build-name="+buildName, "--build-number="+buildNumber, workspace)
 
 	// Publish build info
 	runRt(t, "build-publish", buildName, buildNumber)
@@ -982,8 +982,6 @@ CMD ["sh"]`, baseImage)
 	// Validate build info - should have both dependencies and artifacts
 	validateDockerBuildInfo(t, buildName, buildNumber, true)
 
-	// Cleanup
-	tests2.DeleteTestImage(t, imageTag, container.DockerClient)
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 }
 
@@ -1030,7 +1028,7 @@ CMD ["hello"]`, golangImage, alpineImage)
 	runJfrogCli(t, "rt", "bc", buildName, buildNumber)
 
 	// Run docker build with build-info (--load to make image available locally for cleanup)
-	runCmdWithRetries(t, jfCliTask("docker", "build", "-t", imageTag, "-f", dockerfilePath, "--load", "--build-name="+buildName, "--build-number="+buildNumber, workspace))
+	runJfrogCli(t, "docker", "build", "-t", imageTag, "-f", dockerfilePath, "--load", "--build-name="+buildName, "--build-number="+buildNumber, workspace)
 
 	// Publish build info
 	runRt(t, "build-publish", buildName, buildNumber)
@@ -1140,8 +1138,8 @@ CMD ["sh"]`, baseImage)
 	// clean build before test
 	runJfrogCli(t, "rt", "bc", buildName, buildNumber)
 
-	// Run docker build (--load to make image available locally for cleanup)
-	runJfrogCli(t, "docker", "build", "-t", imageTag, "-f", dockerfilePath, "--push", "--load",
+	// Run docker build (--push only, image stays in registry not local)
+	runJfrogCli(t, "docker", "build", "-t", imageTag, "-f", dockerfilePath, "--push",
 		"--build-name="+buildName, "--build-number="+buildNumber, workspace)
 
 	// Publish build info
@@ -1150,7 +1148,5 @@ CMD ["sh"]`, baseImage)
 	// Validate build info - virtual repo with push should have both dependencies and artifacts
 	validateDockerBuildInfo(t, buildName, buildNumber, true)
 
-	// Cleanup
-	tests2.DeleteTestImage(t, imageTag, container.DockerClient)
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 }
