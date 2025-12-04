@@ -335,7 +335,7 @@ func getNeededBuildNames(buildNamesMap map[*bool][]*string) []string {
 func GetNonVirtualRepositories() map[*string]string {
 	nonVirtualReposMap := map[*bool][]*string{
 		TestArtifactory:        {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo, &TerraformRepo, &ReleaseLifecycleDependencyRepo},
-		TestArtifactoryProject: {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo},
+		TestArtifactoryProject: {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo, &HelmLocalRepo},
 		TestDistribution:       {&DistRepo1, &DistRepo2},
 		TestDocker:             {&DockerLocalRepo, &DockerLocalPromoteRepo, &DockerRemoteRepo, &OciLocalRepo, &OciRemoteRepo},
 		TestDockerScan:         {&DockerLocalRepo, &DockerLocalPromoteRepo, &DockerRemoteRepo},
