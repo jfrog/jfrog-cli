@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 	"net/url"
 	"os"
 	"os/exec"
@@ -14,6 +13,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/jfrog/jfrog-client-go/utils/log"
 
 	tests2 "github.com/jfrog/jfrog-cli-artifactory/utils/tests"
 
@@ -97,12 +98,65 @@ func initDockerBuildTest(t *testing.T) func() {
 	// Initialize native docker test setup
 	cleanupNativeDocker := initNativeDockerWithArtTest(t)
 
+	// Setup buildx builder with insecure registry config for localhost
+	builderName := "jfrog-test-builder"
+	cleanupBuilder := setupInsecureBuildxBuilder(t, builderName)
+
 	// Return combined cleanup function
 	return func() {
+		// Cleanup buildx builder
+		cleanupBuilder()
 		// Restore JFROG_RUN_NATIVE
 		clientTestUtils.UnSetEnvAndAssert(t, "JFROG_RUN_NATIVE")
 		// Run native docker cleanup
 		cleanupNativeDocker()
+	}
+}
+
+// setupInsecureBuildxBuilder creates a buildx builder with insecure registry config
+func setupInsecureBuildxBuilder(t *testing.T, builderName string) func() {
+	// Get registry host from ContainerRegistry
+	registryHost := *tests.ContainerRegistry
+	if parsedURL, err := url.Parse(registryHost); err == nil && parsedURL.Host != "" {
+		registryHost = parsedURL.Host
+	}
+
+	// Create temporary buildkitd.toml config
+	tmpDir, err := os.MkdirTemp("", "buildkit-config")
+	require.NoError(t, err)
+
+	configPath := filepath.Join(tmpDir, "buildkitd.toml")
+	configContent := fmt.Sprintf(`[registry."%s"]
+  http = true
+  insecure = true
+`, registryHost)
+	require.NoError(t, os.WriteFile(configPath, []byte(configContent), 0644))
+
+	// Remove builder if it exists (ignore errors)
+	_ = exec.Command("docker", "buildx", "rm", builderName).Run()
+
+	// Create buildx builder with insecure config
+	createCmd := exec.Command("docker", "buildx", "create",
+		"--name", builderName,
+		"--driver-opt", "network=host",
+		"--config", configPath,
+		"--use")
+	output, err := createCmd.CombinedOutput()
+	require.NoError(t, err, "Failed to create buildx builder: %s", string(output))
+
+	// Bootstrap the builder
+	bootstrapCmd := exec.Command("docker", "buildx", "inspect", "--bootstrap")
+	output, err = bootstrapCmd.CombinedOutput()
+	require.NoError(t, err, "Failed to bootstrap buildx builder: %s", string(output))
+
+	log.Info("Created buildx builder '%s' with insecure registry config for '%s'", builderName, registryHost)
+
+	// Return cleanup function
+	return func() {
+		// Remove the builder
+		_ = exec.Command("docker", "buildx", "rm", builderName).Run()
+		// Cleanup temp directory
+		_ = os.RemoveAll(tmpDir)
 	}
 }
 
