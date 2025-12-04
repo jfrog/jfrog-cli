@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"net/url"
 	"os"
 	"os/exec"
@@ -823,10 +824,11 @@ func TestDockerBuildWithBuildInfo(t *testing.T) {
 	if parsedURL, err := url.Parse(registryHost); err == nil && parsedURL.Host != "" {
 		registryHost = parsedURL.Host
 	}
-	// Construct image name for Docker using url.JoinPath (hostname/repo/image:tag format, no protocol)
-	imageName, err := url.JoinPath(registryHost, tests.OciLocalRepo, "test-docker-build")
-	assert.NoError(t, err)
+	// Construct image name for Docker (hostname/repo/image:tag format, no protocol)
+	imageName := path.Join(registryHost, tests.OciLocalRepo, "test-docker-build")
 	imageTag := imageName + ":v1"
+
+	log.Info("Building image with oci", imageTag)
 
 	// Create test workspace
 	workspace, err := filepath.Abs(tests.Out)
@@ -834,8 +836,7 @@ func TestDockerBuildWithBuildInfo(t *testing.T) {
 	assert.NoError(t, fileutils.CreateDirIfNotExist(workspace))
 
 	// Create simple Dockerfile
-	baseImage, err := url.JoinPath(registryHost, tests.OciRemoteRepo, "nginx:1.28.0")
-	assert.NoError(t, err)
+	baseImage := path.Join(registryHost, tests.OciRemoteRepo, "nginx:1.28.0")
 	dockerfileContent := fmt.Sprintf(`FROM %s
 RUN echo "Hello from test"
 CMD ["sh"]`, baseImage)
@@ -872,10 +873,11 @@ func TestDockerBuildAndPushWithBuildInfo(t *testing.T) {
 	if parsedURL, err := url.Parse(registryHost); err == nil && parsedURL.Host != "" {
 		registryHost = parsedURL.Host
 	}
-	// Construct image name for Docker using url.JoinPath (hostname/repo/image:tag format, no protocol)
-	imageName, err := url.JoinPath(registryHost, tests.OciLocalRepo, "test-docker-build-push")
-	assert.NoError(t, err)
-	imageTag := imageName + ":1"
+	// Construct image name for Docker (hostname/repo/image:tag format, no protocol)
+	imageName := path.Join(registryHost, tests.OciLocalRepo, "test-docker-build")
+	imageTag := imageName + ":v1"
+
+	log.Info("Building image with oci", imageTag)
 
 	// Create test workspace
 	workspace, err := filepath.Abs(tests.Out)
@@ -883,8 +885,7 @@ func TestDockerBuildAndPushWithBuildInfo(t *testing.T) {
 	assert.NoError(t, fileutils.CreateDirIfNotExist(workspace))
 
 	// Create simple Dockerfile
-	baseImage, err := url.JoinPath(registryHost, tests.OciRemoteRepo, "nginx:1.28.0")
-	assert.NoError(t, err)
+	baseImage := path.Join(registryHost, tests.OciRemoteRepo, "nginx:1.28.0")
 	dockerfileContent := fmt.Sprintf(`FROM %s
 RUN echo "Hello from test"
 CMD ["sh"]`, baseImage)
@@ -925,10 +926,11 @@ func TestDockerBuildMultiStageDockerfile(t *testing.T) {
 	if parsedURL, err := url.Parse(registryHost); err == nil && parsedURL.Host != "" {
 		registryHost = parsedURL.Host
 	}
-	// Construct image name for Docker using url.JoinPath (hostname/repo/image:tag format, no protocol)
-	imageName, err := url.JoinPath(registryHost, tests.OciLocalRepo, "test-multistage")
-	assert.NoError(t, err)
+	// Construct image name for Docker (hostname/repo/image:tag format, no protocol)
+	imageName := path.Join(registryHost, tests.OciLocalRepo, "test-docker-build")
 	imageTag := imageName + ":v1"
+
+	log.Info("Building image with oci", imageTag)
 
 	// Create test workspace
 	workspace, err := filepath.Abs(tests.Out)
@@ -936,10 +938,8 @@ func TestDockerBuildMultiStageDockerfile(t *testing.T) {
 	assert.NoError(t, fileutils.CreateDirIfNotExist(workspace))
 
 	// Construct base images with hostname (just like imageTag construction)
-	golangImage, err := url.JoinPath(registryHost, tests.OciRemoteRepo, "alpine:latest")
-	assert.NoError(t, err)
-	alpineImage, err := url.JoinPath(registryHost, tests.OciRemoteRepo, "nginx:latest")
-	assert.NoError(t, err)
+	golangImage := path.Join(registryHost, tests.OciRemoteRepo, "alpine:latest")
+	alpineImage := path.Join(registryHost, tests.OciRemoteRepo, "nginx:latest")
 
 	// Create multi-stage Dockerfile
 	dockerfileContent := fmt.Sprintf(`# First stage - builder
@@ -982,10 +982,11 @@ func TestDockerBuildxWithBuildInfo(t *testing.T) {
 	if parsedURL, err := url.Parse(registryHost); err == nil && parsedURL.Host != "" {
 		registryHost = parsedURL.Host
 	}
-	// Construct image name for Docker using url.JoinPath (hostname/repo/image:tag format, no protocol)
-	imageName, err := url.JoinPath(registryHost, tests.OciLocalRepo, "test-buildx")
-	assert.NoError(t, err)
+	// Construct image name for Docker (hostname/repo/image:tag format, no protocol)
+	imageName := path.Join(registryHost, tests.OciLocalRepo, "test-docker-build")
 	imageTag := imageName + ":v1"
+
+	log.Info("Building image with oci", imageTag)
 	fullImageName := imageTag
 
 	// Create test workspace
@@ -994,8 +995,7 @@ func TestDockerBuildxWithBuildInfo(t *testing.T) {
 	assert.NoError(t, fileutils.CreateDirIfNotExist(workspace))
 
 	// Construct base image with hostname (just like imageTag construction)
-	baseImage, err := url.JoinPath(registryHost, tests.OciRemoteRepo, "alpine:latest")
-	assert.NoError(t, err)
+	baseImage := path.Join(registryHost, tests.OciRemoteRepo, "alpine:latest")
 
 	// Create Dockerfile for buildx
 	dockerfileContent := fmt.Sprintf(`FROM %s
@@ -1042,10 +1042,11 @@ func TestDockerBuildWithVirtualRepo(t *testing.T) {
 	if parsedURL, err := url.Parse(registryHost); err == nil && parsedURL.Host != "" {
 		registryHost = parsedURL.Host
 	}
-	// Construct image name for Docker using url.JoinPath (hostname/repo/image:tag format, no protocol)
-	imageName, err := url.JoinPath(registryHost, tests.DockerVirtualRepo, "test-virtual-repo")
-	assert.NoError(t, err)
+	// Construct image name for Docker (hostname/repo/image:tag format, no protocol)
+	imageName := path.Join(registryHost, tests.OciLocalRepo, "test-docker-build")
 	imageTag := imageName + ":v1"
+
+	log.Info("Building image with oci", imageTag)
 
 	// Create test workspace
 	workspace, err := filepath.Abs(tests.Out)
@@ -1053,8 +1054,7 @@ func TestDockerBuildWithVirtualRepo(t *testing.T) {
 	assert.NoError(t, fileutils.CreateDirIfNotExist(workspace))
 
 	// Construct base image with hostname (just like imageTag construction)
-	baseImage, err := url.JoinPath(registryHost, tests.OciRemoteRepo, "alpine:latest")
-	assert.NoError(t, err)
+	baseImage := path.Join(registryHost, tests.OciRemoteRepo, "alpine:latest")
 
 	// Create Dockerfile that uses image from virtual repo
 	dockerfileContent := fmt.Sprintf(`FROM %s
