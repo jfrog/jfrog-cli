@@ -1006,7 +1006,11 @@ func loginCmd(c *cli.Context) error {
 		}
 		cmd := exec.Command("docker", "login", registry, "-u", user, "-p", password)
 		output, err := cmd.CombinedOutput()
-		return errorutils.CheckErrorf("%s, %s", output, err)
+		if err != nil {
+			return errorutils.CheckErrorf("%s, %s", output, err)
+		}
+		log.Info(string(output))
+		return nil
 	}
 
 	// if registry is not provided use the default from the server details
