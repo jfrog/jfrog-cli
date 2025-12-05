@@ -1147,8 +1147,8 @@ github.com/jellydator/ttlcache/v3 v3.4.0 h1:YS4P125qQS0tNhtL6aeYkheEaB/m8HCqdMMP
 github.com/jellydator/ttlcache/v3 v3.4.0/go.mod h1:Hw9EgjymziQD3yGsQdf1FqFdpp7YjFMd4Srg5EJlgD4=
 github.com/jfrog/archiver/v3 v3.6.1 h1:LOxnkw9pOn45DzCbZNFV6K0+6dCsQ0L8mR3ZcujO5eI=
 github.com/jfrog/archiver/v3 v3.6.1/go.mod h1:VgR+3WZS4N+i9FaDwLZbq+jeU4B4zctXL+gL4EMzfLw=
-github.com/jfrog/build-info-go v1.12.4 h1:eoHoJDOF7Rx2gAOAXEAjbEIpnH+4y5ha2quQT48Py3Q=
-github.com/jfrog/build-info-go v1.12.4/go.mod h1:NEJwH1HxzhtWuiT8eR/anbjT0A3OyLBWpZZrDJs+hWQ=
+github.com/jfrog/build-info-go v1.12.5-0.20251204173227-adf59fe5be3e h1:vYCRSazKPJ08FaXK9EBHWJ0JH3pofbY22eWDkWHdw0s=
+github.com/jfrog/build-info-go v1.12.5-0.20251204173227-adf59fe5be3e/go.mod h1:NEJwH1HxzhtWuiT8eR/anbjT0A3OyLBWpZZrDJs+hWQ=
 github.com/jfrog/froggit-go v1.20.4 h1:N9XkNV00HNjpI8p6xXlF9DrWmvE9hz3z2XRDAYJDweQ=
 github.com/jfrog/froggit-go v1.20.4/go.mod h1:obSG1SlsWjktkuqmKtpq7MNTTL63e0ot+ucTnlOMV88=
 github.com/jfrog/go-mockhttp v0.3.1 h1:/wac8v4GMZx62viZmv4wazB5GNKs+GxawuS1u3maJH8=
@@ -1169,8 +1169,8 @@ github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20251114155350-7ea4c8e32d
 github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20251114155350-7ea4c8e32d5a/go.mod h1:qbu4iqBST9x8LgD8HhzUm91iOB3vHqtoGmaxOnmw0ok=
 github.com/jfrog/jfrog-cli-security v1.23.0 h1:kV/NQhyID/P9Lf7D+sgscvkIDQ0l1sYMXnjs1EKWXaE=
 github.com/jfrog/jfrog-cli-security v1.23.0/go.mod h1:qBAvU9kN41nReJk/O4V9Q/xwiXfAdyhqRIYaOjVm8nE=
-github.com/jfrog/jfrog-client-go v1.55.1-0.20251119183924-d765eb708cec h1:tNfeGi/2FuxIUSi8urFZuqa33grynAHwLRH6iIK/DB0=
-github.com/jfrog/jfrog-client-go v1.55.1-0.20251119183924-d765eb708cec/go.mod h1:ureS+L3wNs0qYUBSwH8C9PjwnraTX9ibZu7JkaqjO/E=
+github.com/jfrog/jfrog-client-go v1.55.1-0.20251202154341-6ef0c0e3e9ce h1:2y4Nhptm15CLYNlkZRdk6z0J8uLPcCxZFliK2E2lcLQ=
+github.com/jfrog/jfrog-client-go v1.55.1-0.20251202154341-6ef0c0e3e9ce/go.mod h1:ureS+L3wNs0qYUBSwH8C9PjwnraTX9ibZu7JkaqjO/E=
 github.com/jhump/protoreflect v1.17.0 h1:qOEr613fac2lOuTgWN4tPAtLL7fUSbuJL5X5XumQh94=
 github.com/jhump/protoreflect v1.17.0/go.mod h1:h9+vUUL38jiBzck8ck+6G/aeMX8Z4QUY/NiJPwPNi+8=
 github.com/jmespath/go-jmespath v0.4.1-0.20220621161143-b0104c826a24 h1:liMMTbpW34dhU4az1GN0pTPADwNmvoRSeoZ6PItiqnY=
