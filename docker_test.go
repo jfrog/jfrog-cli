@@ -98,6 +98,15 @@ func initDockerBuildTest(t *testing.T) func() {
 	// Initialize native docker test setup
 	cleanupNativeDocker := initNativeDockerWithArtTest(t)
 
+	// if this is an external JFrog instance, no need to setup buildx with insecure registry
+	if strings.HasPrefix(*tests.JfrogUrl, "https://") {
+		return func() {
+			// Restore JFROG_RUN_NATIVE
+			clientTestUtils.UnSetEnvAndAssert(t, "JFROG_RUN_NATIVE")
+			// Run native docker cleanup
+			cleanupNativeDocker()
+		}
+	}
 	// Setup buildx builder with insecure registry config for localhost
 	builderName := "jfrog-test-builder"
 	cleanupBuilder := setupInsecureBuildxBuilder(t, builderName)
