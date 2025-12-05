@@ -274,14 +274,14 @@ require (
 
 replace github.com/docker/docker => github.com/docker/docker v27.5.1+incompatible
 
-//replace github.com/jfrog/jfrog-cli-artifactory => github.com/naveenku-jfrog/jfrog-cli-artifactory v0.0.0-20251129184826-6834d2c05c2e
+replace github.com/jfrog/jfrog-cli-artifactory => github.com/fluxxBot/jfrog-cli-artifactory v0.0.0-20251205203803-6ab736eb453e
 
-//replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20251006061821-8b1be6a65215
+replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.12.5-0.20251204173227-adf59fe5be3e
 
 // replace github.com/jfrog/jfrog-cli-core/v2 => github.com/reshmifrog/jfrog-cli-core/v2 v2.58.5-0.20251110095124-ab9a4102ec5a
 
 // replace github.com/jfrog/jfrog-cli-core/v2 => github.com/attiasas/jfrog-cli-core/v2 v2.0.0-20251104113958-abd9de5958c4
 
-//replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.54.2-0.20251007084958-5eeaa42c31a6
+replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.55.1-0.20251202154341-6ef0c0e3e9ce
 
 // replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security dev
