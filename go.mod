@@ -274,7 +274,7 @@ require (
 
 replace github.com/docker/docker => github.com/docker/docker v27.5.1+incompatible
 
-replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20251201084635-893579793a3e
+replace github.com/jfrog/jfrog-cli-artifactory => github.com/fluxxBot/jfrog-cli-artifactory v0.0.0-20251205203803-6ab736eb453e
 
 replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.12.5-0.20251204173227-adf59fe5be3e
 
