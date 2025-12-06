@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/container/strategies"
+
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/python"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/setup"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
@@ -872,6 +874,9 @@ func dockerCmd(c *cli.Context) error {
 		err = loginCmd(c)
 	case "scan":
 		return dockerScanCmd(c, image)
+		// Handle both build and buildx with same handler
+	case "build", "buildx":
+		err = buildCmd(c)
 	default:
 		err = dockerNativeCmd(c)
 	}
@@ -929,6 +934,39 @@ func pushCmd(c *cli.Context, image string) (err error) {
 	return
 }
 
+func buildCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "dockerbuildhelp"); show || err != nil {
+		return err
+	}
+
+	// Extract build configuration and arguments
+	_, rtDetails, _, _, _, cleanArgs, buildConfiguration, err := extractDockerOptionsFromArgs(c.Args())
+	if err != nil {
+		return err
+	}
+	pushOption, dockerFilePath, imageTag, err := extractDockerBuildOptionsFromArgs(cleanArgs)
+	if err != nil {
+		return err
+	}
+
+	// Login to the docker registry
+	err = loginCmd(c)
+	if err != nil {
+		return err
+	}
+
+	dockerOptions := strategies.DockerBuildOptions{
+		DockerFilePath: dockerFilePath,
+		PushExpected:   pushOption,
+		ImageTag:       imageTag,
+	}
+
+	buildCommand := container.NewBuildCommand(cleanArgs).SetDockerBuildOptions(dockerOptions).SetBuildConfiguration(buildConfiguration)
+	buildCommand.SetServerDetails(rtDetails)
+
+	return commands.Exec(buildCommand)
+}
+
 func loginCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "dockerloginhelp"); show || err != nil {
 		return err
@@ -967,8 +1005,12 @@ func loginCmd(c *cli.Context) error {
 			return errors.New("you need to specify a registry for login using username and password")
 		}
 		cmd := exec.Command("docker", "login", registry, "-u", user, "-p", password)
-		_, err := cmd.CombinedOutput()
-		return err
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			return errorutils.CheckErrorf("%s, %s", output, err)
+		}
+		log.Info(string(output))
+		return nil
 	}
 
 	// if registry is not provided use the default from the server details
@@ -977,12 +1019,13 @@ func loginCmd(c *cli.Context) error {
 	}
 
 	loginCommand := container.NewContainerManagerCommand(containerutils.DockerClient)
+	loginCommand.SetPrintConsoleError(true)
 	loginCommand.SetServerDetails(rtDetails).SetLoginRegistry(registry)
 	// Perform login
 	if err := loginCommand.PerformLogin(rtDetails, containerutils.DockerClient); err != nil {
 		return err
 	}
-	log.Info("Login Succeeded.")
+	// here docker itself returns the login success message, so no need to print it again
 	return nil
 }
 
@@ -1063,6 +1106,44 @@ func extractDockerLoginOptionsFromArgs(args []string) (user, password string, er
 		if err != nil {
 			return
 		}
+	}
+	return
+}
+
+func extractDockerBuildOptionsFromArgs(args []string) (pushOption bool, dockerfilePath string, imageTag string, err error) {
+	// check for --push flag or output=type=registry or output=push=true flag, first is the shorthand operator of the later
+	_, pushOption, err = coreutils.FindBooleanFlag("--push", args)
+	if err != nil {
+		return
+	}
+	_, _, outputOption, err := coreutils.FindFlag("--output", args)
+	if err != nil {
+		return
+	}
+	if !pushOption && outputOption != "" &&
+		(strings.Contains(outputOption, "type=registry") ||
+			(strings.Contains(outputOption, "push=true") && strings.Contains(outputOption, "type=image"))) {
+		pushOption = true
+	}
+
+	// Check for -f or --file flag
+	_, _, dockerfilePath, err = coreutils.FindFlag("-f", args)
+	if err != nil || dockerfilePath == "" {
+		_, _, dockerfilePath, _ = coreutils.FindFlag("--file", args)
+	}
+	if dockerfilePath == "" {
+		// Default to Dockerfile in current directory
+		dockerfilePath = "Dockerfile"
+	}
+
+	// Extract image tag from command
+	_, _, imageTag, err = coreutils.FindFlag("-t", args)
+	if err != nil || imageTag == "" {
+		// Try --tag flag as alternative
+		_, _, imageTag, _ = coreutils.FindFlag("--tag", args)
+	}
+	if imageTag == "" {
+		err = errors.New("could not find image tag in the command arguments. Please provide an image tag using the '-t' or '--tag' flag")
 	}
 	return
 }

@@ -1,0 +1,7 @@
+{
+  "key": "${OCI_REMOTE_REPO}",
+  "rclass": "remote",
+  "packageType": "oci",
+  "url": "https://registry-1.docker.io/",
+  "blockPushingSchema1": "false"
+}

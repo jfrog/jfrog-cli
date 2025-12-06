@@ -47,6 +47,7 @@ const (
 	DockerLogin            = "docker-login"
 	DockerPush             = "docker-push"
 	DockerPull             = "docker-pull"
+	DockerBuild            = "docker-build"
 	ContainerPull          = "container-pull"
 	ContainerPush          = "container-push"
 	BuildDockerCreate      = "build-docker-create"
@@ -1872,6 +1873,9 @@ var commandFlags = map[string][]string{
 	DockerPull: {
 		BuildName, BuildNumber, module, Project,
 		serverId, skipLogin,
+	},
+	DockerBuild: {
+		BuildName, BuildNumber, serverId,
 	},
 	DockerPromote: {
 		targetDockerImage, sourceTag, targetTag, dockerPromoteCopy, url, user, password, accessToken, sshPassphrase, sshKeyPath,
