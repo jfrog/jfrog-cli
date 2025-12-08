@@ -317,6 +317,8 @@ const (
 
 	repo = "repo"
 
+	username = "username"
+
 	// Unique git-lfs-clean flags
 	glcPrefix = "glc-"
 	glcDryRun = glcPrefix + dryRun
@@ -1971,7 +1973,7 @@ var commandFlags = map[string][]string{
 		BuildName, BuildNumber, module, Project,
 	},
 	Helm: {
-		BuildName, BuildNumber, module, Project,
+		BuildName, BuildNumber, module, Project, serverId, username, password,
 	},
 	RubyConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,

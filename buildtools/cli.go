@@ -1383,16 +1383,17 @@ func HelmCmd(c *cli.Context) error {
 	args := cliutils.ExtractCommand(c)
 	cmdName, helmArgs := getCommandName(args)
 
-	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(helmArgs)
+	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
 	if err != nil {
 		return err
 	}
 
-	repositoryCachePath := extractRepositoryCacheFromArgs(helmArgs)
-	filteredArgs, serverDetails, err := extractHelmServerDetails(filteredArgs)
+	helmArgs, serverDetails, err := extractHelmServerDetails(helmArgs)
 	if err != nil {
 		return err
 	}
+
+	helmArgs, repositoryCachePath := extractRepositoryCacheFromArgs(helmArgs)
 
 	restoreEnv, err := setHelmRepositoryCache(repositoryCachePath)
 	if err != nil {
@@ -1415,21 +1416,13 @@ func HelmCmd(c *cli.Context) error {
 	return commands.Exec(helmCmd)
 }
 
-// extractRepositoryCacheFromArgs extracts the --repository-cache flag value from Helm command arguments.
-// It supports both --repository-cache=path and --repository-cache path formats.
-func extractRepositoryCacheFromArgs(args []string) string {
-	const flagName = "--repository-cache"
-	const flagPrefix = flagName + "="
-
-	for i, arg := range args {
-		if strings.HasPrefix(arg, flagPrefix) {
-			return strings.TrimPrefix(arg, flagPrefix)
-		}
-		if arg == flagName && i+1 < len(args) {
-			return args[i+1]
-		}
+// extractRepositoryCacheFromArgs extracts the --repository-cache flag value from Helm command arguments
+func extractRepositoryCacheFromArgs(args []string) ([]string, string) {
+	cleanedArgs, repositoryCachePath, err := coreutils.ExtractStringOptionFromArgs(args, "repository-cache")
+	if err != nil {
+		return args, ""
 	}
-	return ""
+	return cleanedArgs, repositoryCachePath
 }
 
 // extractHelmServerDetails extracts server ID from arguments and retrieves server details.
@@ -1452,7 +1445,6 @@ func extractHelmServerDetails(args []string) ([]string, *coreConfig.ServerDetail
 }
 
 // setHelmRepositoryCache sets or unsets HELM_REPOSITORY_CACHE environment variable.
-// Returns a restore function that should be called in a defer to restore the original value.
 func setHelmRepositoryCache(cachePath string) (func(), error) {
 	const envVarName = "HELM_REPOSITORY_CACHE"
 	originalValue := os.Getenv(envVarName)
