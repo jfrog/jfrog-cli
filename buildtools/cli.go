@@ -1383,7 +1383,7 @@ func HelmCmd(c *cli.Context) error {
 	args := cliutils.ExtractCommand(c)
 	cmdName, helmArgs := getCommandName(args)
 
-	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
+	helmArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(helmArgs)
 	if err != nil {
 		return err
 	}
@@ -1407,7 +1407,7 @@ func HelmCmd(c *cli.Context) error {
 	}
 
 	helmCmd := helmcmd.NewHelmCommand().
-		SetHelmArgs(filteredArgs).
+		SetHelmArgs(helmArgs).
 		SetBuildConfiguration(buildConfiguration).
 		SetServerDetails(serverDetails).
 		SetWorkingDirectory(workingDir).
