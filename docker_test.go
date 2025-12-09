@@ -55,7 +55,6 @@ func InitContainerTests() {
 	cleanUpOldRepositories()
 	tests.AddTimestampToGlobalVars()
 	createRequiredRepos()
-	cleanUpOldRepositories()
 }
 
 func initContainerTest(t *testing.T) (containerManagers []container.ContainerManagerType) {
