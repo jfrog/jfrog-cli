@@ -1,0 +1,6 @@
+{
+  "key": "${OCI_LOCAL_REPO}",
+  "rclass": "local",
+  "packageType": "oci",
+  "blockPushingSchema1": "false"
+}
