@@ -1,6 +1,7 @@
 package cliutils
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -650,11 +652,21 @@ func getLatestCliVersionFromGithubAPI() (githubVersionInfo githubResponse, err e
 	if err != nil {
 		return
 	}
-	err = json.Unmarshal(body, &githubVersionInfo)
+	// Use json.Decoder with DisallowUnknownFields for safer deserialization
+	decoder := json.NewDecoder(bytes.NewReader(body))
+	decoder.DisallowUnknownFields()
+	if err = decoder.Decode(&githubVersionInfo); err != nil {
+		return
+	}
+	// Validate the received version tag format
+	if !isValidVersionTag(githubVersionInfo.TagName) {
+		err = errors.New("invalid version tag format received from GitHub API")
+	}
 	return
 }
 
 func doHttpRequest(client *http.Client, req *http.Request) (resp *http.Response, body []byte, err error) {
+	const maxResponseSize = 10 * 1024 * 1024 // 10MB limit
 	req.Close = true
 	resp, err = client.Do(req)
 	if errorutils.CheckError(err) != nil {
@@ -665,8 +677,19 @@ func doHttpRequest(client *http.Client, req *http.Request) (resp *http.Response,
 			err = errors.Join(err, errorutils.CheckError(resp.Body.Close()))
 		}
 	}()
-	body, err = io.ReadAll(resp.Body)
+	// Limit response body size to prevent potential DoS
+	body, err = io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
 	return resp, body, errorutils.CheckError(err)
+}
+
+// isValidVersionTag validates that the version tag follows semantic versioning format
+func isValidVersionTag(tag string) bool {
+	if tag == "" {
+		return false
+	}
+	// Validate semantic versioning format (v1.2.3 or 1.2.3)
+	matched, _ := regexp.MatchString(`^v?\d+\.\d+\.\d+`, tag)
+	return matched
 }
 
 // Get project key from flag or environment variable
