@@ -390,6 +390,7 @@ func initMavenTest(t *testing.T, disableConfig bool) {
 		err := createHomeConfigAndLocalRepo(t, true)
 		assert.NoError(t, err)
 	}
+	_ = os.Unsetenv("JFROG_RUN_NATIVE")
 	// Initialize serverDetails for maven tests
 	serverDetails = &config.ServerDetails{Url: *tests.JfrogUrl, ArtifactoryUrl: *tests.JfrogUrl + tests.ArtifactoryEndpoint, SshKeyPath: *tests.JfrogSshKeyPath, SshPassphrase: *tests.JfrogSshPassphrase}
 	if *tests.JfrogAccessToken != "" {
