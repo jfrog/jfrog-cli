@@ -1,8 +1,7 @@
 package main
 
 // Helm Integration Tests
-// These tests run automatically as part of Artifactory tests.
-// Run with: go test -v -test.artifactory -jfrog.url=http://localhost:8081/ -jfrog.user=admin -jfrog.password=password
+// Run with: go test -v -test.helm -jfrog.url=http://localhost:8081/ -jfrog.user=admin -jfrog.password=password
 
 import (
 	"bytes"
@@ -27,8 +26,8 @@ import (
 )
 
 func initHelmTest(t *testing.T) {
-	if !*tests.TestArtifactory && !*tests.TestArtifactoryProject {
-		t.Skip("Skipping Helm test. Helm tests run as part of Artifactory tests. Use '-test.artifactory' to run them.")
+	if !*tests.TestHelm {
+		t.Skip("Skipping Helm test. To run Helm test add the '-test.helm=true' option.")
 	}
 
 	if _, err := exec.LookPath("helm"); err != nil {
@@ -712,6 +711,52 @@ func TestHelmCommandWithServerID(t *testing.T) {
 	}
 	err = jfrogCli.Exec(args...)
 	require.NoError(t, err, "helm package with server-id should succeed")
+
+	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	require.NoError(t, err, "Failed to get build info")
+	require.True(t, found, "build info should be found")
+
+	validateHelmBuildInfo(t, publishedBuildInfo.BuildInfo, buildName, false, false)
+}
+
+func TestHelmCommandWithoutServerID(t *testing.T) {
+	initHelmTest(t)
+	defer cleanHelmTest(t)
+
+	buildName := tests.HelmBuildName + "-no-server-id"
+	buildNumber := "1"
+
+	chartDir := createTestHelmChart(t, "test-chart", "0.1.0")
+	defer func() {
+		if err := os.RemoveAll(chartDir); err != nil {
+			t.Logf("Warning: Failed to remove test chart directory %s: %v", chartDir, err)
+		}
+	}()
+
+	originalDir, err := os.Getwd()
+	require.NoError(t, err)
+	defer func() {
+		if err := os.Chdir(originalDir); err != nil {
+			t.Logf("Warning: Failed to change back to original directory: %v", err)
+		}
+	}()
+
+	err = os.Chdir(chartDir)
+	require.NoError(t, err)
+
+	// Test that helm command works without --server-id flag
+	// It should use the default server configuration
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+	args := []string{
+		"helm", "package", ".",
+		"--build-name=" + buildName,
+		"--build-number=" + buildNumber,
+		// No --server-id flag - should use default server
+	}
+	err = jfrogCli.Exec(args...)
+	require.NoError(t, err, "helm package without server-id should succeed (uses default server)")
 
 	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
 

@@ -1433,7 +1433,11 @@ func extractHelmServerDetails(args []string) ([]string, *coreConfig.ServerDetail
 	}
 
 	if serverID == "" {
-		return cleanedArgs, nil, nil
+		serverDetails, err := coreConfig.GetDefaultServerConf()
+		if err != nil {
+			return cleanedArgs, nil, err
+		}
+		return cleanedArgs, serverDetails, nil
 	}
 
 	serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, true)
