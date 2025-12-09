@@ -1161,8 +1161,6 @@ github.com/jfrog/jfrog-cli-application v1.0.2-0.20251120093802-1c39a37efcae h1:L
 github.com/jfrog/jfrog-cli-application v1.0.2-0.20251120093802-1c39a37efcae/go.mod h1:mBvgtVcGVjRAqc0b+TPmpYNz70nlXJqt1aitL0RGapA=
 github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20251201084635-893579793a3e h1:VMSR7O18TNpr4yKaUG28FURiehRPrTTtom2KCHEkGt0=
 github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20251201084635-893579793a3e/go.mod h1:3hLZrM2xT+PkIevIGret4x1xDFTaVoNu3h374QnrKyc=
-github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20251125083543-e689762c4ff0 h1:EsasTBE5i2MyCESS/icZxKIlObpGiOyW9K67MAaEWco=
-github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20251125083543-e689762c4ff0/go.mod h1:d9aADumiyjCBvZLffp8wldvP9XFHxcvk2PoOSUYms2g=
 github.com/jfrog/jfrog-cli-evidence v0.8.3-0.20251116083852-12dc534b4d13 h1:V9KRanq6ulMMLLwJcnbN2+UlDa0/+sWrUEC2Dex48+E=
 github.com/jfrog/jfrog-cli-evidence v0.8.3-0.20251116083852-12dc534b4d13/go.mod h1:6KohlDOtLswaJ4YYi/FqflJEZTvt7yP7SA1cjGG0If4=
 github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20251114155350-7ea4c8e32d5a h1:2EhQHDB15mIRPDJ62MwO5pruugpHRkeZq5P0PR4jWKI=
@@ -1346,6 +1344,8 @@ github.com/prometheus/common v0.65.0/go.mod h1:0gZns+BLRQ3V6NdaerOhMbwwRbNh9hkGI
 github.com/prometheus/procfs v0.17.0 h1:FuLQ+05u4ZI+SS/w9+BWEM2TXiHKsUQ9TADiRH7DuK0=
 github.com/prometheus/procfs v0.17.0/go.mod h1:oPQLaDAMRbA+u8H5Pbfq+dl3VDAvHxMUOVhe0wYB2zw=
 github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0/go.mod h1:qqbHyh8v60DhA7CoWK5oRCqLrMHRGoxYCSS9EjAz6Eo=
+github.com/reshmifrog/jfrog-cli-core/v2 v2.58.5-0.20251205053314-60d306390b3c h1:GUL11oZtaGhsWjh77G8ZarcoJ1yYBf69KPkC+lQccM4=
+github.com/reshmifrog/jfrog-cli-core/v2 v2.58.5-0.20251205053314-60d306390b3c/go.mod h1:d9aADumiyjCBvZLffp8wldvP9XFHxcvk2PoOSUYms2g=
 github.com/rivo/uniseg v0.2.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=
 github.com/rivo/uniseg v0.4.7 h1:WUdvkW8uEhrYfLC4ZzdpI2ztxP1I582+49Oc5Mq64VQ=
 github.com/rivo/uniseg v0.4.7/go.mod h1:FN3SvrM+Zdj16jyLfmOkMNblXMcoc8DfTHruCPUcx88=
