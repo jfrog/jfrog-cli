@@ -1,0 +1,512 @@
+#!/usr/bin/env python3
+"""
+Simulate the GitHub Actions workflow for preparing a release.
+This script replicates the behavior of .github/workflows/prepare-release.yml
+"""
+
+import argparse
+import re
+import subprocess
+import sys
+import os
+from typing import Tuple, Optional
+
+
+def run_command(cmd: list, check: bool = True, env: Optional[dict] = None, capture_output: bool = True) -> Tuple[int, str, str]:
+    """Run a shell command and return the result."""
+    print(f"Running: {' '.join(cmd)}")
+    env_vars = os.environ.copy()
+    if env:
+        env_vars.update(env)
+    
+    result = subprocess.run(
+        cmd,
+        capture_output=capture_output,
+        text=True,
+        env=env_vars,
+        check=False
+    )
+    
+    if capture_output:
+        stdout = result.stdout.strip()
+        stderr = result.stderr.strip()
+        if stdout:
+            print(f"  stdout: {stdout}")
+        if stderr:
+            print(f"  stderr: {stderr}")
+    else:
+        stdout = ""
+        stderr = ""
+    
+    if check and result.returncode != 0:
+        print(f"Error: Command failed with exit code {result.returncode}")
+        sys.exit(1)
+    
+    return result.returncode, stdout, stderr
+
+
+def get_go_env(go_home: Optional[str] = None) -> dict:
+    """Build Go environment variables from GOROOT."""
+    env = {}
+    if go_home:
+        env["GOROOT"] = go_home
+        # Add GOROOT/bin to PATH if not already present
+        go_bin = os.path.join(go_home, "bin")
+        current_path = os.environ.get("PATH", "")
+        if go_bin not in current_path:
+            env["PATH"] = f"{go_bin}:{current_path}"
+    return env
+
+
+def compute_current_version(go_home: Optional[str] = None) -> str:
+    """Compute current version by running 'go run main.go -v'."""
+    print("\n=== Computing current version ===")
+    go_env = get_go_env(go_home)
+    returncode, output, _ = run_command(["go", "run", "main.go", "-v"], check=True, env=go_env)
+    
+    # Extract version numbers only (remove non-numeric characters except dots and plus)
+    current_version = re.sub(r'[^0-9.+]+', '', output)
+    print(f"Current version: {current_version}")
+    return current_version
+
+
+def compute_next_version(version_type: str, gh_token: Optional[str] = None) -> str:
+    """Compute next version based on the latest GitHub release tag."""
+    print(f"\n=== Computing next {version_type} version ===")
+    
+    # Use GitHub CLI to get the latest release tag
+    env = {}
+    if gh_token:
+        env["GH_TOKEN"] = gh_token
+    
+    returncode, tag_output, _ = run_command(
+        ["gh", "release", "view", "--repo", "jfrog/jfrog-cli", "--json", "tagName", "-q", ".tagName"],
+        check=True,
+        env=env
+    )
+    
+    if not tag_output:
+        print("Error: Could not determine latest release tag from jfrog/jfrog-cli.")
+        sys.exit(1)
+    
+    # Remove 'v' prefix if present
+    version_core = tag_output.lstrip('v')
+    
+    # Parse semantic version (MAJOR.MINOR.PATCH)
+    parts = version_core.split('.')
+    if len(parts) < 3:
+        print(f"Error: Tag '{tag_output}' is not a valid semver (expected MAJOR.MINOR.PATCH).")
+        sys.exit(1)
+    
+    major = int(parts[0])
+    minor = int(parts[1])
+    # Strip any suffix from patch (e.g. 1-rc.1 -> 1)
+    patch_raw = parts[2]
+    patch_match = re.match(r'^(\d+)', patch_raw)
+    patch = int(patch_match.group(1)) if patch_match else 0
+    
+    # Compute next version based on version_type
+    if version_type == "minor":
+        next_minor = minor + 1
+        next_version = f"{major}.{next_minor}.0"
+    elif version_type == "patch":
+        next_patch = patch + 1
+        next_version = f"{major}.{minor}.{next_patch}"
+    else:
+        print(f"Error: Invalid version type '{version_type}'. Must be 'minor' or 'patch'.")
+        sys.exit(1)
+    
+    print(f"Next version: {next_version}")
+    return next_version
+
+
+def create_and_checkout_branch(current_version: str, next_version: str, ref: str) -> str:
+    """Create and checkout a new branch for the version bump."""
+    print("\n=== Creating and checking out new branch ===")
+    
+    branch_name = f"bump-ver-from-{current_version}-to-{next_version}"
+    
+    # Configure git user
+    run_command(["git", "config", "--local", "user.email", "action@github.com"], check=True)
+    run_command(["git", "config", "--local", "user.name", "github-actions[bot]"], check=True)
+    
+    # Checkout the base ref first
+    run_command(["git", "checkout", ref], check=True)
+    
+    # Create and checkout new branch
+    run_command(["git", "checkout", "-b", branch_name], check=True)
+    
+    print(f"Created branch: {branch_name}")
+    return branch_name
+
+
+def bump_version(next_version: str, go_home: Optional[str] = None):
+    """Bump version using the bump-version.sh script."""
+    print("\n=== Bumping version ===")
+    
+    # Set environment variable to skip git operations in bump-version.sh
+    env = {"BUMP_VERSION_SKIP_GIT": "true"}
+    env.update(get_go_env(go_home))
+    run_command(["build/bump-version.sh", next_version], check=True, env=env, capture_output=False)
+
+
+def update_dependencies(go_home: Optional[str] = None):
+    """Update dependencies using make update-all."""
+    print("\n=== Updating dependencies ===")
+    go_env = get_go_env(go_home)
+    run_command(["make", "update-all"], check=True, env=go_env, capture_output=False)
+
+
+def check_binary(go_home: Optional[str] = None):
+    """Build and check the binary version."""
+    print("\n=== Checking binary ===")
+    go_env = get_go_env(go_home)
+    run_command(["./build/build.sh"], check=True, env=go_env, capture_output=False)
+    returncode, output, _ = run_command(["./jf", "--version"], check=True)
+    print(f"Binary version: {output}")
+
+
+def commit_and_push(branch_name: str, next_version: str):
+    """Commit changes and push to remote."""
+    print("\n=== Committing and pushing changes ===")
+    run_command(["git", "add", "."], check=True)
+    run_command(
+        ["git", "commit", "-m", f"Bump version to {next_version}"],
+        check=True
+    )
+    run_command(
+        ["git", "push", "-u", "origin", branch_name],
+        check=True
+    )
+
+
+def create_pull_request(next_version: str, gh_token: Optional[str] = None) -> int:
+    """Create a pull request and return the PR number."""
+    print("\n=== Creating pull request ===")
+    
+    env = {}
+    if gh_token:
+        env["GH_TOKEN"] = gh_token
+    
+    title = f"Bump version to {next_version}"
+    body = f"Bump version to {next_version}"
+    
+    returncode, output, _ = run_command(
+        ["gh", "pr", "create", "--title", title, "--body", body],
+        check=True,
+        env=env
+    )
+    
+    # Extract PR number from output (e.g., "https://github.com/owner/repo/pull/123")
+    pr_match = re.search(r'/pull/(\d+)', output)
+    if pr_match:
+        pr_number = int(pr_match.group(1))
+        print(f"Created PR #{pr_number}")
+        return pr_number
+    
+    # If not found in output, try to get it from the branch
+    returncode, pr_list_output, _ = run_command(
+        ["gh", "pr", "list", "--json", "number", "--jq", ".[0].number"],
+        check=False,
+        env=env
+    )
+    
+    if pr_list_output:
+        try:
+            pr_number = int(pr_list_output.strip())
+            print(f"Found PR #{pr_number}")
+            return pr_number
+        except ValueError:
+            pass
+    
+    print("Warning: Could not determine PR number")
+    return 0
+
+
+def get_pr_number(branch_name: str, gh_token: Optional[str] = None) -> int:
+    """Get PR number for the given branch."""
+    print("\n=== Getting PR number ===")
+    
+    env = {}
+    if gh_token:
+        env["GH_TOKEN"] = gh_token
+    
+    returncode, output, _ = run_command(
+        ["gh", "pr", "list", "--head", branch_name, "--json", "number", "--jq", ".[0].number"],
+        check=True,
+        env=env
+    )
+    
+    try:
+        pr_number = int(output.strip())
+        print(f"PR number: {pr_number}")
+        return pr_number
+    except ValueError:
+        print("Error: Could not parse PR number")
+        sys.exit(1)
+
+
+def annotate_workflow(pr_number: int, next_version: str, repo: str):
+    """Annotate workflow with PR link and version."""
+    print("\n=== Annotating workflow ===")
+    
+    # Try to get GitHub server URL from git config or default to github.com
+    returncode, server_url_output, _ = run_command(
+        ["git", "config", "--get", "remote.origin.url"],
+        check=False
+    )
+    
+    if "github.com" in server_url_output:
+        server_url = "https://github.com"
+    else:
+        server_url = "https://github.com"  # Default
+    
+    pr_url = f"{server_url}/{repo}/pull/{pr_number}"
+    print(f"::notice title=Release prepared::Prepared release version {next_version}. PR: {pr_url}")
+
+
+def skip_from_release_notes(pr_number: int, gh_token: Optional[str] = None):
+    """Add 'ignore for release' label to the PR."""
+    print("\n=== Adding 'ignore for release' label ===")
+    
+    env = {}
+    if gh_token:
+        env["GH_TOKEN"] = gh_token
+    
+    run_command(
+        ["gh", "pr", "edit", str(pr_number), "--add-label", "ignore for release"],
+        check=True,
+        env=env
+    )
+
+
+def get_repo_name() -> str:
+    """Get repository name from git remote."""
+    returncode, output, _ = run_command(
+        ["git", "config", "--get", "remote.origin.url"],
+        check=True
+    )
+    
+    # Extract repo name from URL (e.g., git@github.com:owner/repo.git or https://github.com/owner/repo.git)
+    match = re.search(r'[:/]([^/]+/[^/]+?)(?:\.git)?$', output)
+    if match:
+        return match.group(1)
+    
+    return "jfrog/jfrog-cli"  # Default
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Simulate the GitHub Actions workflow for preparing a release"
+    )
+    parser.add_argument(
+        "--version",
+        type=str,
+        choices=["minor", "patch"],
+        default="minor",
+        help="The version type to prepare the release for (default: minor)"
+    )
+    parser.add_argument(
+        "--ref",
+        type=str,
+        default="master",
+        help="The branch to prepare the release for (default: master)"
+    )
+    parser.add_argument(
+        "--starting-step",
+        type=str,
+        choices=[
+            "compute-current-version",
+            "compute-next-version",
+            "create-and-checkout-branch",
+            "bump-version",
+            "update-dependencies",
+            "check-binary",
+            "commit-and-push",
+            "create-pull-request",
+            "get-pr-number",
+            "annotate-workflow",
+            "skip-from-release-notes"
+        ],
+        help="Step to start execution from (skips all previous steps). Default: starts from the beginning."
+    )
+    parser.add_argument(
+        "--gh-token",
+        type=str,
+        help="GitHub token for GitHub CLI operations (default: uses GH_TOKEN env var or gh auth)"
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Perform a dry run without making actual changes"
+    )
+    parser.add_argument(
+        "--go-home",
+        type=str,
+        help="Path to Go installation home (GOROOT). If not specified, uses system default Go."
+    )
+    
+    args = parser.parse_args()
+    
+    ref = args.ref
+    
+    if args.dry_run:
+        print("DRY RUN MODE: No actual changes will be made")
+    
+    print(f"Preparing {args.version} release from {ref}")
+    if args.starting_step:
+        print(f"  (Starting from step: {args.starting_step})")
+    
+    # Get GitHub token from args or environment
+    gh_token = args.gh_token or os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
+    
+    # Initialize variables that might be needed
+    current_version = None
+    next_version = None
+    branch_name = None
+    pr_number = 0
+    
+    # Define step order
+    steps_order = [
+        "compute-current-version",
+        "compute-next-version",
+        "create-and-checkout-branch",
+        "bump-version",
+        "update-dependencies",
+        "check-binary",
+        "commit-and-push",
+        "create-pull-request",
+        "get-pr-number",
+        "annotate-workflow",
+        "skip-from-release-notes"
+    ]
+    
+    # Determine which step to start from
+    start_step = args.starting_step or steps_order[0]
+    start_index = steps_order.index(start_step) if start_step in steps_order else 0
+    
+    def should_run_step(step_name: str) -> bool:
+        """Check if a step should be executed based on starting step."""
+        if not args.starting_step:
+            return True
+        step_index = steps_order.index(step_name)
+        return step_index >= start_index
+    
+    try:
+        # Step 1: Compute current version (always needed for later steps)
+        if should_run_step("compute-current-version"):
+            current_version = compute_current_version(args.go_home)
+        else:
+            # Still compute it silently if needed for later steps
+            print("Computing current version (required for later steps)...")
+            current_version = compute_current_version(args.go_home)
+        
+        # Step 2: Compute next version (always needed for later steps)
+        if should_run_step("compute-next-version"):
+            next_version = compute_next_version(args.version, gh_token)
+        else:
+            # Still compute it silently if needed for later steps
+            print("Computing next version (required for later steps)...")
+            next_version = compute_next_version(args.version, gh_token)
+        
+        if args.dry_run:
+            print("\n=== DRY RUN: Would perform the following actions ===")
+            print(f"  - Current version: {current_version}")
+            print(f"  - Next version: {next_version}")
+            for i, step in enumerate(steps_order):
+                if i >= start_index:
+                    step_descriptions = {
+                        "compute-current-version": f"  - Compute current version",
+                        "compute-next-version": f"  - Compute next version",
+                        "create-and-checkout-branch": f"  - Create branch: bump-ver-from-{current_version}-to-{next_version}",
+                        "bump-version": f"  - Bump version to: {next_version}",
+                        "update-dependencies": f"  - Update dependencies",
+                        "check-binary": f"  - Build and check binary",
+                        "commit-and-push": f"  - Commit and push changes",
+                        "create-pull-request": f"  - Create pull request",
+                        "get-pr-number": f"  - Get PR number",
+                        "annotate-workflow": f"  - Annotate workflow",
+                        "skip-from-release-notes": f"  - Add 'ignore for release' label"
+                    }
+                    if step in step_descriptions:
+                        print(step_descriptions[step])
+            if args.go_home:
+                print(f"  - Using Go home: {args.go_home}")
+            return
+        
+        # Step 3: Create and checkout new branch
+        if should_run_step("create-and-checkout-branch"):
+            branch_name = create_and_checkout_branch(current_version, next_version, ref)
+        else:
+            # Try to get branch name from current git branch
+            returncode, git_branch, _ = run_command(["git", "rev-parse", "--abbrev-ref", "HEAD"], check=False)
+            if git_branch and git_branch.startswith("bump-ver-from-"):
+                branch_name = git_branch
+                print(f"Using existing branch: {branch_name}")
+        
+        # Step 4: Bump version
+        if should_run_step("bump-version"):
+            bump_version(next_version, args.go_home)
+        
+        # Step 5: Update dependencies
+        if should_run_step("update-dependencies"):
+            update_dependencies(args.go_home)
+        
+        # Step 6: Check binary
+        if should_run_step("check-binary"):
+            check_binary(args.go_home)
+        
+        # Step 7: Commit and push
+        if should_run_step("commit-and-push"):
+            if not branch_name:
+                returncode, git_branch, _ = run_command(["git", "rev-parse", "--abbrev-ref", "HEAD"], check=False)
+                branch_name = git_branch if git_branch else "unknown"
+            commit_and_push(branch_name, next_version)
+        
+        # Step 8: Create pull request
+        if should_run_step("create-pull-request"):
+            if not branch_name:
+                returncode, git_branch, _ = run_command(["git", "rev-parse", "--abbrev-ref", "HEAD"], check=False)
+                branch_name = git_branch if git_branch else "unknown"
+            pr_number = create_pull_request(next_version, gh_token)
+        
+        # Step 9: Get PR number (if not already obtained)
+        if should_run_step("get-pr-number"):
+            if pr_number == 0:
+                if not branch_name:
+                    returncode, git_branch, _ = run_command(["git", "rev-parse", "--abbrev-ref", "HEAD"], check=False)
+                    branch_name = git_branch if git_branch else "unknown"
+                pr_number = get_pr_number(branch_name, gh_token)
+        
+        # Step 10: Annotate workflow
+        if should_run_step("annotate-workflow"):
+            if pr_number == 0:
+                if not branch_name:
+                    returncode, git_branch, _ = run_command(["git", "rev-parse", "--abbrev-ref", "HEAD"], check=False)
+                    branch_name = git_branch if git_branch else "unknown"
+                pr_number = get_pr_number(branch_name, gh_token)
+            repo = get_repo_name()
+            annotate_workflow(pr_number, next_version, repo)
+        
+        # Step 11: Skip from release notes
+        if should_run_step("skip-from-release-notes"):
+            if pr_number == 0:
+                if not branch_name:
+                    returncode, git_branch, _ = run_command(["git", "rev-parse", "--abbrev-ref", "HEAD"], check=False)
+                    branch_name = git_branch if git_branch else "unknown"
+                pr_number = get_pr_number(branch_name, gh_token)
+            skip_from_release_notes(pr_number, gh_token)
+        
+        print("\n=== Release preparation completed successfully ===")
+        
+    except KeyboardInterrupt:
+        print("\n\nInterrupted by user")
+        sys.exit(1)
+    except Exception as e:
+        print(f"\nError: {e}")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
+
