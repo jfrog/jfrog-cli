@@ -169,15 +169,47 @@ def check_binary(go_home: Optional[str] = None):
 def commit_and_push(branch_name: str, next_version: str):
     """Commit changes and push to remote."""
     print("\n=== Committing and pushing changes ===")
-    run_command(["git", "add", "."], check=True)
-    run_command(
-        ["git", "commit", "-m", f"Bump version to {next_version}"],
-        check=True
+    
+    # Ensure we're on the correct branch
+    returncode, current_branch, _ = run_command(["git", "rev-parse", "--abbrev-ref", "HEAD"], check=False)
+    if current_branch != branch_name:
+        print(f"Switching to branch: {branch_name}")
+        run_command(["git", "checkout", branch_name], check=True)
+    
+    # Check if there are changes to commit
+    returncode, status_output, _ = run_command(["git", "status", "--porcelain"], check=False)
+    if not status_output.strip():
+        print("No changes to commit")
+    else:
+        run_command(["git", "add", "."], check=True)
+        run_command(
+            ["git", "commit", "-m", f"Bump version to {next_version}"],
+            check=True
+        )
+    
+    # Push with explicit upstream setting
+    # First check if remote exists
+    returncode, remote_output, _ = run_command(["git", "remote", "get-url", "origin"], check=False)
+    if returncode != 0:
+        print("Error: 'origin' remote not found")
+        sys.exit(1)
+    
+    # Push the current branch and set upstream
+    # Use HEAD to push the current branch, which avoids issues with branch name resolution
+    returncode, push_output, push_error = run_command(
+        ["git", "push", "--set-upstream", "origin", "HEAD"],
+        check=False
     )
-    run_command(
-        ["git", "push", "-u", "origin", branch_name],
-        check=True
-    )
+    
+    if returncode != 0:
+        # Fallback: try with explicit branch name
+        print("Trying with explicit branch name...")
+        run_command(
+            ["git", "push", "--set-upstream", "origin", branch_name],
+            check=True
+        )
+    else:
+        print(f"Successfully pushed branch {branch_name} to origin")
 
 
 def create_pull_request(next_version: str, gh_token: Optional[str] = None) -> int:
