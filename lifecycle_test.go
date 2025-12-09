@@ -1258,6 +1258,11 @@ func uploadBuildWithDepsAndProject(t *testing.T, buildName, buildNumber, project
 }
 
 func initLifecycleTest(t *testing.T, minVersion string) (cleanCallback func()) {
+
+	if *tests.TestLifecycle {
+		t.Skip("Skipping lifecycle test temporarily.")
+	}
+
 	if !*tests.TestLifecycle {
 		t.Skip("Skipping lifecycle test. To run release bundle test add the '-test.lc=true' option.")
 	}

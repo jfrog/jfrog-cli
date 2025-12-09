@@ -37,7 +37,7 @@ jobs:
             osSuffix: ""
 
           - name: macos
-            version: 13
+            version: 15
             osSuffix: ""
 
           - name: windows
