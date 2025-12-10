@@ -6492,7 +6492,7 @@ func deleteProjectIfExists(t *testing.T, accessManager *access.AccessServicesMan
 	err := accessManager.DeleteProject(projectKey)
 	if err != nil {
 		if !strings.Contains(err.Error(), "Could not find project") {
-			t.Error(t, err)
+			t.Error(err)
 		}
 	}
 }
