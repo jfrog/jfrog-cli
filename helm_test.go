@@ -766,3 +766,17 @@ func TestHelmCommandWithoutServerID(t *testing.T) {
 
 	validateHelmBuildInfo(t, publishedBuildInfo.BuildInfo, buildName, false, false)
 }
+
+// InitHelmTests initializes Helm tests
+func InitHelmTests() {
+	initArtifactoryCli()
+	cleanUpOldBuilds()
+	cleanUpOldRepositories()
+	tests.AddTimestampToGlobalVars()
+	createRequiredRepos()
+}
+
+// CleanHelmTests cleans up after Helm tests
+func CleanHelmTests() {
+	deleteCreatedRepos()
+}
