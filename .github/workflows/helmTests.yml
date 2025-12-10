@@ -2,10 +2,13 @@ name: Helm Tests
 on:
   workflow_dispatch:
   push:
-    # Trigger on all branches for testing
-  # Triggers the workflow on PRs to all branches for testing.
+    branches:
+      - "master"
+  # Triggers the workflow on PRs to master branch only.
   pull_request_target:
     types: [labeled]
+    branches:
+      - "master"
 
 # Ensures that only the latest commit is running for each PR at a time.
 concurrency:
