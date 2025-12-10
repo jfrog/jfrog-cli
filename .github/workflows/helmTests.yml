@@ -2,18 +2,18 @@ name: Helm Tests
 on:
   workflow_dispatch:
   push:
-    branches:
-      - "master"
-  # Triggers the workflow on PRs to master branch only.
+    # Trigger on all branches for testing
+  # Triggers the workflow on PRs to all branches for testing.
   pull_request_target:
     types: [labeled]
-    branches:
-      - "master"
 
 # Ensures that only the latest commit is running for each PR at a time.
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}-${{ github.ref }}
   cancel-in-progress: true
+permissions:
+  id-token: write
+  contents: read
 jobs:
   Helm-Tests:
     name: Helm tests (${{ matrix.os.name }})
