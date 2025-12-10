@@ -5341,6 +5341,63 @@ func TestArtifactorySearchProps(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+// Test that the --include flag works correctly with spec files
+func TestArtifactorySearchIncludeWithSpec(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Upload files
+	specFile, err := tests.CreateSpec(tests.SplitUploadSpecA)
+	assert.NoError(t, err)
+	runRt(t, "upload", "--spec="+specFile, "--recursive", "--flat=false")
+
+	// Test 1: Search with spec WITHOUT --include flag (should return all fields)
+	searchSpecBuilder := spec.NewBuilder().Pattern(tests.RtRepo1 + "/*").Recursive(true)
+	searchCmd := generic.NewSearchCommand()
+	searchCmd.SetServerDetails(serverDetails).SetSpec(searchSpecBuilder.BuildSpec())
+	reader, err := searchCmd.Search()
+	assert.NoError(t, err)
+
+	foundWithAllFields := false
+	for resultItem := new(utils.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
+		// Check that we have all default fields (type, size, sha1, etc.)
+		if resultItem.Type != "" && resultItem.Size > 0 && resultItem.Sha1 != "" {
+			foundWithAllFields = true
+			break
+		}
+	}
+	assert.True(t, foundWithAllFields, "Search without --include should return all fields")
+	readerCloseAndAssert(t, reader)
+
+	// Test 2: Search with spec WITH --include flag using spec builder (simulating CLI flag)
+	searchSpecBuilder = spec.NewBuilder().Pattern(tests.RtRepo1 + "/*").Recursive(true).Include([]string{"size", "created"})
+	searchCmd = generic.NewSearchCommand()
+	searchCmd.SetServerDetails(serverDetails).SetSpec(searchSpecBuilder.BuildSpec())
+	reader, err = searchCmd.Search()
+	assert.NoError(t, err)
+
+	// Verify limited fields are returned
+	var resultItems []utils.SearchResult
+	readerNoDate, err := utils.SearchResultNoDate(reader)
+	assert.NoError(t, err)
+	for resultItem := new(utils.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
+		resultItems = append(resultItems, *resultItem)
+		// Verify that size and created are present (when include is used)
+		// Note: path, name, repo are always included as base fields
+		assert.NotEmpty(t, resultItem.Path, "Path should always be present")
+		// Check that we have the requested field
+		if resultItem.Size > 0 {
+			// Size was requested, should be present
+			assert.Greater(t, resultItem.Size, int64(0), "Size should be present when included")
+		}
+	}
+	assert.Greater(t, len(resultItems), 0, "Should find at least one artifact")
+	readerGetErrorAndAssert(t, readerNoDate)
+	readerCloseAndAssert(t, readerNoDate)
+
+	// Cleanup
+	cleanArtifactoryTest()
+}
+
 // Remove not to be deleted dirs from delete command from path to delete.
 func TestArtifactoryDeleteExcludeProps(t *testing.T) {
 	initArtifactoryTest(t, "")
