@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
 
+	"github.com/BurntSushi/toml"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/container/strategies"
-
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/python"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/setup"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
@@ -1161,6 +1162,49 @@ func getCommandName(orgArgs []string) (string, []string) {
 	return "", cmdArgs
 }
 
+// getPrimarySourceFromToml reads pyproject.toml and returns the name of the primary source
+// Returns (sourceName, isPrimary) where isPrimary indicates if source has priority='primary'
+func getPrimarySourceFromToml() (string, bool) {
+	type PyProjectSource struct {
+		Name     string `toml:"name"`
+		URL      string `toml:"url"`
+		Priority string `toml:"priority"`
+	}
+
+	type PyProject struct {
+		Tool struct {
+			Poetry struct {
+				Source []PyProjectSource `toml:"source"`
+			} `toml:"poetry"`
+		} `toml:"tool"`
+	}
+
+	tomlPath := filepath.Join(".", "pyproject.toml")
+	tomlData, err := os.ReadFile(tomlPath)
+	if err != nil {
+		return "", false
+	}
+
+	var pyproject PyProject
+	if err := toml.Unmarshal(tomlData, &pyproject); err != nil {
+		return "", false
+	}
+
+	// Look for primary source
+	for _, source := range pyproject.Tool.Poetry.Source {
+		if source.Priority == "primary" {
+			return source.Name, true
+		}
+	}
+
+	// If no primary, use first source
+	if len(pyproject.Tool.Poetry.Source) > 0 {
+		return pyproject.Tool.Poetry.Source[0].Name, false
+	}
+
+	return "", false
+}
+
 func NpmInstallCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "npminstallhelp"); show || err != nil {
 		return err
@@ -1353,6 +1397,34 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 		}
 		cmdName, poetryArgs := getCommandName(filteredArgs)
 
+		// Extract --repository flag for artifact collection (if publishing)
+		deployerRepo := ""
+		for i, arg := range poetryArgs {
+			if strings.HasPrefix(arg, "--repository=") {
+				deployerRepo = strings.TrimPrefix(arg, "--repository=")
+			} else if (arg == "--repository" || arg == "-r") && i+1 < len(poetryArgs) {
+				deployerRepo = poetryArgs[i+1]
+			}
+		}
+
+		// Auto-add repository flag if not provided and we're publishing
+		if cmdName == "publish" && deployerRepo == "" {
+			// Try to get primary source from pyproject.toml (same as native Poetry behavior)
+			if repoName, isPrimary := getPrimarySourceFromToml(); repoName != "" {
+				if isPrimary {
+					log.Info(fmt.Sprintf("No --repository flag specified. Using '%s' from pyproject.toml (priority='primary')", repoName))
+				} else {
+					log.Info(fmt.Sprintf("No --repository flag specified. Using '%s' from pyproject.toml (first source)", repoName))
+				}
+				poetryArgs = append([]string{"-r", repoName}, poetryArgs...)
+				deployerRepo = repoName
+			} else {
+				log.Warn("No repository specified and no sources found in pyproject.toml. Poetry will attempt to publish to PyPI.")
+			}
+		} else if cmdName == "publish" && deployerRepo != "" {
+			log.Info(fmt.Sprintf("Publishing to repository: %s (from --repository flag)", deployerRepo))
+		}
+
 		// Execute native poetry command directly (similar to Maven FlexPack)
 		log.Info(fmt.Sprintf("Running Poetry %s.", cmdName))
 		poetryCmd := exec.Command("poetry", append([]string{cmdName}, poetryArgs...)...)
@@ -1369,7 +1441,7 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 				workingDir, err := os.Getwd()
 				if err != nil {
 					log.Warn("Failed to get working directory, skipping build info collection: " + err.Error())
-				} else if err := buildinfo.GetPoetryBuildInfo(workingDir, buildConfiguration); err != nil {
+				} else if err := buildinfo.GetPoetryBuildInfo(workingDir, buildConfiguration, deployerRepo); err != nil {
 					log.Warn("Failed to collect Poetry build info: " + err.Error())
 				} else {
 					buildNumber, err := buildConfiguration.GetBuildNumber()
