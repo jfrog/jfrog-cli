@@ -386,6 +386,13 @@ spec:
 	err = os.WriteFile(filepath.Join(templatesDir, "deployment.yaml"), []byte(deploymentYaml), 0644)
 	require.NoError(t, err)
 
+	// Create an empty Chart.lock file for charts without dependencies
+	// This is required because Helm FlexPack tries to read Chart.lock even when it doesn't exist
+	chartLockYaml := `dependencies: []
+`
+	err = os.WriteFile(filepath.Join(chartDir, "Chart.lock"), []byte(chartLockYaml), 0644)
+	require.NoError(t, err)
+
 	return chartDir
 }
 
