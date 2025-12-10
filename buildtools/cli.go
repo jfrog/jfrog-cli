@@ -350,7 +350,7 @@ func GetCommands() []cli.Command {
 			UsageText:       helmcommand.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
-			HideHelp:        true,
+			Hidden:          true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
 			Action:          HelmCmd,
@@ -1436,6 +1436,9 @@ func extractHelmServerDetails(args []string) ([]string, *coreConfig.ServerDetail
 		serverDetails, err := coreConfig.GetDefaultServerConf()
 		if err != nil {
 			return cleanedArgs, nil, err
+		}
+		if serverDetails == nil {
+			return cleanedArgs, nil, fmt.Errorf("no default server configuration found. Please configure a server using 'jfrog config add' or specify a server using --server-id")
 		}
 		return cleanedArgs, serverDetails, nil
 	}

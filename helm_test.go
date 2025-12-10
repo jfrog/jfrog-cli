@@ -16,6 +16,7 @@ import (
 	"time"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/utils/tests"
@@ -40,6 +41,23 @@ func initHelmTest(t *testing.T) {
 
 	if artifactoryCli == nil {
 		initArtifactoryCli()
+	}
+
+	// Set up home directory configuration so GetDefaultServerConf() can find the server
+	createJfrogHomeConfig(t, true)
+
+	// Initialize serverDetails for Helm tests (similar to maven_test.go)
+	serverDetails = &config.ServerDetails{
+		Url:            *tests.JfrogUrl,
+		ArtifactoryUrl: *tests.JfrogUrl + tests.ArtifactoryEndpoint,
+		SshKeyPath:     *tests.JfrogSshKeyPath,
+		SshPassphrase:  *tests.JfrogSshPassphrase,
+	}
+	if *tests.JfrogAccessToken != "" {
+		serverDetails.AccessToken = *tests.JfrogAccessToken
+	} else {
+		serverDetails.User = *tests.JfrogUser
+		serverDetails.Password = *tests.JfrogPassword
 	}
 }
 
