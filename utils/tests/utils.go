@@ -74,6 +74,7 @@ var (
 	TestTransfer              *bool
 	TestLifecycle             *bool
 	TestEvidence              *bool
+	TestHelm                  *bool
 	HideUnitTestLog           *bool
 	ciRunId                   *string
 	InstallDataTransferPlugin *bool
@@ -111,6 +112,7 @@ func init() {
 	TestTransfer = flag.Bool("test.transfer", false, "Test files transfer")
 	TestLifecycle = flag.Bool("test.lifecycle", false, "Test lifecycle")
 	TestEvidence = flag.Bool("test.evidence", false, "Test evidence")
+	TestHelm = flag.Bool("test.helm", false, "Test Helm")
 	ContainerRegistry = flag.String("test.containerRegistry", "localhost:8082", "Container registry")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
 	InstallDataTransferPlugin = flag.Bool("test.installDataTransferPlugin", false, "Install data-transfer plugin on the source Artifactory server")
@@ -348,6 +350,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestAccess:             {&RtRepo1},
 		TestTransfer:           {&RtRepo1, &RtRepo2, &MvnRepo1, &MvnRemoteRepo, &DockerRemoteRepo},
 		TestLifecycle:          {&RtDevRepo, &RtProdRepo1, &RtProdRepo2},
+		TestHelm:               {&RtRepo1},
 	}
 	return getNeededRepositories(nonVirtualReposMap)
 }
@@ -371,6 +374,7 @@ func GetVirtualRepositories() map[*string]string {
 		TestPlugins:      {},
 		TestXray:         {&GoVirtualRepo},
 		TestAccess:       {},
+		TestHelm:         {},
 	}
 	return getNeededRepositories(virtualReposMap)
 }
@@ -409,6 +413,7 @@ func GetBuildNames() []string {
 		TestAccess:       {},
 		TestTransfer:     {&MvnBuildName},
 		TestLifecycle:    {&LcBuildName1, &LcBuildName2, &LcBuildName3},
+		TestHelm:         {},
 	}
 	return getNeededBuildNames(buildNamesMap)
 }
