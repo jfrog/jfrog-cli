@@ -77,6 +77,7 @@ const (
 	PipenvInstall          = "pipenv-install"
 	PoetryConfig           = "poetry-config"
 	Poetry                 = "poetry"
+	Helm                   = "helm"
 	RubyConfig             = "ruby-config"
 	Conan                  = "conan"
 	Ping                   = "ping"
@@ -315,6 +316,8 @@ const (
 	deleteArtifacts    = "delete-artifacts"
 
 	repo = "repo"
+
+	username = "username"
 
 	// Unique git-lfs-clean flags
 	glcPrefix = "glc-"
@@ -1968,6 +1971,9 @@ var commandFlags = map[string][]string{
 	},
 	Poetry: {
 		BuildName, BuildNumber, module, Project,
+	},
+	Helm: {
+		BuildName, BuildNumber, module, Project, serverId, username, password,
 	},
 	RubyConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,

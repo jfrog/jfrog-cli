@@ -68,13 +68,13 @@ var (
 	TestPip                   *bool
 	TestPipenv                *bool
 	TestPoetry                *bool
+	TestHelm                  *bool
 	TestPlugins               *bool
 	TestXray                  *bool
 	TestAccess                *bool
 	TestTransfer              *bool
 	TestLifecycle             *bool
 	TestEvidence              *bool
-	TestHelm                  *bool
 	HideUnitTestLog           *bool
 	ciRunId                   *string
 	InstallDataTransferPlugin *bool
@@ -106,13 +106,13 @@ func init() {
 	TestPip = flag.Bool("test.pip", false, "Test Pip")
 	TestPipenv = flag.Bool("test.pipenv", false, "Test Pipenv")
 	TestPoetry = flag.Bool("test.poetry", false, "Test Poetry")
+	TestHelm = flag.Bool("test.helm", false, "Test Helm")
 	TestPlugins = flag.Bool("test.plugins", false, "Test Plugins")
 	TestXray = flag.Bool("test.xray", false, "Test Xray")
 	TestAccess = flag.Bool("test.access", false, "Test Access")
 	TestTransfer = flag.Bool("test.transfer", false, "Test files transfer")
 	TestLifecycle = flag.Bool("test.lifecycle", false, "Test lifecycle")
 	TestEvidence = flag.Bool("test.evidence", false, "Test evidence")
-	TestHelm = flag.Bool("test.helm", false, "Test Helm")
 	ContainerRegistry = flag.String("test.containerRegistry", "localhost:8082", "Container registry")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
 	InstallDataTransferPlugin = flag.Bool("test.installDataTransferPlugin", false, "Install data-transfer plugin on the source Artifactory server")
@@ -281,6 +281,7 @@ var reposConfigMap = map[*string]string{
 	&PoetryLocalRepo:                PoetryLocalRepositoryConfig,
 	&PoetryRemoteRepo:               PoetryRemoteRepositoryConfig,
 	&PoetryVirtualRepo:              PoetryVirtualRepositoryConfig,
+	&HelmLocalRepo:                  HelmLocalRepositoryConfig,
 	&RtDebianRepo:                   DebianTestRepositoryConfig,
 	&RtLfsRepo:                      GitLfsTestRepositoryConfig,
 	&RtRepo1:                        Repo1RepositoryConfig,
@@ -332,7 +333,7 @@ func getNeededBuildNames(buildNamesMap map[*bool][]*string) []string {
 func GetNonVirtualRepositories() map[*string]string {
 	nonVirtualReposMap := map[*bool][]*string{
 		TestArtifactory:        {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo, &TerraformRepo, &ReleaseLifecycleDependencyRepo},
-		TestArtifactoryProject: {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo},
+		TestArtifactoryProject: {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo, &HelmLocalRepo},
 		TestDistribution:       {&DistRepo1, &DistRepo2},
 		TestDocker:             {&DockerLocalRepo, &DockerLocalPromoteRepo, &DockerRemoteRepo, &OciLocalRepo, &OciRemoteRepo},
 		TestDockerScan:         {&DockerLocalRepo, &DockerLocalPromoteRepo, &DockerRemoteRepo},
@@ -345,6 +346,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestPip:                {&PypiLocalRepo, &PypiRemoteRepo},
 		TestPipenv:             {&PipenvRemoteRepo},
 		TestPoetry:             {&PoetryLocalRepo, &PoetryRemoteRepo},
+		TestHelm:               {&HelmLocalRepo},
 		TestPlugins:            {&RtRepo1},
 		TestXray:               {&NpmRemoteRepo, &NugetRemoteRepo, &YarnRemoteRepo, &GradleRemoteRepo, &MvnRemoteRepo, &GoRepo, &GoRemoteRepo, &PypiRemoteRepo},
 		TestAccess:             {&RtRepo1},
@@ -371,6 +373,7 @@ func GetVirtualRepositories() map[*string]string {
 		TestPip:          {&PypiVirtualRepo},
 		TestPipenv:       {&PipenvVirtualRepo},
 		TestPoetry:       {&PoetryVirtualRepo},
+		TestHelm:         {},
 		TestPlugins:      {},
 		TestXray:         {&GoVirtualRepo},
 		TestAccess:       {},
@@ -408,6 +411,7 @@ func GetBuildNames() []string {
 		TestPip:          {&PipBuildName},
 		TestPipenv:       {&PipenvBuildName},
 		TestPoetry:       {&PoetryBuildName},
+		TestHelm:         {&HelmBuildName},
 		TestPlugins:      {},
 		TestXray:         {},
 		TestAccess:       {},
@@ -464,6 +468,7 @@ func getSubstitutionMap() map[string]string {
 		"${POETRY_LOCAL_REPO}":         PoetryLocalRepo,
 		"${POETRY_REMOTE_REPO}":        PoetryRemoteRepo,
 		"${POETRY_VIRTUAL_REPO}":       PoetryVirtualRepo,
+		"${HELM_REPO}":                 HelmLocalRepo,
 		"${BUILD_NAME1}":               RtBuildName1,
 		"${BUILD_NAME2}":               RtBuildName2,
 		"${BUNDLE_NAME}":               BundleName,
@@ -529,6 +534,7 @@ func AddTimestampToGlobalVars() {
 	PoetryLocalRepo += uniqueSuffix
 	PoetryRemoteRepo += uniqueSuffix
 	PoetryVirtualRepo += uniqueSuffix
+	HelmLocalRepo += uniqueSuffix
 	RtDebianRepo += uniqueSuffix
 	RtLfsRepo += uniqueSuffix
 	RtRepo1 += uniqueSuffix
@@ -554,6 +560,7 @@ func AddTimestampToGlobalVars() {
 	PipBuildName += uniqueSuffix
 	PipenvBuildName += uniqueSuffix
 	PoetryBuildName += uniqueSuffix
+	HelmBuildName += uniqueSuffix
 	RtBuildName1 += uniqueSuffix
 	RtBuildName2 += uniqueSuffix
 	RtBuildNameWithSpecialChars += uniqueSuffix
