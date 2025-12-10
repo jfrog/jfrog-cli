@@ -1173,6 +1173,7 @@ func transferFilesCmd(c *cli.Context) error {
 	includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
 	newTransferFilesCmd.SetIncludeReposPatterns(includeReposPatterns)
 	newTransferFilesCmd.SetExcludeReposPatterns(excludeReposPatterns)
+	newTransferFilesCmd.SetIncludeFilesPatterns(getIncludeFilesPatterns(c))
 	newTransferFilesCmd.SetIgnoreState(c.Bool(cliutils.IgnoreState))
 	newTransferFilesCmd.SetProxyKey(c.String(cliutils.ProxyKey))
 	return newTransferFilesCmd.Run()
@@ -1187,6 +1188,14 @@ func getTransferIncludeExcludeRepos(c *cli.Context) (includeReposPatterns, exclu
 		excludeReposPatterns = strings.Split(c.String(cliutils.ExcludeRepos), patternSeparator)
 	}
 	return
+}
+
+func getIncludeFilesPatterns(c *cli.Context) []string {
+	const patternSeparator = ";"
+	if c.IsSet(cliutils.IncludeFiles) {
+		return strings.Split(c.String(cliutils.IncludeFiles), patternSeparator)
+	}
+	return nil
 }
 
 func getTransferIncludeExcludeProjects(c *cli.Context) (includeProjectsPatterns, excludeProjectsPatterns []string) {
