@@ -823,7 +823,8 @@ pipelines:
               
               # Run the npm tests with JFrog URL and admin token
               echo "Running npm CLI tests against ${JFROG_URL}"
-              go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.npm --jfrog.url=${JFROG_URL} --jfrog.adminToken=${OAUTH_TOKEN}
+              # go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.npm --jfrog.url=${JFROG_URL} --jfrog.adminToken=${OAUTH_TOKEN}
+              go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.npm --jfrog.url=${JFROG_URL} --jfrog.user=admin --jfrog.password=password
             
           onSuccess:
             - echo "npm CLI tests completed successfully!"
