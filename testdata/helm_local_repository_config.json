@@ -1,0 +1,6 @@
+{
+  "key": "${HELM_REPO}",
+  "rclass": "local",
+  "packageType": "helm"
+}
+
