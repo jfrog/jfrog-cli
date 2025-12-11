@@ -2,14 +2,16 @@ package main
 
 import (
 	"fmt"
-	biutils "github.com/jfrog/build-info-go/utils"
-	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
+
+	biutils "github.com/jfrog/build-info-go/utils"
+	"github.com/jfrog/jfrog-client-go/http/httpclient"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -146,11 +148,12 @@ func TestSetupPipenvCommand(t *testing.T) {
 	// Change dir to temp dir to run the pipenv install in a clean environment.
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
-	chdir := clientTestUtils.ChangeDirWithCallback(t, wd, t.TempDir())
+	tempDir := t.TempDir()
+	chdir := clientTestUtils.ChangeDirWithCallback(t, wd, tempDir)
 	defer chdir()
 
 	// Set custom pip.conf file.
-	t.Setenv("PIP_CONFIG_FILE", filepath.Join(t.TempDir(), "pip.conf"))
+	t.Setenv("PIP_CONFIG_FILE", filepath.Join(tempDir, "pip.conf"))
 
 	// Validate that the package does not exist in the cache before running the test.
 	client, err := httpclient.ClientBuilder().Build()
@@ -166,7 +169,29 @@ func TestSetupPipenvCommand(t *testing.T) {
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 	require.NoError(t, execGo(jfrogCli, "setup", "pipenv", "--repo="+tests.PipenvRemoteRepo))
 
-	// Run 'pip install' to resolve the package from Artifactory and force it to be cached.
+	// Verify pip.conf was created correctly and extract the index URL for pipenv
+	pipConfPath := filepath.Join(tempDir, "pip.conf")
+	pipConfContent, err := os.ReadFile(pipConfPath)
+	require.NoError(t, err, "pip.conf should be created by setup command")
+	assert.Contains(t, string(pipConfContent), "index-url", "pip.conf should contain index-url")
+
+	// Extract the index-url from pip.conf and set PIPENV_PYPI_MIRROR
+	// Pipenv doesn't respect PIP_CONFIG_FILE, it requires PIPENV_PYPI_MIRROR
+	lines := strings.Split(string(pipConfContent), "\n")
+	var indexUrl string
+	for _, line := range lines {
+		if strings.HasPrefix(strings.TrimSpace(line), "index-url") {
+			parts := strings.SplitN(line, "=", 2)
+			if len(parts) == 2 {
+				indexUrl = strings.TrimSpace(parts[1])
+				break
+			}
+		}
+	}
+	require.NotEmpty(t, indexUrl, "Failed to extract index-url from pip.conf")
+	t.Setenv("PIPENV_PYPI_MIRROR", indexUrl)
+
+	// Run 'pipenv install' to resolve the package from Artifactory and force it to be cached.
 	output, err := exec.Command("pipenv", "install", "pefile==2024.8.26").CombinedOutput()
 	assert.NoError(t, err, fmt.Sprintf("%s\n%q", string(output), err))
 
