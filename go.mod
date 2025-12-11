@@ -158,13 +158,11 @@ require (
 	github.com/in-toto/in-toto-golang v0.9.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jedib0t/go-pretty/v6 v6.7.5 // indirect
-	github.com/jedisct1/go-minisign v0.0.0-20211028175153-1c139d1cc84b // indirect
-	github.com/jfrog/froggit-go v1.20.4 // indirect
+	github.com/jfrog/froggit-go v1.20.6 // indirect
 	github.com/jfrog/go-mockhttp v0.3.1 // indirect
 	github.com/jfrog/jfrog-apps-config v1.0.1 // indirect
-	github.com/josharian/intern v1.0.0 // indirect
-	github.com/kevinburke/ssh_config v1.2.0 // indirect
-	github.com/klauspost/compress v1.18.1 // indirect
+	github.com/kevinburke/ssh_config v1.4.0 // indirect
+	github.com/klauspost/compress v1.18.2 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/klauspost/pgzip v1.2.6 // indirect
 	github.com/ktrysmt/go-bitbucket v0.9.87 // indirect
@@ -205,7 +203,6 @@ require (
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sagikazarmark/locafero v0.12.0 // indirect
-	github.com/sassoftware/relic v7.2.1+incompatible // indirect
 	github.com/secure-systems-lab/go-securesystemslib v0.9.1 // indirect
 	github.com/sergi/go-diff v1.4.0 // indirect
 	github.com/shibumi/go-pathspec v1.3.0 // indirect
