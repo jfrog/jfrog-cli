@@ -2,9 +2,10 @@ package artifactory
 
 import (
 	"bytes"
-	"github.com/jfrog/jfrog-cli-artifactory/cliutils/flagkit"
 	"path/filepath"
 	"testing"
+
+	"github.com/jfrog/jfrog-cli-artifactory/cliutils/flagkit"
 
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
@@ -151,6 +152,49 @@ func TestCreateUploadConfiguration(t *testing.T) {
 			assert.Equal(t, testCase.expectedSplitCount, uploadConfiguration.SplitCount)
 			assert.Equal(t, testCase.expectedThreads, uploadConfiguration.Threads)
 			assert.Equal(t, testCase.expectedDeb, uploadConfiguration.Deb)
+		})
+	}
+}
+
+// Test cases for getIncludeFilesPatterns
+var getIncludeFilesPatternsTestCases = []struct {
+	name             string
+	flags            []string
+	expectedPatterns []string
+}{
+	{
+		name:             "no flag set",
+		flags:            []string{},
+		expectedPatterns: nil,
+	},
+	{
+		name:             "single pattern",
+		flags:            []string{cliutils.IncludeFiles + "=org/company/*"},
+		expectedPatterns: []string{"org/company/*"},
+	},
+	{
+		name:             "multiple patterns",
+		flags:            []string{cliutils.IncludeFiles + "=org/company/*;com/example/*"},
+		expectedPatterns: []string{"org/company/*", "com/example/*"},
+	},
+	{
+		name:             "three patterns",
+		flags:            []string{cliutils.IncludeFiles + "=path1/*;path2/*;path3/*"},
+		expectedPatterns: []string{"path1/*", "path2/*", "path3/*"},
+	},
+	{
+		name:             "pattern with deep nesting",
+		flags:            []string{cliutils.IncludeFiles + "=a/b/c/d/e/*"},
+		expectedPatterns: []string{"a/b/c/d/e/*"},
+	},
+}
+
+func TestGetIncludeFilesPatterns(t *testing.T) {
+	for _, testCase := range getIncludeFilesPatternsTestCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			context, _ := tests.CreateContext(t, testCase.flags, []string{})
+			patterns := getIncludeFilesPatterns(context)
+			assert.Equal(t, testCase.expectedPatterns, patterns)
 		})
 	}
 }
