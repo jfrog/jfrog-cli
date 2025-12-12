@@ -629,9 +629,34 @@ func GradleCmd(c *cli.Context) (err error) {
 		return err
 	}
 
-	configFilePath, err := getProjectConfigPathOrThrow(project.Gradle, "gradle", "gradle-config")
+	nativeMode := os.Getenv("JFROG_RUN_NATIVE") == "true"
+	configFilePath, configExists, err := project.GetProjectConfFilePath(project.Gradle)
 	if err != nil {
 		return err
+	}
+
+	// FlexPack native mode for Gradle (bypasses config file requirements)
+	if nativeMode && !configExists {
+		log.Debug("Routing to Gradle FlexPack implementation")
+		if c.NArg() < 1 {
+			return cliutils.WrongNumberOfArgumentsHandler(c)
+		}
+		args := cliutils.ExtractCommand(c)
+		filteredGradleArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
+		if err != nil {
+			return err
+		}
+
+		// Create Gradle command with FlexPack (no config file needed)
+		gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(filteredGradleArgs).SetConfigPath("")
+		return commands.Exec(gradleCmd)
+	}
+
+	// If config file is missing and not in native mode, return the standard missing-config error.
+	if !configExists {
+		if configFilePath, err = getProjectConfigPathOrThrow(project.Gradle, "gradle", "gradle-config"); err != nil {
+			return err
+		}
 	}
 
 	// Found a config file. Continue as native command.
