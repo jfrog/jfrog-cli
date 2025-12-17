@@ -1,6 +1,10 @@
 apply plugin: 'groovy'
 apply plugin: 'idea'
 
+repositories {
+    mavenCentral()
+}
+
 dependencies {
     implementation "junit:junit:4.7"
 }
