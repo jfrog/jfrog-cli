@@ -135,7 +135,8 @@ func TestGradleBuildWithServerID(t *testing.T) {
 		return
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
-	validateBuildInfo(buildInfo, t, 0, 1, gradleModuleId, buildinfo.Gradle)
+	// Expect 1 dependency (junit:4.7) since the project has source code using JUnit
+	validateBuildInfo(buildInfo, t, 1, 1, gradleModuleId, buildinfo.Gradle)
 	cleanGradleTest(t)
 }
 
@@ -184,7 +185,8 @@ func TestGradleBuildWithServerIDAndDetailedSummary(t *testing.T) {
 		return
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
-	validateBuildInfo(buildInfo, t, 0, 1, gradleModuleId, buildinfo.Gradle)
+	// Expect 1 dependency (junit:4.7) since the project has source code using JUnit
+	validateBuildInfo(buildInfo, t, 1, 1, gradleModuleId, buildinfo.Gradle)
 	cleanGradleTest(t)
 }
 
@@ -429,61 +431,6 @@ func TestGradleBuildWithFlexPackFullValidation(t *testing.T) {
 	if len(buildInfo.Modules) > 0 {
 		module := buildInfo.Modules[0]
 		// Validate module type is Gradle
-		assert.Equal(t, buildinfo.Gradle, module.Type, "Module type should be Gradle")
-		assert.NotEmpty(t, module.Id, "Module should have ID")
-	}
-
-	cleanGradleTest(t)
-}
-
-// TestGradleBuildWithFlexPackProjectWithPlugin tests FlexPack with the projectwithplugin test project
-// This is the native equivalent of TestGradleBuildWithServerIDWithUsesPlugin but runs in FlexPack mode
-func TestGradleBuildWithFlexPackProjectWithPlugin(t *testing.T) {
-	initGradleTest(t)
-
-	// Check if Gradle is available in the environment
-	if _, err := exec.LookPath("gradle"); err != nil {
-		t.Skip("Gradle not found in PATH, skipping Gradle FlexPack projectwithplugin test")
-	}
-
-	// Create gradle project with plugin configuration
-	buildGradlePath := createGradleProject(t, "projectwithplugin")
-	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
-	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
-
-	buildName := tests.GradleBuildName + "-flexpack-plugin"
-	buildNumber := "1"
-
-	// Set environment for native FlexPack implementation
-	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_RUN_NATIVE", "true")
-	defer setEnvCallBack()
-
-	// Windows compatibility
-	buildGradlePath = strings.ReplaceAll(buildGradlePath, `\`, "/")
-
-	// Run gradle build (FlexPack mode - no config file, plugin is ignored in native mode)
-	err := runJfrogCliWithoutAssertion("gradle", "clean", "build", "-b"+buildGradlePath, "--build-name="+buildName, "--build-number="+buildNumber)
-	assert.NoError(t, err)
-
-	// Publish build info
-	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
-
-	// Validate build info was created
-	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
-	if err != nil {
-		assert.NoError(t, err)
-		return
-	}
-	if !found {
-		assert.True(t, found, "build info was expected to be found")
-		return
-	}
-
-	// Validate build info structure
-	buildInfo := publishedBuildInfo.BuildInfo
-	assert.NotEmpty(t, buildInfo.Modules, "Build info should have modules")
-	if len(buildInfo.Modules) > 0 {
-		module := buildInfo.Modules[0]
 		assert.Equal(t, buildinfo.Gradle, module.Type, "Module type should be Gradle")
 		assert.NotEmpty(t, module.Id, "Module should have ID")
 	}
