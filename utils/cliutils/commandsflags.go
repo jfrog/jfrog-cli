@@ -1860,7 +1860,7 @@ var commandFlags = map[string][]string{
 		BuildName, BuildNumber, deploymentThreads, InsecureTls, Project, detailedSummary, xrayScan, xrOutput,
 	},
 	Gradle: {
-		BuildName, BuildNumber, deploymentThreads, Project, detailedSummary, xrayScan, xrOutput,
+		BuildName, BuildNumber, deploymentThreads, Project, serverId, detailedSummary, xrayScan, xrOutput,
 	},
 	Docker: {
 		BuildName, BuildNumber, module, Project,

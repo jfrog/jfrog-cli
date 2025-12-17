@@ -283,9 +283,9 @@ replace github.com/docker/docker => github.com/docker/docker v27.5.1+incompatibl
 replace github.com/gfleury/go-bitbucket-v1 => github.com/gfleury/go-bitbucket-v1 v0.0.0-20230825095122-9bc1711434ab
 
 //replace github.com/jfrog/jfrog-cli-artifactory => github.com/naveenku-jfrog/jfrog-cli-artifactory v0.0.0-20251210184507-0c8d138690cb
-replace github.com/jfrog/jfrog-cli-artifactory => github.com/nitinp19/jfrog-cli-artifactory v0.0.0-20251212113004-4a4f4196e21a
+replace github.com/jfrog/jfrog-cli-artifactory => github.com/nitinp19/jfrog-cli-artifactory v0.0.0-20251217164045-f03027bdbbb8
 
-replace github.com/jfrog/build-info-go => github.com/nitinp19/build-info-go v1.12.3-0.20251212112339-30e97816d426
+replace github.com/jfrog/build-info-go => github.com/nitinp19/build-info-go v1.12.3-0.20251217110410-139203aa7c26
 
 // replace github.com/jfrog/jfrog-cli-core/v2 => github.com/reshmifrog/jfrog-cli-core/v2 v2.58.5-0.20251110095124-ab9a4102ec5a
 
