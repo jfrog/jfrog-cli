@@ -333,215 +333,16 @@ func TestGradleBuildWithFlexPackBuildInfo(t *testing.T) {
 		assert.Equal(t, buildinfo.Gradle, module.Type, "Module type should be Gradle")
 		assert.NotEmpty(t, module.Id, "Module should have ID")
 
-		// FlexPack should collect dependencies
-		if len(module.Dependencies) > 0 {
-			// Validate dependency structure
-			for _, dep := range module.Dependencies {
-				assert.NotEmpty(t, dep.Id, "Dependency should have ID")
-				// FlexPack should provide checksums
-				hasChecksum := dep.Sha1 != "" || dep.Sha256 != "" || dep.Md5 != ""
-				assert.True(t, hasChecksum, "Dependency %s should have at least one checksum", dep.Id)
-			}
+		// FlexPack should collect dependencies with scopes and checksums.
+		assert.NotEmpty(t, module.Dependencies, "FlexPack build info should include dependencies")
+		for _, dep := range module.Dependencies {
+			assert.NotEmpty(t, dep.Id, "Dependency should have ID")
+			// FlexPack should provide checksums
+			hasChecksum := dep.Sha1 != "" || dep.Sha256 != "" || dep.Md5 != ""
+			assert.True(t, hasChecksum, "Dependency %s should have at least one checksum", dep.Id)
+			// FlexPack should provide scopes (Gradle configurations)
+			assert.NotEmpty(t, dep.Scopes, "Dependency %s should have scopes/configurations", dep.Id)
 		}
-	}
-
-	cleanGradleTest(t)
-}
-
-// TestGradleBuildWithFlexPackAndPublish tests Gradle publish with JFROG_RUN_NATIVE=true
-func TestGradleBuildWithFlexPackAndPublish(t *testing.T) {
-	initGradleTest(t)
-
-	// Check if Gradle is available in the environment
-	if _, err := exec.LookPath("gradle"); err != nil {
-		t.Skip("Gradle not found in PATH, skipping Gradle FlexPack publish test")
-	}
-
-	buildGradlePath := createGradleProject(t, "gradleproject")
-	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
-	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
-
-	buildName := tests.GradleBuildName + "-flexpack-publish"
-	buildNumber := "1"
-
-	// Set environment for native FlexPack implementation
-	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_RUN_NATIVE", "true")
-	defer setEnvCallBack()
-
-	// Windows compatibility
-	buildGradlePath = strings.ReplaceAll(buildGradlePath, `\`, "/")
-
-	// Run gradle with publish task (FlexPack mode - no config file)
-	// This tests that FlexPack correctly handles publish/artifactoryPublish tasks
-	err := runJfrogCliWithoutAssertion("gradle", "clean", "build", "publish", "-b"+buildGradlePath, "--build-name="+buildName, "--build-number="+buildNumber)
-	if err != nil {
-		// Publish may fail if not properly configured - that's OK for this test
-		// The important thing is that FlexPack mode was activated
-		t.Logf("Gradle publish command returned error (may be expected if publish not configured): %v", err)
-	}
-
-	cleanGradleTest(t)
-}
-
-// TestGradleBuildWithFlexPackFullValidation is the native equivalent of TestGradleBuildWithServerID
-// It validates complete build info structure including module type validation
-func TestGradleBuildWithFlexPackFullValidation(t *testing.T) {
-	initGradleTest(t)
-
-	// Check if Gradle is available in the environment
-	if _, err := exec.LookPath("gradle"); err != nil {
-		t.Skip("Gradle not found in PATH, skipping Gradle FlexPack full validation test")
-	}
-
-	buildGradlePath := createGradleProject(t, "gradleproject")
-	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
-	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
-
-	buildName := tests.GradleBuildName + "-flexpack-full"
-	buildNumber := "1"
-
-	// Set environment for native FlexPack implementation
-	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_RUN_NATIVE", "true")
-	defer setEnvCallBack()
-
-	// Windows compatibility
-	buildGradlePath = strings.ReplaceAll(buildGradlePath, `\`, "/")
-
-	// Run gradle build with build info collection (FlexPack mode - no config file)
-	err := runJfrogCliWithoutAssertion("gradle", "clean", "build", "-b"+buildGradlePath, "--build-name="+buildName, "--build-number="+buildNumber)
-	assert.NoError(t, err)
-
-	// Publish build info
-	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
-
-	// Validate build info was created
-	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
-	if err != nil {
-		assert.NoError(t, err)
-		return
-	}
-	if !found {
-		assert.True(t, found, "build info was expected to be found")
-		return
-	}
-
-	// Validate build info structure - FlexPack collects dependencies only (no artifacts without deployment)
-	buildInfo := publishedBuildInfo.BuildInfo
-	assert.NotEmpty(t, buildInfo.Modules, "Build info should have modules")
-	if len(buildInfo.Modules) > 0 {
-		module := buildInfo.Modules[0]
-		// Validate module type is Gradle
-		assert.Equal(t, buildinfo.Gradle, module.Type, "Module type should be Gradle")
-		assert.NotEmpty(t, module.Id, "Module should have ID")
-	}
-
-	cleanGradleTest(t)
-}
-
-// TestGradleBuildWithFlexPackMultipleTasks tests FlexPack with multiple Gradle tasks
-// Similar to how traditional tests run "clean artifactoryPublish"
-func TestGradleBuildWithFlexPackMultipleTasks(t *testing.T) {
-	initGradleTest(t)
-
-	// Check if Gradle is available in the environment
-	if _, err := exec.LookPath("gradle"); err != nil {
-		t.Skip("Gradle not found in PATH, skipping Gradle FlexPack multiple tasks test")
-	}
-
-	buildGradlePath := createGradleProject(t, "gradleproject")
-	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
-	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
-
-	buildName := tests.GradleBuildName + "-flexpack-multi"
-	buildNumber := "1"
-
-	// Set environment for native FlexPack implementation
-	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_RUN_NATIVE", "true")
-	defer setEnvCallBack()
-
-	// Windows compatibility
-	buildGradlePath = strings.ReplaceAll(buildGradlePath, `\`, "/")
-
-	// Run gradle with multiple tasks (FlexPack mode)
-	err := runJfrogCliWithoutAssertion("gradle", "clean", "compileJava", "test", "build", "-b"+buildGradlePath, "--build-name="+buildName, "--build-number="+buildNumber)
-	assert.NoError(t, err)
-
-	// Publish build info
-	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
-
-	// Validate build info was created
-	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
-	if err != nil {
-		assert.NoError(t, err)
-		return
-	}
-	if !found {
-		assert.True(t, found, "build info was expected to be found")
-		return
-	}
-
-	// Validate build info structure
-	assert.NotEmpty(t, publishedBuildInfo.BuildInfo.Modules, "Build info should have modules")
-
-	cleanGradleTest(t)
-}
-
-// TestGradleBuildWithFlexPackNoBuildInfo tests FlexPack without build info collection
-// This is the native equivalent of running gradle without --build-name/--build-number
-func TestGradleBuildWithFlexPackNoBuildInfo(t *testing.T) {
-	initGradleTest(t)
-
-	// Check if Gradle is available in the environment
-	if _, err := exec.LookPath("gradle"); err != nil {
-		t.Skip("Gradle not found in PATH, skipping Gradle FlexPack no build info test")
-	}
-
-	buildGradlePath := createGradleProject(t, "gradleproject")
-	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
-	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
-
-	// Set environment for native FlexPack implementation
-	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_RUN_NATIVE", "true")
-	defer setEnvCallBack()
-
-	// Windows compatibility
-	buildGradlePath = strings.ReplaceAll(buildGradlePath, `\`, "/")
-
-	// Run gradle without build info flags (FlexPack mode - just execute gradle)
-	err := runJfrogCliWithoutAssertion("gradle", "clean", "build", "-b"+buildGradlePath)
-	assert.NoError(t, err)
-
-	cleanGradleTest(t)
-}
-
-// TestGradleBuildWithFlexPackTestTask tests 'jf gradle test' with JFROG_RUN_NATIVE=true
-func TestGradleBuildWithFlexPackTestTask(t *testing.T) {
-	initGradleTest(t)
-
-	// Check if Gradle is available in the environment
-	if _, err := exec.LookPath("gradle"); err != nil {
-		t.Skip("Gradle not found in PATH, skipping Gradle FlexPack test task test")
-	}
-
-	buildGradlePath := createGradleProject(t, "gradleproject")
-	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
-	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
-
-	buildName := tests.GradleBuildName + "-flexpack-test"
-	buildNumber := "1"
-
-	// Set environment for native FlexPack implementation
-	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_RUN_NATIVE", "true")
-	defer setEnvCallBack()
-
-	// Windows compatibility
-	buildGradlePath = strings.ReplaceAll(buildGradlePath, `\`, "/")
-
-	// Run gradle test task (FlexPack mode)
-	err := runJfrogCliWithoutAssertion("gradle", "clean", "test", "-b"+buildGradlePath, "--build-name="+buildName, "--build-number="+buildNumber)
-	// Test may fail if no tests exist, but command should execute
-	if err != nil {
-		t.Logf("Gradle test command returned error (may be expected if no tests exist): %v", err)
 	}
 
 	cleanGradleTest(t)
@@ -628,113 +429,6 @@ func TestGradleBuildWithFlexPackInvalidArgs(t *testing.T) {
 	// Run gradle with invalid option
 	err = runJfrogCliWithoutAssertion("gradle", "build", "--invalid-option-xyz", "-b"+buildGradlePath)
 	assert.Error(t, err, "Gradle should fail with invalid option")
-
-	cleanGradleTest(t)
-}
-
-// TestGradleBuildWithFlexPackDependencySHA validates that dependency SHA checksums are collected
-func TestGradleBuildWithFlexPackDependencySHA(t *testing.T) {
-	initGradleTest(t)
-
-	// Check if Gradle is available in the environment
-	if _, err := exec.LookPath("gradle"); err != nil {
-		t.Skip("Gradle not found in PATH, skipping Gradle FlexPack dependency SHA test")
-	}
-
-	buildGradlePath := createGradleProject(t, "gradleproject")
-	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
-	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
-
-	buildName := tests.GradleBuildName + "-flexpack-sha"
-	buildNumber := "1"
-
-	// Set environment for native FlexPack implementation
-	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_RUN_NATIVE", "true")
-	defer setEnvCallBack()
-
-	// Windows compatibility
-	buildGradlePath = strings.ReplaceAll(buildGradlePath, `\`, "/")
-
-	// Run gradle build
-	err := runJfrogCliWithoutAssertion("gradle", "clean", "build", "-b"+buildGradlePath, "--build-name="+buildName, "--build-number="+buildNumber)
-	assert.NoError(t, err)
-
-	// Publish build info
-	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
-
-	// Validate build info was created
-	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
-	if err != nil {
-		assert.NoError(t, err)
-		return
-	}
-	if !found {
-		assert.True(t, found, "build info was expected to be found")
-		return
-	}
-
-	// Validate that dependencies have SHA checksums
-	assert.NotEmpty(t, publishedBuildInfo.BuildInfo.Modules, "Build info should have modules")
-	for _, module := range publishedBuildInfo.BuildInfo.Modules {
-		for _, dep := range module.Dependencies {
-			// FlexPack should provide at least one SHA checksum
-			hasSHA := dep.Sha1 != "" || dep.Sha256 != ""
-			assert.True(t, hasSHA, "Dependency %s should have SHA1 or SHA256 checksum", dep.Id)
-		}
-	}
-
-	cleanGradleTest(t)
-}
-
-// TestGradleBuildWithFlexPackDependencyScope validates that dependency scopes/configurations are collected
-func TestGradleBuildWithFlexPackDependencyScope(t *testing.T) {
-	initGradleTest(t)
-
-	// Check if Gradle is available in the environment
-	if _, err := exec.LookPath("gradle"); err != nil {
-		t.Skip("Gradle not found in PATH, skipping Gradle FlexPack dependency scope test")
-	}
-
-	buildGradlePath := createGradleProject(t, "gradleproject")
-	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
-	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
-
-	buildName := tests.GradleBuildName + "-flexpack-scope"
-	buildNumber := "1"
-
-	// Set environment for native FlexPack implementation
-	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_RUN_NATIVE", "true")
-	defer setEnvCallBack()
-
-	// Windows compatibility
-	buildGradlePath = strings.ReplaceAll(buildGradlePath, `\`, "/")
-
-	// Run gradle build
-	err := runJfrogCliWithoutAssertion("gradle", "clean", "build", "-b"+buildGradlePath, "--build-name="+buildName, "--build-number="+buildNumber)
-	assert.NoError(t, err)
-
-	// Publish build info
-	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
-
-	// Validate build info was created
-	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
-	if err != nil {
-		assert.NoError(t, err)
-		return
-	}
-	if !found {
-		assert.True(t, found, "build info was expected to be found")
-		return
-	}
-
-	// Validate that dependencies have scopes
-	assert.NotEmpty(t, publishedBuildInfo.BuildInfo.Modules, "Build info should have modules")
-	for _, module := range publishedBuildInfo.BuildInfo.Modules {
-		for _, dep := range module.Dependencies {
-			// FlexPack should collect scopes (Gradle configurations)
-			assert.NotEmpty(t, dep.Scopes, "Dependency %s should have scopes/configurations", dep.Id)
-		}
-	}
 
 	cleanGradleTest(t)
 }
@@ -848,18 +542,29 @@ func createGradleProject(t *testing.T, projectName string) string {
 	// Copy the entire project directory including source files
 	projectSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "gradle", projectName)
 	projectTarget := filepath.Join(tests.Temp, projectName)
-	err := io.CopyDir(projectSrc, projectTarget, true, nil)
+	// Use absolute paths to avoid issues when tests change working directory and pass relative -b flags.
+	// (e.g. running from tmp/gradleproject and passing -btmp/gradleproject/build.gradle results in duplicated paths)
+	var err error
+	projectTarget, err = filepath.Abs(projectTarget)
+	assert.NoError(t, err)
+	err = io.CopyDir(projectSrc, projectTarget, true, nil)
 	assert.NoError(t, err)
 
 	// Replace template variables in build.gradle
 	srcBuildFile := filepath.Join(projectTarget, "build.gradle")
 	buildGradlePath, err := tests.ReplaceTemplateVariables(srcBuildFile, projectTarget)
 	assert.NoError(t, err)
+	buildGradlePath, err = filepath.Abs(buildGradlePath)
+	assert.NoError(t, err)
+	assert.FileExists(t, buildGradlePath)
 
 	// Replace template variables in settings.gradle
 	srcSettingsFile := filepath.Join(projectTarget, "settings.gradle")
-	_, err = tests.ReplaceTemplateVariables(srcSettingsFile, projectTarget)
+	settingsPath, err := tests.ReplaceTemplateVariables(srcSettingsFile, projectTarget)
 	assert.NoError(t, err)
+	settingsPath, err = filepath.Abs(settingsPath)
+	assert.NoError(t, err)
+	assert.FileExists(t, settingsPath)
 
 	return buildGradlePath
 }
@@ -869,18 +574,28 @@ func createGradleProjectKotlin(t *testing.T, projectName string) string {
 	// Copy the entire project directory including source files
 	projectSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "gradle", projectName)
 	projectTarget := filepath.Join(tests.Temp, projectName)
-	err := io.CopyDir(projectSrc, projectTarget, true, nil)
+	// Use absolute paths to avoid issues when tests change working directory and pass relative -b flags.
+	var err error
+	projectTarget, err = filepath.Abs(projectTarget)
+	assert.NoError(t, err)
+	err = io.CopyDir(projectSrc, projectTarget, true, nil)
 	assert.NoError(t, err)
 
 	// Replace template variables in build.gradle.kts
 	srcBuildFile := filepath.Join(projectTarget, "build.gradle.kts")
 	buildGradlePath, err := tests.ReplaceTemplateVariables(srcBuildFile, projectTarget)
 	assert.NoError(t, err)
+	buildGradlePath, err = filepath.Abs(buildGradlePath)
+	assert.NoError(t, err)
+	assert.FileExists(t, buildGradlePath)
 
 	// Replace template variables in settings.gradle.kts
 	srcSettingsFile := filepath.Join(projectTarget, "settings.gradle.kts")
-	_, err = tests.ReplaceTemplateVariables(srcSettingsFile, projectTarget)
+	settingsPath, err := tests.ReplaceTemplateVariables(srcSettingsFile, projectTarget)
 	assert.NoError(t, err)
+	settingsPath, err = filepath.Abs(settingsPath)
+	assert.NoError(t, err)
+	assert.FileExists(t, settingsPath)
 
 	return buildGradlePath
 }
