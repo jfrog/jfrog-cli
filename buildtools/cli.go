@@ -700,10 +700,6 @@ func GradleCmd(c *cli.Context) (err error) {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	args := cliutils.ExtractCommand(c)
-	args, serverDetails, err := resolveServer(args)
-	if err != nil {
-		return err
-	}
 	filteredGradleArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
 	if err != nil {
 		return err
@@ -735,7 +731,7 @@ func GradleCmd(c *cli.Context) (err error) {
 		return err
 	}
 	printDeploymentView := log.IsStdErrTerminal()
-	gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(filteredGradleArgs).SetConfigPath(configFilePath).SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetXrayScan(xrayScan).SetScanOutputFormat(scanOutputFormat).SetServerDetails(serverDetails)
+	gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(filteredGradleArgs).SetConfigPath(configFilePath).SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetXrayScan(xrayScan).SetScanOutputFormat(scanOutputFormat)
 	err = commands.Exec(gradleCmd)
 	result := gradleCmd.Result()
 	defer cliutils.CleanupResult(result, &err)
