@@ -9,6 +9,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // Verify the input slice exist in Artifactory
@@ -17,23 +18,39 @@ import (
 // serverDetails - Target Artifactory server details
 // t - Tests object
 func VerifyExistInArtifactory(expected []string, specFile string, serverDetails *config.ServerDetails, t *testing.T) {
-	results, _ := SearchInArtifactory(specFile, serverDetails, t)
+	results, err := SearchInArtifactory(specFile, serverDetails, t)
+	require.NoError(t, err)
 	tests.CompareExpectedVsActual(expected, results, t)
 }
 
 func SearchInArtifactory(specFile string, serverDetails *config.ServerDetails, t *testing.T) ([]utils.SearchResult, error) {
-	searchSpec, _ := spec.CreateSpecFromFile(specFile, nil)
+	searchSpec, err := spec.CreateSpecFromFile(specFile, nil)
+	if err != nil {
+		return nil, err
+	}
+	if searchSpec == nil {
+		return nil, assert.AnError
+	}
 	searchCmd := generic.NewSearchCommand()
 	searchCmd.SetServerDetails(serverDetails).SetSpec(searchSpec)
 	reader, err := searchCmd.Search()
-	assert.NoError(t, err)
+	if err != nil {
+		return nil, err
+	}
 	var resultItems []utils.SearchResult
 	readerNoDate, err := utils.SearchResultNoDate(reader)
-	assert.NoError(t, err)
+	if err != nil {
+		_ = reader.Close()
+		return nil, err
+	}
 	for searchResult := new(utils.SearchResult); readerNoDate.NextRecord(searchResult) == nil; searchResult = new(utils.SearchResult) {
 		resultItems = append(resultItems, *searchResult)
 	}
-	assert.NoError(t, reader.Close(), "Couldn't close reader")
-	assert.NoError(t, reader.GetError(), "Couldn't get reader error")
-	return resultItems, err
+	if cerr := reader.Close(); cerr != nil {
+		return resultItems, cerr
+	}
+	if rerr := reader.GetError(); rerr != nil {
+		return resultItems, rerr
+	}
+	return resultItems, nil
 }
