@@ -15,6 +15,7 @@ import (
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	"github.com/stretchr/testify/require"
+	urfavecli "github.com/urfave/cli"
 
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -410,6 +411,11 @@ func TestGradleBuildWithFlexPackInvalidArgs(t *testing.T) {
 	if _, err := exec.LookPath("gradle"); err != nil {
 		t.Skip("Gradle not found in PATH, skipping Gradle FlexPack invalid args test")
 	}
+
+	// The CLI uses urfave/cli, which may call os.Exit(1) for ExitError (e.g., external tool exit code).
+	origOsExiter := urfavecli.OsExiter
+	urfavecli.OsExiter = func(code int) {}
+	defer func() { urfavecli.OsExiter = origOsExiter }()
 
 	buildGradlePath := createGradleProject(t, "gradleproject")
 	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
