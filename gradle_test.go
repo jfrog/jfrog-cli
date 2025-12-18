@@ -430,7 +430,9 @@ func TestGradleBuildWithFlexPackInvalidArgs(t *testing.T) {
 	err = runJfrogCliWithoutAssertion("gradle", "build", "--invalid-option-xyz", "-b"+buildGradlePath)
 	assert.Error(t, err, "Gradle should fail with invalid option")
 
-	cleanGradleTest(t)
+	// This test intentionally fails before any deployment/build-info publish.
+	clientTestUtils.UnSetEnvAndAssert(t, coreutils.HomeDir)
+	tests.CleanFileSystem()
 }
 
 // TestGradleBuildWithFlexPackFallback verifies that gradle falls back to traditional approach
@@ -557,6 +559,8 @@ func createGradleProject(t *testing.T, projectName string) string {
 	buildGradlePath, err = filepath.Abs(buildGradlePath)
 	assert.NoError(t, err)
 	assert.FileExists(t, buildGradlePath)
+	// Gradle accepts forward slashes on all platforms, and this avoids Windows path edge-cases.
+	buildGradlePath = filepath.ToSlash(buildGradlePath)
 
 	// Replace template variables in settings.gradle
 	srcSettingsFile := filepath.Join(projectTarget, "settings.gradle")
@@ -588,6 +592,8 @@ func createGradleProjectKotlin(t *testing.T, projectName string) string {
 	buildGradlePath, err = filepath.Abs(buildGradlePath)
 	assert.NoError(t, err)
 	assert.FileExists(t, buildGradlePath)
+	// Gradle accepts forward slashes on all platforms, and this avoids Windows path edge-cases.
+	buildGradlePath = filepath.ToSlash(buildGradlePath)
 
 	// Replace template variables in settings.gradle.kts
 	srcSettingsFile := filepath.Join(projectTarget, "settings.gradle.kts")
