@@ -11,6 +11,22 @@ apply plugin: 'idea'
 apply plugin: 'com.jfrog.artifactory'
 apply plugin: 'maven-publish'
 
+// Gradle 8+ blocks http:// repositories unless allowInsecureProtocol=true is set.
+// The JFrog Gradle integration / Artifactory plugin may add an Artifactory resolver repo using http://localhost in tests.
+// This block is safe across Gradle versions because it checks for the property before setting it.
+allprojects {
+    repositories.all { repo ->
+        try {
+            def urlStr = repo.respondsTo('getUrl') && repo.url != null ? repo.url.toString() : ""
+            if (urlStr.startsWith("http://") && repo.hasProperty("allowInsecureProtocol")) {
+                repo.allowInsecureProtocol = true
+            }
+        } catch (Throwable ignored) {
+            // Best-effort; ignore repositories that don't support URL/allowInsecureProtocol.
+        }
+    }
+}
+
 version = 1.0
 task initProject(description: 'Initialize project directory structure.') {
     doLast {

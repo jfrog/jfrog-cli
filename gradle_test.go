@@ -453,6 +453,12 @@ func TestGradleBuildWithFlexPackFallback(t *testing.T) {
 	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.GradleConfig)
 	destPath := filepath.Join(filepath.Dir(buildGradlePath), ".jfrog", "projects")
 	createConfigFile(destPath, configFilePath, t)
+
+	// Create the search spec before changing the working directory.
+	// tests.GetTestResourcesPath() is relative ("testdata"), so creating the spec after chdir may fail on CI.
+	searchSpec, err := tests.CreateSpec(tests.SearchAllGradle)
+	require.NoError(t, err)
+
 	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
 	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 
@@ -466,8 +472,6 @@ func TestGradleBuildWithFlexPackFallback(t *testing.T) {
 	runJfrogCli(t, "gradle", "clean", "artifactoryPublish", "-b"+buildGradlePath, "--build-name="+buildName, "--build-number="+buildNumber)
 
 	// Validate artifacts were deployed (traditional approach deploys to Artifactory)
-	searchSpec, err := tests.CreateSpec(tests.SearchAllGradle)
-	assert.NoError(t, err)
 	inttestutils.VerifyExistInArtifactory(tests.GetGradleDeployedArtifacts(), searchSpec, serverDetails, t)
 
 	cleanGradleTest(t)
