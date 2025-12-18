@@ -845,12 +845,20 @@ func TestGradleBuildWithFlexPackKotlinDSL(t *testing.T) {
 }
 
 func createGradleProject(t *testing.T, projectName string) string {
-	srcBuildFile := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "gradle", projectName, "build.gradle")
-	buildGradlePath, err := tests.ReplaceTemplateVariables(srcBuildFile, "")
+	// Copy the entire project directory including source files
+	projectSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "gradle", projectName)
+	projectTarget := filepath.Join(tests.Temp, projectName)
+	err := io.CopyDir(projectSrc, projectTarget, true, nil)
 	assert.NoError(t, err)
 
-	srcSettingsFile := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "gradle", projectName, "settings.gradle")
-	_, err = tests.ReplaceTemplateVariables(srcSettingsFile, "")
+	// Replace template variables in build.gradle
+	srcBuildFile := filepath.Join(projectTarget, "build.gradle")
+	buildGradlePath, err := tests.ReplaceTemplateVariables(srcBuildFile, projectTarget)
+	assert.NoError(t, err)
+
+	// Replace template variables in settings.gradle
+	srcSettingsFile := filepath.Join(projectTarget, "settings.gradle")
+	_, err = tests.ReplaceTemplateVariables(srcSettingsFile, projectTarget)
 	assert.NoError(t, err)
 
 	return buildGradlePath
@@ -858,12 +866,20 @@ func createGradleProject(t *testing.T, projectName string) string {
 
 // createGradleProjectKotlin creates a Kotlin DSL gradle project for testing
 func createGradleProjectKotlin(t *testing.T, projectName string) string {
-	srcBuildFile := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "gradle", projectName, "build.gradle.kts")
-	buildGradlePath, err := tests.ReplaceTemplateVariables(srcBuildFile, "")
+	// Copy the entire project directory including source files
+	projectSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "gradle", projectName)
+	projectTarget := filepath.Join(tests.Temp, projectName)
+	err := io.CopyDir(projectSrc, projectTarget, true, nil)
 	assert.NoError(t, err)
 
-	srcSettingsFile := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "gradle", projectName, "settings.gradle.kts")
-	_, err = tests.ReplaceTemplateVariables(srcSettingsFile, "")
+	// Replace template variables in build.gradle.kts
+	srcBuildFile := filepath.Join(projectTarget, "build.gradle.kts")
+	buildGradlePath, err := tests.ReplaceTemplateVariables(srcBuildFile, projectTarget)
+	assert.NoError(t, err)
+
+	// Replace template variables in settings.gradle.kts
+	srcSettingsFile := filepath.Join(projectTarget, "settings.gradle.kts")
+	_, err = tests.ReplaceTemplateVariables(srcSettingsFile, projectTarget)
 	assert.NoError(t, err)
 
 	return buildGradlePath
