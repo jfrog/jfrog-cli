@@ -16,6 +16,7 @@ import (
 	"time"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/utils/tests"
@@ -40,6 +41,23 @@ func initHelmTest(t *testing.T) {
 
 	if artifactoryCli == nil {
 		initArtifactoryCli()
+	}
+
+	// Set up home directory configuration so GetDefaultServerConf() can find the server
+	createJfrogHomeConfig(t, true)
+
+	// Initialize serverDetails for Helm tests (similar to maven_test.go)
+	serverDetails = &config.ServerDetails{
+		Url:            *tests.JfrogUrl,
+		ArtifactoryUrl: *tests.JfrogUrl + tests.ArtifactoryEndpoint,
+		SshKeyPath:     *tests.JfrogSshKeyPath,
+		SshPassphrase:  *tests.JfrogSshPassphrase,
+	}
+	if *tests.JfrogAccessToken != "" {
+		serverDetails.AccessToken = *tests.JfrogAccessToken
+	} else {
+		serverDetails.User = *tests.JfrogUser
+		serverDetails.Password = *tests.JfrogPassword
 	}
 }
 
@@ -366,6 +384,13 @@ spec:
         image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
 `
 	err = os.WriteFile(filepath.Join(templatesDir, "deployment.yaml"), []byte(deploymentYaml), 0644)
+	require.NoError(t, err)
+
+	// Create an empty Chart.lock file for charts without dependencies
+	// This is required because Helm FlexPack tries to read Chart.lock even when it doesn't exist
+	chartLockYaml := `dependencies: []
+`
+	err = os.WriteFile(filepath.Join(chartDir, "Chart.lock"), []byte(chartLockYaml), 0644)
 	require.NoError(t, err)
 
 	return chartDir
