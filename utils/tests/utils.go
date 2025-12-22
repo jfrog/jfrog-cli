@@ -68,6 +68,7 @@ var (
 	TestPip                   *bool
 	TestPipenv                *bool
 	TestPoetry                *bool
+	TestConan                 *bool
 	TestHelm                  *bool
 	TestPlugins               *bool
 	TestXray                  *bool
@@ -106,6 +107,7 @@ func init() {
 	TestPip = flag.Bool("test.pip", false, "Test Pip")
 	TestPipenv = flag.Bool("test.pipenv", false, "Test Pipenv")
 	TestPoetry = flag.Bool("test.poetry", false, "Test Poetry")
+	TestConan = flag.Bool("test.conan", false, "Test Conan")
 	TestHelm = flag.Bool("test.helm", false, "Test Helm")
 	TestPlugins = flag.Bool("test.plugins", false, "Test Plugins")
 	TestXray = flag.Bool("test.xray", false, "Test Xray")
@@ -281,6 +283,9 @@ var reposConfigMap = map[*string]string{
 	&PoetryLocalRepo:                PoetryLocalRepositoryConfig,
 	&PoetryRemoteRepo:               PoetryRemoteRepositoryConfig,
 	&PoetryVirtualRepo:              PoetryVirtualRepositoryConfig,
+	&ConanLocalRepo:                 ConanLocalRepositoryConfig,
+	&ConanRemoteRepo:                ConanRemoteRepositoryConfig,
+	&ConanVirtualRepo:               ConanVirtualRepositoryConfig,
 	&HelmLocalRepo:                  HelmLocalRepositoryConfig,
 	&RtDebianRepo:                   DebianTestRepositoryConfig,
 	&RtLfsRepo:                      GitLfsTestRepositoryConfig,
@@ -346,6 +351,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestPip:                {&PypiLocalRepo, &PypiRemoteRepo},
 		TestPipenv:             {&PipenvRemoteRepo},
 		TestPoetry:             {&PoetryLocalRepo, &PoetryRemoteRepo},
+		TestConan:              {&ConanLocalRepo, &ConanRemoteRepo},
 		TestHelm:               {&HelmLocalRepo},
 		TestPlugins:            {&RtRepo1},
 		TestXray:               {&NpmRemoteRepo, &NugetRemoteRepo, &YarnRemoteRepo, &GradleRemoteRepo, &MvnRemoteRepo, &GoRepo, &GoRemoteRepo, &PypiRemoteRepo},
@@ -373,6 +379,7 @@ func GetVirtualRepositories() map[*string]string {
 		TestPip:          {&PypiVirtualRepo},
 		TestPipenv:       {&PipenvVirtualRepo},
 		TestPoetry:       {&PoetryVirtualRepo},
+		TestConan:        {&ConanVirtualRepo},
 		TestHelm:         {},
 		TestPlugins:      {},
 		TestXray:         {&GoVirtualRepo},
@@ -411,6 +418,7 @@ func GetBuildNames() []string {
 		TestPip:          {&PipBuildName},
 		TestPipenv:       {&PipenvBuildName},
 		TestPoetry:       {&PoetryBuildName},
+		TestConan:        {&ConanBuildName},
 		TestHelm:         {&HelmBuildName},
 		TestPlugins:      {},
 		TestXray:         {},
