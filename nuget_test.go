@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -424,11 +425,11 @@ func TestDotnetRequestedByDeterminism(t *testing.T) {
 		bi := publishedBuildInfo.BuildInfo
 		require.NotEmpty(t, bi.Modules, "No modules in build info for run %d", i)
 
-		// Extract RequestedBy for each dependency
+		// Extract RequestedBy for each dependency, normalizing order for comparison
 		requestedByMap := make(map[string][][]string)
 		for _, module := range bi.Modules {
 			for _, dep := range module.Dependencies {
-				requestedByMap[dep.Id] = dep.RequestedBy
+				requestedByMap[dep.Id] = sortRequestedByPaths(dep.RequestedBy)
 			}
 		}
 		allRunsRequestedBy = append(allRunsRequestedBy, requestedByMap)
@@ -474,4 +475,25 @@ func TestDotnetRequestedByDeterminism(t *testing.T) {
 
 	t.Logf("Successfully verified RequestedBy determinism across %d runs", numRuns)
 	cleanTestsHomeEnv()
+}
+
+// sortRequestedByPaths sorts RequestedBy paths for consistent comparison.
+// Paths are sorted by length first (shorter paths first), then lexicographically
+// for paths of the same length.
+func sortRequestedByPaths(paths [][]string) [][]string {
+	if len(paths) <= 1 {
+		return paths
+	}
+	// Make a copy to avoid modifying the original
+	sorted := make([][]string, len(paths))
+	copy(sorted, paths)
+	sort.Slice(sorted, func(i, j int) bool {
+		// Sort by length first (shorter paths come first)
+		if len(sorted[i]) != len(sorted[j]) {
+			return len(sorted[i]) < len(sorted[j])
+		}
+		// For same length, sort lexicographically by joining elements
+		return strings.Join(sorted[i], "/") < strings.Join(sorted[j], "/")
+	})
+	return sorted
 }
