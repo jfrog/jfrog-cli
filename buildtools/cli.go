@@ -21,6 +21,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/buildtools/rubyconfig"
 	setupdocs "github.com/jfrog/jfrog-cli/docs/buildtools/setup"
 
+	conancommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/conan"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/container"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/dotnet"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/golang"
@@ -1486,18 +1487,21 @@ func ConanCmd(c *cli.Context) error {
 	}
 
 	args := cliutils.ExtractCommand(c)
-	cmdName, conanArgs := getCommandName(args)
+	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
+	if err != nil {
+		return err
+	}
+	cmdName, conanArgs := getCommandName(filteredArgs)
 
-	// Execute native conan command directly
-	log.Info(fmt.Sprintf("Running Conan %s.", cmdName))
-	conanCmd := exec.Command("conan", append([]string{cmdName}, conanArgs...)...)
-	conanCmd.Stdout = os.Stdout
-	conanCmd.Stderr = os.Stderr
-	if err := conanCmd.Run(); err != nil {
-		return fmt.Errorf("conan %s failed: %w", cmdName, err)
+	// Create and configure Conan command
+	conanCmd := conancommand.NewConanCommand()
+	conanCmd.SetCommandName(cmdName).SetArgs(conanArgs)
+
+	if buildConfiguration != nil {
+		conanCmd.SetBuildConfiguration(buildConfiguration)
 	}
 
-	return nil
+	return conanCmd.Run()
 }
 
 func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
