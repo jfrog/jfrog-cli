@@ -50,6 +50,10 @@ jobs:
         with:
           version: '2.10.2'
 
+      - name: Setup Conan profile
+        if: matrix.os.name != 'macos'
+        run: conan profile detect
+
       - name: Install local Artifactory
         if: matrix.os.name != 'macos'
         uses: jfrog/.github/actions/install-local-artifactory@main
