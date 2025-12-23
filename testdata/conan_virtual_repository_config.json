@@ -1,0 +1,7 @@
+{
+  "key": "cli-conan-virtual",
+  "rclass": "virtual",
+  "packageType": "conan",
+  "repositories": ["cli-conan-local", "cli-conan-remote"]
+}
+
