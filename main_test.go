@@ -59,7 +59,8 @@ func setupIntegrationTests() {
 	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
 		InitArtifactoryTests()
 	}
-	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv || *tests.TestPoetry {
+
+	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv || *tests.TestPoetry || *tests.TestHelm || (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
 		InitBuildToolsTests()
 	}
 	if *tests.TestDocker || *tests.TestPodman || *tests.TestDockerScan {
@@ -83,13 +84,16 @@ func setupIntegrationTests() {
 	if *tests.TestEvidence {
 		InitEvidenceTests()
 	}
+	if *tests.TestHelm {
+		InitHelmTests()
+	}
 }
 
 func tearDownIntegrationTests() {
 	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
 		CleanArtifactoryTests()
 	}
-	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv || *tests.TestPoetry || *tests.TestDocker || *tests.TestPodman || *tests.TestDockerScan {
+	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv || *tests.TestPoetry || *tests.TestHelm || *tests.TestDocker || *tests.TestPodman || *tests.TestDockerScan || (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
 		CleanBuildToolsTests()
 	}
 	if *tests.TestDistribution {
@@ -106,6 +110,9 @@ func tearDownIntegrationTests() {
 	}
 	if *tests.TestEvidence {
 		CleanEvidenceTests()
+	}
+	if *tests.TestHelm {
+		CleanHelmTests()
 	}
 }
 
@@ -190,7 +197,7 @@ func initArtifactoryCli() {
 	*tests.JfrogUrl = utils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
 	artifactoryCli = coreTests.NewJfrogCli(execMain, "jfrog rt", authenticate(false))
 	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestPlugins || *tests.TestArtifactoryProject ||
-		*tests.TestAccess || *tests.TestTransfer || *tests.TestLifecycle {
+		*tests.TestAccess || *tests.TestTransfer || *tests.TestLifecycle || *tests.TestHelm {
 		configCli = createConfigJfrogCLI(authenticate(true))
 		platformCli = coreTests.NewJfrogCli(execMain, "jfrog", authenticate(false))
 	}

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Test project for RequestedBy determinism fix.
+  
+  This project has dependencies that are BOTH direct AND transitive:
+  - Newtonsoft.Json: Direct dependency AND transitive (via NuGet.Core)
+  - Microsoft.CSharp: Direct dependency AND transitive (via NuGet.Core)
+  
+  This creates multiple RequestedBy paths for these dependencies:
+  - Direct path: [["determinism"]]
+  - Transitive path: [["determinism", "NuGet.Core"]]
+  
+  The fix ensures these paths are always sorted consistently:
+  1. Direct paths first (shorter length)
+  2. Lexicographically sorted within same length
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Direct dependency - also a transitive dep of NuGet.Core -->
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    
+    <!-- This package depends on Newtonsoft.Json transitively -->
+    <PackageReference Include="NuGet.Core" Version="2.14.0" />
+    
+    <!-- Additional packages for more complex graph -->
+    <PackageReference Include="RestSharp" Version="110.2.0" />
+  </ItemGroup>
+
+</Project>
+

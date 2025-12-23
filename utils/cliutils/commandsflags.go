@@ -77,6 +77,7 @@ const (
 	PipenvInstall          = "pipenv-install"
 	PoetryConfig           = "poetry-config"
 	Poetry                 = "poetry"
+	Helm                   = "helm"
 	RubyConfig             = "ruby-config"
 	Conan                  = "conan"
 	Ping                   = "ping"
@@ -315,6 +316,8 @@ const (
 	deleteArtifacts    = "delete-artifacts"
 
 	repo = "repo"
+
+	username = "username"
 
 	// Unique git-lfs-clean flags
 	glcPrefix = "glc-"
@@ -561,6 +564,7 @@ const (
 	ExcludeRepos    = "exclude-repos"
 	IncludeProjects = "include-projects"
 	ExcludeProjects = "exclude-projects"
+	IncludeFiles    = "include-files"
 
 	// *** JFrog Pipelines Commands' flags ***
 	// Base flags
@@ -1604,6 +1608,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  ExcludeProjects,
 		Usage: "[Optional] List of semicolon-separated(;) JFrog Projects to exclude from the transfer. You can use wildcards to specify patterns for the project keys.` `",
 	},
+	IncludeFiles: cli.StringFlag{
+		Name:  IncludeFiles,
+		Usage: "[Optional] List of semicolon-separated(;) path patterns to include in the transfer. Files will be filtered based on their directory path. Pattern examples: 'folder/subfolder/*', 'org/company/*'.` `",
+	},
 	IgnoreState: cli.BoolFlag{
 		Name:  IgnoreState,
 		Usage: "[Default: false] Set to true to ignore the saved state from previous transfer-files operations.` `",
@@ -1969,6 +1977,9 @@ var commandFlags = map[string][]string{
 	Poetry: {
 		BuildName, BuildNumber, module, Project,
 	},
+	Helm: {
+		BuildName, BuildNumber, module, Project, serverId, username, password,
+	},
 	RubyConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
@@ -2029,7 +2040,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, deleteQuiet,
 	},
 	TransferFiles: {
-		Filestore, IncludeRepos, ExcludeRepos, IgnoreState, ProxyKey, transferFilesStatus, Stop, PreChecks,
+		Filestore, IncludeRepos, ExcludeRepos, IncludeFiles, IgnoreState, ProxyKey, transferFilesStatus, Stop, PreChecks,
 	},
 	TransferInstall: {
 		installPluginVersion, InstallPluginSrcDir, InstallPluginHomeDir,
