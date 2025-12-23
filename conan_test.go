@@ -427,6 +427,8 @@ func initConanTest(t *testing.T) {
 	// Ensure Conan is installed
 	_, err := exec.LookPath("conan")
 	require.NoError(t, err, "Conan must be installed to run Conan tests")
+	// Ensure Conan default profile exists (required for conan install/create)
+	_ = exec.Command("conan", "profile", "detect").Run()
 	// Initialize CLI if not already done
 	if artifactoryCli == nil {
 		initArtifactoryCli()
