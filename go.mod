@@ -16,15 +16,12 @@ require (
 	github.com/docker/docker v28.5.2+incompatible
 	github.com/gocarina/gocsv v0.0.0-20240520201108-78e41c74b4b1
 	github.com/jfrog/archiver/v3 v3.6.1
-	github.com/jfrog/build-info-go v1.12.5-0.20251209171349-eb030db986f9
+	github.com/jfrog/build-info-go v1.8.9-0.20251223092904-9e9460642431
 	github.com/jfrog/gofrog v1.7.6
-	github.com/jfrog/jfrog-cli-application v1.0.2-0.20251210075951-519050602a7f
-	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20251222102341-20b9565387e0
-	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20251219102726-2cbe70d57403
-	github.com/jfrog/jfrog-cli-evidence v0.8.3-0.20251204144808-73fa744851c0
-	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20251205121610-171eb9b0000e
-	github.com/jfrog/jfrog-cli-security v1.24.1
-	github.com/jfrog/jfrog-client-go v1.55.1-0.20251218135123-ebfdf494c72d
+	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20251223103502-890237031ed7
+	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20251223102649-e659f6937251
+	github.com/jfrog/jfrog-cli-evidence v0.7.1
+	github.com/jfrog/jfrog-client-go v1.55.1-0.20251223101502-1a13a993b0c7
 	github.com/jszwec/csvutil v1.10.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/spf13/viper v1.21.0
@@ -229,6 +226,7 @@ require (
 	github.com/transparency-dev/merkle v0.0.2 // indirect
 	github.com/transparency-dev/tessera v1.0.0 // indirect
 	github.com/ulikunitz/xz v0.5.15 // indirect
+	github.com/urfave/cli/v2 v2.27.7 // indirect
 	github.com/vbatts/tar-split v0.12.2 // indirect
 	github.com/vbauerster/mpb/v8 v8.11.2 // indirect
 	github.com/virtuald/go-ordered-json v0.0.0-20170621173500-b18e6e673d74 // indirect
@@ -238,6 +236,7 @@ require (
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
+	github.com/xrash/smetrics v0.0.0-20250705151800-55b8f293f342 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
 	go.mongodb.org/mongo-driver v1.17.6 // indirect
 	go.opencensus.io v0.24.0 // indirect
@@ -281,10 +280,6 @@ require (
 replace github.com/docker/docker => github.com/docker/docker v27.5.1+incompatible
 
 replace github.com/gfleury/go-bitbucket-v1 => github.com/gfleury/go-bitbucket-v1 v0.0.0-20230825095122-9bc1711434ab
-
-replace github.com/jfrog/build-info-go => github.com/reshmifrog/build-info-go v1.8.9-0.20251222123737-474506b9e128
-
-replace github.com/jfrog/jfrog-cli-artifactory => github.com/reshmifrog/jfrog-cli-artifactory v0.0.0-20251223050802-f7f41aace231
 
 //replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20251006061821-8b1be6a65215
 
