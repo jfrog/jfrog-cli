@@ -39,7 +39,7 @@ func TestConanInstall(t *testing.T) {
 	args := []string{
 		"conan", "install", ".",
 		"--build=missing",
-		"-r", "cli-conan-virtual",
+		"-r", tests.ConanVirtualRepo,
 		"--build-name=" + tests.ConanBuildName,
 		"--build-number=" + buildNumber,
 	}
@@ -88,7 +88,7 @@ func TestConanInstallCreate(t *testing.T) {
 	installArgs := []string{
 		"conan", "install", ".",
 		"--build=missing",
-		"-r", "cli-conan-virtual",
+		"-r", tests.ConanVirtualRepo,
 		"--build-name=" + tests.ConanBuildName,
 		"--build-number=" + buildNumber,
 	}
@@ -145,7 +145,7 @@ func TestConanFullFlow(t *testing.T) {
 	installArgs := []string{
 		"conan", "install", ".",
 		"--build=missing",
-		"-r", "cli-conan-virtual",
+		"-r", tests.ConanVirtualRepo,
 		"--build-name=" + tests.ConanBuildName,
 		"--build-number=" + buildNumber,
 	}
@@ -163,7 +163,7 @@ func TestConanFullFlow(t *testing.T) {
 	// Run conan upload
 	uploadArgs := []string{
 		"conan", "upload", "cli-test-package/*",
-		"-r", "cli-conan-local",
+		"-r", tests.ConanLocalRepo,
 		"--confirm",
 		"--build-name=" + tests.ConanBuildName,
 		"--build-number=" + buildNumber,
@@ -223,7 +223,7 @@ func TestConanCreateUpload(t *testing.T) {
 	// Run conan upload
 	uploadArgs := []string{
 		"conan", "upload", "cli-test-package/*",
-		"-r", "cli-conan-local",
+		"-r", tests.ConanLocalRepo,
 		"--confirm",
 		"--build-name=" + tests.ConanBuildName,
 		"--build-number=" + buildNumber,
@@ -267,7 +267,7 @@ func TestConanAutoLogin(t *testing.T) {
 	args := []string{
 		"conan", "install", ".",
 		"--build=missing",
-		"-r", "cli-conan-virtual",
+		"-r", tests.ConanVirtualRepo,
 	}
 
 	// If auto-login works, this should not fail with authentication error
@@ -296,7 +296,7 @@ func TestConanBuildInfoModuleFromProject(t *testing.T) {
 	args := []string{
 		"conan", "install", ".",
 		"--build=missing",
-		"-r", "cli-conan-virtual",
+		"-r", tests.ConanVirtualRepo,
 		"--build-name=" + tests.ConanBuildName,
 		"--build-number=" + buildNumber,
 	}
@@ -341,7 +341,7 @@ func TestConanMultipleBuilds(t *testing.T) {
 		args := []string{
 			"conan", "install", ".",
 			"--build=missing",
-			"-r", "cli-conan-virtual",
+			"-r", tests.ConanVirtualRepo,
 			"--build-name=" + tests.ConanBuildName,
 			"--build-number=" + buildNumber,
 		}
@@ -389,7 +389,7 @@ func TestConanDependencyChecksums(t *testing.T) {
 	args := []string{
 		"conan", "install", ".",
 		"--build=missing",
-		"-r", "cli-conan-virtual",
+		"-r", tests.ConanVirtualRepo,
 		"--build-name=" + tests.ConanBuildName,
 		"--build-number=" + buildNumber,
 	}
@@ -424,17 +424,15 @@ func initConanTest(t *testing.T) {
 	if !*tests.TestConan {
 		t.Skip("Skipping Conan test. To run Conan test add the '-test.conan=true' option.")
 	}
-
 	// Ensure Conan is installed
 	_, err := exec.LookPath("conan")
 	require.NoError(t, err, "Conan must be installed to run Conan tests")
-
-	// Verify repositories exist (only if serverDetails is initialized)
-	if serverDetails != nil {
-		require.True(t, isRepoExist(tests.ConanRemoteRepo), "Conan remote repository doesn't exist: "+tests.ConanRemoteRepo)
-		require.True(t, isRepoExist(tests.ConanLocalRepo), "Conan local repository doesn't exist: "+tests.ConanLocalRepo)
-		require.True(t, isRepoExist(tests.ConanVirtualRepo), "Conan virtual repository doesn't exist: "+tests.ConanVirtualRepo)
+	// Initialize CLI if not already done
+	if artifactoryCli == nil {
+		initArtifactoryCli()
 	}
+	// Set up home directory configuration
+	createJfrogHomeConfig(t, true)
 }
 
 func createConanProject(t *testing.T, outputFolder string) string {
@@ -452,19 +450,19 @@ func createConanProject(t *testing.T, outputFolder string) string {
 
 func configureConanRemote(t *testing.T) {
 	// Remove existing remote if any
-	_ = exec.Command("conan", "remote", "remove", "cli-conan-virtual").Run()
-	_ = exec.Command("conan", "remote", "remove", "cli-conan-local").Run()
+	_ = exec.Command("conan", "remote", "remove", tests.ConanVirtualRepo).Run()
+	_ = exec.Command("conan", "remote", "remove", tests.ConanLocalRepo).Run()
 	// Add Conan remotes pointing to Artifactory
 	virtualUrl := serverDetails.ArtifactoryUrl + "api/conan/" + tests.ConanVirtualRepo
 	localUrl := serverDetails.ArtifactoryUrl + "api/conan/" + tests.ConanLocalRepo
-	addVirtualCmd := exec.Command("conan", "remote", "add", "cli-conan-virtual", virtualUrl)
+	addVirtualCmd := exec.Command("conan", "remote", "add", tests.ConanVirtualRepo, virtualUrl)
 	require.NoError(t, addVirtualCmd.Run(), "Failed to add Conan virtual remote")
-	addLocalCmd := exec.Command("conan", "remote", "add", "cli-conan-local", localUrl)
+	addLocalCmd := exec.Command("conan", "remote", "add", tests.ConanLocalRepo, localUrl)
 	require.NoError(t, addLocalCmd.Run(), "Failed to add Conan local remote")
 }
 
 func cleanupConanRemote() {
-	_ = exec.Command("conan", "remote", "remove", "cli-conan-virtual").Run()
-	_ = exec.Command("conan", "remote", "remove", "cli-conan-local").Run()
+	_ = exec.Command("conan", "remote", "remove", tests.ConanVirtualRepo).Run()
+	_ = exec.Command("conan", "remote", "remove", tests.ConanLocalRepo).Run()
 }
 
