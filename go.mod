@@ -1,6 +1,6 @@
 module github.com/jfrog/jfrog-cli
 
-go 1.25.4
+go 1.25.5
 
 replace (
 	// Should not be updated to 0.2.6 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
@@ -16,7 +16,7 @@ require (
 	github.com/docker/docker v28.5.2+incompatible
 	github.com/gocarina/gocsv v0.0.0-20240520201108-78e41c74b4b1
 	github.com/jfrog/archiver/v3 v3.6.1
-	github.com/jfrog/build-info-go v1.12.5-0.20251209171349-eb030db986f9
+	github.com/jfrog/build-info-go v1.13.0
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-application v1.0.2-0.20251210075951-519050602a7f
 	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20251223103502-890237031ed7
@@ -281,8 +281,6 @@ require (
 replace github.com/docker/docker => github.com/docker/docker v27.5.1+incompatible
 
 replace github.com/gfleury/go-bitbucket-v1 => github.com/gfleury/go-bitbucket-v1 v0.0.0-20230825095122-9bc1711434ab
-
-replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20251223092904-9e9460642431
 
 //replace github.com/jfrog/jfrog-cli-artifactory => github.com/naveenku-jfrog/jfrog-cli-artifactory v0.0.0-20251210184507-0c8d138690cb
 
