@@ -9,7 +9,6 @@ import (
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	biutils "github.com/jfrog/build-info-go/utils"
-	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
@@ -25,15 +24,15 @@ func TestConanInstall(t *testing.T) {
 	buildNumber := "1"
 
 	// Prepare project
-	projectPath := createConanProject(t, "conan-install-test", "conanproject")
+	projectPath := createConanProject(t, "conan-install-test")
 	wd, err := os.Getwd()
 	require.NoError(t, err)
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
 	defer chdirCallback()
 
 	// Configure Conan remote
-	configureConanRemote(t, tests.ConanVirtualRepo)
-	defer cleanupConanRemote(t)
+	configureConanRemote(t)
+	defer cleanupConanRemote()
 
 	// Run conan install with build info
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
@@ -73,15 +72,15 @@ func TestConanInstallCreate(t *testing.T) {
 	buildNumber := "1"
 
 	// Prepare project
-	projectPath := createConanProject(t, "conan-install-create-test", "conanproject")
+	projectPath := createConanProject(t, "conan-install-create-test")
 	wd, err := os.Getwd()
 	require.NoError(t, err)
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
 	defer chdirCallback()
 
 	// Configure Conan remote
-	configureConanRemote(t, tests.ConanVirtualRepo)
-	defer cleanupConanRemote(t)
+	configureConanRemote(t)
+	defer cleanupConanRemote()
 
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 
@@ -130,15 +129,15 @@ func TestConanFullFlow(t *testing.T) {
 	buildNumber := "1"
 
 	// Prepare project
-	projectPath := createConanProject(t, "conan-full-flow-test", "conanproject")
+	projectPath := createConanProject(t, "conan-full-flow-test")
 	wd, err := os.Getwd()
 	require.NoError(t, err)
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
 	defer chdirCallback()
 
 	// Configure Conan remote
-	configureConanRemote(t, tests.ConanVirtualRepo)
-	defer cleanupConanRemote(t)
+	configureConanRemote(t)
+	defer cleanupConanRemote()
 
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 
@@ -200,15 +199,15 @@ func TestConanCreateUpload(t *testing.T) {
 	buildNumber := "1"
 
 	// Prepare project
-	projectPath := createConanProject(t, "conan-create-upload-test", "conanproject")
+	projectPath := createConanProject(t, "conan-create-upload-test")
 	wd, err := os.Getwd()
 	require.NoError(t, err)
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
 	defer chdirCallback()
 
 	// Configure Conan remote
-	configureConanRemote(t, tests.ConanVirtualRepo)
-	defer cleanupConanRemote(t)
+	configureConanRemote(t)
+	defer cleanupConanRemote()
 
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 
@@ -253,15 +252,15 @@ func TestConanAutoLogin(t *testing.T) {
 	initConanTest(t)
 
 	// Prepare project
-	projectPath := createConanProject(t, "conan-auto-login-test", "conanproject")
+	projectPath := createConanProject(t, "conan-auto-login-test")
 	wd, err := os.Getwd()
 	require.NoError(t, err)
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
 	defer chdirCallback()
 
 	// Configure Conan remote (without manual login)
-	configureConanRemote(t, tests.ConanVirtualRepo)
-	defer cleanupConanRemote(t)
+	configureConanRemote(t)
+	defer cleanupConanRemote()
 
 	// Run conan install - auto-login should happen
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
@@ -282,15 +281,15 @@ func TestConanBuildInfoModuleFromProject(t *testing.T) {
 	buildNumber := "1"
 
 	// Prepare project
-	projectPath := createConanProject(t, "conan-module-test", "conanproject")
+	projectPath := createConanProject(t, "conan-module-test")
 	wd, err := os.Getwd()
 	require.NoError(t, err)
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
 	defer chdirCallback()
 
 	// Configure Conan remote
-	configureConanRemote(t, tests.ConanVirtualRepo)
-	defer cleanupConanRemote(t)
+	configureConanRemote(t)
+	defer cleanupConanRemote()
 
 	// Run conan install
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
@@ -323,15 +322,15 @@ func TestConanMultipleBuilds(t *testing.T) {
 	initConanTest(t)
 
 	// Prepare project
-	projectPath := createConanProject(t, "conan-multi-build-test", "conanproject")
+	projectPath := createConanProject(t, "conan-multi-build-test")
 	wd, err := os.Getwd()
 	require.NoError(t, err)
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
 	defer chdirCallback()
 
 	// Configure Conan remote
-	configureConanRemote(t, tests.ConanVirtualRepo)
-	defer cleanupConanRemote(t)
+	configureConanRemote(t)
+	defer cleanupConanRemote()
 
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 
@@ -375,15 +374,15 @@ func TestConanDependencyChecksums(t *testing.T) {
 	buildNumber := "1"
 
 	// Prepare project
-	projectPath := createConanProject(t, "conan-checksum-test", "conanproject")
+	projectPath := createConanProject(t, "conan-checksum-test")
 	wd, err := os.Getwd()
 	require.NoError(t, err)
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
 	defer chdirCallback()
 
 	// Configure Conan remote
-	configureConanRemote(t, tests.ConanVirtualRepo)
-	defer cleanupConanRemote(t)
+	configureConanRemote(t)
+	defer cleanupConanRemote()
 
 	// Run conan install
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
@@ -438,23 +437,8 @@ func initConanTest(t *testing.T) {
 	}
 }
 
-func cleanConanTest(t *testing.T) {
-	// Delete uploaded packages (only if serverDetails is initialized)
-	if serverDetails != nil {
-		deleteSpec := spec.NewBuilder().Pattern(tests.ConanLocalRepo + "/*").BuildSpec()
-		_, _, err := tests.DeleteFiles(deleteSpec, serverDetails)
-		if err != nil {
-			t.Logf("Warning: failed to delete Conan artifacts: %v", err)
-		}
-	}
-
-	// Clear Conan cache
-	cmd := exec.Command("conan", "remove", "-c", "*")
-	_ = cmd.Run()
-}
-
-func createConanProject(t *testing.T, outputFolder, projectName string) string {
-	projectSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "conan", projectName)
+func createConanProject(t *testing.T, outputFolder string) string {
+	projectSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "conan", "conanproject")
 	tmpDir, cleanupCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 
 	projectPath := filepath.Join(tmpDir, outputFolder)
@@ -466,24 +450,20 @@ func createConanProject(t *testing.T, outputFolder, projectName string) string {
 	return projectPath
 }
 
-func configureConanRemote(t *testing.T, repo string) {
+func configureConanRemote(t *testing.T) {
 	// Remove existing remote if any
 	_ = exec.Command("conan", "remote", "remove", "cli-conan-virtual").Run()
 	_ = exec.Command("conan", "remote", "remove", "cli-conan-local").Run()
-
 	// Add Conan remotes pointing to Artifactory
 	virtualUrl := serverDetails.ArtifactoryUrl + "api/conan/" + tests.ConanVirtualRepo
 	localUrl := serverDetails.ArtifactoryUrl + "api/conan/" + tests.ConanLocalRepo
-
 	addVirtualCmd := exec.Command("conan", "remote", "add", "cli-conan-virtual", virtualUrl)
 	require.NoError(t, addVirtualCmd.Run(), "Failed to add Conan virtual remote")
-
 	addLocalCmd := exec.Command("conan", "remote", "add", "cli-conan-local", localUrl)
 	require.NoError(t, addLocalCmd.Run(), "Failed to add Conan local remote")
 }
 
-func cleanupConanRemote(t *testing.T) {
-	// Remove test remotes
+func cleanupConanRemote() {
 	_ = exec.Command("conan", "remote", "remove", "cli-conan-virtual").Run()
 	_ = exec.Command("conan", "remote", "remove", "cli-conan-local").Run()
 }
