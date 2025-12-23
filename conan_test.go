@@ -43,10 +43,10 @@ func TestConanInstall(t *testing.T) {
 		"--build-name=" + tests.ConanBuildName,
 		"--build-number=" + buildNumber,
 	}
-	assert.NoError(t, jfrogCli.Exec(args...))
+	require.NoError(t, jfrogCli.Exec(args...))
 
 	// Publish build info
-	assert.NoError(t, artifactoryCli.Exec("bp", tests.ConanBuildName, buildNumber))
+	require.NoError(t, artifactoryCli.Exec("bp", tests.ConanBuildName, buildNumber))
 	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.ConanBuildName, artHttpDetails)
 
 	// Validate build info
@@ -55,7 +55,7 @@ func TestConanInstall(t *testing.T) {
 	require.True(t, found, "build info was expected to be found")
 
 	buildInfoModules := publishedBuildInfo.BuildInfo.Modules
-	assert.Len(t, buildInfoModules, 1, "Expected 1 module")
+	require.Len(t, buildInfoModules, 1, "Expected 1 module")
 	assert.Equal(t, buildinfo.Conan, buildInfoModules[0].Type, "Module type should be conan")
 
 	// Should have dependencies (at least zlib)

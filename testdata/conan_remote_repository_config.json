@@ -1,7 +1,6 @@
 {
-  "key": "cli-conan-remote",
+  "key": "${CONAN_REMOTE_REPO}",
   "rclass": "remote",
   "packageType": "conan",
   "url": "https://center2.conan.io"
 }
-
