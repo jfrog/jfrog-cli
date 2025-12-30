@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	pythoncmd "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/python"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 
 	biutils "github.com/jfrog/build-info-go/utils"
@@ -593,6 +594,69 @@ func validateBuildTimestampProperty(properties map[string][]string, moduleType b
 	}
 
 	return nil
+}
+
+func TestCreateAqlQueryForSearchBySHA256(t *testing.T) {
+	tests := []struct {
+		name     string
+		repo     string
+		sha256s  []string
+		expected string
+	}{
+		{
+			name:     "single SHA256",
+			repo:     "pypi-local",
+			sha256s:  []string{"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
+			expected: `{"repo": "pypi-local","$or": [{"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"}]}`,
+		},
+		{
+			name: "multiple SHA256s",
+			repo: "pypi-local",
+			sha256s: []string{
+				"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+				"a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456",
+				"f6e5d4c3b2a1098765432109876543210987654321098765432109876543210987",
+			},
+			expected: `{"repo": "pypi-local","$or": [{"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},{"sha256": "a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456"},{"sha256": "f6e5d4c3b2a1098765432109876543210987654321098765432109876543210987"}]}`,
+		},
+		{
+			name:     "empty SHA256s",
+			repo:     "pypi-local",
+			sha256s:  []string{},
+			expected: `{"repo": "pypi-local","$or": []}`,
+		},
+		{
+			name:     "different repository",
+			repo:     "maven-local",
+			sha256s:  []string{"abc123def456"},
+			expected: `{"repo": "maven-local","$or": [{"sha256": "abc123def456"}]}`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := pythoncmd.CreateAqlQueryForSearchBySHA256(tt.repo, tt.sha256s)
+			assert.Equal(t, tt.expected, result)
+
+			// Verify it's valid JSON
+			var jsonObj map[string]interface{}
+			err := json.Unmarshal([]byte(result), &jsonObj)
+			assert.NoError(t, err, "Generated query should be valid JSON")
+			assert.Equal(t, tt.repo, jsonObj["repo"], "Repository should match")
+
+			// Verify $or array exists and has correct structure
+			orArray, ok := jsonObj["$or"].([]interface{})
+			assert.True(t, ok, "$or should be an array")
+			assert.Equal(t, len(tt.sha256s), len(orArray), "Number of SHA256 conditions should match")
+
+			// Verify each SHA256 condition
+			for i, sha256 := range tt.sha256s {
+				condition, ok := orArray[i].(map[string]interface{})
+				assert.True(t, ok, "Each condition should be an object")
+				assert.Equal(t, sha256, condition["sha256"], "SHA256 value should match")
+			}
+		})
+	}
 }
 
 func TestSetupPipCommand(t *testing.T) {
