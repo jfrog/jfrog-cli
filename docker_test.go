@@ -736,7 +736,7 @@ func TestDockerLoginWithServer(t *testing.T) {
 	} else {
 		credentials = "--user=" + *tests.JfrogUser + " --password=" + *tests.JfrogPassword
 	}
-	err := coreTests.NewJfrogCli(execMain, "jfrog config", credentials).Exec("add", "artDocker", "--interactive=false", "--url="+"http://localhost:8082", "--enc-password="+strconv.FormatBool(true))
+	err := coreTests.NewJfrogCli(execMain, "jfrog config", credentials).Exec("add", "artDocker", "--interactive=false", "--url="+"http://localhost:8082", "--enc-password="+strconv.FormatBool(true), "--overwrite")
 	assert.NoError(t, err)
 
 	imageName := path.Join(*tests.ContainerRegistry, tests.DockerRemoteRepo, "alpine:latest")
@@ -1157,4 +1157,93 @@ CMD ["sh"]`, baseImage)
 	validateDockerBuildInfo(t, buildName, buildNumber, true)
 
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+}
+
+func TestContainerPullWithSha(t *testing.T) {
+	cleanup := initNativeDockerWithArtTest(t)
+	defer cleanup()
+	var credentials string
+	if *tests.JfrogAccessToken != "" {
+		credentials = "--access-token=" + *tests.JfrogAccessToken
+	} else {
+		credentials = "--user=" + *tests.JfrogUser + " --password=" + *tests.JfrogPassword
+	}
+	err := coreTests.NewJfrogCli(execMain, "jfrog config", credentials).Exec("add", "artDocker", "--interactive=false", "--url="+"http://localhost:8082", "--enc-password="+strconv.FormatBool(true), "--overwrite")
+	assert.NoError(t, err)
+	runJfrogCli(t, "config", "use", "artDocker")
+	imageName, err := inttestutils.BuildTestImage(tests.DockerImageName+":1", "", tests.DockerLocalRepo, container.DockerClient)
+	assert.NoError(t, err)
+	defer tests2.DeleteTestImage(t, imageName, container.DockerClient)
+
+	// Push container image
+	runCmdWithRetries(t, jfrogRtCliTask(container.DockerClient.String()+"-push", imageName, tests.DockerVirtualRepo))
+	buildNumber := "1"
+
+	dockerImage := container.DockerImage{
+		Image: imageName,
+	}
+	manifestSha, err := dockerImage.GetManifestDetails()
+	assert.NoError(t, err)
+	imageTag := strings.ReplaceAll(imageName, ":1", "@"+manifestSha)
+
+	// pull image with SHA
+	runJfrogCli(t, "docker", "pull", imageTag, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
+	runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
+
+	imagePath := path.Join(tests.DockerVirtualRepo, tests.DockerImageName, "1") + "/"
+	module := tests.DockerImageName + "@" + manifestSha
+	validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, module, 0, 7, t)
+
+	inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName, tests.DockerVirtualRepo)
+
+}
+
+func TestContainerFatManifestPullWithSha(t *testing.T) {
+	cleanup := initNativeDockerWithArtTest(t)
+	defer cleanup()
+	var credentials string
+	if *tests.JfrogAccessToken != "" {
+		credentials = "--access-token=" + *tests.JfrogAccessToken
+	} else {
+		credentials = "--user=" + *tests.JfrogUser + " --password=" + *tests.JfrogPassword
+	}
+	err := coreTests.NewJfrogCli(execMain, "jfrog config", credentials).Exec("add", "artDocker", "--interactive=false", "--url="+"http://localhost:8082", "--enc-password="+strconv.FormatBool(true), "--overwrite")
+	assert.NoError(t, err)
+	runJfrogCli(t, "config", "use", "artDocker")
+	imageName := "traefik"
+	buildNumber := "1"
+	for _, dockerRepo := range [...]string{tests.DockerRemoteRepo, tests.DockerVirtualRepo} {
+		func() {
+			// calculate the sha of the image provided above
+			dockerImage := container.DockerImage{
+				Image: imageName,
+			}
+			manifestSha, err := dockerImage.GetManifestDetails()
+			assert.NoError(t, err)
+
+			imageTag := path.Join(*tests.ContainerRegistry, dockerRepo, imageName+"@"+manifestSha)
+			// Pull container image
+			defer tests2.DeleteTestImage(t, imageTag, container.DockerClient)
+			// pull image with SHA
+			runJfrogCli(t, "docker", "pull", imageTag, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
+			runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
+
+			// Validate
+			publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.DockerBuildName, buildNumber)
+			if err != nil {
+				assert.NoError(t, err)
+				return
+			}
+			if !found {
+				assert.True(t, found, "build info was expected to be found")
+				return
+			}
+			buildInfo := publishedBuildInfo.BuildInfo
+			module := imageName + "@" + manifestSha
+			validateBuildInfo(buildInfo, t, 6, 0, module, entities.Docker)
+
+			inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.DockerBuildName, artHttpDetails)
+		}()
+	}
+
 }

@@ -276,13 +276,13 @@ func TestReleaseBundleImportOnPrem(t *testing.T) {
 
 func TestReleaseBundleV2Download(t *testing.T) {
 	buildNumber := "5"
+	initArtifactoryTest(t, "")
+	initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
 	defer func() {
 		deleteReceivedReleaseBundle(t, deleteReleaseBundleV2ApiUrl, tests.LcRbName1, buildNumber)
 		inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 		cleanArtifactoryTest()
 	}()
-	initArtifactoryTest(t, "")
-	initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
 
 	runRt(t, "upload", "testdata/a/a1.in", tests.RtRepo1, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber)
 	runRt(t, "build-publish", tests.RtBuildName1, buildNumber)
