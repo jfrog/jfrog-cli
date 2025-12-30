@@ -496,8 +496,9 @@ func skipFlagParsingForDockerCmd() bool {
 }
 
 func getDockerFlags() []cli.Flag {
-	flagList := cliutils.GetCommandFlags(cliutils.Docker)
 	flagNames := datastructures.MakeSet[string]()
+	// Collecting existing Docker flags
+	flagList := cliutils.GetCommandFlags(cliutils.Docker)
 	for _, f := range flagList {
 		flagNames.Add(f.GetName())
 	}
@@ -507,8 +508,8 @@ func getDockerFlags() []cli.Flag {
 		log.Error("Could not convert Docker Scan flags:", err)
 		return flagList
 	}
-	// Avoiding flag duplication
 	for _, f := range converted {
+		// Avoiding flag duplication which causes panic in urfave/cli
 		if !flagNames.Exists(f.GetName()) {
 			flagList = append(flagList, f)
 		}

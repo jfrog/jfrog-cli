@@ -4,6 +4,8 @@ import (
 	"errors"
 	"testing"
 
+	securityDocs "github.com/jfrog/jfrog-cli-security/cli/docs"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -272,5 +274,43 @@ func TestExtractDockerBuildOptionsFromArgs(t *testing.T) {
 			assert.Equal(t, tt.expectedDockerfile, dockerfilePath, "Dockerfile path mismatch")
 			assert.Equal(t, tt.expectedTag, imageTag, "Image tag mismatch")
 		})
+	}
+}
+
+func TestGetDockerFlags(t *testing.T) {
+	flags := getDockerFlags()
+
+	// Check expected flags from CLI
+	commonFlagList := cliutils.GetCommandFlags(cliutils.Docker)
+	for _, commonFlag := range commonFlagList {
+		found := false
+		for _, flag := range flags {
+			if flag.GetName() == commonFlag.GetName() {
+				found = true
+				break
+			}
+		}
+		assert.Truef(t, found, "Expected flag '%s' from CLI not found in docker flags", commonFlag.GetName())
+	}
+
+	// Check expected flags from Security commands
+	secFlags := securityDocs.GetCommandFlags(securityDocs.DockerScan)
+	for _, secFlag := range secFlags {
+		found := false
+		for _, flag := range flags {
+			if flag.GetName() == secFlag.GetName() {
+				found = true
+				break
+			}
+		}
+		assert.Truef(t, found, "Expected flag '%s' from Security commands not found in docker flags", secFlag.GetName())
+	}
+
+	// Make sure there are no duplicate flags
+	flagNames := make(map[string]bool)
+	for _, flag := range flags {
+		_, exists := flagNames[flag.GetName()]
+		assert.Falsef(t, exists, "Duplicate flag '%s' found in docker flags", flag.GetName())
+		flagNames[flag.GetName()] = true
 	}
 }
