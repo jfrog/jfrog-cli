@@ -1079,6 +1079,77 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 		},
 	}
 
+	// Setup for project test case
+	projectRbName := "my-versioned-app-project"
+	projectVersionA := "1.0.0"
+	projectVersionB := "1.0.1"
+
+	// Setup: Create test project and upload builds with project
+	deleteProject := createTestProject(t)
+	if deleteProject != nil {
+		defer func() {
+			if err := deleteProject(); err != nil {
+				t.Logf("Warning: Failed to delete test project: %v", err)
+			}
+		}()
+	}
+
+	deleteBuildsWithProject := uploadBuildsWithProject(t)
+	defer deleteBuildsWithProject()
+
+	// Delete existing release bundle versions with project
+	for _, version := range []string{projectVersionA, projectVersionB} {
+		isExist, err := lcManager.IsReleaseBundleExist(projectRbName, version, tests.ProjectKey)
+		if err == nil && isExist {
+			rbDetails := services.ReleaseBundleDetails{
+				ReleaseBundleName:    projectRbName,
+				ReleaseBundleVersion: version,
+			}
+			err := lcManager.DeleteReleaseBundleVersion(rbDetails, services.CommonOptionalQueryParams{Async: false, ProjectKey: tests.ProjectKey})
+			if err != nil {
+				if !strings.Contains(err.Error(), "404") && !strings.Contains(err.Error(), "not found") {
+					t.Logf("Warning: Failed to delete release bundle %s/%s: %v", projectRbName, version, err)
+				}
+			} else {
+				time.Sleep(5 * time.Second)
+			}
+		}
+	}
+
+	// Create release bundles with project
+	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, projectRbName, projectVersionA, tests.ProjectKey, true, false)
+	defer deleteReleaseBundleWithProject(t, lcManager, projectRbName, projectVersionA, tests.ProjectKey)
+	assertStatusCompletedWithProject(t, lcManager, projectRbName, projectVersionA, "", tests.ProjectKey)
+
+	time.Sleep(1 * time.Second)
+
+	createRbWithFlags(t, "", "", tests.LcBuildName2, number2, projectRbName, projectVersionB, tests.ProjectKey, true, false)
+	defer deleteReleaseBundleWithProject(t, lcManager, projectRbName, projectVersionB, tests.ProjectKey)
+	assertStatusCompletedWithProject(t, lcManager, projectRbName, projectVersionB, "", tests.ProjectKey)
+
+	log.Info("Created two versions for release bundle '%s' with project for search testing.", projectRbName)
+	time.Sleep(3 * time.Second)
+
+	// Add project test case to existing testCases
+	testCases = append(testCases, struct {
+		name               string
+		releaseBundleName  string
+		queryParams        services.GetSearchOptionalQueryParams
+		expectedRbVersions []string
+		expectedTotal      int
+		expectError        bool
+		errorMessage       string
+	}{
+		name:              "Search with project",
+		releaseBundleName: projectRbName,
+		queryParams: services.GetSearchOptionalQueryParams{
+			Project: tests.ProjectKey,
+		},
+		expectedRbVersions: []string{projectVersionA, projectVersionB},
+		expectedTotal:      2,
+		expectError:        false,
+	})
+
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			var resp services.ReleaseBundleVersionsResponse
