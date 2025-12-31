@@ -35,6 +35,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           fastci_otel_token: ${{ secrets.FASTCI_TOKEN }}
 
+          
       - name: Setup Go with cache
         uses: jfrog/.github/actions/install-go-with-cache@main
 
