@@ -43,6 +43,13 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
 
+      - name: Setup FastCI
+        if: matrix.os.name != 'macos'
+        uses: jfrog-fastci/fastci@v0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          fastci_otel_token: ${{ secrets.FASTCI_TOKEN }}
+
       # Due to a bug in Python 3.12.0 we temporarily use version 3.11.5
       - name: Setup Python3
         if: matrix.os.name != 'macos'
