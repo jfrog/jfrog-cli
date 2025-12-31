@@ -41,8 +41,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
 
-      - &fastci
-        name: Setup FastCI
+      - name: Setup FastCI
         if: matrix.os.name != 'macos'
         uses: jfrog-fastci/fastci@v0
         with:
