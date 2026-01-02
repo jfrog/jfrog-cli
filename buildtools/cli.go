@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
+	"github.com/jfrog/gofrog/datastructures"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/container/strategies"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/python"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/setup"
@@ -427,7 +428,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "docker",
-			Flags:           cliutils.GetCommandFlags(cliutils.Docker),
+			Flags:           getDockerFlags(),
 			Usage:           docker.GetDescription(),
 			HelpName:        corecommon.CreateUsage("docker", docker.GetDescription(), docker.Usage),
 			UsageText:       docker.GetArguments(),
@@ -494,6 +495,28 @@ func skipFlagParsingForDockerCmd() bool {
 		return hasHelpFlag
 	}
 	return true
+}
+
+func getDockerFlags() []cli.Flag {
+	flagNames := datastructures.MakeSet[string]()
+	// Collecting existing Docker flags
+	flagList := cliutils.GetCommandFlags(cliutils.Docker)
+	for _, f := range flagList {
+		flagNames.Add(f.GetName())
+	}
+	// Adding `Docker Scan` flags
+	converted, _, err := components.ConvertFlags(securityDocs.DockerScan, securityDocs.GetCommandFlags(securityDocs.DockerScan))
+	if err != nil {
+		log.Error("Could not convert Docker Scan flags:", err)
+		return flagList
+	}
+	for _, f := range converted {
+		// Avoiding flag duplication which causes panic in urfave/cli
+		if !flagNames.Exists(f.GetName()) {
+			flagList = append(flagList, f)
+		}
+	}
+	return flagList
 }
 
 // decorateWithFlagCapture injects a Before hook into every command returned from this package,
