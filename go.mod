@@ -18,12 +18,12 @@ require (
 	github.com/jfrog/archiver/v3 v3.6.1
 	github.com/jfrog/build-info-go v1.13.1-0.20251230063402-e9f0a3564df1
 	github.com/jfrog/gofrog v1.7.6
-	github.com/jfrog/jfrog-cli-application v1.0.2-0.20251210075951-519050602a7f
-	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20251230064405-049e011b0bb7
-	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20251223102649-e659f6937251
-	github.com/jfrog/jfrog-cli-evidence v0.8.3-0.20251204144808-73fa744851c0
+	github.com/jfrog/jfrog-cli-application v1.0.2-0.20251231144110-a68c3ac11c7a
+	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260102083738-35bd3de75e6c
+	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260105150109-78d708a6d70e
+	github.com/jfrog/jfrog-cli-evidence v0.8.3-0.20251225153025-9d8ac181d615
 	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20251205121610-171eb9b0000e
-	github.com/jfrog/jfrog-cli-security v1.24.1
+	github.com/jfrog/jfrog-cli-security v1.25.0
 	github.com/jfrog/jfrog-client-go v1.55.1-0.20251230061734-d954605bdb23
 	github.com/jszwec/csvutil v1.10.0
 	github.com/manifoldco/promptui v0.9.0
@@ -281,6 +281,8 @@ require (
 replace github.com/docker/docker => github.com/docker/docker v27.5.1+incompatible
 
 replace github.com/gfleury/go-bitbucket-v1 => github.com/gfleury/go-bitbucket-v1 v0.0.0-20230825095122-9bc1711434ab
+
+// replace github.com/jfrog/jfrog-cli-core/v2 => ../jfrog-cli-core
 
 // replace github.com/jfrog/jfrog-cli-core/v2 => github.com/reshmifrog/jfrog-cli-core/v2 v2.58.5-0.20251110095124-ab9a4102ec5a
 
