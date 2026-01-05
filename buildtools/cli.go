@@ -3,6 +3,7 @@ package buildtools
 import (
 	"errors"
 	"fmt"
+	conancommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/conan"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -1486,18 +1487,19 @@ func ConanCmd(c *cli.Context) error {
 	}
 
 	args := cliutils.ExtractCommand(c)
-	cmdName, conanArgs := getCommandName(args)
 
-	// Execute native conan command directly
-	log.Info(fmt.Sprintf("Running Conan %s.", cmdName))
-	conanCmd := exec.Command("conan", append([]string{cmdName}, conanArgs...)...)
-	conanCmd.Stdout = os.Stdout
-	conanCmd.Stderr = os.Stderr
-	if err := conanCmd.Run(); err != nil {
-		return fmt.Errorf("conan %s failed: %w", cmdName, err)
+	// Extract build flags (--build-name, --build-number) before passing to Conan
+	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
+	if err != nil {
+		return err
 	}
 
-	return nil
+	cmdName, conanArgs := getCommandName(filteredArgs)
+
+	// Use jfrog-cli-artifactory Conan command with build info support
+	conanCommand := conancommand.NewConanCommand().SetCommandName(cmdName).SetArgs(conanArgs).SetBuildConfiguration(buildConfiguration)
+
+	return commands.Exec(conanCommand)
 }
 
 func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
