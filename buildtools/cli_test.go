@@ -4,7 +4,11 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/jfrog/jfrog-cli-core/v2/plugins/components"
+	securityDocs "github.com/jfrog/jfrog-cli-security/cli/docs"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/urfave/cli"
 )
 
 func TestExtractDockerBuildOptionsFromArgs(t *testing.T) {
@@ -273,4 +277,28 @@ func TestExtractDockerBuildOptionsFromArgs(t *testing.T) {
 			assert.Equal(t, tt.expectedTag, imageTag, "Image tag mismatch")
 		})
 	}
+}
+
+func TestDockerScanCmdArgsParse(t *testing.T) {
+	app := cli.NewApp()
+	app.Commands = overrideCommandAction(GetCommands(), "docker", func(c *cli.Context) error {
+		convertedCtx, err := components.ConvertContext(c, securityDocs.GetCommandFlags(securityDocs.DockerScan)...)
+		require.NoError(t, err)
+		assert.True(t, convertedCtx.GetBoolFlagValue("sca"), "sca flag should be true")
+		assert.True(t, convertedCtx.GetBoolFlagValue("without-contextual-analysis"), "without-contextual-analysis flag should be true")
+		return nil
+	})
+	err := app.Run([]string{"jf", "docker", "scan", "--sca", "--without-contextual-analysis", "myimage:latest"})
+	assert.NoError(t, err)
+}
+
+func overrideCommandAction(commands []cli.Command, name string, action cli.ActionFunc) []cli.Command {
+	var newCommands []cli.Command
+	for _, cmd := range commands {
+		if cmd.Name == name {
+			cmd.Action = action
+		}
+		newCommands = append(newCommands, cmd)
+	}
+	return newCommands
 }
