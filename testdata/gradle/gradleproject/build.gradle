@@ -5,9 +5,6 @@ repositories {
     mavenCentral()
 }
 
-// Gradle 8+ blocks http:// repositories unless allowInsecureProtocol=true is set.
-// The JFrog Gradle integration (traditional extractor flow) may add an Artifactory resolver repo using http://localhost in tests.
-// This block is safe across Gradle versions because it checks for the property before setting it.
 allprojects {
     repositories.all { repo ->
         try {
