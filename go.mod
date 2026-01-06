@@ -291,3 +291,5 @@ replace github.com/gfleury/go-bitbucket-v1 => github.com/gfleury/go-bitbucket-v1
 //replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.54.2-0.20251007084958-5eeaa42c31a6
 
 // replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security dev
+
+replace github.com/jfrog/build-info-go => github.com/reshmifrog/build-info-go v1.8.9-0.20260106081839-607dc80996ee
