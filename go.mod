@@ -16,10 +16,10 @@ require (
 	github.com/docker/docker v28.5.2+incompatible
 	github.com/gocarina/gocsv v0.0.0-20240520201108-78e41c74b4b1
 	github.com/jfrog/archiver/v3 v3.6.1
-	github.com/jfrog/build-info-go v1.13.1-0.20251230063402-e9f0a3564df1
+	github.com/jfrog/build-info-go v1.13.1-0.20260106060835-a1a07c967546
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-application v1.0.2-0.20251231144110-a68c3ac11c7a
-	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260102083738-35bd3de75e6c
+	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260106103112-0375923b3c08
 	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260105150109-78d708a6d70e
 	github.com/jfrog/jfrog-cli-evidence v0.8.3-0.20251225153025-9d8ac181d615
 	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20251205121610-171eb9b0000e
