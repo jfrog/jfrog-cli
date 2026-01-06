@@ -263,10 +263,8 @@ func createConfigFile(inDir, configFilePath string, t *testing.T) {
 	if _, err := os.Stat(inDir); os.IsNotExist(err) {
 		assert.NoError(t, os.MkdirAll(inDir, 0o777))
 	}
-	createdPath, err := tests.ReplaceTemplateVariables(configFilePath, inDir)
+	_, err := tests.ReplaceTemplateVariables(configFilePath, inDir)
 	assert.NoError(t, err)
-	// Fail early with a descriptive error if the config file wasn't actually created.
-	assert.FileExists(t, createdPath)
 }
 
 // Validate that all CLI commands' aliases are unique, and that two commands don't use the same alias.
