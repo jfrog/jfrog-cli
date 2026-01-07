@@ -1204,6 +1204,8 @@ github.com/jellydator/ttlcache/v3 v3.4.0 h1:YS4P125qQS0tNhtL6aeYkheEaB/m8HCqdMMP
 github.com/jellydator/ttlcache/v3 v3.4.0/go.mod h1:Hw9EgjymziQD3yGsQdf1FqFdpp7YjFMd4Srg5EJlgD4=
 github.com/jfrog/archiver/v3 v3.6.1 h1:LOxnkw9pOn45DzCbZNFV6K0+6dCsQ0L8mR3ZcujO5eI=
 github.com/jfrog/archiver/v3 v3.6.1/go.mod h1:VgR+3WZS4N+i9FaDwLZbq+jeU4B4zctXL+gL4EMzfLw=
+github.com/jfrog/build-info-go v1.13.1-0.20260106205248-b1275fac6fe0 h1:mu4mG/Q26p/ecSzHuVU1qQrxJ5jnTRhlOVfvyM7SFGU=
+github.com/jfrog/build-info-go v1.13.1-0.20260106205248-b1275fac6fe0/go.mod h1:+OCtMb22/D+u7Wne5lzkjJjaWr0LRZcHlDwTH86Mpwo=
 github.com/jfrog/froggit-go v1.20.6 h1:Xp7+LlEh0m1KGrQstb+u0aGfjRUtv1eh9xQBV3571jQ=
 github.com/jfrog/froggit-go v1.20.6/go.mod h1:obSG1SlsWjktkuqmKtpq7MNTTL63e0ot+ucTnlOMV88=
 github.com/jfrog/go-mockhttp v0.3.1 h1:/wac8v4GMZx62viZmv4wazB5GNKs+GxawuS1u3maJH8=
@@ -1388,8 +1390,6 @@ github.com/redis/go-redis/extra/redisotel/v9 v9.0.5/go.mod h1:WZjPDy7VNzn77AAfnA
 github.com/redis/go-redis/v9 v9.14.1 h1:nDCrEiJmfOWhD76xlaw+HXT0c9hfNWeXgl0vIRYSDvQ=
 github.com/redis/go-redis/v9 v9.14.1/go.mod h1:huWgSWd8mW6+m0VPhJjSSQ+d6Nh1VICQ6Q5lHuCH/Iw=
 github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0/go.mod h1:qqbHyh8v60DhA7CoWK5oRCqLrMHRGoxYCSS9EjAz6Eo=
-github.com/reshmifrog/build-info-go v1.8.9-0.20260106113011-c7f131cea484 h1:YWK1dA8F+LPOnsN1nNPGQqSSf3Dzx85m9OsBrDbsolM=
-github.com/reshmifrog/build-info-go v1.8.9-0.20260106113011-c7f131cea484/go.mod h1:+OCtMb22/D+u7Wne5lzkjJjaWr0LRZcHlDwTH86Mpwo=
 github.com/rivo/uniseg v0.4.7 h1:WUdvkW8uEhrYfLC4ZzdpI2ztxP1I582+49Oc5Mq64VQ=
 github.com/rivo/uniseg v0.4.7/go.mod h1:FN3SvrM+Zdj16jyLfmOkMNblXMcoc8DfTHruCPUcx88=
 github.com/robfig/cron/v3 v3.0.1 h1:WdRxkvbJztn8LMz/QEvLN5sBU+xKpSqwwUO1Pjr4qDs=
