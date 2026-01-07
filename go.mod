@@ -16,7 +16,7 @@ require (
 	github.com/docker/docker v28.5.2+incompatible
 	github.com/gocarina/gocsv v0.0.0-20240520201108-78e41c74b4b1
 	github.com/jfrog/archiver/v3 v3.6.1
-	github.com/jfrog/build-info-go v1.13.1-0.20260106205248-b1275fac6fe0
+	github.com/jfrog/build-info-go v1.13.1-0.20260107080257-82671efa69a2
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-application v1.0.2-0.20251210075951-519050602a7f
 	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260106205551-4e8b57642da2
