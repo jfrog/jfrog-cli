@@ -359,7 +359,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "conan",
-			Hidden:          true,
+			Hidden:          false,
 			Flags:           cliutils.GetCommandFlags(cliutils.Conan),
 			Usage:           conan.GetDescription(),
 			HelpName:        corecommon.CreateUsage("conan", conan.GetDescription(), conan.Usage),
