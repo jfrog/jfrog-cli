@@ -336,8 +336,10 @@ def uploadCli(architectures) {
         def currentBuild = architectures[i]
         stage("Build and upload ${currentBuild.pkg}") {
             // MacOS binaries should be downloaded from GitHub packages, as they are signed there.
-            if (currentBuild.goos == 'darwin' && params.RUN_DARWIN_WORKFLOW) {
-                uploadSignedDarwinBinaries(currentBuild.goarch,currentBuild.pkg)
+            if (currentBuild.goos == 'darwin') {
+                if (params.RUN_DARWIN_WORKFLOW) {
+                    uploadSignedDarwinBinaries(currentBuild.goarch,currentBuild.pkg)
+                }
             } else {
                 buildAndUpload(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, currentBuild.fileExtension)
             }
