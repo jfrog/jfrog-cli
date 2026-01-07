@@ -12,6 +12,7 @@ import (
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/build-info-go/flexpack"
 	"github.com/jfrog/gofrog/crypto"
+	artutils "github.com/jfrog/jfrog-cli-artifactory/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	buildUtils "github.com/jfrog/jfrog-cli-core/v2/common/build"
 	"github.com/jfrog/jfrog-cli-core/v2/common/project"
@@ -302,7 +303,7 @@ func extractRepositoryConfigForProject(projectType project.ProjectType) (*projec
 	log.Debug("Extracting repository config for project type")
 
 	// In native mode, completely ignore YAML and infer from pyproject.toml
-	if os.Getenv("JFROG_RUN_NATIVE") == "true" {
+	if artutils.ShouldRunNative("") {
 		log.Info("Native mode enabled: inferring Poetry config from pyproject.toml")
 		return inferPoetryConfigFromToml(projectType)
 	}

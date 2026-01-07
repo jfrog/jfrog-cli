@@ -1,6 +1,23 @@
 apply plugin: 'groovy'
 apply plugin: 'idea'
 
+repositories {
+    mavenCentral()
+}
+
+allprojects {
+    repositories.all { repo ->
+        try {
+            def urlStr = repo.respondsTo('getUrl') && repo.url != null ? repo.url.toString() : ""
+            if (urlStr.startsWith("http://") && repo.hasProperty("allowInsecureProtocol")) {
+                repo.allowInsecureProtocol = true
+            }
+        } catch (Throwable ignored) {
+            // Best-effort; ignore repositories that don't support URL/allowInsecureProtocol.
+        }
+    }
+}
+
 dependencies {
     implementation "junit:junit:4.7"
 }
