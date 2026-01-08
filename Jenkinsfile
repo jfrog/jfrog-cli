@@ -466,18 +466,18 @@ def buildAndUpload(goos, goarch, pkg, fileExtension) {
 
 def distributeToReleases(stage, version, rbcSpecName) {
     sh """#!/bin/bash
-        output=$($builderPath ds rbc $stage-rb-$identifier $version --spec=${cliWorkspace}/${repo}/build/release_specs/$rbcSpecName --spec-vars="VERSION=$version;IDENTIFIER=$identifier" --sign 2>&1)
-        exit_code=$?
-        if [[ $exit_code -ne 0 ]]; then
-            if echo "$output" | grep -q "already exists"; then
+        output=\$($builderPath ds rbc $stage-rb-$identifier $version --spec=${cliWorkspace}/${repo}/build/release_specs/$rbcSpecName --spec-vars="VERSION=$version;IDENTIFIER=$identifier" --sign 2>&1)
+        exit_code=\$?
+        if [[ \$exit_code -ne 0 ]]; then
+            if echo "\$output" | grep -q "already exists"; then
                 echo "Release bundle creation skipped - already exists"
                 exit 0
             else
-                echo "$output"
-                exit $exit_code
+                echo "\$output"
+                exit \$exit_code
             fi
         else
-            echo "$output"
+            echo "\$output"
         fi
     """
     sh "$builderPath ds rbd $stage-rb-$identifier $version --site=releases.jfrog.io --sync"
