@@ -434,6 +434,7 @@ def build(goos, goarch, pkg, fileName) {
     dir("${jfrogCliRepoDir}") {
         env.GOOS="$goos"
         env.GOARCH="$goarch"
+        print "Building $fileName on $goos $goarch"
         sh "build/build.sh $fileName"
         sh "chmod +x $fileName"
         // Remove goos and goarch env var to prevent interfering with following builds.
