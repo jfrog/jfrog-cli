@@ -432,6 +432,7 @@ def build(goos, goarch, pkg, fileName) {
         // Remove goos and goarch env var to prevent interfering with following builds.
         env.GOOS=""
         env.GOARCH=""
+        env.JFROG_CLI_REPORT_USAGE="false"
 
         if (goos == 'windows') {
             dir("${jfrogCliRepoDir}build/sign") {
