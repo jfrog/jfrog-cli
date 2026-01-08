@@ -21,6 +21,7 @@ func DispatchIfAlias() error {
 	}
 
 	log.Debug(fmt.Sprintf("Detected running as alias: %s", tool))
+	log.Info(fmt.Sprintf("👻 Ghost Frog: Intercepting '%s' command", tool))
 
 	// CRITICAL: Remove alias directory from PATH to prevent recursion
 	// When jf mvn internally needs to execute the real mvn command, it will use
@@ -126,6 +127,7 @@ func runJFMode(tool string, args []string) error {
 	os.Args = newArgs
 
 	log.Debug(fmt.Sprintf("Running in JF mode: %v", os.Args))
+	log.Info(fmt.Sprintf("👻 Ghost Frog: Transforming '%s' to 'jf %s'", tool, tool))
 
 	// Return nil to continue with normal jf command processing
 	return nil
