@@ -159,6 +159,7 @@ def runRelease(architectures) {
             stage("Publish latest scripts") {
                 withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
                     options = "--url https://releases.jfrog.io/artifactory --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
+                    print "Copying latest scripts from jfrog-cli/$identifier/$version/scripts/ to jfrog-cli/$identifier/scripts/"
                     sh """#!/bin/bash
                         $builderPath rt cp jfrog-cli/$identifier/$version/scripts/getCli.sh jfrog-cli/$identifier/scripts/ --flat $options --fail-no-op
                         $builderPath rt cp jfrog-cli/$identifier/$version/scripts/install-cli.sh jfrog-cli/$identifier/scripts/ --flat $options --fail-no-op
@@ -395,30 +396,35 @@ def pushDockerImageVersion(name, version) {
 }
 
 def uploadGetCliToJfrogRepo21() {
+    print "Uploading $jfrogCliRepoDir/build/getcli/${cliExecutableName}.sh to ecosys-jfrog-cli/$identifier/$version/scripts/getCli.sh"
     sh """#!/bin/bash
         $builderPath rt u $jfrogCliRepoDir/build/getcli/${cliExecutableName}.sh ecosys-jfrog-cli/$identifier/$version/scripts/getCli.sh --flat
     """
 }
 
 def uploadInstallCliToJfrogRepo21() {
+    print "Uploading $jfrogCliRepoDir/build/installcli/${cliExecutableName}.sh to ecosys-jfrog-cli/$identifier/$version/scripts/install-cli.sh"
     sh """#!/bin/bash
         $builderPath rt u $jfrogCliRepoDir/build/installcli/${cliExecutableName}.sh ecosys-jfrog-cli/$identifier/$version/scripts/install-cli.sh --flat
     """
 }
 
 def uploadSetupCliToJfrogRepo21() {
+    print "Uploading $jfrogCliRepoDir/build/setupcli/${cliExecutableName}.sh to ecosys-jfrog-cli/$identifier/$version/scripts/setup-cli.sh"
     sh """#!/bin/bash
         $builderPath rt u $jfrogCliRepoDir/build/setupcli/${cliExecutableName}.sh ecosys-jfrog-cli/$identifier/$version/scripts/setup-cli.sh --flat
     """
 }
 
 def uploadGitLabSetupToJfrogRepo21() {
+    print "Uploading $jfrogCliRepoDir/build/gitlab/(*) to ecosys-jfrog-cli/$identifier/$version/scripts/gitlab/{1}"
     sh """#!/bin/bash
         $builderPath rt u "$jfrogCliRepoDir/build/gitlab/(*)" "ecosys-jfrog-cli/$identifier/$version/scripts/gitlab/{1}"
     """
 }
 
 def uploadBinaryToJfrogRepo21(pkg, fileName) {
+    print "Uploading $jfrogCliRepoDir/$fileName to ecosys-jfrog-cli/$identifier/$version/$pkg/"
     sh """#!/bin/bash
         $builderPath rt u $jfrogCliRepoDir/$fileName ecosys-jfrog-cli/$identifier/$version/$pkg/ --flat
     """
