@@ -39,8 +39,6 @@ node("docker-ubuntu20-xlarge") {
     identifier = 'v2-jf'
     nodeVersion = 'v8.17.0'
 
-    masterBranch = 'master'
-
     releaseVersion = ''
 
     repo = 'jfrog-cli'
@@ -62,7 +60,6 @@ node("docker-ubuntu20-xlarge") {
             dir("$repo") {
                 if (params.BRANCH?.trim()) {
                     sh "git checkout ${params.BRANCH}"
-                    sh "git pull"
                 }
             }
         }
@@ -213,7 +210,6 @@ def runRelease(architectures) {
 
 def setReleaseVersion() {
     dir("$cliWorkspace/$repo") {
-        sh "git checkout $masterBranch"
         sh "build/build.sh"
         releaseVersion = getCliVersion("./jf")
     }
