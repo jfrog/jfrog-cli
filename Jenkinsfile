@@ -489,7 +489,19 @@ def publishNpmPackage(jfrogCliRepoDir) {
             sh '''#!/bin/bash
                 echo "//registry.npmjs.org/:_authToken=$NPM_AUTH_TOKEN" > .npmrc
                 echo "registry=https://registry.npmjs.org" >> .npmrc
-                npm publish
+                output=$(npm publish 2>&1)
+                exit_code=$?
+                if [[ $exit_code -ne 0 ]]; then
+                    if echo "$output" | grep -qi "You cannot publish over the previously published versions"; then
+                        echo "NPM package publish skipped - already exists"
+                        exit 0
+                    else
+                        echo "$output"
+                        exit $exit_code
+                    fi
+                else
+                    echo "$output"
+                fi
             '''
         }
     }
