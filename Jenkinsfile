@@ -49,7 +49,8 @@ node("docker-ubuntu20-xlarge") {
     env.PATH+=":${goRoot}/bin:/tmp/node-${nodeVersion}-linux-x64/bin"
     env.GO111MODULE="on"
     env.CI=true
-    env.JFROG_CLI_LOG_LEVEL="DEBUG"
+    env.JFROG_CLI_LOG_LEVEL="INFO"
+    env.JFROG_CLI_REPORT_USAGE="false"
 
     dir('temp') {
         sh "cat /etc/lsb-release"
@@ -432,7 +433,6 @@ def build(goos, goarch, pkg, fileName) {
         // Remove goos and goarch env var to prevent interfering with following builds.
         env.GOOS=""
         env.GOARCH=""
-        env.JFROG_CLI_REPORT_USAGE="false"
 
         if (goos == 'windows') {
             dir("${jfrogCliRepoDir}build/sign") {
