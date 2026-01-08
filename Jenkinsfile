@@ -62,6 +62,7 @@ node("docker-ubuntu20-xlarge") {
             dir("$repo") {
                 if (params.BRANCH?.trim()) {
                     sh "git checkout ${params.BRANCH}"
+                    sh "git pull"
                 }
             }
         }
