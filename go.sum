@@ -729,6 +729,8 @@ github.com/beevik/etree v1.6.0 h1:u8Kwy8pp9D9XeITj2Z0XtA5qqZEmtJtuXZRQi+j03eE=
 github.com/beevik/etree v1.6.0/go.mod h1:bh4zJxiIr62SOf9pRzN7UUYaEDa9HEKafK25+sLc0Gc=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
+github.com/bhanurp/jfrog-cli-artifactory v0.1.12-0.20260108075108-b5389ca4d380 h1:cj4idl/pC+WMSqj5jddYgrdFfaoWudzpjn0/Zt7ba8U=
+github.com/bhanurp/jfrog-cli-artifactory v0.1.12-0.20260108075108-b5389ca4d380/go.mod h1:U/1q7jEO0YGSAWZEZiEmo0lZHI48xBorsFuL/F8C1fU=
 github.com/blang/semver v3.5.1+incompatible h1:cQNTCjp13qL8KC3Nbxr/y2Bqb63oX6wdnnjpJbkM4JQ=
 github.com/blang/semver v3.5.1+incompatible/go.mod h1:kRBLl5iJ+tD4TcOOxsy/0fnwebNt5EWlYSAyrTnjyyk=
 github.com/boombuler/barcode v1.0.0/go.mod h1:paBWMcWSl3LHKBqUq+rly7CNSldXjb2rDl3JlRe0mD8=
@@ -1216,8 +1218,6 @@ github.com/jfrog/jfrog-apps-config v1.0.1 h1:mtv6k7g8A8BVhlHGlSveapqf4mJfonwvXYL
 github.com/jfrog/jfrog-apps-config v1.0.1/go.mod h1:8AIIr1oY9JuH5dylz2S6f8Ym2MaadPLR6noCBO4C22w=
 github.com/jfrog/jfrog-cli-application v1.0.2-0.20251231144110-a68c3ac11c7a h1:XoJ3w2AFi7zniimALNK3idw9bzY9MwB/FM45TMgxYAY=
 github.com/jfrog/jfrog-cli-application v1.0.2-0.20251231144110-a68c3ac11c7a/go.mod h1:xum2HquWO5uExa/A7MQs3TgJJVEeoqTR+6Z4mfBr1Xw=
-github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260107090044-56a45e5c560e h1:+qB6eWbzeSOh5i6Pc0sC9arG8r5f6GLZm722jDyQ6nI=
-github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260107090044-56a45e5c560e/go.mod h1:U/1q7jEO0YGSAWZEZiEmo0lZHI48xBorsFuL/F8C1fU=
 github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260106204841-744f3f71817b h1:gGGmYXuYvcNns1BnLQI13lC+pgMxrmenx+ramtolQuA=
 github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260106204841-744f3f71817b/go.mod h1:+Hnaikp/xCSPD/q7txxRy4Zc0wzjW/usrCSf+6uONSQ=
 github.com/jfrog/jfrog-cli-evidence v0.8.3-0.20251225153025-9d8ac181d615 h1:y5an0bojHL00ipHP1QuBUrVcP+XK+yZHHOJ/r1I0RUM=
