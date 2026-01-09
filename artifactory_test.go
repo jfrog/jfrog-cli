@@ -2846,21 +2846,25 @@ func TestArtifactoryDeleteCountsWithPartial404(t *testing.T) {
 	readerLength, err := pathsReader.Length()
 	assert.NoError(t, err)
 	assert.Equal(t, totalFiles, readerLength, "Reader should contain all uploaded files")
+	t.Logf("PathsReader contains %d items (expected %d)", readerLength, totalFiles)
+
+	// Reset the reader after Length() consumed it - required before passing to DeleteFiles
+	pathsReader.Reset()
 
 	// Step 3: Simulate race condition - delete some files directly BEFORE calling DeleteFiles
 	// This will cause 404 errors when DeleteFiles tries to delete them
 	filesToPreDelete := 3
 	preDeleteSpec1 := spec.NewBuilder().Pattern(tests.RtRepo1 + "/delete-404-test/a1.in").BuildSpec()
 	_, _, err = tests.DeleteFiles(preDeleteSpec1, serverDetails)
-	assert.NoError(t, err)
+	assert.NoError(t, err, "Failed to pre-delete a1.in")
 
 	preDeleteSpec2 := spec.NewBuilder().Pattern(tests.RtRepo1 + "/delete-404-test/a2.in").BuildSpec()
 	_, _, err = tests.DeleteFiles(preDeleteSpec2, serverDetails)
-	assert.NoError(t, err)
+	assert.NoError(t, err, "Failed to pre-delete a2.in")
 
 	preDeleteSpec3 := spec.NewBuilder().Pattern(tests.RtRepo1 + "/delete-404-test/a3.in").BuildSpec()
 	_, _, err = tests.DeleteFiles(preDeleteSpec3, serverDetails)
-	assert.NoError(t, err)
+	assert.NoError(t, err, "Failed to pre-delete a3.in")
 
 	t.Logf("Pre-deleted %d files to simulate 404 scenario", filesToPreDelete)
 
@@ -2874,18 +2878,24 @@ func TestArtifactoryDeleteCountsWithPartial404(t *testing.T) {
 	// After the fix: successCount + failCount should equal totalFiles
 	t.Logf("Delete result: success=%d, fail=%d, err=%v", successCount, failCount, deleteErr)
 
+	// Calculate expected values for clearer error messages
+	expectedSuccessful := totalFiles - filesToPreDelete
+	totalProcessed := successCount + failCount
+
 	// The total of success + fail should equal what we tried to delete
-	assert.Equal(t, totalFiles, successCount+failCount,
-		"Total of success + fail counts should equal the number of files we tried to delete")
+	assert.Equal(t, totalFiles, totalProcessed,
+		"Total processed (success=%d + fail=%d = %d) should equal totalFiles=%d",
+		successCount, failCount, totalProcessed, totalFiles)
 
 	// We should have some successful deletes (files that weren't pre-deleted)
-	expectedSuccessful := totalFiles - filesToPreDelete
 	assert.Equal(t, expectedSuccessful, successCount,
-		"Success count should match files that still existed")
+		"Success count=%d should match expected=%d (totalFiles=%d - preDeleted=%d)",
+		successCount, expectedSuccessful, totalFiles, filesToPreDelete)
 
 	// We should have some failures (the pre-deleted files that returned 404)
 	assert.Equal(t, filesToPreDelete, failCount,
-		"Fail count should match the pre-deleted files that returned 404")
+		"Fail count=%d should match pre-deleted files=%d",
+		failCount, filesToPreDelete)
 
 	// Verify all files are now gone
 	reader, err = searchCmd.Search()
