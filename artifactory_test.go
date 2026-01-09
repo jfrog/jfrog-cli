@@ -2855,18 +2855,38 @@ func TestArtifactoryDeleteCountsWithPartial404(t *testing.T) {
 	// This will cause 404 errors when DeleteFiles tries to delete them
 	filesToPreDelete := 3
 	preDeleteSpec1 := spec.NewBuilder().Pattern(tests.RtRepo1 + "/delete-404-test/a1.in").BuildSpec()
-	_, _, err = tests.DeleteFiles(preDeleteSpec1, serverDetails)
+	preDeleteSuccess1, preDeleteFail1, err := tests.DeleteFiles(preDeleteSpec1, serverDetails)
 	assert.NoError(t, err, "Failed to pre-delete a1.in")
+	t.Logf("Pre-delete a1.in: success=%d, fail=%d", preDeleteSuccess1, preDeleteFail1)
 
 	preDeleteSpec2 := spec.NewBuilder().Pattern(tests.RtRepo1 + "/delete-404-test/a2.in").BuildSpec()
-	_, _, err = tests.DeleteFiles(preDeleteSpec2, serverDetails)
+	preDeleteSuccess2, preDeleteFail2, err := tests.DeleteFiles(preDeleteSpec2, serverDetails)
 	assert.NoError(t, err, "Failed to pre-delete a2.in")
+	t.Logf("Pre-delete a2.in: success=%d, fail=%d", preDeleteSuccess2, preDeleteFail2)
 
 	preDeleteSpec3 := spec.NewBuilder().Pattern(tests.RtRepo1 + "/delete-404-test/a3.in").BuildSpec()
-	_, _, err = tests.DeleteFiles(preDeleteSpec3, serverDetails)
+	preDeleteSuccess3, preDeleteFail3, err := tests.DeleteFiles(preDeleteSpec3, serverDetails)
 	assert.NoError(t, err, "Failed to pre-delete a3.in")
+	t.Logf("Pre-delete a3.in: success=%d, fail=%d", preDeleteSuccess3, preDeleteFail3)
 
-	t.Logf("Pre-deleted %d files to simulate 404 scenario", filesToPreDelete)
+	// Verify pre-deletion actually removed the files
+	totalPreDeleted := preDeleteSuccess1 + preDeleteSuccess2 + preDeleteSuccess3
+	assert.Equal(t, filesToPreDelete, totalPreDeleted,
+		"Pre-deletion should have deleted %d files, but deleted %d", filesToPreDelete, totalPreDeleted)
+
+	// Double-check by searching - should now have (totalFiles - filesToPreDelete) files
+	reader, err = searchCmd.Search()
+	assert.NoError(t, err, "Failed to search after pre-deletion")
+	filesAfterPreDelete, err := reader.Length()
+	assert.NoError(t, err)
+	readerCloseAndAssert(t, reader)
+	expectedAfterPreDelete := totalFiles - filesToPreDelete
+	assert.Equal(t, expectedAfterPreDelete, filesAfterPreDelete,
+		"After pre-deleting %d files, should have %d remaining, but found %d",
+		filesToPreDelete, expectedAfterPreDelete, filesAfterPreDelete)
+
+	t.Logf("Pre-deleted %d files, verified %d files remaining (expected %d)",
+		totalPreDeleted, filesAfterPreDelete, expectedAfterPreDelete)
 
 	// Step 4: Now call DeleteFiles with the original reader
 	// The reader still contains paths to the pre-deleted files, so we'll get 404s
