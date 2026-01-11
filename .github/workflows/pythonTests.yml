@@ -48,7 +48,7 @@ jobs:
         uses: jfrog-fastci/fastci@v0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          fastci_otel_token: ${{ secrets.FASTCI_TOKEN }}
+          fastci_otel_token: ${{ secrets.FASTCI_TOKEN }} # Token with logging permissions only
 
       # Due to a bug in Python 3.12.0 we temporarily use version 3.11.5
       - name: Setup Python3
