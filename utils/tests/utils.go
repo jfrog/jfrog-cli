@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -34,7 +35,6 @@ import (
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/utils/summary"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
-	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	serviceutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/auth"
 	"github.com/jfrog/jfrog-client-go/http/jfroghttpclient"
@@ -275,13 +275,14 @@ func DeleteFileDirect(serverDetails *config.ServerDetails, artifactoryPath strin
 	}
 
 	// Check response status
-	if resp.StatusCode == 204 {
+	switch resp.StatusCode {
+	case http.StatusNoContent:
 		// Successfully deleted
 		return true, nil
-	} else if resp.StatusCode == 404 {
+	case http.StatusNotFound:
 		// File not found
 		return false, nil
-	} else {
+	default:
 		// Other error
 		return false, fmt.Errorf("unexpected status %d: %s", resp.StatusCode, string(body))
 	}
@@ -723,7 +724,7 @@ func CreateSpec(fileName string) (string, error) {
 	return searchFilePath, err
 }
 
-func ConvertSliceToMap(props []utils.Property) map[string][]string {
+func ConvertSliceToMap(props []serviceutils.Property) map[string][]string {
 	propsMap := make(map[string][]string)
 	for _, item := range props {
 		propsMap[item.Key] = append(propsMap[item.Key], item.Value)

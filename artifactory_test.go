@@ -2804,13 +2804,18 @@ func TestArtifactoryDeleteByProps(t *testing.T) {
 // TestArtifactoryDeleteCountsNonExistentFiles tests that delete correctly handles
 // files that don't exist. The CLI searches first, so non-existent files return
 // All 3 files should return 404 on second delete attempt.
+// TestArtifactoryDeleteCountsNonExistentFiles tests that delete correctly counts
+// 404 failures when all files have already been deleted.
+// Files are placed in separate subfolders to prevent path reduction optimization.
 func TestArtifactoryDeleteCountsNonExistentFiles(t *testing.T) {
 	initArtifactoryTest(t, "")
 
-	// Step 1: Upload 3 specific test files by explicit name
-	testFiles := []string{"a1.in", "a2.in", "a3.in"}
-	for _, f := range testFiles {
-		runRt(t, "upload", "testdata/a/"+f, tests.RtRepo1+"/delete-nonexistent/"+f)
+	// Step 1: Upload 3 specific test files in SEPARATE subfolders to prevent path reduction
+	// Each file goes in its own subfolder so delete service can't optimize to folder delete
+	testFiles := []string{"f1/a1.in", "f2/a2.in", "f3/a3.in"}
+	sourceFiles := []string{"testdata/a/a1.in", "testdata/a/a2.in", "testdata/a/a3.in"}
+	for i, f := range testFiles {
+		runRt(t, "upload", sourceFiles[i], tests.RtRepo1+"/delete-nonexistent/"+f)
 	}
 	t.Logf("Uploaded %d test files: %v", len(testFiles), testFiles)
 
@@ -2826,6 +2831,7 @@ func TestArtifactoryDeleteCountsNonExistentFiles(t *testing.T) {
 	// Step 3: Verify all files are now gone via search
 	searchSpec := spec.NewBuilder().
 		Pattern(tests.RtRepo1 + "/delete-nonexistent/*").
+		Recursive(true).
 		BuildSpec()
 	searchCmd := generic.NewSearchCommand()
 	searchCmd.SetServerDetails(serverDetails).SetSpec(searchSpec)
@@ -2869,19 +2875,21 @@ func TestArtifactoryDeleteCountsNonExistentFiles(t *testing.T) {
 // a mix of existing and non-existing files using CLI's DeleteFiles API.
 // - 3 existing files should return success
 // - 2 pre-deleted files should return failure (404)
+// Files are placed in separate subfolders to prevent path reduction optimization.
 func TestArtifactoryDeleteCountsPartiallyDeleted(t *testing.T) {
 	initArtifactoryTest(t, "")
 
-	// Step 1: Upload 5 specific test files by explicit name
-	testFiles := []string{"a1.in", "a2.in", "a3.in", "b1.in", "b2.in"}
+	// Step 1: Upload 5 specific test files in SEPARATE subfolders to prevent path reduction
+	// Each file goes in its own subfolder so delete service can't optimize to folder delete
+	testFiles := []string{"f1/a1.in", "f2/a2.in", "f3/a3.in", "f4/b1.in", "f5/b2.in"}
 	sourceFiles := []string{"testdata/a/a1.in", "testdata/a/a2.in", "testdata/a/a3.in", "testdata/a/b/b1.in", "testdata/a/b/b2.in"}
 	for i, f := range testFiles {
 		runRt(t, "upload", sourceFiles[i], tests.RtRepo1+"/delete-partial/"+f)
 	}
 	t.Logf("Uploaded %d test files: %v", len(testFiles), testFiles)
 
-	// Step 2: Pre-delete 2 files (a1.in and a2.in) using direct DELETE API
-	filesToPreDelete := []string{"a1.in", "a2.in"}
+	// Step 2: Pre-delete 2 files (f1/a1.in and f2/a2.in) using direct DELETE API
+	filesToPreDelete := []string{"f1/a1.in", "f2/a2.in"}
 	for _, f := range filesToPreDelete {
 		artifactPath := tests.RtRepo1 + "/delete-partial/" + f
 		success, err := tests.DeleteFileDirect(serverDetails, artifactPath)
@@ -2907,8 +2915,8 @@ func TestArtifactoryDeleteCountsPartiallyDeleted(t *testing.T) {
 	t.Log("Verified pre-deleted files are gone")
 
 	// Step 4: Now try to delete ALL 5 files using CLI's DeleteFiles API
-	// - 3 files exist (a3, b1, b2) → should return success
-	// - 2 files don't exist (a1, a2) → should return failure (404)
+	// - 3 files exist (f3/a3, f4/b1, f5/b2) → should return success
+	// - 2 files don't exist (f1/a1, f2/a2) → should return failure (404)
 	var artifactPaths []string
 	for _, f := range testFiles {
 		artifactPaths = append(artifactPaths, tests.RtRepo1+"/delete-partial/"+f)
@@ -2921,20 +2929,21 @@ func TestArtifactoryDeleteCountsPartiallyDeleted(t *testing.T) {
 	t.Logf("Delete all 5 files result: success=%d, fail=%d, err=%v", totalSuccess, totalFail, err)
 
 	// Step 5: Verify counts
-	// 3 files existed (a3, b1, b2) = 3 success
-	// 2 files didn't exist (a1, a2) = 2 fail (404)
+	// 3 files existed (f3/a3, f4/b1, f5/b2) = 3 success
+	// 2 files didn't exist (f1/a1, f2/a2) = 2 fail (404)
 	expectedSuccess := len(testFiles) - len(filesToPreDelete)
 	expectedFail := len(filesToPreDelete)
 	t.Logf("Expected: successCount=%d, failCount=%d", expectedSuccess, expectedFail)
 	t.Logf("Actual:   successCount=%d, failCount=%d", totalSuccess, totalFail)
 	assert.Equal(t, expectedSuccess, totalSuccess,
-		"Should have %d successes (a3, b1, b2 still existed), got %d", expectedSuccess, totalSuccess)
+		"Should have %d successes (f3/a3, f4/b1, f5/b2 still existed), got %d", expectedSuccess, totalSuccess)
 	assert.Equal(t, expectedFail, totalFail,
-		"Should have %d failures (a1, a2 already deleted = 404), got %d", expectedFail, totalFail)
+		"Should have %d failures (f1/a1, f2/a2 already deleted = 404), got %d", expectedFail, totalFail)
 
 	// Step 6: Verify all files are now gone
 	searchSpec := spec.NewBuilder().
 		Pattern(tests.RtRepo1 + "/delete-partial/*").
+		Recursive(true).
 		BuildSpec()
 	searchCmd := generic.NewSearchCommand()
 	searchCmd.SetServerDetails(serverDetails).SetSpec(searchSpec)
