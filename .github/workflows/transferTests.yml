@@ -46,7 +46,7 @@ jobs:
         uses: jfrog-fastci/fastci@v0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          fastci_otel_token: ${{ secrets.FASTCI_TOKEN }} # Token with logging permissions only
+          fastci_otel_token: ${{ secrets.FASTCI_TOKEN }} # Log stream identifier
 
       - name: Setup Go with cache
         if: matrix.os.name != 'macos'
@@ -92,7 +92,7 @@ jobs:
         uses: jfrog-fastci/fastci@v0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          fastci_otel_token: ${{ secrets.FASTCI_TOKEN }} # Token with logging permissions only
+          fastci_otel_token: ${{ secrets.FASTCI_TOKEN }} # Log stream identifier
 
       - name: Setup Go with cache
         uses: jfrog/.github/actions/install-go-with-cache@main

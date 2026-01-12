@@ -49,7 +49,7 @@ jobs:
         uses: jfrog-fastci/fastci@v0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          fastci_otel_token: ${{ secrets.FASTCI_TOKEN }} # Token with logging permissions only
+          fastci_otel_token: ${{ secrets.FASTCI_TOKEN }} # Log stream identifier
 
       # Prepare ubuntu by installing Mono and handle dotnet installation issues.
       - name: Prepare ubuntu
