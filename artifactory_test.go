@@ -2801,18 +2801,16 @@ func TestArtifactoryDeleteByProps(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-// TestArtifactoryDeleteCountsWithPartial404 tests that delete returns accurate
-// success/fail counts when 404 errors occur due to files being deleted between
-// GetPathsToDelete and DeleteFiles (race condition scenario).
-func TestArtifactoryDeleteCountsWithPartial404(t *testing.T) {
+// TestArtifactoryDeleteCountsWithFull404 tests that delete returns accurate
+// counts when ALL files are already deleted (all 404 errors).
+func TestArtifactoryDeleteCountsWithFull404(t *testing.T) {
 	initArtifactoryTest(t, "")
 
-	// Step 1: Upload more than 5 test files (using testdata/a/ which has 9 .in files)
+	// Step 1: Upload test files
 	runRt(t, "upload", "testdata/a/*.in", tests.RtRepo1+"/delete-404-test/", "--flat=true")
-	runRt(t, "upload", "testdata/a/b/*.in", tests.RtRepo1+"/delete-404-test/", "--flat=true")
-	runRt(t, "upload", "testdata/a/b/c/*.in", tests.RtRepo1+"/delete-404-test/", "--flat=true")
+	t.Log("Uploaded test files")
 
-	// Verify we have more than 5 files uploaded
+	// Step 2: Search to find all uploaded files
 	searchSpec := spec.NewBuilder().
 		Pattern(tests.RtRepo1 + "/delete-404-test/*.in").
 		BuildSpec()
@@ -2823,10 +2821,10 @@ func TestArtifactoryDeleteCountsWithPartial404(t *testing.T) {
 	totalFiles, err := reader.Length()
 	assert.NoError(t, err)
 	readerCloseAndAssert(t, reader)
-	assert.Greater(t, totalFiles, 5, "Should have uploaded more than 5 files for this test")
-	t.Logf("Uploaded %d files for delete-404 test", totalFiles)
+	assert.Greater(t, totalFiles, 0, "Should have uploaded files for this test")
+	t.Logf("Found %d files to delete", totalFiles)
 
-	// Step 2: Create delete command and get paths to delete
+	// Step 3: Create delete command and get paths to delete
 	deleteSpec := spec.NewBuilder().
 		Pattern(tests.RtRepo1 + "/delete-404-test/*.in").
 		BuildSpec()
@@ -2838,92 +2836,157 @@ func TestArtifactoryDeleteCountsWithPartial404(t *testing.T) {
 		SetDryRun(false).
 		SetQuiet(true)
 
-	// Get paths to delete (this queries Artifactory for matching files)
+	// Get paths to delete
 	pathsReader, err := deleteCommand.GetPathsToDelete()
 	assert.NoError(t, err)
 
-	// Verify reader has the expected number of items
+	// Verify reader has the expected files
 	readerLength, err := pathsReader.Length()
 	assert.NoError(t, err)
 	assert.Equal(t, totalFiles, readerLength, "Reader should contain all uploaded files")
-	t.Logf("PathsReader contains %d items (expected %d)", readerLength, totalFiles)
-
-	// Reset the reader after Length() consumed it - required before passing to DeleteFiles
+	t.Logf("PathsReader contains %d items", readerLength)
 	pathsReader.Reset()
 
-	// Step 3: Simulate race condition - delete some files directly BEFORE calling DeleteFiles
-	// This will cause 404 errors when DeleteFiles tries to delete them
-	filesToPreDelete := 3
-	preDeleteSpec1 := spec.NewBuilder().Pattern(tests.RtRepo1 + "/delete-404-test/a1.in").BuildSpec()
-	preDeleteSuccess1, preDeleteFail1, err := tests.DeleteFiles(preDeleteSpec1, serverDetails)
-	assert.NoError(t, err, "Failed to pre-delete a1.in")
-	t.Logf("Pre-delete a1.in: success=%d, fail=%d", preDeleteSuccess1, preDeleteFail1)
+	// Step 4: Delete all files (first delete - should all succeed)
+	successCount1, failCount1, deleteErr1 := deleteCommand.DeleteFiles(pathsReader)
+	t.Logf("First delete: success=%d, fail=%d, err=%v", successCount1, failCount1, deleteErr1)
 
-	preDeleteSpec2 := spec.NewBuilder().Pattern(tests.RtRepo1 + "/delete-404-test/a2.in").BuildSpec()
-	preDeleteSuccess2, preDeleteFail2, err := tests.DeleteFiles(preDeleteSpec2, serverDetails)
-	assert.NoError(t, err, "Failed to pre-delete a2.in")
-	t.Logf("Pre-delete a2.in: success=%d, fail=%d", preDeleteSuccess2, preDeleteFail2)
+	assert.NoError(t, deleteErr1, "First delete should succeed without errors")
+	assert.Equal(t, totalFiles, successCount1, "First delete should succeed for all %d files", totalFiles)
+	assert.Equal(t, 0, failCount1, "First delete should have no failures")
 
-	preDeleteSpec3 := spec.NewBuilder().Pattern(tests.RtRepo1 + "/delete-404-test/a3.in").BuildSpec()
-	preDeleteSuccess3, preDeleteFail3, err := tests.DeleteFiles(preDeleteSpec3, serverDetails)
-	assert.NoError(t, err, "Failed to pre-delete a3.in")
-	t.Logf("Pre-delete a3.in: success=%d, fail=%d", preDeleteSuccess3, preDeleteFail3)
-
-	// Verify pre-deletion actually removed the files
-	totalPreDeleted := preDeleteSuccess1 + preDeleteSuccess2 + preDeleteSuccess3
-	assert.Equal(t, filesToPreDelete, totalPreDeleted,
-		"Pre-deletion should have deleted %d files, but deleted %d", filesToPreDelete, totalPreDeleted)
-
-	// Double-check by searching - should now have (totalFiles - filesToPreDelete) files
-	reader, err = searchCmd.Search()
-	assert.NoError(t, err, "Failed to search after pre-deletion")
-	filesAfterPreDelete, err := reader.Length()
-	assert.NoError(t, err)
-	readerCloseAndAssert(t, reader)
-	expectedAfterPreDelete := totalFiles - filesToPreDelete
-	assert.Equal(t, expectedAfterPreDelete, filesAfterPreDelete,
-		"After pre-deleting %d files, should have %d remaining, but found %d",
-		filesToPreDelete, expectedAfterPreDelete, filesAfterPreDelete)
-
-	t.Logf("Pre-deleted %d files, verified %d files remaining (expected %d)",
-		totalPreDeleted, filesAfterPreDelete, expectedAfterPreDelete)
-
-	// Step 4: Now call DeleteFiles with the original reader
-	// The reader still contains paths to the pre-deleted files, so we'll get 404s
-	successCount, failCount, deleteErr := deleteCommand.DeleteFiles(pathsReader)
-	gofrogio.Close(pathsReader, &err)
-
-	// Step 5: Verify the fix - counts should be properly returned even with 404 errors
-	// Before the fix: successCount=0, failCount=0 (bug!)
-	// After the fix: successCount + failCount should equal totalFiles
-	t.Logf("Delete result: success=%d, fail=%d, err=%v", successCount, failCount, deleteErr)
-
-	// Calculate expected values for clearer error messages
-	expectedSuccessful := totalFiles - filesToPreDelete
-	totalProcessed := successCount + failCount
-
-	// The total of success + fail should equal what we tried to delete
-	assert.Equal(t, totalFiles, totalProcessed,
-		"Total processed (success=%d + fail=%d = %d) should equal totalFiles=%d",
-		successCount, failCount, totalProcessed, totalFiles)
-
-	// We should have some successful deletes (files that weren't pre-deleted)
-	assert.Equal(t, expectedSuccessful, successCount,
-		"Success count=%d should match expected=%d (totalFiles=%d - preDeleted=%d)",
-		successCount, expectedSuccessful, totalFiles, filesToPreDelete)
-
-	// We should have some failures (the pre-deleted files that returned 404)
-	assert.Equal(t, filesToPreDelete, failCount,
-		"Fail count=%d should match pre-deleted files=%d",
-		failCount, filesToPreDelete)
-
-	// Verify all files are now gone
+	// Step 5: Verify all files are now gone
 	reader, err = searchCmd.Search()
 	assert.NoError(t, err)
 	remainingFiles, err := reader.Length()
 	assert.NoError(t, err)
 	readerCloseAndAssert(t, reader)
-	assert.Equal(t, 0, remainingFiles, "All files should be deleted")
+	assert.Equal(t, 0, remainingFiles, "All files should be deleted after first delete")
+	t.Log("Verified all files are deleted")
+
+	// Step 6: Reset the reader and try to delete AGAIN (all should get 404)
+	pathsReader.Reset()
+	successCount2, failCount2, deleteErr2 := deleteCommand.DeleteFiles(pathsReader)
+	gofrogio.Close(pathsReader, &err)
+
+	t.Logf("Second delete (all 404): success=%d, fail=%d, err=%v", successCount2, failCount2, deleteErr2)
+
+	// Step 7: Verify the results - all should fail with 404
+	totalProcessed := successCount2 + failCount2
+	assert.Equal(t, totalFiles, totalProcessed,
+		"Total processed (success=%d + fail=%d = %d) should equal totalFiles=%d",
+		successCount2, failCount2, totalProcessed, totalFiles)
+
+	assert.Equal(t, 0, successCount2,
+		"Second delete should have 0 successes (files already deleted), got %d", successCount2)
+
+	assert.Equal(t, totalFiles, failCount2,
+		"Second delete should have %d failures (all 404), got %d", totalFiles, failCount2)
+
+	// Cleanup
+	cleanArtifactoryTest()
+}
+
+// TestArtifactoryDeleteCountsWithPartial404 tests that delete returns accurate
+// counts when SOME files are already deleted (partial 404 errors).
+func TestArtifactoryDeleteCountsWithPartial404(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Step 1: Upload 5 specific test files
+	runRt(t, "upload", "testdata/a/a1.in", tests.RtRepo1+"/delete-partial-404/", "--flat=true")
+	runRt(t, "upload", "testdata/a/a2.in", tests.RtRepo1+"/delete-partial-404/", "--flat=true")
+	runRt(t, "upload", "testdata/a/a3.in", tests.RtRepo1+"/delete-partial-404/", "--flat=true")
+	runRt(t, "upload", "testdata/a/b/b1.in", tests.RtRepo1+"/delete-partial-404/", "--flat=true")
+	runRt(t, "upload", "testdata/a/b/b2.in", tests.RtRepo1+"/delete-partial-404/", "--flat=true")
+	t.Log("Uploaded 5 test files")
+
+	// Step 2: Verify we have 5 files
+	searchSpec := spec.NewBuilder().
+		Pattern(tests.RtRepo1 + "/delete-partial-404/*.in").
+		BuildSpec()
+	searchCmd := generic.NewSearchCommand()
+	searchCmd.SetServerDetails(serverDetails).SetSpec(searchSpec)
+	reader, err := searchCmd.Search()
+	assert.NoError(t, err)
+	totalFiles, err := reader.Length()
+	assert.NoError(t, err)
+	readerCloseAndAssert(t, reader)
+	assert.Equal(t, 5, totalFiles, "Should have uploaded 5 files")
+	t.Logf("Verified %d files uploaded", totalFiles)
+
+	// Step 3: Create delete command and get paths for ALL 5 files
+	deleteSpec := spec.NewBuilder().
+		Pattern(tests.RtRepo1 + "/delete-partial-404/*.in").
+		BuildSpec()
+
+	deleteCommand := generic.NewDeleteCommand()
+	deleteCommand.SetThreads(1).
+		SetSpec(deleteSpec).
+		SetServerDetails(serverDetails).
+		SetDryRun(false).
+		SetQuiet(true)
+
+	// Get paths for all 5 files
+	pathsReader, err := deleteCommand.GetPathsToDelete()
+	assert.NoError(t, err)
+	readerLength, err := pathsReader.Length()
+	assert.NoError(t, err)
+	assert.Equal(t, 5, readerLength, "Reader should contain 5 files")
+	t.Logf("PathsReader contains %d items", readerLength)
+	pathsReader.Reset()
+
+	// Step 4: Delete only 2 files (a1.in and a2.in)
+	preDeleteSpec := spec.NewBuilder().
+		Pattern(tests.RtRepo1 + "/delete-partial-404/a1.in").
+		BuildSpec()
+	preDeleteSuccess1, _, err := tests.DeleteFiles(preDeleteSpec, serverDetails)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, preDeleteSuccess1, "Should have deleted a1.in")
+	t.Log("Pre-deleted a1.in")
+
+	preDeleteSpec2 := spec.NewBuilder().
+		Pattern(tests.RtRepo1 + "/delete-partial-404/a2.in").
+		BuildSpec()
+	preDeleteSuccess2, _, err := tests.DeleteFiles(preDeleteSpec2, serverDetails)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, preDeleteSuccess2, "Should have deleted a2.in")
+	t.Log("Pre-deleted a2.in")
+
+	// Step 5: Verify only 3 files remain
+	reader, err = searchCmd.Search()
+	assert.NoError(t, err)
+	remainingFiles, err := reader.Length()
+	assert.NoError(t, err)
+	readerCloseAndAssert(t, reader)
+	assert.Equal(t, 3, remainingFiles, "Should have 3 files remaining after pre-delete")
+	t.Logf("Verified %d files remaining after pre-deleting 2", remainingFiles)
+
+	// Step 6: Now try to delete ALL 5 files using original pathsReader
+	// Expected: 3 success (a3, b1, b2), 2 fail (a1, a2 already deleted = 404)
+	successCount, failCount, deleteErr := deleteCommand.DeleteFiles(pathsReader)
+	gofrogio.Close(pathsReader, &err)
+
+	t.Logf("Delete result: success=%d, fail=%d, err=%v", successCount, failCount, deleteErr)
+
+	// Step 7: Verify counts
+	totalProcessed := successCount + failCount
+	assert.Equal(t, 5, totalProcessed,
+		"Total processed (success=%d + fail=%d = %d) should equal 5",
+		successCount, failCount, totalProcessed)
+
+	assert.Equal(t, 3, successCount,
+		"Should have 3 successes (a3, b1, b2 still existed), got %d", successCount)
+
+	assert.Equal(t, 2, failCount,
+		"Should have 2 failures (a1, a2 already deleted = 404), got %d", failCount)
+
+	// Step 8: Verify all files are now gone
+	reader, err = searchCmd.Search()
+	assert.NoError(t, err)
+	finalCount, err := reader.Length()
+	assert.NoError(t, err)
+	readerCloseAndAssert(t, reader)
+	assert.Equal(t, 0, finalCount, "All files should be deleted")
 
 	// Cleanup
 	cleanArtifactoryTest()
