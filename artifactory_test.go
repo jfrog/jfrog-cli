@@ -2801,33 +2801,31 @@ func TestArtifactoryDeleteByProps(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-// TestArtifactoryDeleteCountsWithFull404 tests that delete returns accurate
-// counts when ALL files are already deleted (all 404 errors).
-func TestArtifactoryDeleteCountsWithFull404(t *testing.T) {
+// TestArtifactoryDeleteCountsNonExistentFiles tests that delete correctly handles
+// files that don't exist. The CLI searches first, so non-existent files return
+// All 3 files should return 404 on second delete attempt.
+func TestArtifactoryDeleteCountsNonExistentFiles(t *testing.T) {
 	initArtifactoryTest(t, "")
 
 	// Step 1: Upload 3 specific test files by explicit name
 	testFiles := []string{"a1.in", "a2.in", "a3.in"}
 	for _, f := range testFiles {
-		runRt(t, "upload", "testdata/a/"+f, tests.RtRepo1+"/delete-404-full/"+f)
+		runRt(t, "upload", "testdata/a/"+f, tests.RtRepo1+"/delete-nonexistent/"+f)
 	}
 	t.Logf("Uploaded %d test files: %v", len(testFiles), testFiles)
 
-	// Step 2: Delete each file explicitly by name and verify success
+	// Step 2: Delete each file using direct DELETE API and verify success (HTTP 204)
 	for _, f := range testFiles {
-		deleteSpec := spec.NewBuilder().
-			Pattern(tests.RtRepo1 + "/delete-404-full/" + f).
-			BuildSpec()
-		success, fail, err := tests.DeleteFiles(deleteSpec, serverDetails)
-		assert.NoError(t, err, "First delete of %s should succeed", f)
-		assert.Equal(t, 1, success, "First delete of %s should have 1 success", f)
-		assert.Equal(t, 0, fail, "First delete of %s should have 0 failures", f)
+		artifactPath := tests.RtRepo1 + "/delete-nonexistent/" + f
+		success, err := tests.DeleteFileDirect(serverDetails, artifactPath)
+		assert.NoError(t, err, "First delete of %s should not return error", f)
+		assert.True(t, success, "First delete of %s should succeed (HTTP 204)", f)
 	}
-	t.Log("First delete: all files deleted successfully")
+	t.Log("First delete: all files deleted successfully (HTTP 204)")
 
-	// Step 3: Verify all files are now gone
+	// Step 3: Verify all files are now gone via search
 	searchSpec := spec.NewBuilder().
-		Pattern(tests.RtRepo1 + "/delete-404-full/*").
+		Pattern(tests.RtRepo1 + "/delete-nonexistent/*").
 		BuildSpec()
 	searchCmd := generic.NewSearchCommand()
 	searchCmd.SetServerDetails(serverDetails).SetSpec(searchSpec)
@@ -2839,60 +2837,63 @@ func TestArtifactoryDeleteCountsWithFull404(t *testing.T) {
 	assert.Equal(t, 0, remainingFiles, "All files should be deleted")
 	t.Log("Verified all files are deleted")
 
-	// Step 4: Try to delete each file AGAIN by explicit name (all should get 404)
-	totalSuccess := 0
-	totalFail := 0
+	// Step 4: Try to delete ALL files AGAIN using CLI's DeleteFiles API
+	// Build list of artifact paths
+	var artifactPaths []string
 	for _, f := range testFiles {
-		deleteSpec := spec.NewBuilder().
-			Pattern(tests.RtRepo1 + "/delete-404-full/" + f).
-			BuildSpec()
-		success, fail, err := tests.DeleteFiles(deleteSpec, serverDetails)
-		t.Logf("Second delete of %s: success=%d, fail=%d, err=%v", f, success, fail, err)
-		totalSuccess += success
-		totalFail += fail
+		artifactPaths = append(artifactPaths, tests.RtRepo1+"/delete-nonexistent/"+f)
 	}
-	t.Logf("Second delete totals: success=%d, fail=%d", totalSuccess, totalFail)
+	t.Logf("Attempting second delete of paths: %v", artifactPaths)
 
-	// Step 5: Verify the results - all should fail with 404
-	assert.Equal(t, 0, totalSuccess,
-		"Second delete should have 0 successes (files already deleted), got %d", totalSuccess)
-	assert.Equal(t, len(testFiles), totalFail,
-		"Second delete should have %d failures (all 404), got %d", len(testFiles), totalFail)
+	// Use CLI's DeleteFiles API which should properly count 404s as failures
+	// Error IS expected because all files return 404
+	totalSuccess, totalFail, err := tests.DeleteFilesByPathsUsingCli(serverDetails, artifactPaths)
+	// Error is expected when files don't exist (404 responses)
+	t.Logf("Second delete result: success=%d, fail=%d, err=%v", totalSuccess, totalFail, err)
+
+	// Step 5: Verify - all 3 files should return 404 (failedCount=3)
+	expectedSuccess := 0
+	expectedFail := len(testFiles)
+	t.Logf("Expected: successCount=%d, failCount=%d", expectedSuccess, expectedFail)
+	t.Logf("Actual:   successCount=%d, failCount=%d", totalSuccess, totalFail)
+	assert.Equal(t, expectedSuccess, totalSuccess,
+		"Second delete should have 0 successes (all files already deleted), got %d", totalSuccess)
+	assert.Equal(t, expectedFail, totalFail,
+		"Second delete should have %d failures (all 404), got %d", expectedFail, totalFail)
 
 	// Cleanup
 	cleanArtifactoryTest()
 }
 
-// TestArtifactoryDeleteCountsWithPartial404 tests that delete returns accurate
-// counts when SOME files are already deleted (partial 404 errors).
-func TestArtifactoryDeleteCountsWithPartial404(t *testing.T) {
+// TestArtifactoryDeleteCountsPartiallyDeleted tests that delete correctly handles
+// a mix of existing and non-existing files using CLI's DeleteFiles API.
+// - 3 existing files should return success
+// - 2 pre-deleted files should return failure (404)
+func TestArtifactoryDeleteCountsPartiallyDeleted(t *testing.T) {
 	initArtifactoryTest(t, "")
 
 	// Step 1: Upload 5 specific test files by explicit name
 	testFiles := []string{"a1.in", "a2.in", "a3.in", "b1.in", "b2.in"}
 	sourceFiles := []string{"testdata/a/a1.in", "testdata/a/a2.in", "testdata/a/a3.in", "testdata/a/b/b1.in", "testdata/a/b/b2.in"}
 	for i, f := range testFiles {
-		runRt(t, "upload", sourceFiles[i], tests.RtRepo1+"/delete-partial-404/"+f)
+		runRt(t, "upload", sourceFiles[i], tests.RtRepo1+"/delete-partial/"+f)
 	}
 	t.Logf("Uploaded %d test files: %v", len(testFiles), testFiles)
 
-	// Step 2: Pre-delete 2 files (a1.in and a2.in) and confirm deletion
+	// Step 2: Pre-delete 2 files (a1.in and a2.in) using direct DELETE API
 	filesToPreDelete := []string{"a1.in", "a2.in"}
 	for _, f := range filesToPreDelete {
-		deleteSpec := spec.NewBuilder().
-			Pattern(tests.RtRepo1 + "/delete-partial-404/" + f).
-			BuildSpec()
-		success, fail, err := tests.DeleteFiles(deleteSpec, serverDetails)
-		assert.NoError(t, err, "Pre-delete of %s should succeed", f)
-		assert.Equal(t, 1, success, "Pre-delete of %s should have 1 success", f)
-		assert.Equal(t, 0, fail, "Pre-delete of %s should have 0 failures", f)
-		t.Logf("Pre-deleted %s successfully", f)
+		artifactPath := tests.RtRepo1 + "/delete-partial/" + f
+		success, err := tests.DeleteFileDirect(serverDetails, artifactPath)
+		assert.NoError(t, err, "Pre-delete of %s should not return error", f)
+		assert.True(t, success, "Pre-delete of %s should succeed (HTTP 204)", f)
+		t.Logf("Pre-deleted %s successfully (HTTP 204)", f)
 	}
 
-	// Step 3: Verify pre-deleted files are gone (search should return 404 or 0 results)
+	// Step 3: Verify pre-deleted files are gone via search
 	for _, f := range filesToPreDelete {
 		searchSpec := spec.NewBuilder().
-			Pattern(tests.RtRepo1 + "/delete-partial-404/" + f).
+			Pattern(tests.RtRepo1 + "/delete-partial/" + f).
 			BuildSpec()
 		searchCmd := generic.NewSearchCommand()
 		searchCmd.SetServerDetails(serverDetails).SetSpec(searchSpec)
@@ -2905,32 +2906,35 @@ func TestArtifactoryDeleteCountsWithPartial404(t *testing.T) {
 	}
 	t.Log("Verified pre-deleted files are gone")
 
-	// Step 4: Now try to delete ALL 5 files by explicit name
-	// Expected: 3 success (a3, b1, b2), 2 fail (a1, a2 already deleted = 404)
-	totalSuccess := 0
-	totalFail := 0
+	// Step 4: Now try to delete ALL 5 files using CLI's DeleteFiles API
+	// - 3 files exist (a3, b1, b2) → should return success
+	// - 2 files don't exist (a1, a2) → should return failure (404)
+	var artifactPaths []string
 	for _, f := range testFiles {
-		deleteSpec := spec.NewBuilder().
-			Pattern(tests.RtRepo1 + "/delete-partial-404/" + f).
-			BuildSpec()
-		success, fail, err := tests.DeleteFiles(deleteSpec, serverDetails)
-		t.Logf("Delete %s: success=%d, fail=%d, err=%v", f, success, fail, err)
-		totalSuccess += success
-		totalFail += fail
+		artifactPaths = append(artifactPaths, tests.RtRepo1+"/delete-partial/"+f)
 	}
-	t.Logf("Delete all 5 files result: success=%d, fail=%d", totalSuccess, totalFail)
+	t.Logf("Attempting to delete paths: %v", artifactPaths)
+
+	// Error IS expected because some files return 404
+	totalSuccess, totalFail, err := tests.DeleteFilesByPathsUsingCli(serverDetails, artifactPaths)
+	// Error is expected when some files don't exist (404 responses)
+	t.Logf("Delete all 5 files result: success=%d, fail=%d, err=%v", totalSuccess, totalFail, err)
 
 	// Step 5: Verify counts
 	// 3 files existed (a3, b1, b2) = 3 success
-	// 2 files already deleted (a1, a2) = 2 fail
-	assert.Equal(t, 3, totalSuccess,
-		"Should have 3 successes (a3, b1, b2 still existed), got %d", totalSuccess)
-	assert.Equal(t, 2, totalFail,
-		"Should have 2 failures (a1, a2 already deleted = 404), got %d", totalFail)
+	// 2 files didn't exist (a1, a2) = 2 fail (404)
+	expectedSuccess := len(testFiles) - len(filesToPreDelete)
+	expectedFail := len(filesToPreDelete)
+	t.Logf("Expected: successCount=%d, failCount=%d", expectedSuccess, expectedFail)
+	t.Logf("Actual:   successCount=%d, failCount=%d", totalSuccess, totalFail)
+	assert.Equal(t, expectedSuccess, totalSuccess,
+		"Should have %d successes (a3, b1, b2 still existed), got %d", expectedSuccess, totalSuccess)
+	assert.Equal(t, expectedFail, totalFail,
+		"Should have %d failures (a1, a2 already deleted = 404), got %d", expectedFail, totalFail)
 
 	// Step 6: Verify all files are now gone
 	searchSpec := spec.NewBuilder().
-		Pattern(tests.RtRepo1 + "/delete-partial-404/*").
+		Pattern(tests.RtRepo1 + "/delete-partial/*").
 		BuildSpec()
 	searchCmd := generic.NewSearchCommand()
 	searchCmd.SetServerDetails(serverDetails).SetSpec(searchSpec)

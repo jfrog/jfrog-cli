@@ -35,8 +35,11 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/summary"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
+	serviceutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/auth"
+	"github.com/jfrog/jfrog-client-go/http/jfroghttpclient"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
+	"github.com/jfrog/jfrog-client-go/utils/io/content"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/stretchr/testify/assert"
@@ -235,6 +238,112 @@ func DeleteFiles(deleteSpec *spec.SpecFiles, serverDetails *config.ServerDetails
 	}
 	defer ioutils.Close(reader, &err)
 	return deleteCommand.DeleteFiles(reader)
+}
+
+// DeleteFileDirect deletes a single file by its full Artifactory path (e.g., "repo/path/file.txt")
+// This calls the DELETE API directly WITHOUT searching first.
+// Returns:
+//   - success=true, err=nil: File was deleted (HTTP 204)
+//   - success=false, err=nil: File not found (HTTP 404)
+//   - success=false, err!=nil: Other error occurred
+func DeleteFileDirect(serverDetails *config.ServerDetails, artifactoryPath string) (success bool, err error) {
+	// Create auth config
+	artAuth, err := serverDetails.CreateArtAuthConfig()
+	if err != nil {
+		return false, err
+	}
+
+	// Build the full delete URL
+	deleteUrl := clientutils.AddTrailingSlashIfNeeded(artAuth.GetUrl()) + artifactoryPath
+
+	// Create HTTP client
+	client, err := jfroghttpclient.JfrogClientBuilder().
+		SetInsecureTls(serverDetails.InsecureTls).
+		AppendPreRequestInterceptor(artAuth.RunPreRequestFunctions).
+		Build()
+	if err != nil {
+		return false, err
+	}
+
+	// Create HTTP client details with auth
+	httpClientsDetails := artAuth.CreateHttpClientDetails()
+
+	// Send DELETE request directly
+	resp, body, err := client.SendDelete(deleteUrl, nil, &httpClientsDetails)
+	if err != nil {
+		return false, err
+	}
+
+	// Check response status
+	if resp.StatusCode == 204 {
+		// Successfully deleted
+		return true, nil
+	} else if resp.StatusCode == 404 {
+		// File not found
+		return false, nil
+	} else {
+		// Other error
+		return false, fmt.Errorf("unexpected status %d: %s", resp.StatusCode, string(body))
+	}
+}
+
+// DeleteFilesByPathsUsingCli deletes files by their explicit paths using the CLI's DeleteCommand.DeleteFiles API.
+// This bypasses the search phase and directly calls delete on the provided paths.
+// Returns successCount, failedCount, err - where failedCount includes 404 errors.
+func DeleteFilesByPathsUsingCli(serverDetails *config.ServerDetails, artifactoryPaths []string) (successCount, failedCount int, err error) {
+	// Create a ContentWriter to build a reader with the file paths
+	writer, err := content.NewContentWriter(content.DefaultKey, true, false)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	// Write each path as a ResultItem
+	for _, artifactPath := range artifactoryPaths {
+		// Parse the path into repo/path/name
+		parts := strings.SplitN(artifactPath, "/", 2)
+		repo := parts[0]
+		pathAndName := ""
+		name := ""
+		if len(parts) > 1 {
+			pathAndName = parts[1]
+			// Split into path and name
+			lastSlash := strings.LastIndex(pathAndName, "/")
+			if lastSlash >= 0 {
+				pathAndName = pathAndName[:lastSlash]
+				name = artifactPath[strings.LastIndex(artifactPath, "/")+1:]
+			} else {
+				name = pathAndName
+				pathAndName = "."
+			}
+		}
+		item := serviceutils.ResultItem{
+			Repo: repo,
+			Path: pathAndName,
+			Name: name,
+			Type: "file",
+		}
+		writer.Write(item)
+	}
+
+	err = writer.Close()
+	if err != nil {
+		return 0, 0, err
+	}
+
+	// Create a reader from the writer's file
+	reader := content.NewContentReader(writer.GetFilePath(), content.DefaultKey)
+	defer func() {
+		closeErr := reader.Close()
+		if err == nil {
+			err = closeErr
+		}
+	}()
+
+	// Create DeleteCommand and call DeleteFiles
+	deleteCmd := generic.NewDeleteCommand()
+	deleteCmd.SetServerDetails(serverDetails)
+
+	return deleteCmd.DeleteFiles(reader)
 }
 
 // This function makes no assertion, caller is responsible to assert as needed.
