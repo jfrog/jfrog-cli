@@ -347,6 +347,68 @@ func DeleteFilesByPathsUsingCli(serverDetails *config.ServerDetails, artifactory
 	return deleteCmd.DeleteFiles(reader)
 }
 
+// CreateUserWithPassword creates a new user with the specified password.
+func CreateUserWithPassword(serverDetails *config.ServerDetails, username, password string) error {
+	servicesManager, err := artUtils.CreateServiceManager(serverDetails, -1, 0, false)
+	if err != nil {
+		return err
+	}
+	adminFalse := false
+	userParams := services.NewUserParams()
+	userParams.UserDetails.Name = username
+	userParams.UserDetails.Email = username + "@test.com"
+	userParams.UserDetails.Password = password
+	userParams.UserDetails.Admin = &adminFalse
+	return servicesManager.CreateUser(userParams)
+}
+
+// DeleteUser deletes a user.
+func DeleteUser(serverDetails *config.ServerDetails, username string) error {
+	servicesManager, err := artUtils.CreateServiceManager(serverDetails, -1, 0, false)
+	if err != nil {
+		return err
+	}
+	return servicesManager.DeleteUser(username)
+}
+
+// CreatePermissionTarget creates a permission target giving the specified user permissions on the specified repo.
+func CreatePermissionTarget(serverDetails *config.ServerDetails, permName, repoKey, username string, actions []string) error {
+	servicesManager, err := artUtils.CreateServiceManager(serverDetails, -1, 0, false)
+	if err != nil {
+		return err
+	}
+	params := services.NewPermissionTargetParams()
+	params.Name = permName
+	params.Repo = &services.PermissionTargetSection{
+		Repositories: []string{repoKey},
+		Actions: &services.Actions{
+			Users: map[string][]string{
+				username: actions,
+			},
+		},
+	}
+	return servicesManager.CreatePermissionTarget(params)
+}
+
+// DeletePermissionTarget deletes a permission target.
+func DeletePermissionTarget(serverDetails *config.ServerDetails, permName string) error {
+	servicesManager, err := artUtils.CreateServiceManager(serverDetails, -1, 0, false)
+	if err != nil {
+		return err
+	}
+	return servicesManager.DeletePermissionTarget(permName)
+}
+
+// CreateServerDetailsWithCredentials creates a copy of server details with different credentials.
+func CreateServerDetailsWithCredentials(original *config.ServerDetails, username, password string) *config.ServerDetails {
+	newDetails := *original
+	newDetails.SetUser(username)
+	newDetails.SetPassword(password)
+	// Clear access token if using username/password
+	newDetails.SetAccessToken("")
+	return &newDetails
+}
+
 // This function makes no assertion, caller is responsible to assert as needed.
 func GetBuildInfo(serverDetails *config.ServerDetails, buildName, buildNumber string) (pbi *buildinfo.PublishedBuildInfo, found bool, err error) {
 	servicesManager, err := artUtils.CreateServiceManager(serverDetails, -1, 0, false)
