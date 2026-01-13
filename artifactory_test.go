@@ -2801,6 +2801,120 @@ func TestArtifactoryDeleteByProps(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+// TestArtifactoryDeleteCountsPartialSuccess tests that delete correctly handles
+// a mix of successful and failed deletions using CLI's DeleteFiles API.
+// Uses permission-based failures (403) to reliably test partial success scenarios.
+// - Files in RtRepo1: user has delete permission → success (204)
+// - Files in RtRepo2: user has NO delete permission → failure (403)
+func TestArtifactoryDeleteCountsPartialSuccess(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Test user credentials
+	testUser := "delete-test-user"
+	testPassword := "DeleteTest123!"
+
+	// Step 1: Create a test user
+	err := tests.CreateUserWithPassword(serverDetails, testUser, testPassword)
+	assert.NoError(t, err, "Failed to create test user")
+	t.Logf("Created test user: %s", testUser)
+
+	// Cleanup user at the end
+	defer func() {
+		_ = tests.DeleteUser(serverDetails, testUser)
+		t.Logf("Cleaned up test user: %s", testUser)
+	}()
+
+	// Step 2: Create permission target - user can delete from RtRepo1 but NOT from RtRepo2
+	permissionName := "delete-partial-test-perm"
+	err = tests.CreatePermissionTarget(serverDetails, permissionName, tests.RtRepo1, testUser, []string{"read", "write", "delete"})
+	assert.NoError(t, err, "Failed to create permission target for RtRepo1")
+	t.Logf("Created permission target: %s (allows delete on %s)", permissionName, tests.RtRepo1)
+
+	// Cleanup permission at the end
+	defer func() {
+		_ = tests.DeletePermissionTarget(serverDetails, permissionName)
+		t.Logf("Cleaned up permission target: %s", permissionName)
+	}()
+
+	// Step 3: Upload files as admin to both repos
+	// 3 files to RtRepo1 (will succeed with delete)
+	allowedFiles := []string{"f1/a1.in", "f2/a2.in", "f3/a3.in"}
+	sourceFilesAllowed := []string{"testdata/a/a1.in", "testdata/a/a2.in", "testdata/a/a3.in"}
+	for i, f := range allowedFiles {
+		runRt(t, "upload", sourceFilesAllowed[i], tests.RtRepo1+"/delete-partial/"+f)
+	}
+	t.Logf("Uploaded %d files to %s (delete allowed)", len(allowedFiles), tests.RtRepo1)
+
+	// 2 files to RtRepo2 (will fail with 403)
+	deniedFiles := []string{"f4/b1.in", "f5/b2.in"}
+	sourceFilesDenied := []string{"testdata/a/b/b1.in", "testdata/a/b/b2.in"}
+	for i, f := range deniedFiles {
+		runRt(t, "upload", sourceFilesDenied[i], tests.RtRepo2+"/delete-partial/"+f)
+	}
+	t.Logf("Uploaded %d files to %s (delete denied)", len(deniedFiles), tests.RtRepo2)
+
+	// Step 4: Create server details for the test user
+	testUserServerDetails := tests.CreateServerDetailsWithCredentials(serverDetails, testUser, testPassword)
+
+	// Step 5: Build list of all artifact paths (from both repos)
+	var artifactPaths []string
+	for _, f := range allowedFiles {
+		artifactPaths = append(artifactPaths, tests.RtRepo1+"/delete-partial/"+f)
+	}
+	for _, f := range deniedFiles {
+		artifactPaths = append(artifactPaths, tests.RtRepo2+"/delete-partial/"+f)
+	}
+	t.Logf("Attempting to delete %d paths with limited user: %v", len(artifactPaths), artifactPaths)
+
+	// Step 6: Delete using the test user's credentials
+	// - 3 files from RtRepo1 → should succeed (204)
+	// - 2 files from RtRepo2 → should fail (403)
+	totalSuccess, totalFail, err := tests.DeleteFilesByPathsUsingCli(testUserServerDetails, artifactPaths)
+	// Error IS expected because some files return 403
+	t.Logf("Delete result: success=%d, fail=%d, err=%v", totalSuccess, totalFail, err)
+
+	// Step 7: Verify counts
+	expectedSuccess := len(allowedFiles)
+	expectedFail := len(deniedFiles)
+	t.Logf("Expected: successCount=%d, failCount=%d", expectedSuccess, expectedFail)
+	t.Logf("Actual:   successCount=%d, failCount=%d", totalSuccess, totalFail)
+	assert.Equal(t, expectedSuccess, totalSuccess,
+		"Should have %d successes (files from %s), got %d", expectedSuccess, tests.RtRepo1, totalSuccess)
+	assert.Equal(t, expectedFail, totalFail,
+		"Should have %d failures (files from %s - 403), got %d", expectedFail, tests.RtRepo2, totalFail)
+
+	// Step 8: Verify files from RtRepo1 are deleted
+	searchSpec := spec.NewBuilder().
+		Pattern(tests.RtRepo1 + "/delete-partial/*").
+		Recursive(true).
+		BuildSpec()
+	searchCmd := generic.NewSearchCommand()
+	searchCmd.SetServerDetails(serverDetails).SetSpec(searchSpec)
+	reader, err := searchCmd.Search()
+	assert.NoError(t, err)
+	repo1Count, err := reader.Length()
+	assert.NoError(t, err)
+	readerCloseAndAssert(t, reader)
+	assert.Equal(t, 0, repo1Count, "All files from %s should be deleted", tests.RtRepo1)
+
+	// Step 9: Verify files from RtRepo2 still exist (delete failed)
+	searchSpec2 := spec.NewBuilder().
+		Pattern(tests.RtRepo2 + "/delete-partial/*").
+		Recursive(true).
+		BuildSpec()
+	searchCmd2 := generic.NewSearchCommand()
+	searchCmd2.SetServerDetails(serverDetails).SetSpec(searchSpec2)
+	reader2, err := searchCmd2.Search()
+	assert.NoError(t, err)
+	repo2Count, err := reader2.Length()
+	assert.NoError(t, err)
+	readerCloseAndAssert(t, reader2)
+	assert.Equal(t, len(deniedFiles), repo2Count, "Files from %s should still exist (delete was denied)", tests.RtRepo2)
+
+	// Cleanup
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryMultipleFileSpecsUpload(t *testing.T) {
 	initArtifactoryTest(t, "")
 	specFile, err := tests.CreateSpec(tests.UploadMultipleFileSpecs)
