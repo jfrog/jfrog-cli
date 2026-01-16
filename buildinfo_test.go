@@ -1242,8 +1242,8 @@ func TestBuildPublishWithoutCI(t *testing.T) {
 	buildNumber := "1"
 
 	// Ensure CI env vars are NOT set
-	os.Unsetenv("CI")
-	os.Unsetenv("GITHUB_ACTIONS")
+	assert.NoError(t, os.Unsetenv("CI"))
+	assert.NoError(t, os.Unsetenv("GITHUB_ACTIONS"))
 
 	// Clean old build
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
