@@ -1200,3 +1200,69 @@ func TestBuildInfoPropertiesRemovalInBadAndPublish(t *testing.T) {
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 	cleanArtifactoryTest()
 }
+
+// TestBuildPublishWithCIVcsProps tests that CI VCS properties are set on artifacts
+// when running build-publish in a CI environment (GitHub Actions simulated).
+func TestBuildPublishWithCIVcsProps(t *testing.T) {
+	initArtifactoryTest(t, "")
+	buildName := tests.RtBuildName1 + "-civcs"
+	buildNumber := "1"
+
+	// Setup mock GitHub Actions environment
+	cleanupEnv := tests.SetupMockGitHubActionsEnv(t, "jfrog", "jfrog-cli")
+	defer cleanupEnv()
+
+	// Clean old build
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	// Upload files with build name and number
+	specFile, err := tests.CreateSpec(tests.UploadFlatNonRecursive)
+	assert.NoError(t, err)
+	runRt(t, "upload", "--spec="+specFile, "--build-name="+buildName, "--build-number="+buildNumber)
+
+	// Publish build info - should set CI VCS props on artifacts
+	runRt(t, "build-publish", buildName, buildNumber)
+
+	// Search for artifacts
+	resultItems := getResultItemsFromArtifactory(tests.SearchAllRepo1, t)
+
+	// Validate CI VCS properties are set
+	assert.Greater(t, len(resultItems), 0, "No artifacts found")
+	tests.ValidateCIVcsPropsOnArtifacts(t, resultItems, "github", "jfrog", "jfrog-cli")
+
+	cleanArtifactoryTest()
+}
+
+// TestBuildPublishWithoutCI tests that CI VCS properties are NOT set on artifacts
+// when running build-publish outside of a CI environment.
+func TestBuildPublishWithoutCI(t *testing.T) {
+	initArtifactoryTest(t, "")
+	buildName := tests.RtBuildName1 + "-no-civcs"
+	buildNumber := "1"
+
+	// Ensure CI env vars are NOT set
+	os.Unsetenv("CI")
+	os.Unsetenv("GITHUB_ACTIONS")
+
+	// Clean old build
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	// Upload files with build name and number
+	specFile, err := tests.CreateSpec(tests.UploadFlatNonRecursive)
+	assert.NoError(t, err)
+	runRt(t, "upload", "--spec="+specFile, "--build-name="+buildName, "--build-number="+buildNumber)
+
+	// Publish build info - should NOT set CI VCS props (not in CI)
+	runRt(t, "build-publish", buildName, buildNumber)
+
+	// Search for artifacts
+	resultItems := getResultItemsFromArtifactory(tests.SearchAllRepo1, t)
+
+	// Validate CI VCS properties are NOT set
+	assert.Greater(t, len(resultItems), 0, "No artifacts found")
+	tests.ValidateNoCIVcsPropsOnArtifacts(t, resultItems)
+
+	cleanArtifactoryTest()
+}

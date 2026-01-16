@@ -295,3 +295,8 @@ replace github.com/gfleury/go-bitbucket-v1 => github.com/gfleury/go-bitbucket-v1
 // replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security dev
 
 // replace github.com/jfrog/build-info-go => github.com/reshmifrog/build-info-go v1.8.9-0.20260106113011-c7f131cea484
+
+// Local development replaces
+replace github.com/jfrog/build-info-go => ../build-info-go
+
+replace github.com/jfrog/jfrog-cli-artifactory => ../jfrog-cli-artifactory

@@ -1272,3 +1272,45 @@ func containsTarName(tarName string, expectedTars []string) bool {
 	}
 	return isTarPresent
 }
+
+// TestNpmBuildPublishWithCIVcsProps tests that CI VCS properties are set on npm artifacts
+// when running build-publish in a CI environment (GitHub Actions simulated).
+func TestNpmBuildPublishWithCIVcsProps(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+
+	buildName := "npm-civcs-test"
+	buildNumber := "1"
+
+	// Setup mock GitHub Actions environment
+	cleanupEnv := tests.SetupMockGitHubActionsEnv(t, "myorg", "npm-project")
+	defer cleanupEnv()
+
+	// Clean old build
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	// Setup npm project
+	npmProjectPath := initNpmProjectTest(t)
+	clientTestUtils.ChangeDirAndAssert(t, npmProjectPath)
+
+	// Run npm publish with build info collection
+	runJfrogCli(t, "npm", "publish", "--build-name="+buildName, "--build-number="+buildNumber)
+
+	// Publish build info - should set CI VCS props on artifacts
+	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	// Search for published npm package
+	searchSpec, err := tests.CreateSpec(tests.SearchAllNpm)
+	assert.NoError(t, err)
+	resultItems := getResultItemsFromArtifactory(searchSpec, t)
+
+	// Validate CI VCS properties are set on npm artifacts
+	if len(resultItems) > 0 {
+		tests.ValidateCIVcsPropsOnArtifacts(t, resultItems, "github", "myorg", "npm-project")
+	}
+}

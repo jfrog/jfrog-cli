@@ -770,3 +770,75 @@ func SkipTest(reason string) {
 	log.Info(reason)
 	os.Exit(0)
 }
+
+// SetupMockGitHubActionsEnv sets up mock GitHub Actions CI environment variables.
+// Returns a cleanup function to restore original env vars.
+func SetupMockGitHubActionsEnv(t *testing.T, org, repo string) func() {
+	callbacks := []func(){}
+
+	// CI=true (required for all CI providers)
+	callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "CI", "true"))
+
+	// GitHub Actions specific vars
+	callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "GITHUB_ACTIONS", "true"))
+	callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "GITHUB_WORKFLOW", "test-workflow"))
+	callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "GITHUB_RUN_ID", "12345"))
+	callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "GITHUB_REPOSITORY_OWNER", org))
+	callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "GITHUB_REPOSITORY", org+"/"+repo))
+
+	return func() {
+		for _, cb := range callbacks {
+			cb()
+		}
+	}
+}
+
+// ValidateCIVcsPropsOnArtifacts validates that CI VCS properties are set on artifacts.
+func ValidateCIVcsPropsOnArtifacts(t *testing.T, resultItems []utils.ResultItem, expectedProvider, expectedOrg, expectedRepo string) {
+	for _, item := range resultItems {
+		propertiesMap := ConvertPropertiesToMap(item.Properties)
+
+		// Validate vcs.provider
+		if expectedProvider != "" {
+			vals, ok := propertiesMap["vcs.provider"]
+			assert.True(t, ok, "Missing vcs.provider on %s", item.Name)
+			assert.Contains(t, vals, expectedProvider, "Wrong vcs.provider on %s", item.Name)
+		}
+
+		// Validate vcs.org
+		if expectedOrg != "" {
+			vals, ok := propertiesMap["vcs.org"]
+			assert.True(t, ok, "Missing vcs.org on %s", item.Name)
+			assert.Contains(t, vals, expectedOrg, "Wrong vcs.org on %s", item.Name)
+		}
+
+		// Validate vcs.repo
+		if expectedRepo != "" {
+			vals, ok := propertiesMap["vcs.repo"]
+			assert.True(t, ok, "Missing vcs.repo on %s", item.Name)
+			assert.Contains(t, vals, expectedRepo, "Wrong vcs.repo on %s", item.Name)
+		}
+	}
+}
+
+// ConvertPropertiesToMap converts a slice of Property to a map for easier lookup.
+func ConvertPropertiesToMap(properties []utils.Property) map[string][]string {
+	propsMap := make(map[string][]string)
+	for _, prop := range properties {
+		propsMap[prop.Key] = append(propsMap[prop.Key], prop.Value)
+	}
+	return propsMap
+}
+
+// ValidateNoCIVcsPropsOnArtifacts validates that CI VCS properties are NOT set on artifacts.
+func ValidateNoCIVcsPropsOnArtifacts(t *testing.T, resultItems []utils.ResultItem) {
+	for _, item := range resultItems {
+		propertiesMap := ConvertPropertiesToMap(item.Properties)
+		_, hasProvider := propertiesMap["vcs.provider"]
+		_, hasOrg := propertiesMap["vcs.org"]
+		_, hasRepo := propertiesMap["vcs.repo"]
+		assert.False(t, hasProvider, "vcs.provider should not be set when not in CI on %s", item.Name)
+		assert.False(t, hasOrg, "vcs.org should not be set when not in CI on %s", item.Name)
+		assert.False(t, hasRepo, "vcs.repo should not be set when not in CI on %s", item.Name)
+	}
+}
