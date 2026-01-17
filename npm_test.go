@@ -1294,9 +1294,8 @@ func TestNpmBuildPublishWithCIVcsProps(t *testing.T) {
 	assert.NoError(t, err)
 	defer clientTestUtils.ChangeDirAndAssert(t, wd)
 
-	// Setup npm project
-	npmProjectPath := initNpmProjectTest(t)
-	clientTestUtils.ChangeDirAndAssert(t, npmProjectPath)
+	// Setup npm project (this changes the working directory)
+	initNpmProjectTest(t)
 
 	// Run npm publish with build info collection
 	runJfrogCli(t, "npm", "publish", "--build-name="+buildName, "--build-number="+buildNumber)
@@ -1304,10 +1303,11 @@ func TestNpmBuildPublishWithCIVcsProps(t *testing.T) {
 	// Publish build info - should set CI VCS props on artifacts
 	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
 
+	// Restore working directory before searching (getResultItemsFromArtifactory uses os.Getwd)
+	clientTestUtils.ChangeDirAndAssert(t, wd)
+
 	// Search for published npm package
-	searchSpec, err := tests.CreateSpec(tests.SearchAllNpm)
-	assert.NoError(t, err)
-	resultItems := getResultItemsFromArtifactory(searchSpec, t)
+	resultItems := getResultItemsFromArtifactory(tests.SearchAllNpm, t)
 
 	// Validate CI VCS properties are set on npm artifacts
 	if len(resultItems) > 0 {

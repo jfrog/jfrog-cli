@@ -674,10 +674,11 @@ func TestGradleBuildPublishWithCIVcsProps(t *testing.T) {
 	// Publish build info - should set CI VCS props on artifacts
 	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
 
+	// Restore working directory before searching (getResultItemsFromArtifactory uses os.Getwd)
+	clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
+
 	// Search for deployed Gradle artifacts
-	searchSpec, err := tests.CreateSpec(tests.SearchAllGradle)
-	assert.NoError(t, err)
-	resultItems := getResultItemsFromArtifactory(searchSpec, t)
+	resultItems := getResultItemsFromArtifactory(tests.SearchAllGradle, t)
 
 	// Validate CI VCS properties are set on Gradle artifacts
 	if len(resultItems) > 0 {

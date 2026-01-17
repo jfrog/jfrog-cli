@@ -692,9 +692,7 @@ func TestMavenBuildPublishWithCIVcsProps(t *testing.T) {
 	runRt(t, "build-publish", buildName, buildNumber)
 
 	// Search for deployed Maven artifacts
-	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
-	assert.NoError(t, err)
-	resultItems := getResultItemsFromArtifactory(searchSpec, t)
+	resultItems := getResultItemsFromArtifactory(tests.SearchAllMaven, t)
 
 	// Validate CI VCS properties are set on Maven artifacts
 	if len(resultItems) > 0 {
