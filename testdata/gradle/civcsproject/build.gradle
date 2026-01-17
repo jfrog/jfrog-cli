@@ -35,7 +35,7 @@ publishing {
     repositories {
         maven {
             name = "Artifactory"
-            url = uri("${URL}/${REPO1}")
+            url = uri("${URL}artifactory/${REPO1}")
             credentials {
                 username = "${USERNAME}"
                 password = "${PASSWORD}"
