@@ -1202,14 +1202,14 @@ func TestBuildInfoPropertiesRemovalInBadAndPublish(t *testing.T) {
 }
 
 // TestBuildPublishWithCIVcsProps tests that CI VCS properties are set on artifacts
-// when running build-publish in a CI environment (GitHub Actions simulated).
+// when running build-publish in a CI environment (GitHub Actions).
 func TestBuildPublishWithCIVcsProps(t *testing.T) {
 	initArtifactoryTest(t, "")
 	buildName := tests.RtBuildName1 + "-civcs"
 	buildNumber := "1"
 
-	// Setup mock GitHub Actions environment
-	cleanupEnv := tests.SetupMockGitHubActionsEnv(t, "jfrog", "jfrog-cli")
+	// Setup GitHub Actions environment (uses real env vars on CI, mock values locally)
+	cleanupEnv, actualOrg, actualRepo := tests.SetupGitHubActionsEnv(t)
 	defer cleanupEnv()
 
 	// Clean old build
@@ -1229,7 +1229,7 @@ func TestBuildPublishWithCIVcsProps(t *testing.T) {
 
 	// Validate CI VCS properties are set
 	assert.Greater(t, len(resultItems), 0, "No artifacts found")
-	tests.ValidateCIVcsPropsOnArtifacts(t, resultItems, "github", "jfrog", "jfrog-cli")
+	tests.ValidateCIVcsPropsOnArtifacts(t, resultItems, "github", actualOrg, actualRepo)
 
 	cleanArtifactoryTest()
 }

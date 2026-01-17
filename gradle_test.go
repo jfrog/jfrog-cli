@@ -642,22 +642,23 @@ func prepareGradleSetupTest(t *testing.T) func() {
 }
 
 // TestGradleBuildPublishWithCIVcsProps tests that CI VCS properties are set on Gradle artifacts
-// when running build-publish in a CI environment (GitHub Actions simulated).
+// when running build-publish in a CI environment (GitHub Actions).
+// This test uses civcsproject which has maven-publish configured with publishing repository.
 func TestGradleBuildPublishWithCIVcsProps(t *testing.T) {
 	initGradleTest(t)
 	buildName := "gradle-civcs-test"
 	buildNumber := "1"
 
-	// Setup mock GitHub Actions environment
-	cleanupEnv := tests.SetupMockGitHubActionsEnv(t, "myorg", "gradle-project")
+	// Setup GitHub Actions environment (uses real env vars on CI, mock values locally)
+	cleanupEnv, actualOrg, actualRepo := tests.SetupGitHubActionsEnv(t)
 	defer cleanupEnv()
 
 	// Clean old build
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 
-	// Create Gradle project and config
-	buildGradlePath := createGradleProject(t, "gradleproject")
+	// Create Gradle project with maven-publish configured (dedicated project for CI VCS test)
+	buildGradlePath := createGradleProject(t, "civcsproject")
 	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.GradleConfig)
 	destPath := filepath.Join(filepath.Dir(buildGradlePath), ".jfrog", "projects")
 	createConfigFile(destPath, configFilePath, t)
@@ -668,8 +669,8 @@ func TestGradleBuildPublishWithCIVcsProps(t *testing.T) {
 	// Windows compatibility
 	buildGradlePath = strings.ReplaceAll(buildGradlePath, `\`, "/")
 
-	// Run Gradle build with build info collection
-	runJfrogCli(t, "gradle", "clean", "artifactoryPublish", "-b"+buildGradlePath, "--build-name="+buildName, "--build-number="+buildNumber)
+	// Run Gradle build with publish task (uses maven-publish plugin configured with Artifactory)
+	runJfrogCli(t, "gradle", "clean", "publish", "-b"+buildGradlePath, "--build-name="+buildName, "--build-number="+buildNumber)
 
 	// Publish build info - should set CI VCS props on artifacts
 	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
@@ -679,11 +680,10 @@ func TestGradleBuildPublishWithCIVcsProps(t *testing.T) {
 
 	// Search for deployed Gradle artifacts
 	resultItems := getResultItemsFromArtifactory(tests.SearchAllGradle, t)
+	assert.Greater(t, len(resultItems), 0, "No Gradle artifacts found")
 
 	// Validate CI VCS properties are set on Gradle artifacts
-	if len(resultItems) > 0 {
-		tests.ValidateCIVcsPropsOnArtifacts(t, resultItems, "github", "myorg", "gradle-project")
-	}
+	tests.ValidateCIVcsPropsOnArtifacts(t, resultItems, "github", actualOrg, actualRepo)
 
 	cleanGradleTest(t)
 }

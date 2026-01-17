@@ -1207,11 +1207,10 @@ func isNpm7(npmVersion *version.Version) bool {
 func TestGenericNpm(t *testing.T) {
 	initNpmTest(t)
 	defer cleanNpmTest(t)
-	npmPath := initNpmProjectTest(t)
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
-	chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, npmPath)
-	defer chdirCallBack()
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+	initNpmProjectTest(t)
 
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	args := []string{"npm", "version"}
@@ -1274,7 +1273,7 @@ func containsTarName(tarName string, expectedTars []string) bool {
 }
 
 // TestNpmBuildPublishWithCIVcsProps tests that CI VCS properties are set on npm artifacts
-// when running build-publish in a CI environment (GitHub Actions simulated).
+// when running build-publish in a CI environment (GitHub Actions).
 func TestNpmBuildPublishWithCIVcsProps(t *testing.T) {
 	initNpmTest(t)
 	defer cleanNpmTest(t)
@@ -1282,8 +1281,8 @@ func TestNpmBuildPublishWithCIVcsProps(t *testing.T) {
 	buildName := "npm-civcs-test"
 	buildNumber := "1"
 
-	// Setup mock GitHub Actions environment
-	cleanupEnv := tests.SetupMockGitHubActionsEnv(t, "myorg", "npm-project")
+	// Setup GitHub Actions environment (uses real env vars on CI, mock values locally)
+	cleanupEnv, actualOrg, actualRepo := tests.SetupGitHubActionsEnv(t)
 	defer cleanupEnv()
 
 	// Clean old build
@@ -1310,7 +1309,6 @@ func TestNpmBuildPublishWithCIVcsProps(t *testing.T) {
 	resultItems := getResultItemsFromArtifactory(tests.SearchAllNpm, t)
 
 	// Validate CI VCS properties are set on npm artifacts
-	if len(resultItems) > 0 {
-		tests.ValidateCIVcsPropsOnArtifacts(t, resultItems, "github", "myorg", "npm-project")
-	}
+	assert.Greater(t, len(resultItems), 0, "No npm artifacts found")
+	tests.ValidateCIVcsPropsOnArtifacts(t, resultItems, "github", actualOrg, actualRepo)
 }

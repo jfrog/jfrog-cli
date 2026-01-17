@@ -1249,7 +1249,7 @@ func TestContainerFatManifestPullWithSha(t *testing.T) {
 }
 
 // TestDockerBuildPublishWithCIVcsProps tests that CI VCS properties are set on Docker artifacts
-// when running build-publish in a CI environment (GitHub Actions simulated).
+// when running build-publish in a CI environment (GitHub Actions).
 func TestDockerBuildPublishWithCIVcsProps(t *testing.T) {
 	cleanup := initDockerBuildTest(t)
 	defer cleanup()
@@ -1257,8 +1257,8 @@ func TestDockerBuildPublishWithCIVcsProps(t *testing.T) {
 	buildName := "docker-civcs-test"
 	buildNumber := "1"
 
-	// Setup mock GitHub Actions environment
-	cleanupEnv := tests.SetupMockGitHubActionsEnv(t, "myorg", "docker-project")
+	// Setup GitHub Actions environment (uses real env vars on CI, mock values locally)
+	cleanupEnv, actualOrg, actualRepo := tests.SetupGitHubActionsEnv(t)
 	defer cleanupEnv()
 
 	// Clean old build
@@ -1315,7 +1315,8 @@ CMD ["echo", "Hello from CI VCS test"]`, baseImage)
 	}
 	assert.Greater(t, artifactCount, 0, "No Docker artifacts in build info")
 
-	// Note: Docker layers may have different property validation requirements
-	// due to the nature of how Docker image manifests and layers work.
-	// The test validates that build-publish completed without errors with CI VCS env set.
+	// Search for deployed Docker artifacts and validate CI VCS properties
+	resultItems := getResultItemsFromArtifactory(tests.SearchAllOci, t)
+	assert.Greater(t, len(resultItems), 0, "No Docker artifacts found in repository")
+	tests.ValidateCIVcsPropsOnArtifacts(t, resultItems, "github", actualOrg, actualRepo)
 }

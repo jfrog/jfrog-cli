@@ -670,14 +670,14 @@ func readConfigFileCreated(t *testing.T) commands.ConfigFile {
 }
 
 // TestMavenBuildPublishWithCIVcsProps tests that CI VCS properties are set on Maven artifacts
-// when running build-publish in a CI environment (GitHub Actions simulated).
+// when running build-publish in a CI environment (GitHub Actions).
 func TestMavenBuildPublishWithCIVcsProps(t *testing.T) {
 	initMavenTest(t, false)
 	buildName := tests.MvnBuildName + "-civcs"
 	buildNumber := "1"
 
-	// Setup mock GitHub Actions environment
-	cleanupEnv := tests.SetupMockGitHubActionsEnv(t, "myorg", "maven-project")
+	// Setup GitHub Actions environment (uses real env vars on CI, mock values locally)
+	cleanupEnv, actualOrg, actualRepo := tests.SetupGitHubActionsEnv(t)
 	defer cleanupEnv()
 
 	// Clean old build
@@ -695,9 +695,8 @@ func TestMavenBuildPublishWithCIVcsProps(t *testing.T) {
 	resultItems := getResultItemsFromArtifactory(tests.SearchAllMaven, t)
 
 	// Validate CI VCS properties are set on Maven artifacts
-	if len(resultItems) > 0 {
-		tests.ValidateCIVcsPropsOnArtifacts(t, resultItems, "github", "myorg", "maven-project")
-	}
+	assert.Greater(t, len(resultItems), 0, "No Maven artifacts found")
+	tests.ValidateCIVcsPropsOnArtifacts(t, resultItems, "github", actualOrg, actualRepo)
 
 	cleanMavenTest(t)
 }

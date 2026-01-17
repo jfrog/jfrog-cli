@@ -1,0 +1,50 @@
+apply plugin: 'java'
+apply plugin: 'maven-publish'
+
+repositories {
+    mavenCentral()
+}
+
+allprojects {
+    repositories.all { repo ->
+        try {
+            def urlStr = repo.respondsTo('getUrl') && repo.url != null ? repo.url.toString() : ""
+            if (urlStr.startsWith("http://") && repo.hasProperty("allowInsecureProtocol")) {
+                repo.allowInsecureProtocol = true
+            }
+        } catch (Throwable ignored) {
+            // Best-effort; ignore repositories that don't support URL/allowInsecureProtocol.
+        }
+    }
+}
+
+group = 'org.jfrog.test'
+version = '1.0'
+
+dependencies {
+    implementation "junit:junit:4.7"
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            artifactId = 'civcs-example'
+        }
+    }
+    repositories {
+        maven {
+            name = "Artifactory"
+            url = uri("${URL}/${REPO1}")
+            credentials {
+                username = "${USERNAME}"
+                password = "${PASSWORD}"
+            }
+            allowInsecureProtocol = true
+        }
+    }
+}
+
+tasks.withType(GenerateModuleMetadata) {
+    enabled = false
+}

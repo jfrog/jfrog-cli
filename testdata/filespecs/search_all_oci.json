@@ -1,0 +1,7 @@
+{
+  "files": [
+    {
+      "pattern": "${OCI_LOCAL_REPO}/*"
+    }
+  ]
+}
