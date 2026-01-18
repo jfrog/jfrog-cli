@@ -34,6 +34,7 @@ import (
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
+	rtutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/auth"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
@@ -1308,15 +1309,31 @@ CMD ["echo", "Hello from CI VCS test"]`, baseImage)
 		return
 	}
 
-	// Get artifact count from build info
-	artifactCount := 0
+	// Get artifacts from build info - these are the only ones that should have CI VCS props
+	var buildInfoArtifactNames []string
 	for _, module := range publishedBuildInfo.BuildInfo.Modules {
-		artifactCount += len(module.Artifacts)
+		for _, artifact := range module.Artifacts {
+			buildInfoArtifactNames = append(buildInfoArtifactNames, artifact.Name)
+		}
 	}
-	assert.Greater(t, artifactCount, 0, "No Docker artifacts in build info")
+	assert.Greater(t, len(buildInfoArtifactNames), 0, "No Docker artifacts in build info")
 
-	// Search for deployed Docker artifacts and validate CI VCS properties
+	// Search for deployed Docker artifacts
 	resultItems := getResultItemsFromArtifactory(tests.SearchAllOci, t)
 	assert.Greater(t, len(resultItems), 0, "No Docker artifacts found in repository")
-	tests.ValidateCIVcsPropsOnArtifacts(t, resultItems, "github", actualOrg, actualRepo)
+
+	// Filter to only validate artifacts that are in build info
+	var buildInfoArtifacts []rtutils.ResultItem
+	for _, item := range resultItems {
+		for _, biName := range buildInfoArtifactNames {
+			if item.Name == biName {
+				buildInfoArtifacts = append(buildInfoArtifacts, item)
+				break
+			}
+		}
+	}
+	assert.Greater(t, len(buildInfoArtifacts), 0, "No build info artifacts found in search results")
+
+	// Validate CI VCS properties only on artifacts that are in build info
+	tests.ValidateCIVcsPropsOnArtifacts(t, buildInfoArtifacts, "github", actualOrg, actualRepo)
 }
