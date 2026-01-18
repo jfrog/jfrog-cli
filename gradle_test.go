@@ -643,7 +643,7 @@ func prepareGradleSetupTest(t *testing.T) func() {
 
 // TestGradleBuildPublishWithCIVcsProps tests that CI VCS properties are set on Gradle artifacts
 // when running build-publish in a CI environment (GitHub Actions).
-// This test uses civcsproject which has maven-publish configured with publishing repository.
+// This test uses FlexPack mode (JFROG_RUN_NATIVE=true) with native Gradle publish task.
 func TestGradleBuildPublishWithCIVcsProps(t *testing.T) {
 	initGradleTest(t)
 	buildName := "gradle-civcs-test"
@@ -653,15 +653,17 @@ func TestGradleBuildPublishWithCIVcsProps(t *testing.T) {
 	cleanupEnv, actualOrg, actualRepo := tests.SetupGitHubActionsEnv(t)
 	defer cleanupEnv()
 
+	// Enable FlexPack mode for native publish support
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_RUN_NATIVE", "true")
+	defer setEnvCallBack()
+
 	// Clean old build
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 
 	// Create Gradle project with maven-publish configured (dedicated project for CI VCS test)
+	// Note: No config file needed for FlexPack mode - it uses native publish
 	buildGradlePath := createGradleProject(t, "civcsproject")
-	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.GradleConfig)
-	destPath := filepath.Join(filepath.Dir(buildGradlePath), ".jfrog", "projects")
-	createConfigFile(destPath, configFilePath, t)
 
 	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
 	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
@@ -669,7 +671,7 @@ func TestGradleBuildPublishWithCIVcsProps(t *testing.T) {
 	// Windows compatibility
 	buildGradlePath = strings.ReplaceAll(buildGradlePath, `\`, "/")
 
-	// Run Gradle build with publish task (uses maven-publish plugin configured with Artifactory)
+	// Run Gradle build with native publish task (FlexPack captures artifacts)
 	runJfrogCli(t, "gradle", "clean", "publish", "-b"+buildGradlePath, "--build-name="+buildName, "--build-number="+buildNumber)
 
 	// Publish build info - should set CI VCS props on artifacts

@@ -40,6 +40,7 @@ publishing {
     repositories {
         maven {
             name = "Artifactory"
+            // URL uses template variables replaced by test framework
             url = uri("${URL}artifactory/${GRADLE_REPO}")
             credentials {
                 username = "${USERNAME}"
