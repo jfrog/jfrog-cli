@@ -34,7 +34,6 @@ import (
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
-	rtutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/auth"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
@@ -1309,31 +1308,32 @@ CMD ["echo", "Hello from CI VCS test"]`, baseImage)
 		return
 	}
 
-	// Get artifacts from build info - these are the only ones that should have CI VCS props
-	var buildInfoArtifactNames []string
+	// Create service manager for getting artifact properties
+	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
+	assert.NoError(t, err)
+
+	// Verify VCS properties on each artifact from build info
+	artifactCount := 0
 	for _, module := range publishedBuildInfo.BuildInfo.Modules {
 		for _, artifact := range module.Artifacts {
-			buildInfoArtifactNames = append(buildInfoArtifactNames, artifact.Name)
+			fullPath := artifact.OriginalDeploymentRepo + "/" + artifact.Path
+
+			props, err := serviceManager.GetItemProps(fullPath)
+			assert.NoError(t, err, "Failed to get properties for artifact: %s", fullPath)
+			assert.NotNil(t, props, "Properties are nil for artifact: %s", fullPath)
+
+			// Validate VCS properties
+			assert.Contains(t, props.Properties, "vcs.provider", "Missing vcs.provider on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.provider"], "github", "Wrong vcs.provider on %s", artifact.Name)
+
+			assert.Contains(t, props.Properties, "vcs.org", "Missing vcs.org on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.org"], actualOrg, "Wrong vcs.org on %s", artifact.Name)
+
+			assert.Contains(t, props.Properties, "vcs.repo", "Missing vcs.repo on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.repo"], actualRepo, "Wrong vcs.repo on %s", artifact.Name)
+
+			artifactCount++
 		}
 	}
-	assert.Greater(t, len(buildInfoArtifactNames), 0, "No Docker artifacts in build info")
-
-	// Search for deployed Docker artifacts
-	resultItems := getResultItemsFromArtifactory(tests.SearchAllOci, t)
-	assert.Greater(t, len(resultItems), 0, "No Docker artifacts found in repository")
-
-	// Filter to only validate artifacts that are in build info
-	var buildInfoArtifacts []rtutils.ResultItem
-	for _, item := range resultItems {
-		for _, biName := range buildInfoArtifactNames {
-			if item.Name == biName {
-				buildInfoArtifacts = append(buildInfoArtifacts, item)
-				break
-			}
-		}
-	}
-	assert.Greater(t, len(buildInfoArtifacts), 0, "No build info artifacts found in search results")
-
-	// Validate CI VCS properties only on artifacts that are in build info
-	tests.ValidateCIVcsPropsOnArtifacts(t, buildInfoArtifacts, "github", actualOrg, actualRepo)
+	assert.Greater(t, artifactCount, 0, "No artifacts in build info")
 }

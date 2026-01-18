@@ -772,27 +772,41 @@ func SkipTest(reason string) {
 }
 
 // SetupGitHubActionsEnv enables CI VCS property collection for a test.
-// It unsets JFROG_CLI_CI_VCS_PROPS_DISABLED and returns the org/repo from GitHub Actions env vars.
+// When running on GitHub Actions, it uses the real environment variables.
+// When running locally, it sets mock CI environment variables.
 // Returns a cleanup function and the actual org/repo values to use for validation.
-// Note: This function should only be called when running on GitHub Actions.
 func SetupGitHubActionsEnv(t *testing.T) (cleanup func(), actualOrg, actualRepo string) {
 	callbacks := []func(){}
 
 	// Enable CI VCS property collection for this test (unset the disable flag)
 	callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "JFROG_CLI_CI_VCS_PROPS_DISABLED", ""))
 
-	// Extract org and repo from GITHUB_REPOSITORY (format: "owner/repo")
-	ghRepo := os.Getenv("GITHUB_REPOSITORY")
-	if ghRepo != "" {
-		parts := strings.Split(ghRepo, "/")
-		if len(parts) == 2 {
-			actualOrg = parts[0]
-			actualRepo = parts[1]
+	// Check if we're running on GitHub Actions
+	if os.Getenv("GITHUB_ACTIONS") == "true" {
+		// Running on CI - use real environment variables
+		ghRepo := os.Getenv("GITHUB_REPOSITORY")
+		if ghRepo != "" {
+			parts := strings.Split(ghRepo, "/")
+			if len(parts) == 2 {
+				actualOrg = parts[0]
+				actualRepo = parts[1]
+			}
 		}
-	}
-	// If we couldn't parse, use the owner directly
-	if actualOrg == "" {
-		actualOrg = os.Getenv("GITHUB_REPOSITORY_OWNER")
+		if actualOrg == "" {
+			actualOrg = os.Getenv("GITHUB_REPOSITORY_OWNER")
+		}
+	} else {
+		// Running locally - set mock CI environment variables
+		actualOrg = "test-org"
+		actualRepo = "test-repo"
+
+		// Set the required CI environment variables for cienv.GetCIVcsInfo() to detect CI
+		callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "CI", "true"))
+		callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "GITHUB_ACTIONS", "true"))
+		callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "GITHUB_WORKFLOW", "test"))
+		callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "GITHUB_RUN_ID", "12345"))
+		callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "GITHUB_REPOSITORY_OWNER", actualOrg))
+		callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "GITHUB_REPOSITORY", actualOrg+"/"+actualRepo))
 	}
 
 	cleanup = func() {

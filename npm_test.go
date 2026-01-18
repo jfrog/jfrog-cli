@@ -1302,13 +1302,40 @@ func TestNpmBuildPublishWithCIVcsProps(t *testing.T) {
 	// Publish build info - should set CI VCS props on artifacts
 	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
 
-	// Restore working directory before searching (getResultItemsFromArtifactory uses os.Getwd)
+	// Restore working directory
 	clientTestUtils.ChangeDirAndAssert(t, wd)
 
-	// Search for published npm package
-	resultItems := getResultItemsFromArtifactory(tests.SearchAllNpm, t)
+	// Get the published build info to find artifact paths
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	assert.NoError(t, err)
+	assert.True(t, found, "Build info was not found")
 
-	// Validate CI VCS properties are set on npm artifacts
-	assert.Greater(t, len(resultItems), 0, "No npm artifacts found")
-	tests.ValidateCIVcsPropsOnArtifacts(t, resultItems, "github", actualOrg, actualRepo)
+	// Create service manager for getting artifact properties
+	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
+	assert.NoError(t, err)
+
+	// Verify VCS properties on each artifact from build info
+	artifactCount := 0
+	for _, module := range publishedBuildInfo.BuildInfo.Modules {
+		for _, artifact := range module.Artifacts {
+			fullPath := artifact.OriginalDeploymentRepo + "/" + artifact.Path
+
+			props, err := serviceManager.GetItemProps(fullPath)
+			assert.NoError(t, err, "Failed to get properties for artifact: %s", fullPath)
+			assert.NotNil(t, props, "Properties are nil for artifact: %s", fullPath)
+
+			// Validate VCS properties
+			assert.Contains(t, props.Properties, "vcs.provider", "Missing vcs.provider on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.provider"], "github", "Wrong vcs.provider on %s", artifact.Name)
+
+			assert.Contains(t, props.Properties, "vcs.org", "Missing vcs.org on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.org"], actualOrg, "Wrong vcs.org on %s", artifact.Name)
+
+			assert.Contains(t, props.Properties, "vcs.repo", "Missing vcs.repo on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.repo"], actualRepo, "Wrong vcs.repo on %s", artifact.Name)
+
+			artifactCount++
+		}
+	}
+	assert.Greater(t, artifactCount, 0, "No artifacts in build info")
 }
