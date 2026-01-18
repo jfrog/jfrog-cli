@@ -1,5 +1,10 @@
+import org.gradle.util.GradleVersion
+
 apply plugin: 'java'
 apply plugin: 'maven-publish'
+
+// Check if Gradle version supports allowInsecureProtocol (6.2+)
+def supportsInsecureProtocol = GradleVersion.current() >= GradleVersion.version("6.2")
 
 repositories {
     mavenCentral()
@@ -35,12 +40,15 @@ publishing {
     repositories {
         maven {
             name = "Artifactory"
-            url = uri("${URL}artifactory/${REPO1}")
+            url = uri("${URL}artifactory/${GRADLE_REPO}")
             credentials {
                 username = "${USERNAME}"
                 password = "${PASSWORD}"
             }
-            allowInsecureProtocol = true
+            // Only set allowInsecureProtocol for Gradle 6.2+ (when using HTTP)
+            if (supportsInsecureProtocol) {
+                allowInsecureProtocol = true
+            }
         }
     }
 }
