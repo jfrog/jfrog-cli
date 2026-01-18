@@ -1316,7 +1316,12 @@ CMD ["echo", "Hello from CI VCS test"]`, baseImage)
 	artifactCount := 0
 	for _, module := range publishedBuildInfo.BuildInfo.Modules {
 		for _, artifact := range module.Artifacts {
-			fullPath := artifact.OriginalDeploymentRepo + "/" + artifact.Path
+			// Docker artifacts may have empty OriginalDeploymentRepo - use the known repo
+			repo := artifact.OriginalDeploymentRepo
+			if repo == "" {
+				repo = tests.OciLocalRepo
+			}
+			fullPath := repo + "/" + artifact.Path
 
 			props, err := serviceManager.GetItemProps(fullPath)
 			assert.NoError(t, err, "Failed to get properties for artifact: %s", fullPath)
