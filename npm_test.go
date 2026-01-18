@@ -1207,11 +1207,10 @@ func isNpm7(npmVersion *version.Version) bool {
 func TestGenericNpm(t *testing.T) {
 	initNpmTest(t)
 	defer cleanNpmTest(t)
-	npmPath := initNpmProjectTest(t)
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
-	chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, npmPath)
-	defer chdirCallBack()
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+	initNpmProjectTest(t)
 
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	args := []string{"npm", "version"}
@@ -1271,4 +1270,45 @@ func containsTarName(tarName string, expectedTars []string) bool {
 		break
 	}
 	return isTarPresent
+}
+
+// TestNpmBuildPublishWithCIVcsProps tests that CI VCS properties are set on npm artifacts
+// when running build-publish in a CI environment (GitHub Actions).
+func TestNpmBuildPublishWithCIVcsProps(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+
+	buildName := "npm-civcs-test"
+	buildNumber := "1"
+
+	// Setup GitHub Actions environment (uses real env vars on CI, mock values locally)
+	cleanupEnv, actualOrg, actualRepo := tests.SetupGitHubActionsEnv(t)
+	defer cleanupEnv()
+
+	// Clean old build
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	// Setup npm project (this changes the working directory)
+	initNpmProjectTest(t)
+
+	// Run npm publish with build info collection
+	runJfrogCli(t, "npm", "publish", "--build-name="+buildName, "--build-number="+buildNumber)
+
+	// Publish build info - should set CI VCS props on artifacts
+	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	// Restore working directory before searching (getResultItemsFromArtifactory uses os.Getwd)
+	clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	// Search for published npm package
+	resultItems := getResultItemsFromArtifactory(tests.SearchAllNpm, t)
+
+	// Validate CI VCS properties are set on npm artifacts
+	assert.Greater(t, len(resultItems), 0, "No npm artifacts found")
+	tests.ValidateCIVcsPropsOnArtifacts(t, resultItems, "github", actualOrg, actualRepo)
 }

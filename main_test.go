@@ -53,6 +53,13 @@ func setupIntegrationTests() {
 		clientlog.Error(fmt.Sprintf("Couldn't set env: %s. Error: %s", coreutils.CI, err.Error()))
 		os.Exit(1)
 	}
+	// Disable CI VCS property collection by default for all tests.
+	// Tests that specifically test CI VCS props will unset this flag.
+	err = os.Setenv("JFROG_CLI_CI_VCS_PROPS_DISABLED", "true")
+	if err != nil {
+		clientlog.Error(fmt.Sprintf("Couldn't set env: JFROG_CLI_CI_VCS_PROPS_DISABLED. Error: %s", err.Error()))
+		os.Exit(1)
+	}
 	flag.Parse()
 	log.SetDefaultLogger()
 	validateCmdAliasesUniqueness()
