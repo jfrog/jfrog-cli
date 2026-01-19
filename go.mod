@@ -299,4 +299,4 @@ replace github.com/gfleury/go-bitbucket-v1 => github.com/gfleury/go-bitbucket-v1
 // Local development replaces
 replace github.com/jfrog/build-info-go => github.com/bhanurp/build-info-go v1.10.10-0.20260116061627-18c4e0c011a2
 
-replace github.com/jfrog/jfrog-cli-artifactory => github.com/bhanurp/jfrog-cli-artifactory v0.1.12-0.20260118074326-7270c56a58a4
+replace github.com/jfrog/jfrog-cli-artifactory => github.com/bhanurp/jfrog-cli-artifactory v0.1.12-0.20260119065635-f5c37e665300
