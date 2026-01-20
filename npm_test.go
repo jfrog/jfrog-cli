@@ -681,15 +681,14 @@ func TestNpmPublishWithDeploymentView(t *testing.T) {
 	defer cleanNpmTest(t)
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
-	defer clientTestUtils.ChangeDirAndAssert(t, wd)
-	initNpmProjectTest(t)
+	npmPath := initNpmProjectTest(t)
+	chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, npmPath)
+	defer chdirCallBack()
 	assertPrintedDeploymentViewFunc, cleanupFunc := initDeploymentViewTest(t)
 	defer cleanupFunc()
 	runGenericNpm(t, "npm", "publish")
 	// Check deployment view
 	assertPrintedDeploymentViewFunc()
-	// Restore workspace
-	clientTestUtils.ChangeDirAndAssert(t, wd)
 }
 
 func TestNpmPackInstall(t *testing.T) {
@@ -1209,8 +1208,9 @@ func TestGenericNpm(t *testing.T) {
 	defer cleanNpmTest(t)
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
-	defer clientTestUtils.ChangeDirAndAssert(t, wd)
-	initNpmProjectTest(t)
+	npmPath := initNpmProjectTest(t)
+	chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, npmPath)
+	defer chdirCallBack()
 
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	args := []string{"npm", "version"}
@@ -1291,10 +1291,11 @@ func TestNpmBuildPublishWithCIVcsProps(t *testing.T) {
 
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
-	defer clientTestUtils.ChangeDirAndAssert(t, wd)
 
-	// Setup npm project (this changes the working directory)
-	initNpmProjectTest(t)
+	// Setup npm project and change to that directory
+	npmPath := initNpmProjectTest(t)
+	chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, npmPath)
+	defer chdirCallBack()
 
 	// Run npm publish with build info collection
 	runJfrogCli(t, "npm", "publish", "--build-name="+buildName, "--build-number="+buildNumber)
@@ -1302,7 +1303,7 @@ func TestNpmBuildPublishWithCIVcsProps(t *testing.T) {
 	// Publish build info - should set CI VCS props on artifacts
 	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
 
-	// Restore working directory
+	// Restore working directory before getting build info
 	clientTestUtils.ChangeDirAndAssert(t, wd)
 
 	// Get the published build info to find artifact paths
