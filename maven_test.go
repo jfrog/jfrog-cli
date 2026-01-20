@@ -668,3 +668,62 @@ func readConfigFileCreated(t *testing.T) commands.ConfigFile {
 	assert.NoError(t, err)
 	return configFile
 }
+
+// TestMavenBuildPublishWithCIVcsProps tests that CI VCS properties are set on Maven artifacts
+// when running build-publish in a CI environment (GitHub Actions).
+func TestMavenBuildPublishWithCIVcsProps(t *testing.T) {
+	initMavenTest(t, false)
+	buildName := tests.MvnBuildName + "-civcs"
+	buildNumber := "1"
+
+	// Setup GitHub Actions environment (uses real env vars on CI, mock values locally)
+	cleanupEnv, actualOrg, actualRepo := tests.SetupGitHubActionsEnv(t)
+	defer cleanupEnv()
+
+	// Clean old build
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	// Run Maven build with build info collection
+	err := runMaven(t, createSimpleMavenProject, tests.MavenConfig, "install", "--build-name="+buildName, "--build-number="+buildNumber)
+	assert.NoError(t, err)
+
+	// Publish build info - should set CI VCS props on artifacts
+	runRt(t, "build-publish", buildName, buildNumber)
+
+	// Get the published build info to find artifact paths
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	assert.NoError(t, err)
+	assert.True(t, found, "Build info was not found")
+
+	// Create service manager for getting artifact properties
+	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
+	assert.NoError(t, err)
+
+	// Verify VCS properties on each artifact from build info
+	artifactCount := 0
+	for _, module := range publishedBuildInfo.BuildInfo.Modules {
+		for _, artifact := range module.Artifacts {
+			fullPath := artifact.OriginalDeploymentRepo + "/" + artifact.Path
+
+			props, err := serviceManager.GetItemProps(fullPath)
+			assert.NoError(t, err, "Failed to get properties for artifact: %s", fullPath)
+			assert.NotNil(t, props, "Properties are nil for artifact: %s", fullPath)
+
+			// Validate VCS properties
+			assert.Contains(t, props.Properties, "vcs.provider", "Missing vcs.provider on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.provider"], "github", "Wrong vcs.provider on %s", artifact.Name)
+
+			assert.Contains(t, props.Properties, "vcs.org", "Missing vcs.org on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.org"], actualOrg, "Wrong vcs.org on %s", artifact.Name)
+
+			assert.Contains(t, props.Properties, "vcs.repo", "Missing vcs.repo on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.repo"], actualRepo, "Wrong vcs.repo on %s", artifact.Name)
+
+			artifactCount++
+		}
+	}
+	assert.Greater(t, artifactCount, 0, "No artifacts in build info")
+
+	cleanMavenTest(t)
+}

@@ -1247,3 +1247,98 @@ func TestContainerFatManifestPullWithSha(t *testing.T) {
 	}
 
 }
+
+// TestDockerBuildPublishWithCIVcsProps tests that CI VCS properties are set on Docker artifacts
+// when running build-publish in a CI environment (GitHub Actions).
+func TestDockerBuildPublishWithCIVcsProps(t *testing.T) {
+	cleanup := initDockerBuildTest(t)
+	defer cleanup()
+
+	buildName := "docker-civcs-test"
+	buildNumber := "1"
+
+	// Setup GitHub Actions environment (uses real env vars on CI, mock values locally)
+	cleanupEnv, actualOrg, actualRepo := tests.SetupGitHubActionsEnv(t)
+	defer cleanupEnv()
+
+	// Clean old build
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	// Extract hostname from ContainerRegistry
+	registryHost := *tests.ContainerRegistry
+	if parsedURL, err := url.Parse(registryHost); err == nil && parsedURL.Host != "" {
+		registryHost = parsedURL.Host
+	}
+
+	// Construct image name
+	imageName := path.Join(registryHost, tests.OciLocalRepo, "test-civcs-docker")
+	imageTag := imageName + ":v1"
+
+	// Create test workspace
+	workspace, err := filepath.Abs(tests.Out)
+	assert.NoError(t, err)
+	assert.NoError(t, fileutils.CreateDirIfNotExist(workspace))
+
+	// Create simple Dockerfile
+	baseImage := path.Join(registryHost, tests.OciRemoteRepo, "alpine:latest")
+	dockerfileContent := fmt.Sprintf(`FROM %s
+CMD ["echo", "Hello from CI VCS test"]`, baseImage)
+
+	dockerfilePath := filepath.Join(workspace, "Dockerfile")
+	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644))
+
+	// Clean build before test
+	runJfrogCli(t, "rt", "bc", buildName, buildNumber)
+
+	// Run docker build with build-info
+	runJfrogCli(t, "docker", "build", "-t", imageTag, "--push", "-f", dockerfilePath, "--build-name="+buildName, "--build-number="+buildNumber, workspace)
+
+	// Publish build info - should set CI VCS props on Docker layers
+	runRt(t, "build-publish", buildName, buildNumber)
+
+	// Validate build info was published with artifacts
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+
+	// Create service manager for getting artifact properties
+	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
+	assert.NoError(t, err)
+
+	// Verify VCS properties on each artifact from build info
+	artifactCount := 0
+	for _, module := range publishedBuildInfo.BuildInfo.Modules {
+		for _, artifact := range module.Artifacts {
+			// Docker artifacts may have empty OriginalDeploymentRepo - use the known repo
+			repo := artifact.OriginalDeploymentRepo
+			if repo == "" {
+				repo = tests.OciLocalRepo
+			}
+			fullPath := repo + "/" + artifact.Path
+
+			props, err := serviceManager.GetItemProps(fullPath)
+			assert.NoError(t, err, "Failed to get properties for artifact: %s", fullPath)
+			assert.NotNil(t, props, "Properties are nil for artifact: %s", fullPath)
+
+			// Validate VCS properties
+			assert.Contains(t, props.Properties, "vcs.provider", "Missing vcs.provider on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.provider"], "github", "Wrong vcs.provider on %s", artifact.Name)
+
+			assert.Contains(t, props.Properties, "vcs.org", "Missing vcs.org on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.org"], actualOrg, "Wrong vcs.org on %s", artifact.Name)
+
+			assert.Contains(t, props.Properties, "vcs.repo", "Missing vcs.repo on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.repo"], actualRepo, "Wrong vcs.repo on %s", artifact.Name)
+
+			artifactCount++
+		}
+	}
+	assert.Greater(t, artifactCount, 0, "No artifacts in build info")
+}

@@ -770,3 +770,148 @@ func SkipTest(reason string) {
 	log.Info(reason)
 	os.Exit(0)
 }
+
+// SetupGitHubActionsEnv enables CI VCS property collection for a test.
+// When running on GitHub Actions, it uses the real environment variables.
+// When running locally, it sets mock CI environment variables.
+// Returns a cleanup function and the actual org/repo values to use for validation.
+func SetupGitHubActionsEnv(t *testing.T) (cleanup func(), actualOrg, actualRepo string) {
+	callbacks := []func(){}
+
+	// Enable CI VCS property collection for this test (unset the disable flag)
+	callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "JFROG_CLI_CI_VCS_PROPS_DISABLED", ""))
+
+	// Check if we're running on GitHub Actions
+	if os.Getenv("GITHUB_ACTIONS") == "true" {
+		// Running on CI - use real environment variables
+		ghRepo := os.Getenv("GITHUB_REPOSITORY")
+		if ghRepo != "" {
+			parts := strings.Split(ghRepo, "/")
+			if len(parts) == 2 {
+				actualOrg = parts[0]
+				actualRepo = parts[1]
+			}
+		}
+		if actualOrg == "" {
+			actualOrg = os.Getenv("GITHUB_REPOSITORY_OWNER")
+		}
+	} else {
+		// Running locally - set mock CI environment variables
+		actualOrg = "test-org"
+		actualRepo = "test-repo"
+
+		// Set the required CI environment variables for cienv.GetCIVcsInfo() to detect CI
+		callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "CI", "true"))
+		callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "GITHUB_ACTIONS", "true"))
+		callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "GITHUB_WORKFLOW", "test"))
+		callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "GITHUB_RUN_ID", "12345"))
+		callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "GITHUB_REPOSITORY_OWNER", actualOrg))
+		callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "GITHUB_REPOSITORY", actualOrg+"/"+actualRepo))
+	}
+
+	cleanup = func() {
+		for _, cb := range callbacks {
+			cb()
+		}
+	}
+	return cleanup, actualOrg, actualRepo
+}
+
+// ValidateCIVcsPropsOnArtifacts validates that CI VCS properties are set on artifacts.
+func ValidateCIVcsPropsOnArtifacts(t *testing.T, resultItems []utils.ResultItem, expectedProvider, expectedOrg, expectedRepo string) {
+	for _, item := range resultItems {
+		propertiesMap := ConvertPropertiesToMap(item.Properties)
+
+		// Validate vcs.provider
+		if expectedProvider != "" {
+			vals, ok := propertiesMap["vcs.provider"]
+			assert.True(t, ok, "Missing vcs.provider on %s", item.Name)
+			assert.Contains(t, vals, expectedProvider, "Wrong vcs.provider on %s", item.Name)
+		}
+
+		// Validate vcs.org
+		if expectedOrg != "" {
+			vals, ok := propertiesMap["vcs.org"]
+			assert.True(t, ok, "Missing vcs.org on %s", item.Name)
+			assert.Contains(t, vals, expectedOrg, "Wrong vcs.org on %s", item.Name)
+		}
+
+		// Validate vcs.repo
+		if expectedRepo != "" {
+			vals, ok := propertiesMap["vcs.repo"]
+			assert.True(t, ok, "Missing vcs.repo on %s", item.Name)
+			assert.Contains(t, vals, expectedRepo, "Wrong vcs.repo on %s", item.Name)
+		}
+	}
+}
+
+// ConvertPropertiesToMap converts a slice of Property to a map for easier lookup.
+func ConvertPropertiesToMap(properties []utils.Property) map[string][]string {
+	propsMap := make(map[string][]string)
+	for _, prop := range properties {
+		propsMap[prop.Key] = append(propsMap[prop.Key], prop.Value)
+	}
+	return propsMap
+}
+
+// ValidateNoCIVcsPropsOnArtifacts validates that CI VCS properties are NOT set on artifacts.
+func ValidateNoCIVcsPropsOnArtifacts(t *testing.T, resultItems []utils.ResultItem) {
+	for _, item := range resultItems {
+		propertiesMap := ConvertPropertiesToMap(item.Properties)
+		_, hasProvider := propertiesMap["vcs.provider"]
+		_, hasOrg := propertiesMap["vcs.org"]
+		_, hasRepo := propertiesMap["vcs.repo"]
+		assert.False(t, hasProvider, "vcs.provider should not be set when not in CI on %s", item.Name)
+		assert.False(t, hasOrg, "vcs.org should not be set when not in CI on %s", item.Name)
+		assert.False(t, hasRepo, "vcs.repo should not be set when not in CI on %s", item.Name)
+	}
+}
+
+// ValidateCIVcsPropsIfPresent validates CI VCS properties only if at least one artifact has them.
+// This is useful for build tools where OriginalDeploymentRepo may not always be set.
+// Logs a warning if no artifacts have CI VCS properties.
+func ValidateCIVcsPropsIfPresent(t *testing.T, resultItems []utils.ResultItem, expectedProvider, expectedOrg, expectedRepo string) {
+	// Check if any artifact has CI VCS properties
+	hasProps := false
+	for _, item := range resultItems {
+		propertiesMap := ConvertPropertiesToMap(item.Properties)
+		if _, ok := propertiesMap["vcs.provider"]; ok {
+			hasProps = true
+			break
+		}
+	}
+
+	if !hasProps {
+		t.Log("Warning: No artifacts have CI VCS properties set. " +
+			"This may indicate OriginalDeploymentRepo is not populated in build-info.")
+		return
+	}
+
+	// Validate all artifacts that have properties
+	for _, item := range resultItems {
+		propertiesMap := ConvertPropertiesToMap(item.Properties)
+
+		// Only validate if the artifact has any VCS property
+		if _, hasAny := propertiesMap["vcs.provider"]; !hasAny {
+			continue
+		}
+
+		if expectedProvider != "" {
+			vals, ok := propertiesMap["vcs.provider"]
+			assert.True(t, ok, "Missing vcs.provider on %s", item.Name)
+			assert.Contains(t, vals, expectedProvider, "Wrong vcs.provider on %s", item.Name)
+		}
+
+		if expectedOrg != "" {
+			vals, ok := propertiesMap["vcs.org"]
+			assert.True(t, ok, "Missing vcs.org on %s", item.Name)
+			assert.Contains(t, vals, expectedOrg, "Wrong vcs.org on %s", item.Name)
+		}
+
+		if expectedRepo != "" {
+			vals, ok := propertiesMap["vcs.repo"]
+			assert.True(t, ok, "Missing vcs.repo on %s", item.Name)
+			assert.Contains(t, vals, expectedRepo, "Wrong vcs.repo on %s", item.Name)
+		}
+	}
+}
