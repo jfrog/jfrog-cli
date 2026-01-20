@@ -151,7 +151,7 @@ func TestReleaseBundleCreationFromMultipleBuildsAndBundlesUsingCommandFlags(t *t
 }
 
 func TestReleaseBundleCreationFromMultipleSourcesUsingSpec(t *testing.T) {
-	t.Skip("JGC-412 - Skipping TestReleaseBundleCreationFromMultipleSourcesUsingSpec")
+	//t.Skip("JGC-412 - Skipping TestReleaseBundleCreationFromMultipleSourcesUsingSpec")
 
 	cleanCallback := initLifecycleTest(t, minMultiSourcesArtifactoryVersion)
 	defer cleanCallback()
