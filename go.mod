@@ -10,7 +10,7 @@ replace (
 )
 
 require (
-	github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
+	github.com/projectdiscovery/nuclei/v3 v3.3.5
 	github.com/BurntSushi/toml v1.5.0
 	github.com/agnivade/levenshtein v1.2.1
 	github.com/buger/jsonparser v1.1.1
