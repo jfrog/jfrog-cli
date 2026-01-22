@@ -2920,6 +2920,59 @@ func TestArtifactoryIncludeDirFlatNonEmptyFolderUploadMatchingPattern(t *testing
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryUploadWithIncludeDirsAndDryRun(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Create test directory structure with files and empty directories
+	dirInnerPath := filepath.Join("inner", "folder")
+	canonicalPath := tests.Out + fileutils.GetFileSeparator() + dirInnerPath
+	err := os.MkdirAll(canonicalPath, 0777)
+	assert.NoError(t, err)
+
+	// Create a test file in the nested directory
+	testFile := filepath.Join(canonicalPath, "test.txt")
+	err = os.WriteFile(testFile, []byte("test content"), 0644)
+	assert.NoError(t, err)
+
+	// Create an empty directory
+	emptyDirPath := tests.Out + fileutils.GetFileSeparator() + "empty"
+	err = os.MkdirAll(emptyDirPath, 0777)
+	assert.NoError(t, err)
+
+	// Upload with include-dirs and dry-run - should not upload anything
+	runRt(t, "upload", tests.Out+"/", tests.RtRepo1, "--recursive=true", "--include-dirs=true", "--flat=false", "--dry-run")
+
+	// Verify nothing was uploaded by searching for files and directories
+	searchFilePath, err := tests.CreateSpec(tests.SearchRepo1IncludeDirs)
+	assert.NoError(t, err)
+
+	// Search should return empty results since dry-run prevents actual upload
+	resultItems := searchItemsInArtifactory(t, tests.SearchRepo1IncludeDirs)
+	assert.Empty(t, resultItems, "Files should not be uploaded with dry-run flag")
+
+	// Verify empty directory was not created
+	verifyDoesntExistInArtifactory(searchFilePath, t)
+
+	// Now upload without dry-run - should upload files and directories
+	runRt(t, "upload", tests.Out+"/", tests.RtRepo1, "--recursive=true", "--include-dirs=true", "--flat=false")
+
+	// Verify files and directories were uploaded
+	resultItems = searchItemsInArtifactory(t, tests.SearchRepo1IncludeDirs)
+	assert.NotEmpty(t, resultItems, "Files and directories should be uploaded without dry-run")
+
+	// Verify we can download the uploaded structure
+	clientTestUtils.RemoveAllAndAssert(t, tests.Out)
+	runRt(t, "download", tests.RtRepo1, tests.Out+"/", "--include-dirs=true", "--recursive=true")
+
+	// Verify the directory structure was downloaded
+	assert.True(t, fileutils.IsPathExists(filepath.Join(tests.Out, "inner", "folder", "test.txt"), false),
+		"File should exist after download")
+	assert.True(t, fileutils.IsPathExists(filepath.Join(tests.Out, "empty"), false),
+		"Empty directory should exist after download")
+
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryDirectDownload(t *testing.T) {
 	initArtifactoryTest(t, "")
 
