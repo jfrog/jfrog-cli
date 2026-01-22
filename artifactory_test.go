@@ -2991,11 +2991,14 @@ func TestArtifactoryUploadWithIncludeDirsAndDryRun(t *testing.T) {
 	clientTestUtils.RemoveAllAndAssert(t, tests.Out)
 	runRt(t, "download", tests.RtRepo1+"/"+uploadPath+"/", tests.Out+"/", "--include-dirs=true", "--recursive=true")
 
-	// Verify the directory structure was downloaded (accounting for the upload path)
-	assert.True(t, fileutils.IsPathExists(filepath.Join(tests.Out, "inner", "folder", "test.txt"), false),
-		"File should exist after download")
-	assert.True(t, fileutils.IsPathExists(filepath.Join(tests.Out, "empty"), false),
-		"Empty directory should exist after download")
+	// Verify the directory structure was downloaded
+	// The upload path preserves the "out/" directory, so files are at dry-run-test/out/...
+	expectedFilePath := filepath.Join(tests.Out, uploadPath, "out", "inner", "folder", "test.txt")
+	assert.True(t, fileutils.IsPathExists(expectedFilePath, false),
+		"File should exist after download at: %s", expectedFilePath)
+	expectedEmptyDirPath := filepath.Join(tests.Out, uploadPath, "out", "empty")
+	assert.True(t, fileutils.IsPathExists(expectedEmptyDirPath, false),
+		"Empty directory should exist after download at: %s", expectedEmptyDirPath)
 
 	cleanArtifactoryTest()
 }
