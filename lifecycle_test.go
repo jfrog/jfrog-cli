@@ -150,6 +150,38 @@ func TestReleaseBundleCreationFromMultipleBuildsAndBundlesUsingCommandFlags(t *t
 	assertStatusCompleted(t, lcManager, tests.LcRbName3, number3, "")
 }
 
+func TestReleaseBundleCreationFromMultiBundlesUsingCommandFlagWithProject(t *testing.T) {
+	cleanCallback := initLifecycleTest(t, minMultiSourcesArtifactoryVersion)
+	defer cleanCallback()
+	deleteProject := createTestProject(t)
+	if deleteProject != nil {
+		defer func() {
+			if err := deleteProject(); err != nil {
+				t.Error(err)
+			}
+		}()
+	}
+	lcManager := getLcServiceManager(t)
+
+	deleteBuilds := uploadBuildsWithProject(t)
+	defer deleteBuilds()
+
+	// Create first release bundle from builds with project
+	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, tests.LcRbName1, number1, tests.ProjectKey, true, true)
+	defer deleteReleaseBundleWithProject(t, lcManager, tests.LcRbName1, number1, tests.ProjectKey)
+	assertStatusCompletedWithProject(t, lcManager, tests.LcRbName1, number1, "", tests.ProjectKey)
+
+	// Create second release bundle from builds with project
+	createRbWithFlags(t, "", "", tests.LcBuildName2, number2, tests.LcRbName2, number2, tests.ProjectKey, true, true)
+	defer deleteReleaseBundleWithProject(t, lcManager, tests.LcRbName2, number2, tests.ProjectKey)
+	assertStatusCompletedWithProject(t, lcManager, tests.LcRbName2, number2, "", tests.ProjectKey)
+
+	// Create release bundle from the two previous release bundles with project
+	createRbFromMultiSourcesUsingCommandFlags(t, lcManager, "", createReleaseBundlesSource(), tests.LcRbName3, number3, tests.ProjectKey, true)
+	defer deleteReleaseBundleWithProject(t, lcManager, tests.LcRbName3, number3, tests.ProjectKey)
+	assertStatusCompletedWithProject(t, lcManager, tests.LcRbName3, number3, "", tests.ProjectKey)
+}
+
 func TestReleaseBundleCreationFromMultipleSourcesUsingSpec(t *testing.T) {
 
 	cleanCallback := initLifecycleTest(t, minMultiSourcesArtifactoryVersion)
