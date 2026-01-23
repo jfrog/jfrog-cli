@@ -256,6 +256,20 @@ func createRbFromMultiSourcesUsingCommandFlags(t *testing.T, lcManager *lifecycl
 	assert.NoError(t, err)
 }
 
+func populateRepositoryKeyForReleaseBundleSources(sources []services.RbSource) {
+	if len(sources) == 0 || sources[0].SourceType != "release_bundles" {
+		return
+	}
+	for i := range sources {
+		for j := range sources[i].ReleaseBundles {
+			rb := &sources[i].ReleaseBundles[j]
+			if rb.ProjectKey != "" {
+				rb.RepositoryKey = rb.ProjectKey + "-release-bundles-v2"
+			}
+		}
+	}
+}
+
 func buildMultiSources(sources []services.RbSource, buildsSourcesStr, bundlesSourcesStr, projectKey string) []services.RbSource {
 	// Process Builds
 	if buildsSourcesStr != "" {
@@ -265,6 +279,9 @@ func buildMultiSources(sources []services.RbSource, buildsSourcesStr, bundlesSou
 	// Process Release Bundles
 	if bundlesSourcesStr != "" {
 		sources = buildMultiBundleSources(sources, bundlesSourcesStr, projectKey)
+		if projectKey != "" {
+			populateRepositoryKeyForReleaseBundleSources(sources)
+		}
 	}
 
 	return sources
