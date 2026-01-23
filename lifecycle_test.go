@@ -190,7 +190,7 @@ func TestReleaseBundleCreationFromMultiBundlesUsingCommandFlagWithProject(t *tes
 	time.Sleep(5 * time.Second)
 
 	// Create release bundle from the two previous release bundles with project
-	createRbFromMultiSourcesUsingCommandFlags(t, lcManager, "", createReleaseBundlesSource(), tests.LcRbName3, number3, tests.ProjectKey, true)
+	createRbFromMultiSourcesUsingCommandFlagsWithProject(t, lcManager, "", createReleaseBundlesSource(), tests.LcRbName3, number3, tests.ProjectKey, true)
 	defer deleteReleaseBundleWithProject(t, lcManager, tests.LcRbName3, number3, tests.ProjectKey)
 	assertStatusCompletedWithProject(t, lcManager, tests.LcRbName3, number3, "", tests.ProjectKey)
 }
@@ -256,15 +256,41 @@ func createRbFromMultiSourcesUsingCommandFlags(t *testing.T, lcManager *lifecycl
 	assert.NoError(t, err)
 }
 
-func populateRepositoryKeyForReleaseBundleSources(sources []services.RbSource) {
-	if len(sources) == 0 || sources[0].SourceType != "release_bundles" {
+//nolint:unparam // sync parameter is kept for API consistency with existing tests
+func createRbFromMultiSourcesUsingCommandFlagsWithProject(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, buildsSourcesOption, bundlesSourcesOption,
+	rbName, rbVersion, project string, sync bool,
+) {
+	var sources []services.RbSource
+	sources = buildMultiSources(sources, buildsSourcesOption, bundlesSourcesOption, project)
+	// For projects (non-default), populate repository key for release bundle sources
+	if project != "" && project != "default" {
+		populateRepositoryKeyForReleaseBundleSourcesWithProject(sources, project)
+	}
+
+	rbDetails := services.ReleaseBundleDetails{
+		ReleaseBundleName:    rbName,
+		ReleaseBundleVersion: rbVersion,
+	}
+	queryParams := services.CommonOptionalQueryParams{
+		Async:      !sync,
+		ProjectKey: project,
+	}
+
+	_, err := lcManager.CreateReleaseBundlesFromMultipleSources(rbDetails, queryParams, gpgKeyPairName, sources)
+	assert.NoError(t, err)
+}
+
+func populateRepositoryKeyForReleaseBundleSourcesWithProject(sources []services.RbSource, projectKey string) {
+	if projectKey == "" || projectKey == "default" {
 		return
 	}
 	for i := range sources {
-		for j := range sources[i].ReleaseBundles {
-			rb := &sources[i].ReleaseBundles[j]
-			if rb.ProjectKey != "" {
-				rb.RepositoryKey = rb.ProjectKey + "-release-bundles-v2"
+		if sources[i].SourceType == "release_bundles" {
+			for j := range sources[i].ReleaseBundles {
+				rb := &sources[i].ReleaseBundles[j]
+				if rb.ProjectKey != "" && rb.ProjectKey != "default" {
+					rb.RepositoryKey = rb.ProjectKey + "-release-bundles-v2"
+				}
 			}
 		}
 	}
@@ -279,9 +305,6 @@ func buildMultiSources(sources []services.RbSource, buildsSourcesStr, bundlesSou
 	// Process Release Bundles
 	if bundlesSourcesStr != "" {
 		sources = buildMultiBundleSources(sources, bundlesSourcesStr, projectKey)
-		if projectKey != "" {
-			populateRepositoryKeyForReleaseBundleSources(sources)
-		}
 	}
 
 	return sources
