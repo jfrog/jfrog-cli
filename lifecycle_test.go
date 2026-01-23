@@ -171,10 +171,23 @@ func TestReleaseBundleCreationFromMultiBundlesUsingCommandFlagWithProject(t *tes
 	defer deleteReleaseBundleWithProject(t, lcManager, tests.LcRbName1, number1, tests.ProjectKey)
 	assertStatusCompletedWithProject(t, lcManager, tests.LcRbName1, number1, "", tests.ProjectKey)
 
+	// Verify first release bundle exists with project
+	isExist, err := lcManager.IsReleaseBundleExist(tests.LcRbName1, number1, tests.ProjectKey)
+	assert.NoError(t, err)
+	assert.True(t, isExist, "Release bundle %s/%s should exist in project %s", tests.LcRbName1, number1, tests.ProjectKey)
+
 	// Create second release bundle from builds with project
 	createRbWithFlags(t, "", "", tests.LcBuildName2, number2, tests.LcRbName2, number2, tests.ProjectKey, true, true)
 	defer deleteReleaseBundleWithProject(t, lcManager, tests.LcRbName2, number2, tests.ProjectKey)
 	assertStatusCompletedWithProject(t, lcManager, tests.LcRbName2, number2, "", tests.ProjectKey)
+
+	// Verify second release bundle exists with project
+	isExist, err = lcManager.IsReleaseBundleExist(tests.LcRbName2, number2, tests.ProjectKey)
+	assert.NoError(t, err)
+	assert.True(t, isExist, "Release bundle %s/%s should exist in project %s", tests.LcRbName2, number2, tests.ProjectKey)
+
+	// Wait a bit to ensure release bundles are fully indexed before using them as sources
+	time.Sleep(5 * time.Second)
 
 	// Create release bundle from the two previous release bundles with project
 	createRbFromMultiSourcesUsingCommandFlags(t, lcManager, "", createReleaseBundlesSource(), tests.LcRbName3, number3, tests.ProjectKey, true)
@@ -223,6 +236,7 @@ func TestReleaseBundleCreationFromArtifactsWithoutSigningKey(t *testing.T) {
 	testReleaseBundleCreation(t, tests.UploadDevSpec, tests.LifecycleArtifacts, tests.GetExpectedLifecycleCreationByArtifacts(), withoutSigningKey)
 }
 
+//nolint:unparam // sync parameter is kept for API consistency with existing tests
 func createRbFromMultiSourcesUsingCommandFlags(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, buildsSourcesOption, bundlesSourcesOption,
 	rbName, rbVersion, project string, sync bool,
 ) {
@@ -612,6 +626,8 @@ func assertStatusCompleted(t *testing.T, lcManager *lifecycle.LifecycleServicesM
 }
 
 // If createdMillis is provided, assert status for promotion. If blank, assert for creation.
+//
+//nolint:unparam // createdMillis parameter is kept for API consistency with existing tests
 func assertStatusCompletedWithProject(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion, createdMillis, projectKey string) {
 	resp, err := getStatusWithProject(lcManager, rbName, rbVersion, createdMillis, projectKey)
 	if !assert.NoError(t, err) {
