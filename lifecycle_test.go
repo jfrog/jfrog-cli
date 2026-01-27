@@ -263,12 +263,10 @@ func buildMultiBuildSources(sources []services.RbSource, sourcesStr string) []se
 		if entry == "" {
 			continue
 		}
-		// Assuming the format "name=xxx, number=xxx, include-dep=true"
 		components := strings.Split(entry, ",")
 		if len(components) < 2 {
 			continue
 		}
-
 		name := strings.TrimSpace(strings.Split(components[0], "=")[1])
 		number := strings.TrimSpace(strings.Split(components[1], "=")[1])
 
