@@ -150,6 +150,51 @@ func TestReleaseBundleCreationFromMultipleBuildsAndBundlesUsingCommandFlags(t *t
 	assertStatusCompleted(t, lcManager, tests.LcRbName3, number3, "")
 }
 
+func TestReleaseBundleCreationFromMultiBundlesUsingCommandFlagWithProject(t *testing.T) {
+	cleanCallback := initLifecycleTest(t, minMultiSourcesArtifactoryVersion)
+	defer cleanCallback()
+	deleteProject := createTestProject(t)
+	if deleteProject != nil {
+		defer func() {
+			if err := deleteProject(); err != nil {
+				t.Error(err)
+			}
+		}()
+	}
+	lcManager := getLcServiceManager(t)
+
+	deleteBuilds := uploadBuildsWithProject(t)
+	defer deleteBuilds()
+
+	// Create first release bundle from builds with project
+	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, tests.LcRbName1, number1, tests.ProjectKey, true, true)
+	defer deleteReleaseBundleWithProject(t, lcManager, tests.LcRbName1, number1, tests.ProjectKey)
+	assertStatusCompletedWithProject(t, lcManager, tests.LcRbName1, number1, "", tests.ProjectKey)
+
+	// Verify first release bundle exists with project
+	isExist, err := lcManager.IsReleaseBundleExist(tests.LcRbName1, number1, tests.ProjectKey)
+	assert.NoError(t, err)
+	assert.True(t, isExist, "Release bundle %s/%s should exist in project %s", tests.LcRbName1, number1, tests.ProjectKey)
+
+	// Create second release bundle from builds with project
+	createRbWithFlags(t, "", "", tests.LcBuildName2, number2, tests.LcRbName2, number2, tests.ProjectKey, true, true)
+	defer deleteReleaseBundleWithProject(t, lcManager, tests.LcRbName2, number2, tests.ProjectKey)
+	assertStatusCompletedWithProject(t, lcManager, tests.LcRbName2, number2, "", tests.ProjectKey)
+
+	// Verify second release bundle exists with project
+	isExist, err = lcManager.IsReleaseBundleExist(tests.LcRbName2, number2, tests.ProjectKey)
+	assert.NoError(t, err)
+	assert.True(t, isExist, "Release bundle %s/%s should exist in project %s", tests.LcRbName2, number2, tests.ProjectKey)
+
+	// Wait a bit to ensure release bundles are fully indexed before using them as sources
+	time.Sleep(5 * time.Second)
+
+	// Create release bundle from the two previous release bundles with project
+	createRbFromMultiSourcesUsingCommandFlagsWithProject(t, lcManager, "", createReleaseBundlesSource(), tests.LcRbName3, number3, tests.ProjectKey, true)
+	defer deleteReleaseBundleWithProject(t, lcManager, tests.LcRbName3, number3, tests.ProjectKey)
+	assertStatusCompletedWithProject(t, lcManager, tests.LcRbName3, number3, "", tests.ProjectKey)
+}
+
 func TestReleaseBundleCreationFromMultipleSourcesUsingSpec(t *testing.T) {
 
 	cleanCallback := initLifecycleTest(t, minMultiSourcesArtifactoryVersion)
@@ -191,6 +236,7 @@ func TestReleaseBundleCreationFromArtifactsWithoutSigningKey(t *testing.T) {
 	testReleaseBundleCreation(t, tests.UploadDevSpec, tests.LifecycleArtifacts, tests.GetExpectedLifecycleCreationByArtifacts(), withoutSigningKey)
 }
 
+//nolint:unparam // sync parameter is kept for API consistency with existing tests
 func createRbFromMultiSourcesUsingCommandFlags(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, buildsSourcesOption, bundlesSourcesOption,
 	rbName, rbVersion, project string, sync bool,
 ) {
@@ -208,6 +254,46 @@ func createRbFromMultiSourcesUsingCommandFlags(t *testing.T, lcManager *lifecycl
 
 	_, err := lcManager.CreateReleaseBundlesFromMultipleSources(rbDetails, queryParams, gpgKeyPairName, sources)
 	assert.NoError(t, err)
+}
+
+//nolint:unparam // sync parameter is kept for API consistency with existing tests
+func createRbFromMultiSourcesUsingCommandFlagsWithProject(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, buildsSourcesOption, bundlesSourcesOption,
+	rbName, rbVersion, project string, sync bool,
+) {
+	var sources []services.RbSource
+	sources = buildMultiSources(sources, buildsSourcesOption, bundlesSourcesOption, project)
+	// For projects (non-default), populate repository key for release bundle sources
+	if project != "" && project != "default" {
+		populateRepositoryKeyForReleaseBundleSourcesWithProject(sources, project)
+	}
+
+	rbDetails := services.ReleaseBundleDetails{
+		ReleaseBundleName:    rbName,
+		ReleaseBundleVersion: rbVersion,
+	}
+	queryParams := services.CommonOptionalQueryParams{
+		Async:      !sync,
+		ProjectKey: project,
+	}
+
+	_, err := lcManager.CreateReleaseBundlesFromMultipleSources(rbDetails, queryParams, gpgKeyPairName, sources)
+	assert.NoError(t, err)
+}
+
+func populateRepositoryKeyForReleaseBundleSourcesWithProject(sources []services.RbSource, projectKey string) {
+	if projectKey == "" || projectKey == "default" {
+		return
+	}
+	for i := range sources {
+		if sources[i].SourceType == "release_bundles" {
+			for j := range sources[i].ReleaseBundles {
+				rb := &sources[i].ReleaseBundles[j]
+				if rb.ProjectKey != "" && rb.ProjectKey != "default" {
+					rb.RepositoryKey = rb.ProjectKey + "-release-bundles-v2"
+				}
+			}
+		}
+	}
 }
 
 func buildMultiSources(sources []services.RbSource, buildsSourcesStr, bundlesSourcesStr, projectKey string) []services.RbSource {
@@ -580,6 +666,8 @@ func assertStatusCompleted(t *testing.T, lcManager *lifecycle.LifecycleServicesM
 }
 
 // If createdMillis is provided, assert status for promotion. If blank, assert for creation.
+//
+//nolint:unparam // createdMillis parameter is kept for API consistency with existing tests
 func assertStatusCompletedWithProject(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion, createdMillis, projectKey string) {
 	resp, err := getStatusWithProject(lcManager, rbName, rbVersion, createdMillis, projectKey)
 	if !assert.NoError(t, err) {
