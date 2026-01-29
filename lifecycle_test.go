@@ -260,7 +260,8 @@ func createRbFromMultiSourcesUsingCommandFlags(t *testing.T, lcManager *lifecycl
 func createRbFromMultiSourcesUsingCommandFlagsWithProject(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, buildsSourcesOption, bundlesSourcesOption,
 	rbName, rbVersion, project string, sync bool,
 ) {
-	sources := buildMultiSources(sources, buildsSourcesOption, bundlesSourcesOption, project)
+	var sources []services.RbSource
+	sources = buildMultiSources(sources, buildsSourcesOption, bundlesSourcesOption, project)
 	// For projects (non-default), populate repository key for release bundle sources
 	if project != "" && project != "default" {
 		populateRepositoryKeyForReleaseBundleSourcesWithProject(sources, project)
