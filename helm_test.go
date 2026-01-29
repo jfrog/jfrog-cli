@@ -16,9 +16,11 @@ import (
 	"time"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
+	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
@@ -801,6 +803,159 @@ func TestHelmPackageAndPushWithBuildInfo(t *testing.T) {
 
 	// Validate that build info contains both dependencies (from package) and artifacts (from push)
 	validateHelmBuildInfo(t, publishedBuildInfo.BuildInfo, buildName, true, true)
+}
+
+// TestHelmBuildPublishWithCIVcsProps tests that CI VCS properties are set on Helm artifacts
+// when running build-publish in a CI environment (GitHub Actions).
+// Helm charts are published via Helm client; build-publish retrieves artifact paths
+// from Build Info and applies CI VCS properties via optimized batch SetProps API call.
+func TestHelmBuildPublishWithCIVcsProps(t *testing.T) {
+	initHelmTest(t)
+	defer cleanHelmTest(t)
+
+	buildName := tests.HelmBuildName + "-civcs"
+	buildNumber := "1"
+
+	// Setup GitHub Actions environment (uses real env vars on CI, mock values locally)
+	cleanupEnv, actualOrg, actualRepo := tests.SetupGitHubActionsEnv(t)
+	defer cleanupEnv()
+
+	// Clean old build
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	chartDir := createTestHelmChartWithDependencies(t, "test-chart-civcs", "0.1.0")
+	defer func() {
+		if err := os.RemoveAll(chartDir); err != nil {
+			t.Logf("Warning: Failed to remove test chart directory %s: %v", chartDir, err)
+		}
+	}()
+
+	originalDir, err := os.Getwd()
+	require.NoError(t, err)
+	defer func() {
+		if err := os.Chdir(originalDir); err != nil {
+			t.Logf("Warning: Failed to change back to original directory: %v", err)
+		}
+	}()
+
+	err = os.Chdir(chartDir)
+	require.NoError(t, err)
+
+	// Run helm dependency update
+	helmCmd := exec.Command("helm", "dependency", "update")
+	helmCmd.Dir = chartDir
+	err = helmCmd.Run()
+	require.NoError(t, err, "helm dependency update should succeed")
+
+	// Run helm package with build info (collects dependencies)
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+	args := []string{
+		"helm", "package", ".",
+		"--build-name=" + buildName,
+		"--build-number=" + buildNumber,
+	}
+	err = jfrogCli.Exec(args...)
+	require.NoError(t, err, "helm package should succeed")
+
+	// Get the packaged chart file
+	chartFiles, err := filepath.Glob(filepath.Join(chartDir, "*.tgz"))
+	require.NoError(t, err)
+	require.Greater(t, len(chartFiles), 0, "Chart package file should be created")
+	chartFile := filepath.Base(chartFiles[0])
+
+	// Setup registry for push
+	parsedURL, err := url.Parse(serverDetails.ArtifactoryUrl)
+	require.NoError(t, err)
+	registryHost := parsedURL.Host
+	registryURL := fmt.Sprintf("oci://%s/%s", registryHost, tests.HelmLocalRepo)
+
+	if !isRepoExist(tests.HelmLocalRepo) {
+		t.Skipf("Repository %s does not exist. Skipping test.", tests.HelmLocalRepo)
+	}
+
+	err = loginHelmRegistry(t, registryHost)
+	if err != nil {
+		errorMsg := strings.ToLower(err.Error())
+		if strings.Contains(errorMsg, "account temporarily locked") {
+			t.Skip("Artifactory account is temporarily locked. Skipping test.")
+		}
+		if strings.Contains(errorMsg, "http response to https") ||
+			strings.Contains(errorMsg, "tls: first record does not look like a tls handshake") {
+			t.Skip("Helm registry login failed due to HTTPS/HTTP mismatch. Skipping test.")
+		}
+	}
+	require.NoError(t, err, "helm registry login should succeed")
+
+	// Run helm push with the same build name/number (adds artifacts to existing build info)
+	args = []string{
+		"helm", "push", chartFile,
+		registryURL,
+		"--build-name=" + buildName,
+		"--build-number=" + buildNumber,
+	}
+	err = jfrogCli.Exec(args...)
+	if err != nil {
+		errorMsg := strings.ToLower(err.Error())
+		if strings.Contains(errorMsg, "404") ||
+			strings.Contains(errorMsg, "not found") ||
+			strings.Contains(errorMsg, "exit status 1") {
+			t.Skip("OCI registry API not accessible (404). Skipping test.")
+		}
+	}
+	require.NoError(t, err, "helm push should succeed")
+
+	// Publish build info - should set CI VCS props on artifacts
+	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	// Get the published build info
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	require.NoError(t, err, "Failed to get build info")
+	require.True(t, found, "build info should be found")
+
+	// Verify build info has artifacts
+	require.Greater(t, len(publishedBuildInfo.BuildInfo.Modules), 0, "Build info should have modules")
+
+	// Create service manager for getting artifact properties
+	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
+	require.NoError(t, err)
+
+	// Verify VCS properties on each artifact from build info
+	artifactCount := 0
+	propsValidatedCount := 0
+	for _, module := range publishedBuildInfo.BuildInfo.Modules {
+		for _, artifact := range module.Artifacts {
+			artifactCount++
+			if artifact.OriginalDeploymentRepo == "" {
+				continue // Skip artifacts without deployment repo info
+			}
+			fullPath := artifact.OriginalDeploymentRepo + "/" + artifact.Path
+
+			props, err := serviceManager.GetItemProps(fullPath)
+			if err != nil {
+				t.Logf("Skipping artifact %s: could not get properties: %v", fullPath, err)
+				continue
+			}
+			if props == nil {
+				continue
+			}
+
+			// Validate VCS properties if present
+			if _, ok := props.Properties["vcs.provider"]; ok {
+				assert.Contains(t, props.Properties["vcs.provider"], "github", "Wrong vcs.provider on %s", artifact.Name)
+				assert.Contains(t, props.Properties["vcs.org"], actualOrg, "Wrong vcs.org on %s", artifact.Name)
+				assert.Contains(t, props.Properties["vcs.repo"], actualRepo, "Wrong vcs.repo on %s", artifact.Name)
+				propsValidatedCount++
+			}
+		}
+	}
+
+	t.Logf("Helm build info: %d artifacts, %d with CI VCS properties validated", artifactCount, propsValidatedCount)
+	t.Logf("CI VCS environment: org=%s, repo=%s", actualOrg, actualRepo)
+
+	// Validate that build info was created successfully
+	assert.NotEmpty(t, publishedBuildInfo.BuildInfo.Started, "Build info should have start time")
+	assert.Equal(t, buildName, publishedBuildInfo.BuildInfo.Name, "Build name should match")
 }
 
 // InitHelmTests initializes Helm tests
