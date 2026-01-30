@@ -284,6 +284,8 @@ replace github.com/gfleury/go-bitbucket-v1 => github.com/gfleury/go-bitbucket-v1
 
 //replace github.com/jfrog/jfrog-cli-core/v2 => ../jfrog-cli-core
 
+replace github.com/jfrog/jfrog-cli-artifactory => github.com/fluxxBot/jfrog-cli-artifactory v0.0.0-20260130044429-464a5025d08a
+
 //replace github.com/jfrog/build-info-go => github.com/fluxxBot/build-info-go v1.10.10-0.20260105070825-d3f36f619ba5
 
 //replace github.com/jfrog/jfrog-cli-core/v2 => github.com/fluxxBot/jfrog-cli-core/v2 v2.58.1-0.20260105065921-c6488910f44c
