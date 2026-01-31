@@ -12,6 +12,7 @@ import (
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	biutils "github.com/jfrog/build-info-go/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
@@ -628,4 +629,93 @@ func TestPoetryFlexPackFeatures(t *testing.T) {
 		// Clean up
 		inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, "poetry-checksum-test", artHttpDetails)
 	})
+}
+
+// TestPoetryBuildPublishWithCIVcsProps tests that CI VCS properties are set on Poetry artifacts
+// when running build-publish in a CI environment (GitHub Actions).
+// Poetry relies on build-publish to set CI VCS properties via batch AQL query.
+func TestPoetryBuildPublishWithCIVcsProps(t *testing.T) {
+	initPoetryTest(t)
+
+	buildName := tests.PoetryBuildName + "-civcs"
+	buildNumber := "1"
+
+	// Setup GitHub Actions environment (uses real env vars on CI, mock values locally)
+	cleanupEnv, actualOrg, actualRepo := tests.SetupGitHubActionsEnv(t)
+	defer cleanupEnv()
+
+	// Populate cli config with 'default' server
+	oldHomeDir, newHomeDir := prepareHomeDir(t)
+	defer func() {
+		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
+		clientTestUtils.RemoveAllAndAssert(t, newHomeDir)
+	}()
+
+	// Clean old build
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	projectPath := createPoetryProject(t, "poetry-civcs", "poetryproject")
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+
+	// Build the package first
+	buildCmd := exec.Command("poetry", "build")
+	buildCmd.Dir = projectPath
+	assert.NoError(t, buildCmd.Run(), "Failed to build Poetry package")
+
+	// Run poetry publish with build info collection
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	args := []string{
+		"poetry", "publish",
+		"--build-name=" + buildName,
+		"--build-number=" + buildNumber,
+		"--repository=" + tests.PoetryLocalRepo,
+	}
+	err = jfrogCli.Exec(args...)
+	assert.NoError(t, err, "Failed executing poetry publish command")
+
+	// Publish build info - should set CI VCS props on artifacts
+	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	// Get the published build info to find artifact paths
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	assert.NoError(t, err)
+	assert.True(t, found, "Build info was not found")
+
+	// Create service manager for getting artifact properties
+	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
+	assert.NoError(t, err)
+
+	// Verify VCS properties on each artifact from build info
+	artifactCount := 0
+	for _, module := range publishedBuildInfo.BuildInfo.Modules {
+		for _, artifact := range module.Artifacts {
+			if artifact.OriginalDeploymentRepo == "" {
+				continue // Skip artifacts without deployment repo info
+			}
+			fullPath := artifact.OriginalDeploymentRepo + "/" + artifact.Path
+
+			props, err := serviceManager.GetItemProps(fullPath)
+			assert.NoError(t, err, "Failed to get properties for artifact: %s", fullPath)
+			assert.NotNil(t, props, "Properties are nil for artifact: %s", fullPath)
+
+			// Validate VCS properties
+			assert.Contains(t, props.Properties, "vcs.provider", "Missing vcs.provider on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.provider"], "github", "Wrong vcs.provider on %s", artifact.Name)
+
+			assert.Contains(t, props.Properties, "vcs.org", "Missing vcs.org on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.org"], actualOrg, "Wrong vcs.org on %s", artifact.Name)
+
+			assert.Contains(t, props.Properties, "vcs.repo", "Missing vcs.repo on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.repo"], actualRepo, "Wrong vcs.repo on %s", artifact.Name)
+
+			artifactCount++
+		}
+	}
+
+	assert.Greater(t, artifactCount, 0, "No artifacts were validated for CI VCS properties")
 }

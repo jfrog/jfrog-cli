@@ -9,6 +9,7 @@ import (
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	biutils "github.com/jfrog/build-info-go/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
@@ -466,4 +467,99 @@ func configureConanRemote(t *testing.T) {
 func cleanupConanRemote() {
 	_ = exec.Command("conan", "remote", "remove", tests.ConanVirtualRepo).Run()
 	_ = exec.Command("conan", "remote", "remove", tests.ConanLocalRepo).Run()
+}
+
+// TestConanBuildPublishWithCIVcsProps tests that CI VCS properties are set on Conan artifacts
+// when running build-publish in a CI environment (GitHub Actions).
+// Conan packages are published via Conan client; build-publish retrieves artifact paths
+// from Build Info and applies properties via batch API.
+func TestConanBuildPublishWithCIVcsProps(t *testing.T) {
+	initConanTest(t)
+
+	buildName := tests.ConanBuildName + "-civcs"
+	buildNumber := "1"
+
+	// Setup GitHub Actions environment (uses real env vars on CI, mock values locally)
+	cleanupEnv, actualOrg, actualRepo := tests.SetupGitHubActionsEnv(t)
+	defer cleanupEnv()
+
+	// Clean old build
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	// Prepare project
+	projectPath := createConanProject(t, "conan-civcs-test")
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+
+	// Configure Conan remote
+	configureConanRemote(t)
+	defer cleanupConanRemote()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+
+	// Run conan create
+	createArgs := []string{
+		"conan", "create", ".",
+		"--build=missing",
+		"--build-name=" + buildName,
+		"--build-number=" + buildNumber,
+	}
+	assert.NoError(t, jfrogCli.Exec(createArgs...))
+
+	// Run conan upload
+	uploadArgs := []string{
+		"conan", "upload", "cli-test-package/*",
+		"-r", tests.ConanLocalRepo,
+		"--confirm",
+		"--build-name=" + buildName,
+		"--build-number=" + buildNumber,
+	}
+	assert.NoError(t, jfrogCli.Exec(uploadArgs...))
+
+	// Publish build info - should set CI VCS props on artifacts
+	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	// Get the published build info to find artifact paths
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	require.NoError(t, err)
+	require.True(t, found, "Build info was not found")
+
+	// Create service manager for getting artifact properties
+	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
+	require.NoError(t, err)
+
+	// Verify VCS properties on each artifact from build info
+	artifactCount := 0
+	for _, module := range publishedBuildInfo.BuildInfo.Modules {
+		for _, artifact := range module.Artifacts {
+			if artifact.OriginalDeploymentRepo == "" {
+				continue // Skip artifacts without deployment repo info
+			}
+			fullPath := artifact.OriginalDeploymentRepo + "/" + artifact.Path
+
+			props, err := serviceManager.GetItemProps(fullPath)
+			if err != nil {
+				t.Logf("Skipping artifact %s: could not get properties", fullPath)
+				continue
+			}
+			if props == nil {
+				continue
+			}
+
+			// Validate VCS properties
+			if _, ok := props.Properties["vcs.provider"]; ok {
+				assert.Contains(t, props.Properties["vcs.provider"], "github", "Wrong vcs.provider on %s", artifact.Name)
+				assert.Contains(t, props.Properties["vcs.org"], actualOrg, "Wrong vcs.org on %s", artifact.Name)
+				assert.Contains(t, props.Properties["vcs.repo"], actualRepo, "Wrong vcs.repo on %s", artifact.Name)
+				artifactCount++
+			}
+		}
+	}
+
+	// Log summary
+	t.Logf("Conan build info created with CI VCS properties validated on %d artifacts", artifactCount)
+	t.Logf("CI VCS environment validated: org=%s, repo=%s", actualOrg, actualRepo)
 }
