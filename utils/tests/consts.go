@@ -2156,6 +2156,46 @@ func GetExpectedLifecycleCreationByAql() []string {
 	}
 }
 
+// GetExpectedLifecycleBuild1Artifacts returns expected artifacts from build 1 only.
+func GetExpectedLifecycleBuild1Artifacts() []string {
+	return []string{
+		RtDevRepo + "/a1.in",
+		RtDevRepo + "/a2.in",
+		RtDevRepo + "/a3.in",
+	}
+}
+
+// GetExpectedLifecycleUpdateArtifacts returns expected artifacts after updating a draft bundle
+// that was created from build 1 (a1.in, a2.in, a3.in) with build 3 (dep-file as dependency).
+func GetExpectedLifecycleUpdateArtifacts() []string {
+	return []string{
+		RtDevRepo + "/a1.in",
+		RtDevRepo + "/a2.in",
+		RtDevRepo + "/a3.in",
+		RtDevRepo + "/dep-file",
+	}
+}
+
+// GetExpectedLifecycleBuild2Artifacts returns expected artifacts from build 2 only.
+func GetExpectedLifecycleBuild2Artifacts() []string {
+	return []string{
+		RtDevRepo + "/b1.in",
+		RtDevRepo + "/b2.in",
+		RtDevRepo + "/b3.in",
+	}
+}
+
+// GetExpectedLifecycleUpdateBuild2Artifacts returns expected artifacts after updating a draft bundle
+// that was created from build 2 (b1.in, b2.in, b3.in) with build 3 (dep-file as dependency).
+func GetExpectedLifecycleUpdateBuild2Artifacts() []string {
+	return []string{
+		RtDevRepo + "/b1.in",
+		RtDevRepo + "/b2.in",
+		RtDevRepo + "/b3.in",
+		RtDevRepo + "/dep-file",
+	}
+}
+
 func GetExpectedLifecycleArtifacts() []string {
 	return []string{
 		RtProdRepo1 + "/a1.in",

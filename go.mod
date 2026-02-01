@@ -16,15 +16,15 @@ require (
 	github.com/docker/docker v28.5.2+incompatible
 	github.com/gocarina/gocsv v0.0.0-20240520201108-78e41c74b4b1
 	github.com/jfrog/archiver/v3 v3.6.1
-	github.com/jfrog/build-info-go v1.13.1-0.20260107080257-82671efa69a2
+	github.com/jfrog/build-info-go v1.13.1-0.20260119231731-3cc4a0771bbd
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-application v1.0.2-0.20251231144110-a68c3ac11c7a
-	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260107090044-56a45e5c560e
+	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260201084712-af3845a393d3
 	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260106204841-744f3f71817b
 	github.com/jfrog/jfrog-cli-evidence v0.8.3-0.20251225153025-9d8ac181d615
 	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20251205121610-171eb9b0000e
 	github.com/jfrog/jfrog-cli-security v1.25.0
-	github.com/jfrog/jfrog-client-go v1.55.1-0.20260107080024-ccd1f1de6614
+	github.com/jfrog/jfrog-client-go v1.55.1-0.20260201135506-ffd03518ef56
 	github.com/jszwec/csvutil v1.10.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/spf13/viper v1.21.0
