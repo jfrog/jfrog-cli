@@ -24,7 +24,7 @@ require (
 	github.com/jfrog/jfrog-cli-evidence v0.8.3-0.20260125120022-1c6f4f382dbb
 	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20251205121610-171eb9b0000e
 	github.com/jfrog/jfrog-cli-security v1.26.0
-	github.com/jfrog/jfrog-client-go v1.55.1-0.20260128141727-bd34d78a3e48
+	github.com/jfrog/jfrog-client-go v1.55.1-0.20260201212408-cc8d4eae6349
 	github.com/jszwec/csvutil v1.10.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/spf13/viper v1.21.0
@@ -288,7 +288,7 @@ replace github.com/gfleury/go-bitbucket-v1 => github.com/gfleury/go-bitbucket-v1
 
 //replace github.com/jfrog/jfrog-cli-core/v2 => github.com/fluxxBot/jfrog-cli-core/v2 v2.58.1-0.20260105065921-c6488910f44c
 
-//replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.54.2-0.20251007084958-5eeaa42c31a6
+// replace github.com/jfrog/jfrog-client-go => github.com/reshmifrog/jfrog-client-go v1.52.1-0.20260129081329-8ef6c26d281f
 
 // replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security dev
 
