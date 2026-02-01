@@ -120,6 +120,7 @@ const (
 	SearchAllGradle                                       = "search_all_gradle.json"
 	SearchAllMaven                                        = "search_all_maven.json"
 	SearchAllNpm                                          = "search_all_npm.json"
+	SearchAllOci                                          = "search_all_oci.json"
 	SearchAllProdRepo1                                    = "search_all_prod_repo1.json"
 	SearchAllProdRepo2                                    = "search_all_prod_repo2.json"
 	SearchAllRepo1                                        = "search_all_repo1.json"
