@@ -476,11 +476,11 @@ func TestDotnetRequestedByDeterminism(t *testing.T) {
 	cleanTestsHomeEnv()
 }
 
-// TestNugetBuildPublishWithCIVcsProps tests that CI VCS properties are set on NuGet artifacts
-// when running build-publish in a CI environment (GitHub Actions).
-// NuGet relies on build-publish to set CI VCS properties via batch AQL query.
-// Note: NuGet packages are uploaded without properties; build-publish identifies
-// artifacts from Build Info and applies properties in a single batch request.
+// TestNugetBuildPublishWithCIVcsProps tests that CI VCS properties integration works
+// with NuGet in a CI environment (GitHub Actions).
+// Note: NuGet restore only has dependencies (not artifacts), so this test validates
+// that build-info collection works correctly in CI environment. CI VCS properties
+// are set on artifacts via build-publish when packages are pushed (nuget push).
 func TestNugetBuildPublishWithCIVcsProps(t *testing.T) {
 	initNugetTest(t)
 	defer cleanTestsHomeEnv()
@@ -514,7 +514,7 @@ func TestNugetBuildPublishWithCIVcsProps(t *testing.T) {
 	err = runNuGet(t, args...)
 	require.NoError(t, err)
 
-	// Publish build info - should set CI VCS props on artifacts
+	// Publish build info
 	require.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
 
 	// Get the published build info
@@ -522,14 +522,15 @@ func TestNugetBuildPublishWithCIVcsProps(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, found, "Build info was not found")
 
-	// NuGet restore only has dependencies, not artifacts
-	// Verify build info was created successfully
+	// Validate build info was created correctly
 	require.NotEmpty(t, publishedBuildInfo.BuildInfo.Modules, "Build info should have modules")
-	require.Greater(t, len(publishedBuildInfo.BuildInfo.Modules[0].Dependencies), 0, "Build info should have dependencies")
+	assert.Greater(t, len(publishedBuildInfo.BuildInfo.Modules[0].Dependencies), 0, "Build info should have dependencies")
+	assert.Equal(t, buildName, publishedBuildInfo.BuildInfo.Name, "Build name should match")
+	assert.Equal(t, buildNumber, publishedBuildInfo.BuildInfo.Number, "Build number should match")
 
-	// Note: For NuGet, CI VCS properties are only applicable when there are artifacts (e.g., nuget push)
-	// This test verifies the build-info collection works correctly in CI environment
-	// The CI VCS properties will be set on artifacts when they are uploaded via build-publish
-	t.Logf("NuGet build info created with %d dependencies", len(publishedBuildInfo.BuildInfo.Modules[0].Dependencies))
-	t.Logf("CI VCS environment validated: org=%s, repo=%s", actualOrg, actualRepo)
+	// Verify CI environment was detected (for nuget push scenarios, CI VCS props would be set)
+	assert.NotEmpty(t, actualOrg, "CI org should be detected")
+	assert.NotEmpty(t, actualRepo, "CI repo should be detected")
+	t.Logf("NuGet build info created with %d dependencies in CI environment (org=%s, repo=%s)",
+		len(publishedBuildInfo.BuildInfo.Modules[0].Dependencies), actualOrg, actualRepo)
 }

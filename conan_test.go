@@ -541,25 +541,24 @@ func TestConanBuildPublishWithCIVcsProps(t *testing.T) {
 			fullPath := artifact.OriginalDeploymentRepo + "/" + artifact.Path
 
 			props, err := serviceManager.GetItemProps(fullPath)
-			if err != nil {
-				t.Logf("Skipping artifact %s: could not get properties", fullPath)
-				continue
-			}
+			assert.NoError(t, err, "Failed to get properties for artifact: %s", fullPath)
 			if props == nil {
 				continue
 			}
 
 			// Validate VCS properties
-			if _, ok := props.Properties["vcs.provider"]; ok {
-				assert.Contains(t, props.Properties["vcs.provider"], "github", "Wrong vcs.provider on %s", artifact.Name)
-				assert.Contains(t, props.Properties["vcs.org"], actualOrg, "Wrong vcs.org on %s", artifact.Name)
-				assert.Contains(t, props.Properties["vcs.repo"], actualRepo, "Wrong vcs.repo on %s", artifact.Name)
-				artifactCount++
-			}
+			assert.Contains(t, props.Properties, "vcs.provider", "Missing vcs.provider on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.provider"], "github", "Wrong vcs.provider on %s", artifact.Name)
+
+			assert.Contains(t, props.Properties, "vcs.org", "Missing vcs.org on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.org"], actualOrg, "Wrong vcs.org on %s", artifact.Name)
+
+			assert.Contains(t, props.Properties, "vcs.repo", "Missing vcs.repo on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.repo"], actualRepo, "Wrong vcs.repo on %s", artifact.Name)
+
+			artifactCount++
 		}
 	}
 
-	// Log summary
-	t.Logf("Conan build info created with CI VCS properties validated on %d artifacts", artifactCount)
-	t.Logf("CI VCS environment validated: org=%s, repo=%s", actualOrg, actualRepo)
+	assert.Greater(t, artifactCount, 0, "No artifacts were validated for CI VCS properties")
 }

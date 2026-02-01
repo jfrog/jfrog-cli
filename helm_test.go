@@ -824,7 +824,7 @@ func TestHelmBuildPublishWithCIVcsProps(t *testing.T) {
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 
-	chartDir := createTestHelmChartWithDependencies(t, "test-chart-civcs", "0.1.0")
+	chartDir := createTestHelmChartWithDependencies(t, "test-chart-civcs", "0.2.0")
 	defer func() {
 		if err := os.RemoveAll(chartDir); err != nil {
 			t.Logf("Warning: Failed to remove test chart directory %s: %v", chartDir, err)
@@ -922,40 +922,34 @@ func TestHelmBuildPublishWithCIVcsProps(t *testing.T) {
 
 	// Verify VCS properties on each artifact from build info
 	artifactCount := 0
-	propsValidatedCount := 0
 	for _, module := range publishedBuildInfo.BuildInfo.Modules {
 		for _, artifact := range module.Artifacts {
-			artifactCount++
 			if artifact.OriginalDeploymentRepo == "" {
 				continue // Skip artifacts without deployment repo info
 			}
 			fullPath := artifact.OriginalDeploymentRepo + "/" + artifact.Path
 
 			props, err := serviceManager.GetItemProps(fullPath)
-			if err != nil {
-				t.Logf("Skipping artifact %s: could not get properties: %v", fullPath, err)
-				continue
-			}
+			assert.NoError(t, err, "Failed to get properties for artifact: %s", fullPath)
 			if props == nil {
 				continue
 			}
 
-			// Validate VCS properties if present
-			if _, ok := props.Properties["vcs.provider"]; ok {
-				assert.Contains(t, props.Properties["vcs.provider"], "github", "Wrong vcs.provider on %s", artifact.Name)
-				assert.Contains(t, props.Properties["vcs.org"], actualOrg, "Wrong vcs.org on %s", artifact.Name)
-				assert.Contains(t, props.Properties["vcs.repo"], actualRepo, "Wrong vcs.repo on %s", artifact.Name)
-				propsValidatedCount++
-			}
+			// Validate VCS properties
+			assert.Contains(t, props.Properties, "vcs.provider", "Missing vcs.provider on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.provider"], "github", "Wrong vcs.provider on %s", artifact.Name)
+
+			assert.Contains(t, props.Properties, "vcs.org", "Missing vcs.org on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.org"], actualOrg, "Wrong vcs.org on %s", artifact.Name)
+
+			assert.Contains(t, props.Properties, "vcs.repo", "Missing vcs.repo on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.repo"], actualRepo, "Wrong vcs.repo on %s", artifact.Name)
+
+			artifactCount++
 		}
 	}
 
-	t.Logf("Helm build info: %d artifacts, %d with CI VCS properties validated", artifactCount, propsValidatedCount)
-	t.Logf("CI VCS environment: org=%s, repo=%s", actualOrg, actualRepo)
-
-	// Validate that build info was created successfully
-	assert.NotEmpty(t, publishedBuildInfo.BuildInfo.Started, "Build info should have start time")
-	assert.Equal(t, buildName, publishedBuildInfo.BuildInfo.Name, "Build name should match")
+	assert.Greater(t, artifactCount, 0, "No artifacts were validated for CI VCS properties")
 }
 
 // InitHelmTests initializes Helm tests
