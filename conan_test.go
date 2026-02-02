@@ -538,11 +538,12 @@ func TestConanBuildPublishWithCIVcsProps(t *testing.T) {
 		for _, artifact := range module.Artifacts {
 			// Use same fallback logic as CI VCS: OriginalDeploymentRepo + Path, or Path directly
 			var fullPath string
-			if artifact.OriginalDeploymentRepo != "" {
+			switch {
+			case artifact.OriginalDeploymentRepo != "":
 				fullPath = artifact.OriginalDeploymentRepo + "/" + artifact.Path
-			} else if artifact.Path != "" {
+			case artifact.Path != "":
 				fullPath = artifact.Path
-			} else {
+			default:
 				continue // Skip artifacts without any path info
 			}
 
