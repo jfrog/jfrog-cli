@@ -503,12 +503,12 @@ func TestReleaseBundleCreationWithDraftFlag(t *testing.T) {
 	assertStatusDraft(t, lcManager, tests.LcRbName1, number1)
 
 	//// Test 2: Create draft bundle using build-name/build-number flags
-	//createRbWithFlags(t, "", "", tests.LcBuildName2, number2, tests.LcRbName2, number2, "default", true, true, true)
-	//defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
-	//assertStatusDraft(t, lcManager, tests.LcRbName2, number2)
+	// createRbWithFlags(t, "", "", tests.LcBuildName2, number2, tests.LcRbName2, number2, "default", true, true, true)
+	// defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
+	// assertStatusDraft(t, lcManager, tests.LcRbName2, number2)
 }
 
-//func TestReleaseBundleUpdateWithSpec(t *testing.T) {
+//  func TestReleaseBundleUpdateWithSpec(t *testing.T) {
 //	cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
 //	defer cleanCallback()
 //	lcManager := getLcServiceManager(t)
@@ -534,7 +534,7 @@ func TestReleaseBundleCreationWithDraftFlag(t *testing.T) {
 //	assertRbArtifacts(t, lcManager, tests.LcRbName1, number1, tests.GetExpectedLifecycleUpdateArtifacts())
 //}
 
-//func TestReleaseBundleUpdateWithFlags(t *testing.T) {
+//  func TestReleaseBundleUpdateWithFlags(t *testing.T) {
 //	cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
 //	defer cleanCallback()
 //	lcManager := getLcServiceManager(t)
@@ -684,30 +684,30 @@ func createRbWithFlags(t *testing.T, specFilePath, sourceOption, buildName, buil
 	assert.NoError(t, lcCli.Exec(argsAndOptions...))
 }
 
-func updateRbWithFlags(t *testing.T, specFilePath, rbName, rbVersion, project, sourceTypeBuilds string, sync bool) {
-	argsAndOptions := []string{
-		"rbu",
-		rbName,
-		rbVersion,
-		"--add", // Mandatory flag for rbu
-	}
-
-	if specFilePath != "" {
-		argsAndOptions = append(argsAndOptions, getOption("spec", specFilePath))
-	}
-
-	if sourceTypeBuilds != "" {
-		argsAndOptions = append(argsAndOptions, getOption("source-type-builds", sourceTypeBuilds))
-	}
-
-	if project != "" {
-		argsAndOptions = append(argsAndOptions, getOption(cliutils.Project, project))
-	}
-
-	argsAndOptions = append(argsAndOptions, getOption(cliutils.Sync, strconv.FormatBool(sync)))
-
-	assert.NoError(t, lcCli.Exec(argsAndOptions...))
-}
+// func updateRbWithFlags(t *testing.T, specFilePath, rbName, rbVersion, project, sourceTypeBuilds string, sync bool) {
+//	argsAndOptions := []string{
+//		"rbu",
+//		rbName,
+//		rbVersion,
+//		"--add", // Mandatory flag for rbu
+//	}
+//
+//	if specFilePath != "" {
+//		argsAndOptions = append(argsAndOptions, getOption("spec", specFilePath))
+//	}
+//
+//	if sourceTypeBuilds != "" {
+//		argsAndOptions = append(argsAndOptions, getOption("source-type-builds", sourceTypeBuilds))
+//	}
+//
+//	if project != "" {
+//		argsAndOptions = append(argsAndOptions, getOption(cliutils.Project, project))
+//	}
+//
+//	argsAndOptions = append(argsAndOptions, getOption(cliutils.Sync, strconv.FormatBool(sync)))
+//
+//	assert.NoError(t, lcCli.Exec(argsAndOptions...))
+//}
 
 /*func exportRb(t *testing.T, rbName, rbVersion, targetPath string) {
 	lcCli.RunCliCmdWithOutput(t, "rbe", rbName, rbVersion, targetPath+"/")
