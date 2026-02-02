@@ -743,13 +743,18 @@ func TestTwineBuildPublishWithCIVcsProps(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Verify VCS properties on each artifact from build info
+	// Use same fallback logic as CI VCS: OriginalDeploymentRepo + Path, or Path directly
 	artifactCount := 0
 	for _, module := range publishedBuildInfo.BuildInfo.Modules {
 		for _, artifact := range module.Artifacts {
-			if artifact.OriginalDeploymentRepo == "" {
-				continue // Skip artifacts without deployment repo info
+			var fullPath string
+			if artifact.OriginalDeploymentRepo != "" {
+				fullPath = artifact.OriginalDeploymentRepo + "/" + artifact.Path
+			} else if artifact.Path != "" {
+				fullPath = artifact.Path
+			} else {
+				continue // Skip artifacts without any path info
 			}
-			fullPath := artifact.OriginalDeploymentRepo + "/" + artifact.Path
 
 			props, err := serviceManager.GetItemProps(fullPath)
 			assert.NoError(t, err, "Failed to get properties for artifact: %s", fullPath)

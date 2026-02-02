@@ -294,4 +294,4 @@ replace github.com/gfleury/go-bitbucket-v1 => github.com/gfleury/go-bitbucket-v1
 
 // replace github.com/jfrog/build-info-go => github.com/reshmifrog/build-info-go v1.8.9-0.20260106113011-c7f131cea484
 
-replace github.com/jfrog/jfrog-cli-artifactory => github.com/bhanurp/jfrog-cli-artifactory v0.1.12-0.20260201151210-3c89ffbf853f
+replace github.com/jfrog/jfrog-cli-artifactory => github.com/bhanurp/jfrog-cli-artifactory v0.1.12-0.20260202074034-d6aeb3259fcd
