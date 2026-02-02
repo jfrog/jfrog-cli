@@ -38,6 +38,7 @@ const (
 	artifactoryLifecycleMinVersion          = "7.68.3"
 	signingKeyOptionalArtifactoryMinVersion = "7.104.1"
 	promotionTypeFlagArtifactoryMinVersion  = "7.106.1"
+	draftBundleArtifactoryMinVersion        = "7.136.0"
 	gpgKeyPairName                          = "lc-tests-key-pair"
 	lcTestdataPath                          = "lifecycle"
 	releaseBundlesSpec                      = "release-bundles-spec.json"
@@ -489,27 +490,36 @@ func TestPromoteReleaseBundleWithPromotionTypeFlag(t *testing.T) {
 	assertStatusCompleted(t, lcManager, tests.LcRbName1, number1, "")
 }
 
-func TestReleaseBundleCreationWithDraftFlag(t *testing.T) {
-	cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
+func TestReleaseBundleCreationWithDraftFlagFromSpec(t *testing.T) {
+	cleanCallback := initLifecycleTest(t, draftBundleArtifactoryMinVersion)
 	defer cleanCallback()
 	lcManager := getLcServiceManager(t)
 
 	deleteBuilds := uploadBuilds(t)
 	defer deleteBuilds()
 
-	// Test 1: Create draft bundle from spec
+	// Create draft bundle from spec
 	createRbFromSpecWithDraft(t, tests.LifecycleBuilds12, tests.LcRbName1, number1, true, true, true)
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
 	assertStatusDraft(t, lcManager, tests.LcRbName1, number1)
+}
 
-	// Test 2: Create draft bundle using build-name/build-number flags
+func TestReleaseBundleCreationWithDraftFlagFromFlags(t *testing.T) {
+	cleanCallback := initLifecycleTest(t, draftBundleArtifactoryMinVersion)
+	defer cleanCallback()
+	lcManager := getLcServiceManager(t)
+
+	deleteBuilds := uploadBuilds(t)
+	defer deleteBuilds()
+
+	// Create draft bundle using build-name/build-number flags
 	createRbWithFlags(t, "", "", tests.LcBuildName2, number2, tests.LcRbName2, number2, "default", true, true, true)
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
 	assertStatusDraft(t, lcManager, tests.LcRbName2, number2)
 }
 
 func TestReleaseBundleUpdateWithSpec(t *testing.T) {
-	cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
+	cleanCallback := initLifecycleTest(t, draftBundleArtifactoryMinVersion)
 	defer cleanCallback()
 	lcManager := getLcServiceManager(t)
 
@@ -535,7 +545,7 @@ func TestReleaseBundleUpdateWithSpec(t *testing.T) {
 }
 
 func TestReleaseBundleUpdateWithFlags(t *testing.T) {
-	cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
+	cleanCallback := initLifecycleTest(t, draftBundleArtifactoryMinVersion)
 	defer cleanCallback()
 	lcManager := getLcServiceManager(t)
 
