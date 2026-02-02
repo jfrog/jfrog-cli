@@ -502,62 +502,62 @@ func TestReleaseBundleCreationWithDraftFlag(t *testing.T) {
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
 	assertStatusDraft(t, lcManager, tests.LcRbName1, number1)
 
-	//// Test 2: Create draft bundle using build-name/build-number flags
-	// createRbWithFlags(t, "", "", tests.LcBuildName2, number2, tests.LcRbName2, number2, "default", true, true, true)
-	// defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
-	// assertStatusDraft(t, lcManager, tests.LcRbName2, number2)
+	// Test 2: Create draft bundle using build-name/build-number flags
+	createRbWithFlags(t, "", "", tests.LcBuildName2, number2, tests.LcRbName2, number2, "default", true, true, true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
+	assertStatusDraft(t, lcManager, tests.LcRbName2, number2)
 }
 
-//  func TestReleaseBundleUpdateWithSpec(t *testing.T) {
-//	cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
-//	defer cleanCallback()
-//	lcManager := getLcServiceManager(t)
-//
-//	deleteBuilds := uploadBuilds(t)
-//	defer deleteBuilds()
-//
-//	// Create a draft bundle from build 1
-//	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, tests.LcRbName1, number1, "default", true, true, true)
-//	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
-//	assertStatusDraft(t, lcManager, tests.LcRbName1, number1)
-//	assertRbArtifacts(t, lcManager, tests.LcRbName1, number1, tests.GetExpectedLifecycleBuild1Artifacts())
-//
-//	// Update the draft bundle by adding build 3 (which includes dependencies) using spec file
-//	updateSpecFile, err := tests.CreateSpec(tests.LifecycleBuilds3)
-//	assert.NoError(t, err)
-//	updateRbWithFlags(t, updateSpecFile, tests.LcRbName1, number1, "default", "", true)
-//
-//	// Verify the bundle is still in DRAFT status after update
-//	assertStatusDraft(t, lcManager, tests.LcRbName1, number1)
-//
-//	// Verify the bundle now contains artifacts from both build 1 and build 3
-//	assertRbArtifacts(t, lcManager, tests.LcRbName1, number1, tests.GetExpectedLifecycleUpdateArtifacts())
-//}
+func TestReleaseBundleUpdateWithSpec(t *testing.T) {
+	cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
+	defer cleanCallback()
+	lcManager := getLcServiceManager(t)
 
-//  func TestReleaseBundleUpdateWithFlags(t *testing.T) {
-//	cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
-//	defer cleanCallback()
-//	lcManager := getLcServiceManager(t)
-//
-//	deleteBuilds := uploadBuilds(t)
-//	defer deleteBuilds()
-//
-//	// Create a draft bundle from build 2
-//	createRbWithFlags(t, "", "", tests.LcBuildName2, number2, tests.LcRbName2, number2, "default", true, true, true)
-//	defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
-//	assertStatusDraft(t, lcManager, tests.LcRbName2, number2)
-//	assertRbArtifacts(t, lcManager, tests.LcRbName2, number2, tests.GetExpectedLifecycleBuild2Artifacts())
-//
-//	// Update draft using --source-type-builds flag to add build 3
-//	sourceBuildsFlag := fmt.Sprintf("name=%s,id=%s,include-deps=true", tests.LcBuildName3, number3)
-//	updateRbWithFlags(t, "", tests.LcRbName2, number2, "default", sourceBuildsFlag, true)
-//
-//	// Verify the bundle is still in DRAFT status after update
-//	assertStatusDraft(t, lcManager, tests.LcRbName2, number2)
-//
-//	// Verify the bundle now contains artifacts from both build 2 and build 3
-//	assertRbArtifacts(t, lcManager, tests.LcRbName2, number2, tests.GetExpectedLifecycleUpdateBuild2Artifacts())
-//}
+	deleteBuilds := uploadBuilds(t)
+	defer deleteBuilds()
+
+	// Create a draft bundle from build 1
+	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, tests.LcRbName1, number1, "default", true, true, true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
+	assertStatusDraft(t, lcManager, tests.LcRbName1, number1)
+	assertRbArtifacts(t, lcManager, tests.LcRbName1, number1, tests.GetExpectedLifecycleBuild1Artifacts())
+
+	// Update the draft bundle by adding build 3 (which includes dependencies) using spec file
+	updateSpecFile, err := tests.CreateSpec(tests.LifecycleBuilds3)
+	assert.NoError(t, err)
+	updateRbWithFlags(t, updateSpecFile, tests.LcRbName1, number1, "default", "", true)
+
+	// Verify the bundle is still in DRAFT status after update
+	assertStatusDraft(t, lcManager, tests.LcRbName1, number1)
+
+	// Verify the bundle now contains artifacts from both build 1 and build 3
+	assertRbArtifacts(t, lcManager, tests.LcRbName1, number1, tests.GetExpectedLifecycleUpdateArtifacts())
+}
+
+func TestReleaseBundleUpdateWithFlags(t *testing.T) {
+	cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
+	defer cleanCallback()
+	lcManager := getLcServiceManager(t)
+
+	deleteBuilds := uploadBuilds(t)
+	defer deleteBuilds()
+
+	// Create a draft bundle from build 2
+	createRbWithFlags(t, "", "", tests.LcBuildName2, number2, tests.LcRbName2, number2, "default", true, true, true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
+	assertStatusDraft(t, lcManager, tests.LcRbName2, number2)
+	assertRbArtifacts(t, lcManager, tests.LcRbName2, number2, tests.GetExpectedLifecycleBuild2Artifacts())
+
+	// Update draft using --source-type-builds flag to add build 3
+	sourceBuildsFlag := fmt.Sprintf("name=%s,id=%s,include-deps=true", tests.LcBuildName3, number3)
+	updateRbWithFlags(t, "", tests.LcRbName2, number2, "default", sourceBuildsFlag, true)
+
+	// Verify the bundle is still in DRAFT status after update
+	assertStatusDraft(t, lcManager, tests.LcRbName2, number2)
+
+	// Verify the bundle now contains artifacts from both build 2 and build 3
+	assertRbArtifacts(t, lcManager, tests.LcRbName2, number2, tests.GetExpectedLifecycleUpdateBuild2Artifacts())
+}
 
 /*func deleteExportedReleaseBundle(t *testing.T, rbName string) {
 	assert.NoError(t, os.RemoveAll(rbName))
@@ -684,30 +684,30 @@ func createRbWithFlags(t *testing.T, specFilePath, sourceOption, buildName, buil
 	assert.NoError(t, lcCli.Exec(argsAndOptions...))
 }
 
-// func updateRbWithFlags(t *testing.T, specFilePath, rbName, rbVersion, project, sourceTypeBuilds string, sync bool) {
-//	argsAndOptions := []string{
-//		"rbu",
-//		rbName,
-//		rbVersion,
-//		"--add", // Mandatory flag for rbu
-//	}
-//
-//	if specFilePath != "" {
-//		argsAndOptions = append(argsAndOptions, getOption("spec", specFilePath))
-//	}
-//
-//	if sourceTypeBuilds != "" {
-//		argsAndOptions = append(argsAndOptions, getOption("source-type-builds", sourceTypeBuilds))
-//	}
-//
-//	if project != "" {
-//		argsAndOptions = append(argsAndOptions, getOption(cliutils.Project, project))
-//	}
-//
-//	argsAndOptions = append(argsAndOptions, getOption(cliutils.Sync, strconv.FormatBool(sync)))
-//
-//	assert.NoError(t, lcCli.Exec(argsAndOptions...))
-//}
+func updateRbWithFlags(t *testing.T, specFilePath, rbName, rbVersion, project, sourceTypeBuilds string, sync bool) {
+	argsAndOptions := []string{
+		"rbu",
+		rbName,
+		rbVersion,
+		"--add", // Mandatory flag for rbu
+	}
+
+	if specFilePath != "" {
+		argsAndOptions = append(argsAndOptions, getOption("spec", specFilePath))
+	}
+
+	if sourceTypeBuilds != "" {
+		argsAndOptions = append(argsAndOptions, getOption("source-type-builds", sourceTypeBuilds))
+	}
+
+	if project != "" {
+		argsAndOptions = append(argsAndOptions, getOption(cliutils.Project, project))
+	}
+
+	argsAndOptions = append(argsAndOptions, getOption(cliutils.Sync, strconv.FormatBool(sync)))
+
+	assert.NoError(t, lcCli.Exec(argsAndOptions...))
+}
 
 /*func exportRb(t *testing.T, rbName, rbVersion, targetPath string) {
 	lcCli.RunCliCmdWithOutput(t, "rbe", rbName, rbVersion, targetPath+"/")
