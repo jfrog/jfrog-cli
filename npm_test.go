@@ -235,14 +235,18 @@ func TestNpmInstallClientNative(t *testing.T) {
 
 	packageJsonPath := npmProjectDirectory + "/package.json"
 	moduleName := readModuleId(t, packageJsonPath, npmVersion)
-	runJfrogCli(t, "npm", "i", "--run-native=true", "--build-name="+tests.NpmBuildName, "--build-number="+buildNumber)
+	// Set JFROG_RUN_NATIVE=true for native npm mode
+	clientTestUtils.SetEnvAndAssert(t, "JFROG_RUN_NATIVE", "true")
+	defer clientTestUtils.UnSetEnvAndAssert(t, "JFROG_RUN_NATIVE")
+
+	runJfrogCli(t, "npm", "i", "--build-name="+tests.NpmBuildName, "--build-number="+buildNumber)
 	validateNpmLocalBuildInfo(t, tests.NpmBuildName, buildNumber, moduleName)
 	assert.NoError(t, artifactoryCli.Exec("bp", tests.NpmBuildName, buildNumber))
 
 	npmTest := npmTestParams{
-		testName:    "npm with run-native",
+		testName:    "npm with run-native (JFROG_RUN_NATIVE=true)",
 		buildNumber: buildNumber,
-		npmArgs:     "--run-native=true",
+		npmArgs:     "",
 	}
 
 	validateNpmInstall(t, npmTest, isNpm7(npmVersion))
@@ -265,6 +269,7 @@ func createNpmrcForTesting(t *testing.T, configFilePath string) (err error) {
 }
 
 func publishUsingNpmrc(configFilePath string, buildNumber string) (npm.NpmPublishCommand, error) {
+	// Use deprecated --run-native flag to test backward compatibility (shows deprecation warning)
 	args := []string{"--run-native=true", "--build-name=" + tests.NpmBuildName, "--build-number=" + buildNumber}
 	npmpCmd := npm.NewNpmPublishCommand()
 	npmpCmd.SetConfigFilePath(configFilePath).SetArgs(args)
@@ -578,6 +583,8 @@ func initNpmTest(t *testing.T) {
 	if !*tests.TestNpm {
 		t.Skip("Skipping Npm test. To run Npm test add the '-test.npm=true' option.")
 	}
+	// Ensure JFROG_RUN_NATIVE is not set (clean state for non-native tests)
+	_ = os.Unsetenv("JFROG_RUN_NATIVE")
 	createJfrogHomeConfig(t, true)
 }
 
@@ -851,14 +858,18 @@ func TestNpmPublishWithWorkspacesRunNative(t *testing.T) {
 	npmProjectPath := initNpmWorkspacesProjectTest(t)
 	configFilePath := filepath.Join(npmProjectPath, ".jfrog", "projects", "npm.yaml")
 
-	// Create npmrc for run-native functionality
+	// Create npmrc for native functionality
 	err = createNpmrcForTesting(t, configFilePath)
 	assert.NoError(t, err)
 
-	// Add build info parameters with run-native flag
+	// Set JFROG_RUN_NATIVE=true for native npm mode
+	clientTestUtils.SetEnvAndAssert(t, "JFROG_RUN_NATIVE", "true")
+	defer clientTestUtils.UnSetEnvAndAssert(t, "JFROG_RUN_NATIVE")
+
+	// Add build info parameters
 	buildName := tests.NpmBuildName + "-workspaces-native"
 	buildNumber := "890"
-	args := []string{"--workspaces", "--build-name=" + buildName, "--build-number=" + buildNumber, "--run-native"}
+	args := []string{"--workspaces", "--build-name=" + buildName, "--build-number=" + buildNumber}
 
 	npmpCmd := npm.NewNpmPublishCommand()
 	npmpCmd.SetConfigFilePath(configFilePath).SetArgs(args)

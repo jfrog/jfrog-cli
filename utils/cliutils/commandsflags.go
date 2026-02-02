@@ -1745,7 +1745,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	runNative: cli.BoolFlag{
 		Name:  runNative,
-		Usage: "[Default: false] Set to true if you'd like to use the native client configurations. Note: This flag would invoke native client behind the scenes, has performance implications and does not support deployment view and detailed summary` `",
+		Usage: "[Default: false][DEPRECATED: Use JFROG_RUN_NATIVE=true environment variable instead] Set to true if you'd like to use the native client configurations. Note: This flag would invoke native client behind the scenes, has performance implications and does not support deployment view and detailed summary` `",
 	},
 	npmWorkspaces: cli.BoolFlag{
 		Name:  npmWorkspaces,
