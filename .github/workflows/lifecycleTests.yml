@@ -55,17 +55,6 @@ jobs:
         if: matrix.os.name != 'macos'
         uses: jfrog/.github/actions/install-go-with-cache@main
 
-      - name: Force fresh module download
-        if: matrix.os.name != 'macos'
-        run: |
-          echo "=== Current jfrog-client-go in go.mod ==="
-          grep jfrog-client-go go.mod
-          echo "=== Clearing module cache and downloading fresh ==="
-          go clean -modcache
-          go mod download
-          echo "=== Resolved jfrog-client-go version ==="
-          go list -m github.com/jfrog/jfrog-client-go
-
       - name: Debug macOS Environment and Set Timeout
         if: runner.os == 'macOS'
         run: |
