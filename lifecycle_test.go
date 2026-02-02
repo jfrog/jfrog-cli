@@ -603,11 +603,11 @@ func createRbFromSpec(t *testing.T, specName, rbName, rbVersion string, sync boo
 	createRbWithFlags(t, specFile, "spec", "", "", rbName, rbVersion, "", sync, withoutSigningKey, false)
 }
 
-func createRbFromSpecWithDraft(t *testing.T, specName, rbName, rbVersion string, sync, withoutSigningKey, draft bool) {
-	specFile, err := tests.CreateSpec(specName)
-	assert.NoError(t, err)
-	createRbWithFlags(t, specFile, "spec", "", "", rbName, rbVersion, "", sync, withoutSigningKey, draft)
-}
+// func createRbFromSpecWithDraft(t *testing.T, specName, rbName, rbVersion string, sync, withoutSigningKey, draft bool) {
+//	specFile, err := tests.CreateSpec(specName)
+//	assert.NoError(t, err)
+//	createRbWithFlags(t, specFile, "spec", "", "", rbName, rbVersion, "", sync, withoutSigningKey, draft)
+//}
 
 func TestCreateBundleWithoutSpec(t *testing.T) {
 	cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
@@ -770,13 +770,13 @@ func assertStatusCompleted(t *testing.T, lcManager *lifecycle.LifecycleServicesM
 	assert.Equal(t, services.Completed, resp.Status)
 }
 
-func assertStatusDraft(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion string) {
-	resp, err := getStatus(lcManager, rbName, rbVersion, "")
-	if !assert.NoError(t, err) {
-		return
-	}
-	assert.Equal(t, services.Draft, resp.Status)
-}
+// func assertStatusDraft(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion string) {
+//	resp, err := getStatus(lcManager, rbName, rbVersion, "")
+//	if !assert.NoError(t, err) {
+//		return
+//	}
+//	assert.Equal(t, services.Draft, resp.Status)
+//}
 
 // If createdMillis is provided, assert status for promotion. If blank, assert for creation.
 //
