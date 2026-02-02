@@ -489,24 +489,24 @@ func TestPromoteReleaseBundleWithPromotionTypeFlag(t *testing.T) {
 	assertStatusCompleted(t, lcManager, tests.LcRbName1, number1, "")
 }
 
-//  func TestReleaseBundleCreationWithDraftFlag(t *testing.T) {
-//	cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
-//	defer cleanCallback()
-//	lcManager := getLcServiceManager(t)
-//
-//	deleteBuilds := uploadBuilds(t)
-//	defer deleteBuilds()
-//
-//	// Test 1: Create draft bundle from spec
-//	createRbFromSpecWithDraft(t, tests.LifecycleBuilds12, tests.LcRbName1, number1, true, true, true)
-//	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
-//	assertStatusDraft(t, lcManager, tests.LcRbName1, number1)
-//
-//	//// Test 2: Create draft bundle using build-name/build-number flags
-//	// createRbWithFlags(t, "", "", tests.LcBuildName2, number2, tests.LcRbName2, number2, "default", true, true, true)
-//	// defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
-//	// assertStatusDraft(t, lcManager, tests.LcRbName2, number2)
-//}
+func TestReleaseBundleCreationWithDraftFlag(t *testing.T) {
+	cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
+	defer cleanCallback()
+	lcManager := getLcServiceManager(t)
+
+	deleteBuilds := uploadBuilds(t)
+	defer deleteBuilds()
+
+	// Test 1: Create draft bundle from spec
+	createRbFromSpecWithDraft(t, tests.LifecycleBuilds12, tests.LcRbName1, number1, true, true, true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
+	assertStatusDraft(t, lcManager, tests.LcRbName1, number1)
+
+	//// Test 2: Create draft bundle using build-name/build-number flags
+	// createRbWithFlags(t, "", "", tests.LcBuildName2, number2, tests.LcRbName2, number2, "default", true, true, true)
+	// defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
+	// assertStatusDraft(t, lcManager, tests.LcRbName2, number2)
+}
 
 //  func TestReleaseBundleUpdateWithSpec(t *testing.T) {
 //	cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
@@ -603,11 +603,11 @@ func createRbFromSpec(t *testing.T, specName, rbName, rbVersion string, sync boo
 	createRbWithFlags(t, specFile, "spec", "", "", rbName, rbVersion, "", sync, withoutSigningKey, false)
 }
 
-// func createRbFromSpecWithDraft(t *testing.T, specName, rbName, rbVersion string, sync, withoutSigningKey, draft bool) {
-//	specFile, err := tests.CreateSpec(specName)
-//	assert.NoError(t, err)
-//	createRbWithFlags(t, specFile, "spec", "", "", rbName, rbVersion, "", sync, withoutSigningKey, draft)
-//}
+func createRbFromSpecWithDraft(t *testing.T, specName, rbName, rbVersion string, sync, withoutSigningKey, draft bool) {
+	specFile, err := tests.CreateSpec(specName)
+	assert.NoError(t, err)
+	createRbWithFlags(t, specFile, "spec", "", "", rbName, rbVersion, "", sync, withoutSigningKey, draft)
+}
 
 func TestCreateBundleWithoutSpec(t *testing.T) {
 	cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
@@ -770,13 +770,13 @@ func assertStatusCompleted(t *testing.T, lcManager *lifecycle.LifecycleServicesM
 	assert.Equal(t, services.Completed, resp.Status)
 }
 
-// func assertStatusDraft(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion string) {
-//	resp, err := getStatus(lcManager, rbName, rbVersion, "")
-//	if !assert.NoError(t, err) {
-//		return
-//	}
-//	assert.Equal(t, services.Draft, resp.Status)
-//}
+func assertStatusDraft(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion string) {
+	resp, err := getStatus(lcManager, rbName, rbVersion, "")
+	if !assert.NoError(t, err) {
+		return
+	}
+	assert.Equal(t, services.Draft, resp.Status)
+}
 
 // If createdMillis is provided, assert status for promotion. If blank, assert for creation.
 //
