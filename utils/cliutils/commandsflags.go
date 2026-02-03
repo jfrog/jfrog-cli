@@ -592,6 +592,7 @@ const (
 	SigningKey     = "signing-key"
 	setupRepo      = repo
 	PromotionType  = "promotion-type"
+	Draft          = "draft"
 )
 
 var flagsMap = map[string]cli.Flag{
