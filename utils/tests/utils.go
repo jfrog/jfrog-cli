@@ -70,6 +70,7 @@ var (
 	TestPoetry                *bool
 	TestConan                 *bool
 	TestHelm                  *bool
+	TestHuggingFace           *bool
 	TestPlugins               *bool
 	TestXray                  *bool
 	TestAccess                *bool
@@ -109,6 +110,7 @@ func init() {
 	TestPoetry = flag.Bool("test.poetry", false, "Test Poetry")
 	TestConan = flag.Bool("test.conan", false, "Test Conan")
 	TestHelm = flag.Bool("test.helm", false, "Test Helm")
+	TestHuggingFace = flag.Bool("test.huggingface", false, "Test HuggingFace")
 	TestPlugins = flag.Bool("test.plugins", false, "Test Plugins")
 	TestXray = flag.Bool("test.xray", false, "Test Xray")
 	TestAccess = flag.Bool("test.access", false, "Test Access")
@@ -353,12 +355,14 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestPoetry:             {&PoetryLocalRepo, &PoetryRemoteRepo},
 		TestConan:              {&ConanLocalRepo, &ConanRemoteRepo},
 		TestHelm:               {&HelmLocalRepo},
+		TestHuggingFace:        {},
 		TestPlugins:            {&RtRepo1},
 		TestXray:               {&NpmRemoteRepo, &NugetRemoteRepo, &YarnRemoteRepo, &GradleRemoteRepo, &MvnRemoteRepo, &GoRepo, &GoRemoteRepo, &PypiRemoteRepo},
 		TestAccess:             {&RtRepo1},
 		TestTransfer:           {&RtRepo1, &RtRepo2, &MvnRepo1, &MvnRemoteRepo, &DockerRemoteRepo},
 		TestLifecycle:          {&RtDevRepo, &RtProdRepo1, &RtProdRepo2},
 		TestHelm:               {&RtRepo1},
+		TestHuggingFace:        {},
 	}
 	return getNeededRepositories(nonVirtualReposMap)
 }
@@ -381,9 +385,11 @@ func GetVirtualRepositories() map[*string]string {
 		TestPoetry:       {&PoetryVirtualRepo},
 		TestConan:        {&ConanVirtualRepo},
 		TestHelm:         {},
+		TestHuggingFace:  {},
 		TestPlugins:      {},
 		TestXray:         {&GoVirtualRepo},
 		TestAccess:       {},
+		TestHuggingFace:  {},
 		TestHelm:         {},
 	}
 	return getNeededRepositories(virtualReposMap)
@@ -420,6 +426,7 @@ func GetBuildNames() []string {
 		TestPoetry:       {&PoetryBuildName},
 		TestConan:        {&ConanBuildName},
 		TestHelm:         {&HelmBuildName},
+		TestHuggingFace:  {&HuggingFaceBuildName},
 		TestPlugins:      {},
 		TestXray:         {},
 		TestAccess:       {},

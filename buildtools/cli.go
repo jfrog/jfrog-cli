@@ -28,6 +28,7 @@ import (
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/golang"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/gradle"
 	helmcmd "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/helm"
+	huggingfaceCommands "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/huggingface"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/mvn"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/npm"
 	containerutils "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/ocicontainer"
@@ -58,6 +59,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/buildtools/gopublish"
 	gradledoc "github.com/jfrog/jfrog-cli/docs/buildtools/gradle"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/gradleconfig"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/huggingface"
 	mvndoc "github.com/jfrog/jfrog-cli/docs/buildtools/mvn"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/mvnconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npmcommand"
@@ -474,6 +476,17 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
 			Action:          twineCmd,
+		},
+		{
+			Name:        "hugging-face",
+			Aliases:     []string{"hf"},
+			Flags:       cliutils.GetCommandFlags(cliutils.HuggingFace),
+			HelpName:    corecommon.CreateUsage("hugging-face", huggingface.GetDescription(), huggingface.Usage),
+			Description: huggingface.GetDescription(),
+			UsageText:   huggingface.GetArguments(),
+			Hidden:      true,
+			Action:      huggingFaceCmd,
+			Category:    buildToolsCategory,
 		},
 	})
 	return decorateWithFlagCapture(cmds)
@@ -1106,6 +1119,79 @@ func loginCmd(c *cli.Context) error {
 	}
 	// here docker itself returns the login success message, so no need to print it again
 	return nil
+}
+
+func huggingFaceCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+	if c.NArg() < 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+	args := cliutils.ExtractCommand(c)
+	cmdName, hfArgs := getCommandName(args)
+	switch cmdName {
+	case "u", "upload":
+		return huggingFaceUploadCmd(c, hfArgs)
+	case "d", "download":
+		return huggingFaceDownloadCmd(c, hfArgs)
+	default:
+		return errors.New("Wrong command: " + cmdName)
+	}
+}
+
+func huggingFaceUploadCmd(c *cli.Context, hfArgs []string) error {
+	// Upload requires folderPath and repoID
+	if len(hfArgs) < 2 {
+		return cliutils.PrintHelpAndReturnError("Folder path and repository ID are required.", c)
+	}
+	folderPath := hfArgs[0]
+	if folderPath == "" {
+		return cliutils.PrintHelpAndReturnError("Folder path cannot be empty.", c)
+	}
+	repoID := hfArgs[1]
+	if repoID == "" {
+		return cliutils.PrintHelpAndReturnError("Repository ID cannot be empty.", c)
+	}
+	revision := ""
+	if c.String("revision") != "" {
+		revision = c.String("revision")
+	}
+	repoType := c.String("repo-type")
+	if repoType == "" {
+		repoType = "model"
+	}
+	huggingFaceUploadCmd := huggingfaceCommands.NewHuggingFaceUpload().SetFolderPath(folderPath).SetRepoId(repoID).SetRepoType(repoType).SetRevision(revision)
+	return commands.Exec(huggingFaceUploadCmd)
+}
+
+func huggingFaceDownloadCmd(c *cli.Context, hfArgs []string) error {
+	// Download requires repoID
+	if len(hfArgs) < 1 {
+		return cliutils.PrintHelpAndReturnError("Model/Dataset name is required.", c)
+	}
+	repoID := hfArgs[0]
+	if repoID == "" {
+		return cliutils.PrintHelpAndReturnError("Model/Dataset name cannot be empty.", c)
+	}
+	revision := ""
+	if c.String("revision") != "" {
+		revision = c.String("revision")
+	}
+	etagTimeout := 86400
+	if c.String("etag-timeout") != "" {
+		var err error
+		etagTimeout, err = strconv.Atoi(c.String("etag-timeout"))
+		if err != nil {
+			return errorutils.CheckErrorf("invalid etag-timeout value: %s", c.String("etag-timeout"))
+		}
+	}
+	repoType := c.String("repo-type")
+	if repoType == "" {
+		repoType = "model"
+	}
+	huggingFaceDownloadCmd := huggingfaceCommands.NewHuggingFaceDownload().SetRepoId(repoID).SetRepoType(repoType).SetRevision(revision).SetEtagTimeout(etagTimeout)
+	return commands.Exec(huggingFaceDownloadCmd)
 }
 
 func dockerScanCmd(c *cli.Context, imageTag string) error {

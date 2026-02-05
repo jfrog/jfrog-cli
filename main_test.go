@@ -94,6 +94,9 @@ func setupIntegrationTests() {
 	if *tests.TestHelm {
 		InitHelmTests()
 	}
+	if *tests.TestHuggingFace {
+		InitHuggingFaceTests()
+	}
 }
 
 func tearDownIntegrationTests() {
@@ -120,6 +123,9 @@ func tearDownIntegrationTests() {
 	}
 	if *tests.TestHelm {
 		CleanHelmTests()
+	}
+	if *tests.TestHuggingFace {
+		CleanHuggingFaceTests()
 	}
 }
 
