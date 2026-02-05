@@ -9,6 +9,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/buildtools/dockerpush"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npmci"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npminstall"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/pnpmpublish"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/urfave/cli"
@@ -77,6 +78,14 @@ func GetBuildToolsHelpCommands() []cli.Command {
 			Flags:     cliutils.GetCommandFlags(cliutils.NpmPublish),
 			Usage:     npmpublish.GetDescription(),
 			HelpName:  corecommon.CreateUsage("npm publish", npmpublish.GetDescription(), npmpublish.Usage),
+			ArgsUsage: common.CreateEnvVars(),
+			Hidden:    true,
+		},
+		{
+			Name:      "pnpmpublishhelp",
+			Flags:     cliutils.GetCommandFlags(cliutils.PnpmPublish),
+			Usage:     pnpmpublish.GetDescription(),
+			HelpName:  corecommon.CreateUsage("pnpm publish", pnpmpublish.GetDescription(), pnpmpublish.Usage),
 			ArgsUsage: common.CreateEnvVars(),
 			Hidden:    true,
 		},
