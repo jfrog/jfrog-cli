@@ -752,17 +752,13 @@ func finalizeRbWithFlags(t *testing.T, rbName, rbVersion, project, signingKey st
 		rbName,
 		rbVersion,
 	}
-
 	if signingKey != "" {
 		argsAndOptions = append(argsAndOptions, getOption(cliutils.SigningKey, signingKey))
 	}
-
 	if project != "" {
 		argsAndOptions = append(argsAndOptions, getOption(cliutils.Project, project))
 	}
-
 	argsAndOptions = append(argsAndOptions, getOption(cliutils.Sync, strconv.FormatBool(sync)))
-
 	assert.NoError(t, lcCli.Exec(argsAndOptions...))
 }
 
