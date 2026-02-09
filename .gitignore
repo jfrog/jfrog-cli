@@ -2,6 +2,7 @@
 .idea
 .vscode
 *.iml
+.tool-versions
 
 # Test files
 testdata/go/project1/go.sum
