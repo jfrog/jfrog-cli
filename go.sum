@@ -209,8 +209,6 @@ github.com/fatih/color v1.18.0 h1:S8gINlzdQ840/4pfAwic/ZE0djQEH3wM94VfqLTZcOM=
 github.com/fatih/color v1.18.0/go.mod h1:4FelSpRwEGDpQ12mAdzqdOukCy4u8WUtOY6lkT/6HfU=
 github.com/felixge/httpsnoop v1.0.4 h1:NFTV2Zj1bL4mc9sqWACXbQFVBBg2W3GPvqp8/ESS2Wg=
 github.com/felixge/httpsnoop v1.0.4/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSwevea8zH2U=
-github.com/fluxxBot/jfrog-cli-artifactory v0.0.0-20260130044429-464a5025d08a h1:QpKxvaVVlIKA/4EPg2RnN+o9UfTVWs3gw/mb5V2uCbo=
-github.com/fluxxBot/jfrog-cli-artifactory v0.0.0-20260130044429-464a5025d08a/go.mod h1:ANFZOB4AX+Voo24l1BO8bVvN76m3ZViR1QaK5u3QDgE=
 github.com/forPelevin/gomoji v1.4.1 h1:7U+Bl8o6RV/dOQz7coQFWj/jX6Ram6/cWFOuFDEPEUo=
 github.com/forPelevin/gomoji v1.4.1/go.mod h1:mM6GtmCgpoQP2usDArc6GjbXrti5+FffolyQfGgPboQ=
 github.com/foxcpp/go-mockdns v1.1.0 h1:jI0rD8M0wuYAxL7r/ynTrCQQq0BVqfB99Vgk7DlmewI=
@@ -421,6 +419,8 @@ github.com/jfrog/jfrog-apps-config v1.0.1 h1:mtv6k7g8A8BVhlHGlSveapqf4mJfonwvXYL
 github.com/jfrog/jfrog-apps-config v1.0.1/go.mod h1:8AIIr1oY9JuH5dylz2S6f8Ym2MaadPLR6noCBO4C22w=
 github.com/jfrog/jfrog-cli-application v1.0.2-0.20260202095705-3657239cde88 h1:KP6SmrduuGMMsMfHhBATv5I3W1iTtjBojtqEkPHBWk4=
 github.com/jfrog/jfrog-cli-application v1.0.2-0.20260202095705-3657239cde88/go.mod h1:xum2HquWO5uExa/A7MQs3TgJJVEeoqTR+6Z4mfBr1Xw=
+github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260206111107-7a05b41040dd h1:ZKRwlPEkSmul7fBKat7qBVU3tSxd6xg2GbxQixK4COg=
+github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260206111107-7a05b41040dd/go.mod h1:1GKFtQs/5/3HRp1JyMHMQVT9lxzXR+YecO6dWdRThNs=
 github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260202114755-cec5fd702f50 h1:u3NvevCPC5ygeOMv39XSlpIOCt7PhLtFWR2XZ0QkKaU=
 github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260202114755-cec5fd702f50/go.mod h1:+Hnaikp/xCSPD/q7txxRy4Zc0wzjW/usrCSf+6uONSQ=
 github.com/jfrog/jfrog-cli-evidence v0.8.3-0.20260202100913-d9ee9476845a h1:lTOAhUjKcOmM/0Kbj4V+I/VHPlW7YNAhIEVpGnCM5mI=

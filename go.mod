@@ -19,7 +19,7 @@ require (
 	github.com/jfrog/build-info-go v1.13.1-0.20260130140656-2d0d5593fccf
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-application v1.0.2-0.20260202095705-3657239cde88
-	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260204122910-dcfb1d59b122
+	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260206111107-7a05b41040dd
 	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260202114755-cec5fd702f50
 	github.com/jfrog/jfrog-cli-evidence v0.8.3-0.20260202100913-d9ee9476845a
 	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20251205121610-171eb9b0000e
@@ -259,7 +259,7 @@ replace github.com/ktrysmt/go-bitbucket => github.com/ktrysmt/go-bitbucket v0.9.
 
 //replace github.com/jfrog/jfrog-cli-core/v2 => ../jfrog-cli-core
 
-replace github.com/jfrog/jfrog-cli-artifactory => github.com/fluxxBot/jfrog-cli-artifactory v0.0.0-20260130044429-464a5025d08a
+// replace github.com/jfrog/jfrog-cli-artifactory => github.com/fluxxBot/jfrog-cli-artifactory v0.0.0-20260130044429-464a5025d08a
 
 //replace github.com/jfrog/build-info-go => github.com/fluxxBot/build-info-go v1.10.10-0.20260105070825-d3f36f619ba5
 
