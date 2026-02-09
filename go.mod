@@ -259,7 +259,7 @@ replace github.com/ktrysmt/go-bitbucket => github.com/ktrysmt/go-bitbucket v0.9.
 
 //replace github.com/jfrog/jfrog-cli-core/v2 => ../jfrog-cli-core
 
-// replace github.com/jfrog/jfrog-cli-artifactory => github.com/fluxxBot/jfrog-cli-artifactory v0.0.0-20260130044429-464a5025d08a
+replace github.com/jfrog/jfrog-cli-artifactory => github.com/naveenku-jfrog/jfrog-cli-artifactory v0.0.0-20260209132136-4c936db5dfc0
 
 //replace github.com/jfrog/build-info-go => github.com/fluxxBot/build-info-go v1.10.10-0.20260105070825-d3f36f619ba5
 
