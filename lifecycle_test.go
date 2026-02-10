@@ -38,6 +38,7 @@ const (
 	artifactoryLifecycleMinVersion          = "7.68.3"
 	signingKeyOptionalArtifactoryMinVersion = "7.104.1"
 	promotionTypeFlagArtifactoryMinVersion  = "7.106.1"
+	draftBundleArtifactoryMinVersion        = "7.136.0"
 	gpgKeyPairName                          = "lc-tests-key-pair"
 	lcTestdataPath                          = "lifecycle"
 	releaseBundlesSpec                      = "release-bundles-spec.json"
@@ -167,7 +168,7 @@ func TestReleaseBundleCreationFromMultiBundlesUsingCommandFlagWithProject(t *tes
 	defer deleteBuilds()
 
 	// Create first release bundle from builds with project
-	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, tests.LcRbName1, number1, tests.ProjectKey, true, true)
+	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, tests.LcRbName1, number1, tests.ProjectKey, true, true, false)
 	defer deleteReleaseBundleWithProject(t, lcManager, tests.LcRbName1, number1, tests.ProjectKey)
 	assertStatusCompletedWithProject(t, lcManager, tests.LcRbName1, number1, "", tests.ProjectKey)
 
@@ -177,7 +178,7 @@ func TestReleaseBundleCreationFromMultiBundlesUsingCommandFlagWithProject(t *tes
 	assert.True(t, isExist, "Release bundle %s/%s should exist in project %s", tests.LcRbName1, number1, tests.ProjectKey)
 
 	// Create second release bundle from builds with project
-	createRbWithFlags(t, "", "", tests.LcBuildName2, number2, tests.LcRbName2, number2, tests.ProjectKey, true, true)
+	createRbWithFlags(t, "", "", tests.LcBuildName2, number2, tests.LcRbName2, number2, tests.ProjectKey, true, true, false)
 	defer deleteReleaseBundleWithProject(t, lcManager, tests.LcRbName2, number2, tests.ProjectKey)
 	assertStatusCompletedWithProject(t, lcManager, tests.LcRbName2, number2, "", tests.ProjectKey)
 
@@ -489,6 +490,112 @@ func TestPromoteReleaseBundleWithPromotionTypeFlag(t *testing.T) {
 	assertStatusCompleted(t, lcManager, tests.LcRbName1, number1, "")
 }
 
+func TestReleaseBundleCreationWithDraftFlagFromSpec(t *testing.T) {
+	cleanCallback := initLifecycleTest(t, draftBundleArtifactoryMinVersion)
+	defer cleanCallback()
+	lcManager := getLcServiceManager(t)
+
+	deleteBuilds := uploadBuilds(t)
+	defer deleteBuilds()
+
+	// Create draft bundle from spec
+	createRbFromSpecWithDraft(t, tests.LifecycleBuilds12, tests.LcRbName1, number1, true, true, true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
+	assertStatusDraft(t, lcManager, tests.LcRbName1, number1)
+}
+
+func TestReleaseBundleCreationWithDraftFlagFromFlags(t *testing.T) {
+	cleanCallback := initLifecycleTest(t, draftBundleArtifactoryMinVersion)
+	defer cleanCallback()
+	lcManager := getLcServiceManager(t)
+
+	deleteBuilds := uploadBuilds(t)
+	defer deleteBuilds()
+
+	// Create draft bundle using build-name/build-number flags
+	createRbWithFlags(t, "", "", tests.LcBuildName2, number2, tests.LcRbName2, number2, "default", true, true, true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
+	assertStatusDraft(t, lcManager, tests.LcRbName2, number2)
+}
+
+func TestReleaseBundleUpdateWithSpec(t *testing.T) {
+	cleanCallback := initLifecycleTest(t, draftBundleArtifactoryMinVersion)
+	defer cleanCallback()
+	lcManager := getLcServiceManager(t)
+
+	deleteBuilds := uploadBuilds(t)
+	defer deleteBuilds()
+
+	// Create a draft bundle from build 1
+	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, tests.LcRbName1, number1, "default", true, true, true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
+	assertStatusDraft(t, lcManager, tests.LcRbName1, number1)
+	assertRbArtifacts(t, lcManager, tests.LcRbName1, number1, tests.GetExpectedLifecycleBuild1Artifacts())
+
+	// Update the draft bundle by adding build 3 (which includes dependencies) using spec file
+	updateSpecFile, err := tests.CreateSpec(tests.LifecycleBuilds3)
+	assert.NoError(t, err)
+	updateRbWithFlags(t, updateSpecFile, tests.LcRbName1, number1, "default", "", true)
+
+	// Verify the bundle is still in DRAFT status after update
+	assertStatusDraft(t, lcManager, tests.LcRbName1, number1)
+
+	// Verify the bundle now contains artifacts from both build 1 and build 3
+	assertRbArtifacts(t, lcManager, tests.LcRbName1, number1, tests.GetExpectedLifecycleUpdateArtifacts())
+}
+
+func TestReleaseBundleUpdateWithFlags(t *testing.T) {
+	cleanCallback := initLifecycleTest(t, draftBundleArtifactoryMinVersion)
+	defer cleanCallback()
+	lcManager := getLcServiceManager(t)
+
+	deleteBuilds := uploadBuilds(t)
+	defer deleteBuilds()
+
+	// Create a draft bundle from build 2
+	createRbWithFlags(t, "", "", tests.LcBuildName2, number2, tests.LcRbName2, number2, "default", true, true, true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
+	assertStatusDraft(t, lcManager, tests.LcRbName2, number2)
+	assertRbArtifacts(t, lcManager, tests.LcRbName2, number2, tests.GetExpectedLifecycleBuild2Artifacts())
+
+	// Update draft using --source-type-builds flag to add build 3
+	sourceBuildsFlag := fmt.Sprintf("name=%s,id=%s,include-deps=true", tests.LcBuildName3, number3)
+	updateRbWithFlags(t, "", tests.LcRbName2, number2, "default", sourceBuildsFlag, true)
+
+	// Verify the bundle is still in DRAFT status after update
+	assertStatusDraft(t, lcManager, tests.LcRbName2, number2)
+
+	// Verify the bundle now contains artifacts from both build 2 and build 3
+	assertRbArtifacts(t, lcManager, tests.LcRbName2, number2, tests.GetExpectedLifecycleUpdateBuild2Artifacts())
+}
+
+func TestReleaseBundleFinalize(t *testing.T) {
+	cleanCallback := initLifecycleTest(t, draftBundleArtifactoryMinVersion)
+	defer cleanCallback()
+	lcManager := getLcServiceManager(t)
+
+	deleteBuilds := uploadBuilds(t)
+	defer deleteBuilds()
+
+	// Create a draft bundle from build 1
+	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, tests.LcRbName1, number1, "default", true, true, true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
+	assertStatusDraft(t, lcManager, tests.LcRbName1, number1)
+	assertRbArtifacts(t, lcManager, tests.LcRbName1, number1, tests.GetExpectedLifecycleBuild1Artifacts())
+
+	// Finalize the draft bundle (the command prints "Release Bundle successfully finalized" on success)
+	finalizeRbWithFlags(t, tests.LcRbName1, number1, "default", gpgKeyPairName, true)
+
+	// Verify the bundle's current status is COMPLETED after finalize
+	// Note: We use assertCurrentBundleStatusCompleted (not assertStatusCompleted) because
+	// the creation status endpoint returns the audit status of the creation operation (DRAFT),
+	// while we want to verify the bundle's actual current state (COMPLETED after finalize).
+	assertCurrentBundleStatusCompleted(t, lcManager, tests.LcRbName1, number1)
+
+	// Verify the bundle still exists and contains the same artifacts after finalize
+	assertRbArtifacts(t, lcManager, tests.LcRbName1, number1, tests.GetExpectedLifecycleBuild1Artifacts())
+}
+
 /*func deleteExportedReleaseBundle(t *testing.T, rbName string) {
 	assert.NoError(t, os.RemoveAll(rbName))
 }*/
@@ -524,13 +631,19 @@ func uploadBuildsWithProject(t *testing.T) func() {
 func createRbBackwardCompatible(t *testing.T, specName, sourceOption, rbName, rbVersion string, sync bool) {
 	specFile, err := getSpecFile(specName)
 	assert.NoError(t, err)
-	createRbWithFlags(t, specFile, sourceOption, "", "", rbName, rbVersion, "", sync, false)
+	createRbWithFlags(t, specFile, sourceOption, "", "", rbName, rbVersion, "", sync, false, false)
 }
 
 func createRbFromSpec(t *testing.T, specName, rbName, rbVersion string, sync bool, withoutSigningKey bool) {
 	specFile, err := tests.CreateSpec(specName)
 	assert.NoError(t, err)
-	createRbWithFlags(t, specFile, "spec", "", "", rbName, rbVersion, "", sync, withoutSigningKey)
+	createRbWithFlags(t, specFile, "spec", "", "", rbName, rbVersion, "", sync, withoutSigningKey, false)
+}
+
+func createRbFromSpecWithDraft(t *testing.T, specName, rbName, rbVersion string, sync, withoutSigningKey, draft bool) {
+	specFile, err := tests.CreateSpec(specName)
+	assert.NoError(t, err)
+	createRbWithFlags(t, specFile, "spec", "", "", rbName, rbVersion, "", sync, withoutSigningKey, draft)
 }
 
 func TestCreateBundleWithoutSpec(t *testing.T) {
@@ -542,11 +655,11 @@ func TestCreateBundleWithoutSpec(t *testing.T) {
 	deleteBuilds := uploadBuilds(t)
 	defer deleteBuilds()
 
-	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, tests.LcRbName1, number1, "default", false, false)
+	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, tests.LcRbName1, number1, "default", false, false, false)
 	assertStatusCompleted(t, lcManager, tests.LcRbName1, number1, "")
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
 
-	createRbWithFlags(t, "", "", tests.LcBuildName2, number2, tests.LcRbName2, number2, "default", false, true)
+	createRbWithFlags(t, "", "", tests.LcBuildName2, number2, tests.LcRbName2, number2, "default", false, true, false)
 	assertStatusCompleted(t, lcManager, tests.LcRbName2, number2, "")
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
 }
@@ -566,13 +679,13 @@ func TestCreateBundleWithoutSpecAndWithProject(t *testing.T) {
 	deleteBuilds := uploadBuildsWithProject(t)
 	defer deleteBuilds()
 
-	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, tests.LcRbName1, number1, tests.ProjectKey, false, false)
+	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, tests.LcRbName1, number1, tests.ProjectKey, false, false, false)
 	assertStatusCompletedWithProject(t, lcManager, tests.LcRbName1, number1, "", tests.ProjectKey)
 	defer deleteReleaseBundleWithProject(t, lcManager, tests.LcRbName1, number1, tests.ProjectKey)
 }
 
 func createRbWithFlags(t *testing.T, specFilePath, sourceOption, buildName, buildNumber, rbName, rbVersion, project string,
-	sync, withoutSigningKey bool,
+	sync, withoutSigningKey, draft bool,
 ) {
 	argsAndOptions := []string{
 		"rbc",
@@ -601,6 +714,51 @@ func createRbWithFlags(t *testing.T, specFilePath, sourceOption, buildName, buil
 		argsAndOptions = append(argsAndOptions, getOption(cliutils.Project, project))
 	}
 
+	if draft {
+		argsAndOptions = append(argsAndOptions, getOption(cliutils.Draft, "true"))
+	}
+
+	assert.NoError(t, lcCli.Exec(argsAndOptions...))
+}
+
+func updateRbWithFlags(t *testing.T, specFilePath, rbName, rbVersion, project, sourceTypeBuilds string, sync bool) {
+	argsAndOptions := []string{
+		"rbu",
+		rbName,
+		rbVersion,
+		"--add", // Mandatory flag for rbu
+	}
+
+	if specFilePath != "" {
+		argsAndOptions = append(argsAndOptions, getOption("spec", specFilePath))
+	}
+
+	if sourceTypeBuilds != "" {
+		argsAndOptions = append(argsAndOptions, getOption("source-type-builds", sourceTypeBuilds))
+	}
+
+	if project != "" {
+		argsAndOptions = append(argsAndOptions, getOption(cliutils.Project, project))
+	}
+
+	argsAndOptions = append(argsAndOptions, getOption(cliutils.Sync, strconv.FormatBool(sync)))
+
+	assert.NoError(t, lcCli.Exec(argsAndOptions...))
+}
+
+func finalizeRbWithFlags(t *testing.T, rbName, rbVersion, project, signingKey string, sync bool) {
+	argsAndOptions := []string{
+		"rbf",
+		rbName,
+		rbVersion,
+	}
+	if signingKey != "" {
+		argsAndOptions = append(argsAndOptions, getOption(cliutils.SigningKey, signingKey))
+	}
+	if project != "" {
+		argsAndOptions = append(argsAndOptions, getOption(cliutils.Project, project))
+	}
+	argsAndOptions = append(argsAndOptions, getOption(cliutils.Sync, strconv.FormatBool(sync)))
 	assert.NoError(t, lcCli.Exec(argsAndOptions...))
 }
 
@@ -665,6 +823,14 @@ func assertStatusCompleted(t *testing.T, lcManager *lifecycle.LifecycleServicesM
 	assert.Equal(t, services.Completed, resp.Status)
 }
 
+func assertStatusDraft(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion string) {
+	resp, err := getStatus(lcManager, rbName, rbVersion, "")
+	if !assert.NoError(t, err) {
+		return
+	}
+	assert.Equal(t, services.Draft, resp.Status)
+}
+
 // If createdMillis is provided, assert status for promotion. If blank, assert for creation.
 //
 //nolint:unparam // createdMillis parameter is kept for API consistency with existing tests
@@ -674,6 +840,35 @@ func assertStatusCompletedWithProject(t *testing.T, lcManager *lifecycle.Lifecyc
 		return
 	}
 	assert.Equal(t, services.Completed, resp.Status)
+}
+
+// assertCurrentBundleStatusCompleted asserts the bundle's current record status is COMPLETED.
+// This differs from assertStatusCompleted which checks the creation operation's audit status.
+// Use this after finalize to verify the bundle is now in COMPLETED state.
+func assertCurrentBundleStatusCompleted(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion string) {
+	status, err := getCurrentBundleRecordStatus(lcManager, rbName, rbVersion)
+	if !assert.NoError(t, err) {
+		return
+	}
+	assert.Equal(t, "COMPLETED", status, "Expected bundle current status to be COMPLETED after finalize")
+}
+
+// getCurrentBundleRecordStatus fetches the current bundle status from the bundle record.
+// This returns the actual current state of the bundle, not the creation operation status.
+func getCurrentBundleRecordStatus(lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion string) (string, error) {
+	params := services.GetSearchOptionalQueryParams{
+		Limit: 100,
+	}
+	resp, err := lcManager.ReleaseBundlesSearchVersions(rbName, params)
+	if err != nil {
+		return "", err
+	}
+	for _, bundle := range resp.ReleaseBundles {
+		if bundle.ReleaseBundleVersion == rbVersion {
+			return bundle.Status, nil
+		}
+	}
+	return "", fmt.Errorf("bundle version %s/%s not found", rbName, rbVersion)
 }
 
 func getLcServiceManager(t *testing.T) *lifecycle.LifecycleServicesManager {
@@ -1204,13 +1399,13 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 	}
 
 	// Create release bundles with project
-	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, projectRbName, projectVersionA, tests.ProjectKey, true, false)
+	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, projectRbName, projectVersionA, tests.ProjectKey, true, false, false)
 	defer deleteReleaseBundleWithProject(t, lcManager, projectRbName, projectVersionA, tests.ProjectKey)
 	assertStatusCompletedWithProject(t, lcManager, projectRbName, projectVersionA, "", tests.ProjectKey)
 
 	time.Sleep(1 * time.Second)
 
-	createRbWithFlags(t, "", "", tests.LcBuildName2, number2, projectRbName, projectVersionB, tests.ProjectKey, true, false)
+	createRbWithFlags(t, "", "", tests.LcBuildName2, number2, projectRbName, projectVersionB, tests.ProjectKey, true, false, false)
 	defer deleteReleaseBundleWithProject(t, lcManager, projectRbName, projectVersionB, tests.ProjectKey)
 	assertStatusCompletedWithProject(t, lcManager, projectRbName, projectVersionB, "", tests.ProjectKey)
 

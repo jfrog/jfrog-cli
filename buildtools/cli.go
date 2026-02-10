@@ -931,14 +931,15 @@ func goCmdVerification(c *cli.Context) (string, error) {
 
 func dockerCmd(c *cli.Context) error {
 	args := cliutils.ExtractCommand(c)
-	var cmd, image string
+	var cmd, cmdArg string
 	// We may have prior flags before push/pull commands for the docker client.
+	// cmdArg is the second non-flag argument: image name for pull/push/scan, subcommand for buildx
 	for _, arg := range args {
 		if !strings.HasPrefix(arg, "-") {
 			if cmd == "" {
 				cmd = arg
 			} else {
-				image = arg
+				cmdArg = arg
 				break
 			}
 		}
@@ -946,16 +947,22 @@ func dockerCmd(c *cli.Context) error {
 	var err error
 	switch cmd {
 	case "pull":
-		err = pullCmd(c, image)
+		err = pullCmd(c, cmdArg)
 	case "push":
-		err = pushCmd(c, image)
+		err = pushCmd(c, cmdArg)
 	case "login":
 		err = loginCmd(c)
 	case "scan":
-		return dockerScanCmd(c, image)
-		// Handle both build and buildx with same handler
-	case "build", "buildx":
+		return dockerScanCmd(c, cmdArg)
+	case "build":
 		err = buildCmd(c)
+	case "buildx":
+		// Only intercept "buildx build", pass through other buildx subcommands (create, ls, rm, etc.)
+		if cmdArg == "build" {
+			err = buildCmd(c)
+		} else {
+			err = dockerNativeCmd(c)
+		}
 	default:
 		err = dockerNativeCmd(c)
 	}
