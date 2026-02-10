@@ -697,7 +697,7 @@ func inferPoetryConfigFromToml(_ project.ProjectType) (*project.RepositoryConfig
 
 	sources := viper.Get("tool.poetry.source")
 	if sources == nil {
-		return nil, fmt.Errorf("no Poetry sources found in pyproject.toml. Add a source pointing to your JFrog repository. See 'jf poetry-config --help' for details.")
+		return nil, fmt.Errorf("no Poetry sources found in pyproject.toml. Add a source pointing to your JFrog repository. See 'jf poetry-config --help' for details")
 	}
 
 	// Get list of configured servers from jf config

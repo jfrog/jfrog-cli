@@ -610,7 +610,7 @@ func createLifecycleDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, e
 		return nil, err
 	}
 	if lcDetails.Url == "" {
-		return nil, errors.New("platform URL is mandatory for lifecycle commands. Configure it via the --url flag or by running 'jf config add'.")
+		return nil, errors.New("platform URL is mandatory for lifecycle commands. Configure it via the --url flag or by running 'jf config add'")
 	}
 	PlatformToLifecycleUrls(lcDetails)
 	return lcDetails, nil
