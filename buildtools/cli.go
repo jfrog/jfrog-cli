@@ -651,7 +651,7 @@ func GradleCmd(c *cli.Context) (err error) {
 				return cleanedArgs, nil, err
 			}
 			if serverDetails == nil {
-				return cleanedArgs, nil, fmt.Errorf("no default server configuration found. Please configure a server using 'jfrog config add' or specify a server using --server-id")
+				return cleanedArgs, nil, fmt.Errorf("no default server configuration found. Please configure a server using 'jf config add' or specify a server using --server-id")
 			}
 			return cleanedArgs, serverDetails, nil
 		}
@@ -1508,7 +1508,7 @@ func extractHelmServerDetails(args []string) ([]string, *coreConfig.ServerDetail
 			return cleanedArgs, nil, err
 		}
 		if serverDetails == nil {
-			return cleanedArgs, nil, fmt.Errorf("no default server configuration found. Please configure a server using 'jfrog config add' or specify a server using --server-id")
+			return cleanedArgs, nil, fmt.Errorf("no default server configuration found. Please configure a server using 'jf config add' or specify a server using --server-id")
 		}
 		return cleanedArgs, serverDetails, nil
 	}
@@ -1695,7 +1695,7 @@ func terraformCmd(c *cli.Context) error {
 	case "publish", "p":
 		return terraformPublishCmd(configFilePath, filteredArgs, c)
 	default:
-		return errorutils.CheckErrorf("Terraform command: '%s' is not supported. %s", cmdName, cliutils.GetDocumentationMessage())
+		return errorutils.CheckErrorf("Terraform command: '%s' is not supported. Supported commands: publish. %s", cmdName, cliutils.GetDocumentationMessage())
 	}
 }
 

@@ -85,7 +85,7 @@ func GetCliError(err error, success, failed int, failNoOp bool) error {
 			return coreutils.CliError{ExitCode: coreutils.ExitCodeError, ErrorMsg: errorMessage}
 		}
 	case coreutils.ExitCodeFailNoOp:
-		return coreutils.CliError{ExitCode: coreutils.ExitCodeFailNoOp, ErrorMsg: "No errors, but also no files affected (fail-no-op flag)."}
+		return coreutils.CliError{ExitCode: coreutils.ExitCodeFailNoOp, ErrorMsg: "No files were affected by the operation. To allow this, remove the --fail-no-op flag."}
 	default:
 		return nil
 	}
@@ -641,12 +641,12 @@ func getLatestCliVersionFromGithubAPI() (githubVersionInfo githubResponse, err e
 	log.Debug(fmt.Sprintf("Sending HTTP %s request to: %s", req.Method, req.URL))
 	resp, body, err := doHttpRequest(client, req)
 	if err != nil {
-		err = errors.New("couldn't get latest JFrog CLI latest version info from GitHub API: " + err.Error())
+		err = errors.New("couldn't get the latest JFrog CLI version info from GitHub API: " + err.Error())
 		return
 	}
 	err = errorutils.CheckResponseStatusWithBody(resp, body, http.StatusOK)
 	if resp.StatusCode == http.StatusForbidden && githubToken == "" {
-		err = errors.New("received HTTP status Forbidden from Github, there is no GitHub token, please set github token to avoid anonymous calls rate limits: " + string(body))
+		err = errors.New("GitHub API rate limit exceeded. Set the JFROG_CLI_GITHUB_TOKEN environment variable to authenticate and avoid rate limits: " + string(body))
 		return
 	}
 	if err != nil {
@@ -660,7 +660,7 @@ func getLatestCliVersionFromGithubAPI() (githubVersionInfo githubResponse, err e
 	}
 	// Validate the received version tag format
 	if !isValidVersionTag(githubVersionInfo.TagName) {
-		err = errors.New("invalid version tag format received from GitHub API")
+		err = errors.New("invalid version tag format received from GitHub API. You can suppress this check with JFROG_CLI_AVOID_NEW_VERSION_WARNING=true")
 	}
 	return
 }
@@ -746,7 +746,7 @@ func getDebFlag(c *cli.Context) (deb string, err error) {
 	deb = c.String("deb")
 	slashesCount := strings.Count(deb, "/") - strings.Count(deb, "\\/")
 	if deb != "" && slashesCount != 2 {
-		return "", errors.New("the --deb option should be in the form of distribution/component/architecture")
+		return "", errors.New("the --deb option should be in the form of distribution/component/architecture (e.g., bionic/main/amd64)")
 	}
 	return deb, nil
 }
