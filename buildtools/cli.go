@@ -50,6 +50,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/terraformconfig"
 	twinedocs "github.com/jfrog/jfrog-cli/docs/artifactory/twine"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/conan"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/conanconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/docker"
 	dotnetdocs "github.com/jfrog/jfrog-cli/docs/buildtools/dotnet"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/dotnetconfig"
@@ -356,6 +357,19 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
 			Action:          HelmCmd,
+		},
+		{
+			Name:         "conan-config",
+			Flags:        cliutils.GetCommandFlags(cliutils.ConanConfig),
+			Aliases:      []string{"conanc"},
+			Usage:        conanconfig.GetDescription(),
+			HelpName:     corecommon.CreateUsage("conan-config", conanconfig.GetDescription(), conanconfig.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Category:     buildToolsCategory,
+			Action: func(c *cli.Context) error {
+				return cliutils.CreateConfigCmd(c, project.Conan)
+			},
 		},
 		{
 			Name:            "conan",
