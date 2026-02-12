@@ -79,6 +79,7 @@ const (
 	Poetry                 = "poetry"
 	Helm                   = "helm"
 	RubyConfig             = "ruby-config"
+	ConanConfig            = "conan-config"
 	Conan                  = "conan"
 	Ping                   = "ping"
 	RtCurl                 = "rt-curl"
@@ -1982,6 +1983,9 @@ var commandFlags = map[string][]string{
 		BuildName, BuildNumber, module, Project, serverId, username, password,
 	},
 	RubyConfig: {
+		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
+	},
+	ConanConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	Conan: {
