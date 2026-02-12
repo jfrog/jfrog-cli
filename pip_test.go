@@ -688,3 +688,92 @@ func TestSetupPipCommand(t *testing.T) {
 		assert.Equal(t, http.StatusOK, res.StatusCode)
 	}
 }
+
+// TestTwineBuildPublishWithCIVcsProps tests that CI VCS properties are set on Twine artifacts
+// when running build-publish in a CI environment (GitHub Actions).
+// Twine relies on build-publish to set CI VCS properties via batch AQL query.
+func TestTwineBuildPublishWithCIVcsProps(t *testing.T) {
+	initPipTest(t)
+
+	buildName := tests.PipBuildName + "-civcs"
+	buildNumber := "1"
+
+	// Setup GitHub Actions environment (uses real env vars on CI, mock values locally)
+	cleanupEnv, actualOrg, actualRepo := tests.SetupGitHubActionsEnv(t)
+	defer cleanupEnv()
+
+	// Populate cli config with 'default' server.
+	oldHomeDir, newHomeDir := prepareHomeDir(t)
+	defer func() {
+		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
+		clientTestUtils.RemoveAllAndAssert(t, newHomeDir)
+	}()
+
+	cleanVirtualEnv, err := prepareVirtualEnv(t)
+	assert.NoError(t, err)
+	defer cleanVirtualEnv()
+
+	// Clean old build
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	projectPath := createPypiProject(t, "twine-civcs", "pyproject", "twine")
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+
+	// Run twine upload with build info collection
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	args := []string{"twine", "upload", "dist/*", "--build-name=" + buildName, "--build-number=" + buildNumber}
+	err = jfrogCli.Exec(args...)
+	assert.NoError(t, err, "Failed executing twine upload command")
+
+	// Publish build info - should set CI VCS props on artifacts
+	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	// Get the published build info to find artifact paths
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	assert.NoError(t, err)
+	assert.True(t, found, "Build info was not found")
+
+	// Create service manager for getting artifact properties
+	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
+	assert.NoError(t, err)
+
+	// Verify VCS properties on each artifact from build info
+	// Use same fallback logic as CI VCS: OriginalDeploymentRepo + Path, or Path directly
+	artifactCount := 0
+	for _, module := range publishedBuildInfo.BuildInfo.Modules {
+		for _, artifact := range module.Artifacts {
+			var fullPath string
+			switch {
+			case artifact.OriginalDeploymentRepo != "":
+				fullPath = artifact.OriginalDeploymentRepo + "/" + artifact.Path
+			case artifact.Path != "":
+				fullPath = artifact.Path
+			default:
+				continue // Skip artifacts without any path info
+			}
+
+			props, err := serviceManager.GetItemProps(fullPath)
+			assert.NoError(t, err, "Failed to get properties for artifact: %s", fullPath)
+			assert.NotNil(t, props, "Properties are nil for artifact: %s", fullPath)
+
+			// Validate VCS properties
+			assert.Contains(t, props.Properties, "vcs.provider", "Missing vcs.provider on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.provider"], "github", "Wrong vcs.provider on %s", artifact.Name)
+
+			assert.Contains(t, props.Properties, "vcs.org", "Missing vcs.org on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.org"], actualOrg, "Wrong vcs.org on %s", artifact.Name)
+
+			assert.Contains(t, props.Properties, "vcs.repo", "Missing vcs.repo on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.repo"], actualRepo, "Wrong vcs.repo on %s", artifact.Name)
+
+			artifactCount++
+		}
+	}
+
+	assert.Greater(t, artifactCount, 0, "No artifacts were validated for CI VCS properties")
+}
