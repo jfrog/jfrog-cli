@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/jfrog/jfrog-client-go/http/httpclient"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"os"
 	"os/exec"
@@ -12,20 +10,21 @@ import (
 
 	biutils "github.com/jfrog/build-info-go/utils"
 
-	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
-	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
-
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/golang"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/build"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
+	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/inttestutils"
-
 	"github.com/jfrog/jfrog-cli/utils/tests"
+	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGoConfigWithModuleNameChange(t *testing.T) {
@@ -419,4 +418,88 @@ func TestSetupGoCommand(t *testing.T) {
 	if assert.NoError(t, err, "Failed to find the artifact in the cache: "+moduleCacheUrl) {
 		assert.Equal(t, http.StatusOK, res.StatusCode)
 	}
+}
+
+// TestGoBuildPublishWithCIVcsProps tests that CI VCS properties are set on Go artifacts
+// when running go-publish followed by build-publish in a CI environment (GitHub Actions).
+// Go supports direct upload via 'jf gp' which sets CI VCS properties during upload.
+func TestGoBuildPublishWithCIVcsProps(t *testing.T) {
+	_, cleanUpFunc := initGoTest(t)
+	defer cleanUpFunc()
+
+	buildName := tests.GoBuildName + "-civcs"
+	buildNumber := "1"
+
+	// Setup GitHub Actions environment (uses real env vars on CI, mock values locally)
+	cleanupEnv, actualOrg, actualRepo := tests.SetupGitHubActionsEnv(t)
+	defer cleanupEnv()
+
+	// Clean old build
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+
+	// Prepare and build the Go project
+	prepareGoProject("project1", t, true)
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	// Build the Go project with build info collection
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	err = execGo(jfrogCli, "go", "build", "--mod=mod", "--build-name="+buildName, "--build-number="+buildNumber)
+	assert.NoError(t, err)
+
+	// Publish the Go module to Artifactory with build info collection
+	// This is where CI VCS properties should be set during direct upload
+	err = execGo(jfrogCli, "gp", "--build-name="+buildName, "--build-number="+buildNumber, "v1.0.0")
+	assert.NoError(t, err)
+
+	// Publish build info - should also set CI VCS props via batch update if not already set
+	err = execGo(artifactoryCli, "bp", buildName, buildNumber)
+	assert.NoError(t, err)
+
+	// Get the published build info to find artifact paths
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	assert.NoError(t, err)
+	assert.True(t, found, "Build info was not found")
+
+	// Create service manager for getting artifact properties
+	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
+	assert.NoError(t, err)
+
+	// Verify VCS properties on each artifact from build info
+	// Use same fallback logic as CI VCS: OriginalDeploymentRepo + Path, or Path directly
+	artifactCount := 0
+	for _, module := range publishedBuildInfo.BuildInfo.Modules {
+		for _, artifact := range module.Artifacts {
+			var fullPath string
+			switch {
+			case artifact.OriginalDeploymentRepo != "":
+				fullPath = artifact.OriginalDeploymentRepo + "/" + artifact.Path
+			case artifact.Path != "":
+				fullPath = artifact.Path
+			default:
+				continue // Skip artifacts without any path info
+			}
+
+			props, err := serviceManager.GetItemProps(fullPath)
+			assert.NoError(t, err, "Failed to get properties for artifact: %s", fullPath)
+			assert.NotNil(t, props, "Properties are nil for artifact: %s", fullPath)
+
+			// Validate VCS properties
+			assert.Contains(t, props.Properties, "vcs.provider", "Missing vcs.provider on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.provider"], "github", "Wrong vcs.provider on %s", artifact.Name)
+
+			assert.Contains(t, props.Properties, "vcs.org", "Missing vcs.org on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.org"], actualOrg, "Wrong vcs.org on %s", artifact.Name)
+
+			assert.Contains(t, props.Properties, "vcs.repo", "Missing vcs.repo on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.repo"], actualRepo, "Wrong vcs.repo on %s", artifact.Name)
+
+			artifactCount++
+		}
+	}
+
+	assert.Greater(t, artifactCount, 0, "No artifacts were validated for CI VCS properties")
 }
