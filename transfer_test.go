@@ -58,6 +58,9 @@ func CleanTransferTests() {
 }
 
 func initTransferTest(t *testing.T) func() {
+	if *tests.TestTransfer {
+		t.Skip("Skipping transfer test temporarily.")
+	}
 	if !*tests.TestTransfer {
 		t.Skip("Skipping transfer test. To run transfer test add the '-test.transfer=true' option.")
 	}

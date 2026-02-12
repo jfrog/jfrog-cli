@@ -2,15 +2,21 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	tests2 "github.com/jfrog/jfrog-cli-artifactory/utils/tests"
+	"net/url"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/jfrog/jfrog-client-go/utils/log"
+
+	tests2 "github.com/jfrog/jfrog-cli-artifactory/utils/tests"
 
 	"github.com/docker/docker/api/types/mount"
 
@@ -56,7 +62,6 @@ func initContainerTest(t *testing.T) (containerManagers []container.ContainerMan
 		containerManagers = append(containerManagers, container.DockerClient)
 	}
 	if *tests.TestPodman {
-		t.Skip("JGC-410 - Skipping podman tests")
 		containerManagers = append(containerManagers, container.Podman)
 	}
 	if len(containerManagers) == 0 {
@@ -81,6 +86,104 @@ func initNativeDockerWithArtTest(t *testing.T) func() {
 	createJfrogHomeConfig(t, true)
 	return func() {
 		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
+	}
+}
+
+// initDockerBuildTest initializes test environment for docker build tests with JFROG_RUN_NATIVE enabled
+func initDockerBuildTest(t *testing.T) func() {
+	// Set JFROG_RUN_NATIVE=true for docker build tests
+	clientTestUtils.SetEnvAndAssert(t, "JFROG_RUN_NATIVE", "true")
+
+	// Initialize native docker test setup
+	cleanupNativeDocker := initNativeDockerWithArtTest(t)
+
+	// if this is an external JFrog instance, no need to setup buildx with insecure registry
+	if strings.HasPrefix(*tests.JfrogUrl, "https://") {
+		return func() {
+			// Restore JFROG_RUN_NATIVE
+			clientTestUtils.UnSetEnvAndAssert(t, "JFROG_RUN_NATIVE")
+			// Run native docker cleanup
+			cleanupNativeDocker()
+		}
+	}
+	// Setup buildx builder with insecure registry config for localhost
+	builderName := "jfrog-test-builder"
+	cleanupBuilder := setupInsecureBuildxBuilder(t, builderName)
+
+	// Return combined cleanup function
+	return func() {
+		// Cleanup buildx builder
+		cleanupBuilder()
+		// Restore JFROG_RUN_NATIVE
+		clientTestUtils.UnSetEnvAndAssert(t, "JFROG_RUN_NATIVE")
+		// Run native docker cleanup
+		cleanupNativeDocker()
+	}
+}
+
+// setupInsecureBuildxBuilder creates a buildx builder with insecure registry config
+func setupInsecureBuildxBuilder(t *testing.T, builderName string) func() {
+	// Get registry host from ContainerRegistry
+	registryHost := *tests.ContainerRegistry
+	if parsedURL, err := url.Parse(registryHost); err == nil && parsedURL.Host != "" {
+		registryHost = parsedURL.Host
+	}
+
+	// Create temporary buildkitd.toml config
+	tmpDir, err := os.MkdirTemp("", "buildkit-config")
+	require.NoError(t, err)
+
+	configPath := filepath.Join(tmpDir, "buildkitd.toml")
+	configContent := fmt.Sprintf(`[registry."%s"]
+  http = true
+  insecure = true
+`, registryHost)
+	require.NoError(t, os.WriteFile(configPath, []byte(configContent), 0644))
+
+	// Remove builder if it exists (stop first, then remove)
+	_ = exec.Command("docker", "buildx", "stop", builderName).Run()
+	_ = exec.Command("docker", "buildx", "rm", "-f", builderName).Run()
+
+	// Also remove any leftover buildkit container
+	_ = exec.Command("docker", "rm", "-f", "buildx_buildkit_"+builderName+"0").Run()
+
+	// Create buildx builder with insecure config
+	// Pin to moby/buildkit:v0.12.2 as v0.12.3+ has issues with private HTTP insecure registries
+	createCmd := exec.Command("docker", "buildx", "create",
+		"--name", builderName,
+		"--driver", "docker-container",
+		"--driver-opt", "network=host",
+		"--driver-opt", "image=moby/buildkit:v0.12.2",
+		"--config", configPath,
+		"--bootstrap",
+		"--use")
+	output, err := createCmd.CombinedOutput()
+	require.NoError(t, err, "Failed to create buildx builder: %s", string(output))
+
+	// Verify builder is using our config
+	inspectCmd := exec.Command("docker", "buildx", "inspect", builderName)
+	output, err = inspectCmd.CombinedOutput()
+	require.NoError(t, err, "Failed to inspect buildx builder: %s", string(output))
+	log.Info("Builder inspect output: %s", string(output))
+
+	// Set BUILDX_BUILDER env var to force 'docker build' to use our builder
+	oldBuilder := os.Getenv("BUILDX_BUILDER")
+	require.NoError(t, os.Setenv("BUILDX_BUILDER", builderName))
+
+	log.Info("Created buildx builder '%s' with insecure registry config for '%s'", builderName, registryHost)
+
+	// Return cleanup function
+	return func() {
+		// Restore original BUILDX_BUILDER env var
+		if oldBuilder == "" {
+			_ = os.Unsetenv("BUILDX_BUILDER")
+		} else {
+			_ = os.Setenv("BUILDX_BUILDER", oldBuilder)
+		}
+		// Remove the builder
+		_ = exec.Command("docker", "buildx", "rm", builderName).Run()
+		// Cleanup temp directory
+		_ = os.RemoveAll(tmpDir)
 	}
 }
 
@@ -291,6 +394,175 @@ func TestPushFatManifestImage(t *testing.T) {
 	totalResults, err := reader.Length()
 	assert.NoError(t, err)
 	assert.True(t, totalResults > 1)
+}
+
+// runNestedPathDockerBuildTest is a helper function for testing docker build --push with nested paths.
+// It handles common setup, build execution, validation, and cleanup.
+// platforms: empty string for single platform, or comma-separated platforms like "linux/amd64,linux/arm64"
+func runNestedPathDockerBuildTest(t *testing.T, buildNameSuffix, imageSuffix, nestedPath, platforms string) {
+	buildName := buildNameSuffix + tests.DockerBuildName
+	buildNumber := "1"
+
+	// Extract hostname from ContainerRegistry (remove protocol if present)
+	registryHost := *tests.ContainerRegistry
+	if parsedURL, err := url.Parse(registryHost); err == nil && parsedURL.Host != "" {
+		registryHost = parsedURL.Host
+	}
+
+	// Construct image name with nested path: repo/nestedPath/image
+	nestedImageName := path.Join(registryHost, tests.OciLocalRepo, nestedPath, imageSuffix)
+	imageTag := nestedImageName + ":v1"
+
+	// Create test workspace
+	workspace, err := filepath.Abs(tests.Out)
+	assert.NoError(t, err)
+	assert.NoError(t, fileutils.CreateDirIfNotExist(workspace))
+
+	// Construct base image with hostname
+	baseImage := path.Join(registryHost, tests.OciRemoteRepo, "alpine:latest")
+
+	// Create Dockerfile
+	dockerfileContent := fmt.Sprintf(`FROM %s
+RUN echo "Built for nested path test"
+CMD ["echo", "Hello from nested path"]`, baseImage)
+
+	dockerfilePath := filepath.Join(workspace, "Dockerfile")
+	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644))
+
+	// Cleanup old build
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	// Clean build before test
+	runJfrogCli(t, "rt", "bc", buildName, buildNumber)
+
+	// Run docker build --push (single or multiplatform based on platforms parameter)
+	if platforms != "" {
+		runJfrogCli(t, "docker", "buildx", "build", "--platform", platforms,
+			"-t", imageTag, "-f", dockerfilePath, "--push", "--build-name="+buildName, "--build-number="+buildNumber, workspace)
+	} else {
+		runJfrogCli(t, "docker", "build", "-t", imageTag, "-f", dockerfilePath, "--push",
+			"--build-name="+buildName, "--build-number="+buildNumber, workspace)
+	}
+
+	// Publish build info
+	runJfrogCli(t, "rt", "build-publish", buildName, buildNumber)
+
+	// Validate the published build-info exists
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	assert.NoError(t, err)
+	assert.True(t, found, "build info was expected to be found")
+	assert.True(t, len(publishedBuildInfo.BuildInfo.Modules) >= 1, "Expected at least 1 module in build info")
+
+	// Validate build-name & build-number properties in all image layers at nested path
+	searchSpec := spec.NewBuilder().Pattern(tests.OciLocalRepo + "/" + nestedPath + "/*").Build(buildName).Recursive(true).BuildSpec()
+	searchCmd := generic.NewSearchCommand()
+	searchCmd.SetServerDetails(serverDetails).SetSpec(searchSpec)
+	reader, err := searchCmd.Search()
+	assert.NoError(t, err)
+	totalResults, err := reader.Length()
+	assert.NoError(t, err)
+	assert.True(t, totalResults > 1, "Expected layers to be found at nested path "+nestedPath+"/")
+
+	// Cleanup image from Artifactory
+	inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, nestedPath+"/"+imageSuffix, buildName, tests.OciLocalRepo)
+}
+
+// TestDockerBuildPushWithNestedPath tests docker build --push with nested paths like repo/myorg/image.
+// This validates that layer fetching works correctly for single platform images with nested paths.
+func TestDockerBuildPushWithNestedPath(t *testing.T) {
+	cleanup := initDockerBuildTest(t)
+	defer cleanup()
+	runNestedPathDockerBuildTest(t, "docker-build-nested", "test-single-nested", "myorg", "")
+}
+
+// TestPushFatManifestImageWithNestedPath tests pushing fat-manifest (multi-platform) images with nested paths.
+// This validates that layer fetching works correctly for paths like <repository>/myorg/image
+// which was failing before the fix to FatManifestHandler.createSearchablePathForDockerManifestContents.
+func TestPushFatManifestImageWithNestedPath(t *testing.T) {
+	cleanup := initDockerBuildTest(t)
+	defer cleanup()
+	runNestedPathDockerBuildTest(t, "push-fat-manifest-nested", "test-multiarch-nested", "myorg", "linux/amd64,linux/arm64")
+}
+
+// TestDockerBuildWithNestedPathBaseImage tests that dependencies are correctly collected
+// when using a nested path image as a base layer in a Dockerfile.
+func TestDockerBuildWithNestedPathBaseImage(t *testing.T) {
+	cleanup := initDockerBuildTest(t)
+	defer cleanup()
+
+	// Extract hostname from ContainerRegistry
+	registryHost := *tests.ContainerRegistry
+	if parsedURL, err := url.Parse(registryHost); err == nil && parsedURL.Host != "" {
+		registryHost = parsedURL.Host
+	}
+
+	// Step 1: Push a base image to a nested path (myorg/base-image)
+	baseImageBuildName := "base-nested" + tests.DockerBuildName
+	baseImageBuildNumber := "1"
+	nestedBasePath := "myorg"
+	baseImageName := path.Join(registryHost, tests.OciLocalRepo, nestedBasePath, "base-image")
+	baseImageTag := baseImageName + ":v1"
+
+	workspace, err := filepath.Abs(tests.Out)
+	assert.NoError(t, err)
+	assert.NoError(t, fileutils.CreateDirIfNotExist(workspace))
+
+	// Create base Dockerfile
+	alpineBase := path.Join(registryHost, tests.OciRemoteRepo, "alpine:latest")
+	baseDockerfile := fmt.Sprintf(`FROM %s
+RUN echo "This is the nested base image"
+CMD ["echo", "base"]`, alpineBase)
+
+	baseDockerfilePath := filepath.Join(workspace, "Dockerfile.base")
+	assert.NoError(t, os.WriteFile(baseDockerfilePath, []byte(baseDockerfile), 0644))
+
+	// Push base image to nested path
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, baseImageBuildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, baseImageBuildName, artHttpDetails)
+
+	runJfrogCli(t, "rt", "bc", baseImageBuildName, baseImageBuildNumber)
+	runJfrogCli(t, "docker", "build", "-t", baseImageTag, "-f", baseDockerfilePath, "--push",
+		"--build-name="+baseImageBuildName, "--build-number="+baseImageBuildNumber, workspace)
+	runJfrogCli(t, "rt", "build-publish", baseImageBuildName, baseImageBuildNumber)
+
+	// Step 2: Build a new image using the nested path base image
+	childBuildName := "child-nested" + tests.DockerBuildName
+	childBuildNumber := "1"
+	childImageName := path.Join(registryHost, tests.OciLocalRepo, "child-image")
+	childImageTag := childImageName + ":v1"
+
+	// Create child Dockerfile that uses the nested path base image
+	childDockerfile := fmt.Sprintf(`FROM %s
+RUN echo "This is the child image using nested base"
+CMD ["echo", "child"]`, baseImageTag)
+
+	childDockerfilePath := filepath.Join(workspace, "Dockerfile.child")
+	assert.NoError(t, os.WriteFile(childDockerfilePath, []byte(childDockerfile), 0644))
+
+	// Build child image
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, childBuildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, childBuildName, artHttpDetails)
+
+	runJfrogCli(t, "rt", "bc", childBuildName, childBuildNumber)
+	runJfrogCli(t, "docker", "build", "-t", childImageTag, "-f", childDockerfilePath, "--push",
+		"--build-name="+childBuildName, "--build-number="+childBuildNumber, workspace)
+	runJfrogCli(t, "rt", "build-publish", childBuildName, childBuildNumber)
+
+	// Step 3: Validate build info has dependencies from the nested path base image
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, childBuildName, childBuildNumber)
+	assert.NoError(t, err)
+	assert.True(t, found, "build info was expected to be found")
+	assert.True(t, len(publishedBuildInfo.BuildInfo.Modules) >= 1, "Expected at least 1 module in build info")
+
+	// Check that dependencies exist (these come from the base image layers)
+	module := publishedBuildInfo.BuildInfo.Modules[0]
+	assert.True(t, len(module.Dependencies) > 0,
+		"Expected dependencies from nested path base image (myorg/base-image). ")
+
+	// Cleanup
+	inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, nestedBasePath+"/base-image", baseImageBuildName, tests.OciLocalRepo)
+	inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, "child-image", childBuildName, tests.OciLocalRepo)
 }
 
 func TestPushMultiTaggedImage(t *testing.T) {
@@ -601,17 +873,23 @@ func TestNativeDockerFlagParsing(t *testing.T) {
 	defer cleanup()
 
 	dockerTestCases := []struct {
-		name string
-		args []string
+		name        string
+		args        []string
+		expectedErr error
 	}{
-		{"docker", []string{"docker"}},
-		{"docker version", []string{"docker", "version"}},
-		{"docker scan", []string{"docker", "scan"}},
-		{"cli flags after args", []string{"docker", "version", "--build-name=d", "--build-number=1", "--module=1"}},
-		{"cli flags before args", []string{"docker", "--build-name=d", "--build-number=1", "--module=1", "version"}},
+		{"docker", []string{"docker"}, nil},
+		{"docker version", []string{"docker", "version"}, nil},
+		{"docker scan", []string{"docker", "scan", "--min-severity=low"}, errors.New("a docker image name must be provided")},
+		{"cli flags after args", []string{"docker", "version", "--build-name=d", "--build-number=1", "--module=1"}, nil},
+		{"cli flags before args", []string{"docker", "--build-name=d", "--build-number=1", "--module=1", "version"}, nil},
 	}
 	for _, testCase := range dockerTestCases {
 		t.Run(testCase.name, func(t *testing.T) {
+			if testCase.expectedErr != nil {
+				err := runJfrogCliWithoutAssertion(testCase.args...)
+				assert.EqualError(t, err, testCase.expectedErr.Error())
+				return
+			}
 			runCmdWithRetries(t, jfCliTask(testCase.args...))
 		})
 	}
@@ -627,7 +905,7 @@ func TestDockerLoginWithServer(t *testing.T) {
 	} else {
 		credentials = "--user=" + *tests.JfrogUser + " --password=" + *tests.JfrogPassword
 	}
-	err := coreTests.NewJfrogCli(execMain, "jfrog config", credentials).Exec("add", "artDocker", "--interactive=false", "--url="+"http://localhost:8082", "--enc-password="+strconv.FormatBool(true))
+	err := coreTests.NewJfrogCli(execMain, "jfrog config", credentials).Exec("add", "artDocker", "--interactive=false", "--url="+"http://localhost:8082", "--enc-password="+strconv.FormatBool(true), "--overwrite")
 	assert.NoError(t, err)
 
 	imageName := path.Join(*tests.ContainerRegistry, tests.DockerRemoteRepo, "alpine:latest")
@@ -739,4 +1017,497 @@ func runCmdWithRetries(t *testing.T, task func() error) {
 		},
 	}
 	assert.NoError(t, executor.Execute())
+}
+
+func validateDockerBuildInfo(t *testing.T, buildName, buildNumber string, expectedArtifacts bool) {
+	// Get and validate build-info
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	assert.NoError(t, err)
+	assert.True(t, found, "build info was expected to be found")
+
+	buildInfo := publishedBuildInfo.BuildInfo
+	assert.NotNil(t, buildInfo)
+	assert.NotEmpty(t, buildInfo.Modules)
+
+	// Check module
+	module := buildInfo.Modules[0]
+	assert.Equal(t, entities.Docker, module.Type)
+
+	// Check dependencies count
+	assert.NotEmpty(t, module.Dependencies)
+	assert.True(t, len(module.Dependencies) > 0, "expected dependencies but found none")
+
+	// Check artifacts count
+	if expectedArtifacts {
+		assert.NotEmpty(t, module.Artifacts)
+		assert.True(t, len(module.Artifacts) > 0, "expected artifacts but found none")
+	} else {
+		assert.Empty(t, module.Artifacts, "expected no artifacts but found some")
+	}
+
+	// Check properties
+	assert.NotNil(t, module.Properties)
+	assert.Contains(t, module.Properties, "docker.image.tag")
+	assert.Contains(t, module.Properties, "docker.build.command")
+
+	// Check config digest - should be present when image was pushed
+	if expectedArtifacts {
+		assert.Contains(t, module.Properties, "docker.image.id")
+		props, ok := module.Properties.(map[string]string)
+		if ok {
+			configDigest := props["docker.image.id"]
+			assert.NotEmpty(t, configDigest)
+			assert.True(t, strings.HasPrefix(configDigest, "sha256:"))
+		}
+	}
+}
+
+// TestDockerBuildWithBuildInfo tests basic docker build command with build-info collection
+func TestDockerBuildWithBuildInfo(t *testing.T) {
+	cleanup := initDockerBuildTest(t)
+	defer cleanup()
+
+	buildName := tests.DockerBuildName
+	buildNumber := "1"
+	// Extract hostname from ContainerRegistry (remove protocol if present)
+	registryHost := *tests.ContainerRegistry
+	if parsedURL, err := url.Parse(registryHost); err == nil && parsedURL.Host != "" {
+		registryHost = parsedURL.Host
+	}
+	// Construct image name for Docker (hostname/repo/image:tag format, no protocol)
+	imageName := path.Join(registryHost, tests.OciLocalRepo, "test-docker-build")
+	imageTag := imageName + ":v1"
+
+	log.Info("Building image with oci", imageTag)
+
+	// Create test workspace
+	workspace, err := filepath.Abs(tests.Out)
+	assert.NoError(t, err)
+	assert.NoError(t, fileutils.CreateDirIfNotExist(workspace))
+
+	// Create simple Dockerfile
+	baseImage := path.Join(registryHost, tests.OciRemoteRepo, "nginx:1.28.0")
+	dockerfileContent := fmt.Sprintf(`FROM %s
+RUN echo "Hello from test"
+CMD ["sh"]`, baseImage)
+
+	dockerfilePath := filepath.Join(workspace, "Dockerfile")
+	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644))
+
+	// clean build before test
+	runJfrogCli(t, "rt", "bc", buildName, buildNumber)
+
+	// Run docker build with build-info (--load to make image available locally for cleanup)
+	runJfrogCli(t, "docker", "build", "-t", imageTag, "-f", dockerfilePath, "--load", "--build-name="+buildName, "--build-number="+buildNumber, workspace)
+
+	// Publish build info
+	runJfrogCli(t, "rt", "build-publish", buildName, buildNumber)
+
+	// Validate build info
+	validateDockerBuildInfo(t, buildName, buildNumber, false) // Should have dependencies from base image, no artifacts
+
+	// Cleanup
+	tests2.DeleteTestImage(t, imageTag, container.DockerClient)
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+}
+
+// TestDockerBuildAndPushWithBuildInfo tests docker build followed by push with full build-info tracking
+func TestDockerBuildAndPushWithBuildInfo(t *testing.T) {
+	cleanup := initDockerBuildTest(t)
+	defer cleanup()
+
+	buildName := tests.DockerBuildName
+	buildNumber := "2"
+	// Extract hostname from ContainerRegistry (remove protocol if present)
+	registryHost := *tests.ContainerRegistry
+	if parsedURL, err := url.Parse(registryHost); err == nil && parsedURL.Host != "" {
+		registryHost = parsedURL.Host
+	}
+	// Construct image name for Docker (hostname/repo/image:tag format, no protocol)
+	imageName := path.Join(registryHost, tests.OciLocalRepo, "test-docker-build")
+	imageTag := imageName + ":v2"
+
+	log.Info("Building image with oci", imageTag)
+
+	// Create test workspace
+	workspace, err := filepath.Abs(tests.Out)
+	assert.NoError(t, err)
+	assert.NoError(t, fileutils.CreateDirIfNotExist(workspace))
+
+	// Create simple Dockerfile
+	baseImage := path.Join(registryHost, tests.OciRemoteRepo, "nginx:1.28.0")
+	dockerfileContent := fmt.Sprintf(`FROM %s
+RUN echo "Hello from test"
+CMD ["sh"]`, baseImage)
+
+	dockerfilePath := filepath.Join(workspace, "Dockerfile")
+	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644))
+
+	// Create test file
+	testFilePath := filepath.Join(workspace, "test.txt")
+	assert.NoError(t, os.WriteFile(testFilePath, []byte("Hello from Docker build test"), 0644))
+
+	// clean build before test
+	runJfrogCli(t, "rt", "bc", buildName, buildNumber)
+
+	// Run docker build with build-info (--push only, image stays in registry not local)
+	runJfrogCli(t, "docker", "build", "-t", imageTag, "--push", "-f", dockerfilePath, "--build-name="+buildName, "--build-number="+buildNumber, workspace)
+
+	// Publish build info
+	runRt(t, "build-publish", buildName, buildNumber)
+
+	// Validate build info - should have both dependencies and artifacts
+	validateDockerBuildInfo(t, buildName, buildNumber, true)
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+}
+
+// TestDockerBuildMultiStageDockerfile tests multi-stage Dockerfile parsing and dependency collection
+func TestDockerBuildMultiStageDockerfile(t *testing.T) {
+	cleanup := initDockerBuildTest(t)
+	defer cleanup()
+
+	buildName := tests.DockerBuildName
+	buildNumber := "1"
+	// Extract hostname from ContainerRegistry (remove protocol if present)
+	registryHost := *tests.ContainerRegistry
+	if parsedURL, err := url.Parse(registryHost); err == nil && parsedURL.Host != "" {
+		registryHost = parsedURL.Host
+	}
+	// Construct image name for Docker (hostname/repo/image:tag format, no protocol)
+	imageName := path.Join(registryHost, tests.OciLocalRepo, "test-docker-build")
+	imageTag := imageName + ":v3"
+
+	log.Info("Building image with oci", imageTag)
+
+	// Create test workspace
+	workspace, err := filepath.Abs(tests.Out)
+	assert.NoError(t, err)
+	assert.NoError(t, fileutils.CreateDirIfNotExist(workspace))
+
+	// Construct base images with hostname (just like imageTag construction)
+	golangImage := path.Join(registryHost, tests.OciRemoteRepo, "alpine:latest")
+	alpineImage := path.Join(registryHost, tests.OciRemoteRepo, "nginx:latest")
+
+	// Create multi-stage Dockerfile
+	dockerfileContent := fmt.Sprintf(`# First stage - builder
+FROM %s AS builder
+CMD ["hello"]
+
+# second stage - final
+FROM %s
+CMD ["hello"]`, golangImage, alpineImage)
+
+	dockerfilePath := filepath.Join(workspace, "Dockerfile")
+	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644))
+
+	// clean build before test
+	runJfrogCli(t, "rt", "bc", buildName, buildNumber)
+
+	// Run docker build with build-info (--load to make image available locally for cleanup)
+	runJfrogCli(t, "docker", "build", "-t", imageTag, "-f", dockerfilePath, "--load", "--build-name="+buildName, "--build-number="+buildNumber, workspace)
+
+	// Publish build info
+	runRt(t, "build-publish", buildName, buildNumber)
+
+	// Validate build info - should have dependencies from golang:1.19-alpine and alpine:3.18
+	validateDockerBuildInfo(t, buildName, buildNumber, false)
+
+	// Cleanup
+	tests2.DeleteTestImage(t, imageTag, container.DockerClient)
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+}
+
+// TestDockerBuildxWithBuildInfo tests buildx build command with build-info collection
+func TestDockerBuildxWithBuildInfo(t *testing.T) {
+	cleanup := initDockerBuildTest(t)
+	defer cleanup()
+
+	buildName := tests.DockerBuildName
+	buildNumber := "1"
+	// Extract hostname from ContainerRegistry (remove protocol if present)
+	registryHost := *tests.ContainerRegistry
+	if parsedURL, err := url.Parse(registryHost); err == nil && parsedURL.Host != "" {
+		registryHost = parsedURL.Host
+	}
+	// Construct image name for Docker (hostname/repo/image:tag format, no protocol)
+	imageName := path.Join(registryHost, tests.OciLocalRepo, "test-docker-build")
+	imageTag := imageName + ":v4"
+
+	log.Info("Building image with oci", imageTag)
+	fullImageName := imageTag
+
+	// Create test workspace
+	workspace, err := filepath.Abs(tests.Out)
+	assert.NoError(t, err)
+	assert.NoError(t, fileutils.CreateDirIfNotExist(workspace))
+
+	// Construct base image with hostname (just like imageTag construction)
+	baseImage := path.Join(registryHost, tests.OciRemoteRepo, "alpine:latest")
+
+	// Create Dockerfile for buildx
+	dockerfileContent := fmt.Sprintf(`FROM %s
+RUN echo "Built with buildx"
+CMD ["echo", "Hello from buildx"]`, baseImage)
+
+	dockerfilePath := filepath.Join(workspace, "Dockerfile")
+	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644))
+
+	// Check if buildx is available
+	cmd := exec.Command("docker", "buildx", "version")
+	if err := cmd.Run(); err != nil {
+		t.Error("Docker buildx not available, skipping test")
+	}
+
+	// clean build before test
+	runJfrogCli(t, "rt", "bc", buildName, buildNumber)
+
+	// Run docker buildx build with build-info and push
+	runJfrogCli(t, "docker", "buildx", "build", "--platform", "linux/amd64",
+		"-t", fullImageName, "-f", dockerfilePath, "--push", "--build-name="+buildName, "--build-number="+buildNumber, workspace)
+
+	// Publish build info
+	runJfrogCli(t, "rt", "build-publish", buildName, buildNumber)
+
+	// Validate build info - buildx with --push should have both dependencies and artifacts
+	validateDockerBuildInfo(t, buildName, buildNumber, true)
+
+	// Cleanup
+	// Extract just the image name (last part) for cleanup
+	imageNameOnly := "test-docker-build"
+	inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, imageNameOnly, buildName, tests.OciLocalRepo)
+}
+
+// TestDockerBuildWithVirtualRepo tests docker build with virtual repository
+func TestDockerBuildWithVirtualRepo(t *testing.T) {
+	cleanup := initDockerBuildTest(t)
+	defer cleanup()
+
+	buildName := tests.DockerBuildName
+	buildNumber := "1"
+	// Extract hostname from ContainerRegistry (remove protocol if present)
+	registryHost := *tests.ContainerRegistry
+	if parsedURL, err := url.Parse(registryHost); err == nil && parsedURL.Host != "" {
+		registryHost = parsedURL.Host
+	}
+	// Construct image name for Docker (hostname/repo/image:tag format, no protocol)
+	imageName := path.Join(registryHost, tests.OciLocalRepo, "test-docker-build")
+	imageTag := imageName + ":v5"
+
+	log.Info("Building image with oci", imageTag)
+
+	// Create test workspace
+	workspace, err := filepath.Abs(tests.Out)
+	assert.NoError(t, err)
+	assert.NoError(t, fileutils.CreateDirIfNotExist(workspace))
+
+	// Construct base image with hostname (just like imageTag construction)
+	baseImage := path.Join(registryHost, tests.OciRemoteRepo, "alpine:latest")
+
+	// Create Dockerfile that uses image from virtual repo
+	dockerfileContent := fmt.Sprintf(`FROM %s
+RUN echo "Testing virtual repo"
+CMD ["sh"]`, baseImage)
+
+	dockerfilePath := filepath.Join(workspace, "Dockerfile")
+	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644))
+
+	// clean build before test
+	runJfrogCli(t, "rt", "bc", buildName, buildNumber)
+
+	// Run docker build (--push only, image stays in registry not local)
+	runJfrogCli(t, "docker", "build", "-t", imageTag, "-f", dockerfilePath, "--push",
+		"--build-name="+buildName, "--build-number="+buildNumber, workspace)
+
+	// Publish build info
+	runJfrogCli(t, "rt", "build-publish", buildName, buildNumber)
+
+	// Validate build info - virtual repo with push should have both dependencies and artifacts
+	validateDockerBuildInfo(t, buildName, buildNumber, true)
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+}
+
+func TestContainerPullWithSha(t *testing.T) {
+	cleanup := initNativeDockerWithArtTest(t)
+	defer cleanup()
+	var credentials string
+	if *tests.JfrogAccessToken != "" {
+		credentials = "--access-token=" + *tests.JfrogAccessToken
+	} else {
+		credentials = "--user=" + *tests.JfrogUser + " --password=" + *tests.JfrogPassword
+	}
+	err := coreTests.NewJfrogCli(execMain, "jfrog config", credentials).Exec("add", "artDocker", "--interactive=false", "--url="+"http://localhost:8082", "--enc-password="+strconv.FormatBool(true), "--overwrite")
+	assert.NoError(t, err)
+	runJfrogCli(t, "config", "use", "artDocker")
+	imageName, err := inttestutils.BuildTestImage(tests.DockerImageName+":1", "", tests.DockerLocalRepo, container.DockerClient)
+	assert.NoError(t, err)
+	defer tests2.DeleteTestImage(t, imageName, container.DockerClient)
+
+	// Push container image
+	runCmdWithRetries(t, jfrogRtCliTask(container.DockerClient.String()+"-push", imageName, tests.DockerVirtualRepo))
+	buildNumber := "1"
+
+	dockerImage := container.DockerImage{
+		Image: imageName,
+	}
+	manifestSha, err := dockerImage.GetManifestDetails()
+	assert.NoError(t, err)
+	imageTag := strings.ReplaceAll(imageName, ":1", "@"+manifestSha)
+
+	// pull image with SHA
+	runJfrogCli(t, "docker", "pull", imageTag, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
+	runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
+
+	imagePath := path.Join(tests.DockerVirtualRepo, tests.DockerImageName, "1") + "/"
+	module := tests.DockerImageName + "@" + manifestSha
+	validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, module, 0, 7, t)
+
+	inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName, tests.DockerVirtualRepo)
+
+}
+
+func TestContainerFatManifestPullWithSha(t *testing.T) {
+	cleanup := initNativeDockerWithArtTest(t)
+	defer cleanup()
+	var credentials string
+	if *tests.JfrogAccessToken != "" {
+		credentials = "--access-token=" + *tests.JfrogAccessToken
+	} else {
+		credentials = "--user=" + *tests.JfrogUser + " --password=" + *tests.JfrogPassword
+	}
+	err := coreTests.NewJfrogCli(execMain, "jfrog config", credentials).Exec("add", "artDocker", "--interactive=false", "--url="+"http://localhost:8082", "--enc-password="+strconv.FormatBool(true), "--overwrite")
+	assert.NoError(t, err)
+	runJfrogCli(t, "config", "use", "artDocker")
+	imageName := "traefik"
+	buildNumber := "1"
+	for _, dockerRepo := range [...]string{tests.DockerRemoteRepo, tests.DockerVirtualRepo} {
+		func() {
+			// calculate the sha of the image provided above
+			dockerImage := container.DockerImage{
+				Image: imageName,
+			}
+			manifestSha, err := dockerImage.GetManifestDetails()
+			assert.NoError(t, err)
+
+			imageTag := path.Join(*tests.ContainerRegistry, dockerRepo, imageName+"@"+manifestSha)
+			// Pull container image
+			defer tests2.DeleteTestImage(t, imageTag, container.DockerClient)
+			// pull image with SHA
+			runJfrogCli(t, "docker", "pull", imageTag, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
+			runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
+
+			// Validate
+			publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.DockerBuildName, buildNumber)
+			if err != nil {
+				assert.NoError(t, err)
+				return
+			}
+			if !found {
+				assert.True(t, found, "build info was expected to be found")
+				return
+			}
+			buildInfo := publishedBuildInfo.BuildInfo
+			module := imageName + "@" + manifestSha
+			validateBuildInfo(buildInfo, t, 6, 0, module, entities.Docker)
+
+			inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.DockerBuildName, artHttpDetails)
+		}()
+	}
+
+}
+
+// TestDockerBuildPublishWithCIVcsProps tests that CI VCS properties are set on Docker artifacts
+// when running build-publish in a CI environment (GitHub Actions).
+func TestDockerBuildPublishWithCIVcsProps(t *testing.T) {
+	cleanup := initDockerBuildTest(t)
+	defer cleanup()
+
+	buildName := "docker-civcs-test"
+	buildNumber := "1"
+
+	// Setup GitHub Actions environment (uses real env vars on CI, mock values locally)
+	cleanupEnv, actualOrg, actualRepo := tests.SetupGitHubActionsEnv(t)
+	defer cleanupEnv()
+
+	// Clean old build
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	// Extract hostname from ContainerRegistry
+	registryHost := *tests.ContainerRegistry
+	if parsedURL, err := url.Parse(registryHost); err == nil && parsedURL.Host != "" {
+		registryHost = parsedURL.Host
+	}
+
+	// Construct image name
+	imageName := path.Join(registryHost, tests.OciLocalRepo, "test-civcs-docker")
+	imageTag := imageName + ":v1"
+
+	// Create test workspace
+	workspace, err := filepath.Abs(tests.Out)
+	assert.NoError(t, err)
+	assert.NoError(t, fileutils.CreateDirIfNotExist(workspace))
+
+	// Create simple Dockerfile
+	baseImage := path.Join(registryHost, tests.OciRemoteRepo, "alpine:latest")
+	dockerfileContent := fmt.Sprintf(`FROM %s
+CMD ["echo", "Hello from CI VCS test"]`, baseImage)
+
+	dockerfilePath := filepath.Join(workspace, "Dockerfile")
+	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644))
+
+	// Clean build before test
+	runJfrogCli(t, "rt", "bc", buildName, buildNumber)
+
+	// Run docker build with build-info
+	runJfrogCli(t, "docker", "build", "-t", imageTag, "--push", "-f", dockerfilePath, "--build-name="+buildName, "--build-number="+buildNumber, workspace)
+
+	// Publish build info - should set CI VCS props on Docker layers
+	runRt(t, "build-publish", buildName, buildNumber)
+
+	// Validate build info was published with artifacts
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+
+	// Create service manager for getting artifact properties
+	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
+	assert.NoError(t, err)
+
+	// Verify VCS properties on each artifact from build info
+	artifactCount := 0
+	for _, module := range publishedBuildInfo.BuildInfo.Modules {
+		for _, artifact := range module.Artifacts {
+			// Docker artifacts may have empty OriginalDeploymentRepo - use the known repo
+			repo := artifact.OriginalDeploymentRepo
+			if repo == "" {
+				repo = tests.OciLocalRepo
+			}
+			fullPath := repo + "/" + artifact.Path
+
+			props, err := serviceManager.GetItemProps(fullPath)
+			assert.NoError(t, err, "Failed to get properties for artifact: %s", fullPath)
+			assert.NotNil(t, props, "Properties are nil for artifact: %s", fullPath)
+
+			// Validate VCS properties
+			assert.Contains(t, props.Properties, "vcs.provider", "Missing vcs.provider on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.provider"], "github", "Wrong vcs.provider on %s", artifact.Name)
+
+			assert.Contains(t, props.Properties, "vcs.org", "Missing vcs.org on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.org"], actualOrg, "Wrong vcs.org on %s", artifact.Name)
+
+			assert.Contains(t, props.Properties, "vcs.repo", "Missing vcs.repo on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.repo"], actualRepo, "Wrong vcs.repo on %s", artifact.Name)
+
+			artifactCount++
+		}
+	}
+	assert.Greater(t, artifactCount, 0, "No artifacts in build info")
 }

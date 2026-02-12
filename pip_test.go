@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	pythoncmd "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/python"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 
 	biutils "github.com/jfrog/build-info-go/utils"
@@ -595,6 +596,69 @@ func validateBuildTimestampProperty(properties map[string][]string, moduleType b
 	return nil
 }
 
+func TestCreateAqlQueryForSearchBySHA256(t *testing.T) {
+	tests := []struct {
+		name     string
+		repo     string
+		sha256s  []string
+		expected string
+	}{
+		{
+			name:     "single SHA256",
+			repo:     "pypi-local",
+			sha256s:  []string{"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
+			expected: `{"repo": "pypi-local","$or": [{"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"}]}`,
+		},
+		{
+			name: "multiple SHA256s",
+			repo: "pypi-local",
+			sha256s: []string{
+				"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+				"a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456",
+				"f6e5d4c3b2a1098765432109876543210987654321098765432109876543210987",
+			},
+			expected: `{"repo": "pypi-local","$or": [{"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},{"sha256": "a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456"},{"sha256": "f6e5d4c3b2a1098765432109876543210987654321098765432109876543210987"}]}`,
+		},
+		{
+			name:     "empty SHA256s",
+			repo:     "pypi-local",
+			sha256s:  []string{},
+			expected: `{"repo": "pypi-local","$or": []}`,
+		},
+		{
+			name:     "different repository",
+			repo:     "maven-local",
+			sha256s:  []string{"abc123def456"},
+			expected: `{"repo": "maven-local","$or": [{"sha256": "abc123def456"}]}`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := pythoncmd.CreateAqlQueryForSearchBySHA256(tt.repo, tt.sha256s)
+			assert.Equal(t, tt.expected, result)
+
+			// Verify it's valid JSON
+			var jsonObj map[string]interface{}
+			err := json.Unmarshal([]byte(result), &jsonObj)
+			assert.NoError(t, err, "Generated query should be valid JSON")
+			assert.Equal(t, tt.repo, jsonObj["repo"], "Repository should match")
+
+			// Verify $or array exists and has correct structure
+			orArray, ok := jsonObj["$or"].([]interface{})
+			assert.True(t, ok, "$or should be an array")
+			assert.Equal(t, len(tt.sha256s), len(orArray), "Number of SHA256 conditions should match")
+
+			// Verify each SHA256 condition
+			for i, sha256 := range tt.sha256s {
+				condition, ok := orArray[i].(map[string]interface{})
+				assert.True(t, ok, "Each condition should be an object")
+				assert.Equal(t, sha256, condition["sha256"], "SHA256 value should match")
+			}
+		})
+	}
+}
+
 func TestSetupPipCommand(t *testing.T) {
 	if !*tests.TestPip {
 		t.Skip("Skipping Pip test. To run Pip test add the '-test.pip=true' option.")
@@ -623,4 +687,93 @@ func TestSetupPipCommand(t *testing.T) {
 	if assert.NoError(t, err, "Failed to find the package in the cache: "+packageCacheUrl) {
 		assert.Equal(t, http.StatusOK, res.StatusCode)
 	}
+}
+
+// TestTwineBuildPublishWithCIVcsProps tests that CI VCS properties are set on Twine artifacts
+// when running build-publish in a CI environment (GitHub Actions).
+// Twine relies on build-publish to set CI VCS properties via batch AQL query.
+func TestTwineBuildPublishWithCIVcsProps(t *testing.T) {
+	initPipTest(t)
+
+	buildName := tests.PipBuildName + "-civcs"
+	buildNumber := "1"
+
+	// Setup GitHub Actions environment (uses real env vars on CI, mock values locally)
+	cleanupEnv, actualOrg, actualRepo := tests.SetupGitHubActionsEnv(t)
+	defer cleanupEnv()
+
+	// Populate cli config with 'default' server.
+	oldHomeDir, newHomeDir := prepareHomeDir(t)
+	defer func() {
+		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
+		clientTestUtils.RemoveAllAndAssert(t, newHomeDir)
+	}()
+
+	cleanVirtualEnv, err := prepareVirtualEnv(t)
+	assert.NoError(t, err)
+	defer cleanVirtualEnv()
+
+	// Clean old build
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	projectPath := createPypiProject(t, "twine-civcs", "pyproject", "twine")
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+
+	// Run twine upload with build info collection
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	args := []string{"twine", "upload", "dist/*", "--build-name=" + buildName, "--build-number=" + buildNumber}
+	err = jfrogCli.Exec(args...)
+	assert.NoError(t, err, "Failed executing twine upload command")
+
+	// Publish build info - should set CI VCS props on artifacts
+	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	// Get the published build info to find artifact paths
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	assert.NoError(t, err)
+	assert.True(t, found, "Build info was not found")
+
+	// Create service manager for getting artifact properties
+	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
+	assert.NoError(t, err)
+
+	// Verify VCS properties on each artifact from build info
+	// Use same fallback logic as CI VCS: OriginalDeploymentRepo + Path, or Path directly
+	artifactCount := 0
+	for _, module := range publishedBuildInfo.BuildInfo.Modules {
+		for _, artifact := range module.Artifacts {
+			var fullPath string
+			switch {
+			case artifact.OriginalDeploymentRepo != "":
+				fullPath = artifact.OriginalDeploymentRepo + "/" + artifact.Path
+			case artifact.Path != "":
+				fullPath = artifact.Path
+			default:
+				continue // Skip artifacts without any path info
+			}
+
+			props, err := serviceManager.GetItemProps(fullPath)
+			assert.NoError(t, err, "Failed to get properties for artifact: %s", fullPath)
+			assert.NotNil(t, props, "Properties are nil for artifact: %s", fullPath)
+
+			// Validate VCS properties
+			assert.Contains(t, props.Properties, "vcs.provider", "Missing vcs.provider on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.provider"], "github", "Wrong vcs.provider on %s", artifact.Name)
+
+			assert.Contains(t, props.Properties, "vcs.org", "Missing vcs.org on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.org"], actualOrg, "Wrong vcs.org on %s", artifact.Name)
+
+			assert.Contains(t, props.Properties, "vcs.repo", "Missing vcs.repo on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.repo"], actualRepo, "Wrong vcs.repo on %s", artifact.Name)
+
+			artifactCount++
+		}
+	}
+
+	assert.Greater(t, artifactCount, 0, "No artifacts were validated for CI VCS properties")
 }

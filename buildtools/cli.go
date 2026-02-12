@@ -3,17 +3,23 @@ package buildtools
 import (
 	"errors"
 	"fmt"
+	conancommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/conan"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
 
+	"github.com/BurntSushi/toml"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/container/strategies"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/python"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/setup"
+	artutils "github.com/jfrog/jfrog-cli-artifactory/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-security/utils/techutils"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/helmcommand"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/rubyconfig"
 	setupdocs "github.com/jfrog/jfrog-cli/docs/buildtools/setup"
 
@@ -21,6 +27,7 @@ import (
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/dotnet"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/golang"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/gradle"
+	helmcmd "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/helm"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/mvn"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/npm"
 	containerutils "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/ocicontainer"
@@ -42,6 +49,7 @@ import (
 	terraformdocs "github.com/jfrog/jfrog-cli/docs/artifactory/terraform"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/terraformconfig"
 	twinedocs "github.com/jfrog/jfrog-cli/docs/artifactory/twine"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/conan"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/docker"
 	dotnetdocs "github.com/jfrog/jfrog-cli/docs/buildtools/dotnet"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/dotnetconfig"
@@ -337,6 +345,32 @@ func GetCommands() []cli.Command {
 			Action:          PoetryCmd,
 		},
 		{
+			Name:            "helm",
+			Flags:           cliutils.GetCommandFlags(cliutils.Helm),
+			Usage:           helmcommand.GetDescription(),
+			HelpName:        corecommon.CreateUsage("helm", helmcommand.GetDescription(), helmcommand.Usage),
+			UsageText:       helmcommand.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			Hidden:          false,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Category:        buildToolsCategory,
+			Action:          HelmCmd,
+		},
+		{
+			Name:            "conan",
+			Hidden:          false,
+			Flags:           cliutils.GetCommandFlags(cliutils.Conan),
+			Usage:           conan.GetDescription(),
+			HelpName:        corecommon.CreateUsage("conan", conan.GetDescription(), conan.Usage),
+			UsageText:       conan.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Category:        buildToolsCategory,
+			Action:          ConanCmd,
+		},
+		{
 			Name:         "ruby-config",
 			Flags:        cliutils.GetCommandFlags(cliutils.RubyConfig),
 			Aliases:      []string{"rubyc"},
@@ -393,23 +427,15 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:      "docker",
-			Flags:     cliutils.GetCommandFlags(cliutils.Docker),
-			Usage:     docker.GetDescription(),
-			HelpName:  corecommon.CreateUsage("docker", docker.GetDescription(), docker.Usage),
-			UsageText: docker.GetArguments(),
-			SkipFlagParsing: func() bool {
-				for i, arg := range os.Args {
-					// 'docker scan' isn't a docker client command. We won't skip its flags.
-					if arg == "docker" && len(os.Args) > i+1 && os.Args[i+1] == "scan" {
-						return false
-					}
-				}
-				return true
-			}(),
-			BashComplete: corecommon.CreateBashCompletionFunc("login", "push", "pull", "scan"),
-			Category:     buildToolsCategory,
-			Action:       dockerCmd,
+			Name:            "docker",
+			Flags:           cliutils.GetCommandFlags(cliutils.Docker),
+			Usage:           docker.GetDescription(),
+			HelpName:        corecommon.CreateUsage("docker", docker.GetDescription(), docker.Usage),
+			UsageText:       docker.GetArguments(),
+			SkipFlagParsing: skipFlagParsingForDockerCmd(),
+			BashComplete:    corecommon.CreateBashCompletionFunc("login", "push", "pull", "scan"),
+			Category:        buildToolsCategory,
+			Action:          dockerCmd,
 		},
 		{
 			Name:         "terraform-config",
@@ -451,6 +477,24 @@ func GetCommands() []cli.Command {
 		},
 	})
 	return decorateWithFlagCapture(cmds)
+}
+
+func skipFlagParsingForDockerCmd() bool {
+	isDockerScan := false
+	hasHelpFlag := false
+	for i, arg := range os.Args {
+		if arg == "docker" && len(os.Args) > i+1 && os.Args[i+1] == "scan" {
+			isDockerScan = true
+		}
+		if arg == "--help" || arg == "-h" {
+			hasHelpFlag = true
+		}
+	}
+	// 'docker scan' isn't a docker client command. We won't skip its flags.
+	if isDockerScan {
+		return hasHelpFlag
+	}
+	return true
 }
 
 // decorateWithFlagCapture injects a Before hook into every command returned from this package,
@@ -517,8 +561,13 @@ func MvnCmd(c *cli.Context) (err error) {
 		return err
 	}
 
-	// FlexPack bypasses all config file requirements
-	if os.Getenv("JFROG_RUN_NATIVE") == "true" {
+	configFilePath, configExists, err := project.GetProjectConfFilePath(project.Maven)
+	if err != nil {
+		return err
+	}
+
+	// FlexPack bypasses all config file requirements (only when no config exists)
+	if artutils.ShouldRunNative(configFilePath) && !configExists {
 		log.Debug("Routing to Maven native implementation")
 		// Extract build configuration for FlexPack
 		args := cliutils.ExtractCommand(c)
@@ -531,9 +580,11 @@ func MvnCmd(c *cli.Context) (err error) {
 		return commands.Exec(mvnCmd)
 	}
 
-	configFilePath, err := getProjectConfigPathOrThrow(project.Maven, "mvn", "mvn-config")
-	if err != nil {
-		return err
+	// If config file is missing and not in native mode, return the standard missing-config error.
+	if !configExists {
+		if configFilePath, err = getProjectConfigPathOrThrow(project.Maven, "mvn", "mvn-config"); err != nil {
+			return err
+		}
 	}
 
 	if c.NArg() < 1 {
@@ -588,9 +639,62 @@ func GradleCmd(c *cli.Context) (err error) {
 		return err
 	}
 
-	configFilePath, err := getProjectConfigPathOrThrow(project.Gradle, "gradle", "gradle-config")
+	resolveServer := func(args []string) ([]string, *coreConfig.ServerDetails, error) {
+		cleanedArgs, serverID, err := coreutils.ExtractServerIdFromCommand(args)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to extract server ID: %w", err)
+		}
+
+		if serverID == "" {
+			serverDetails, err := coreConfig.GetDefaultServerConf()
+			if err != nil {
+				return cleanedArgs, nil, err
+			}
+			if serverDetails == nil {
+				return cleanedArgs, nil, fmt.Errorf("no default server configuration found. Please configure a server using 'jfrog config add' or specify a server using --server-id")
+			}
+			return cleanedArgs, serverDetails, nil
+		}
+
+		serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, true)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to get server configuration for ID '%s': %w", serverID, err)
+		}
+		return cleanedArgs, serverDetails, nil
+	}
+
+	configFilePath, configExists, err := project.GetProjectConfFilePath(project.Gradle)
 	if err != nil {
 		return err
+	}
+	nativeMode := artutils.ShouldRunNative(configFilePath)
+
+	// FlexPack native mode for Gradle (bypasses config file requirements)
+	if nativeMode && !configExists {
+		log.Debug("Routing to Gradle FlexPack implementation")
+		if c.NArg() < 1 {
+			return cliutils.WrongNumberOfArgumentsHandler(c)
+		}
+		args := cliutils.ExtractCommand(c)
+		args, serverDetails, err := resolveServer(args)
+		if err != nil {
+			return err
+		}
+		filteredGradleArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
+		if err != nil {
+			return err
+		}
+
+		// Create Gradle command with FlexPack (no config file needed)
+		gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(filteredGradleArgs).SetConfigPath("").SetServerDetails(serverDetails)
+		return commands.Exec(gradleCmd)
+	}
+
+	// If config file is missing and not in native mode, return the standard missing-config error.
+	if !configExists {
+		if configFilePath, err = getProjectConfigPathOrThrow(project.Gradle, "gradle", "gradle-config"); err != nil {
+			return err
+		}
 	}
 
 	// Found a config file. Continue as native command.
@@ -827,14 +931,15 @@ func goCmdVerification(c *cli.Context) (string, error) {
 
 func dockerCmd(c *cli.Context) error {
 	args := cliutils.ExtractCommand(c)
-	var cmd, image string
+	var cmd, cmdArg string
 	// We may have prior flags before push/pull commands for the docker client.
+	// cmdArg is the second non-flag argument: image name for pull/push/scan, subcommand for buildx
 	for _, arg := range args {
 		if !strings.HasPrefix(arg, "-") {
 			if cmd == "" {
 				cmd = arg
 			} else {
-				image = arg
+				cmdArg = arg
 				break
 			}
 		}
@@ -842,13 +947,22 @@ func dockerCmd(c *cli.Context) error {
 	var err error
 	switch cmd {
 	case "pull":
-		err = pullCmd(c, image)
+		err = pullCmd(c, cmdArg)
 	case "push":
-		err = pushCmd(c, image)
+		err = pushCmd(c, cmdArg)
 	case "login":
 		err = loginCmd(c)
 	case "scan":
-		return dockerScanCmd(c, image)
+		return dockerScanCmd(c, cmdArg)
+	case "build":
+		err = buildCmd(c)
+	case "buildx":
+		// Only intercept "buildx build", pass through other buildx subcommands (create, ls, rm, etc.)
+		if cmdArg == "build" {
+			err = buildCmd(c)
+		} else {
+			err = dockerNativeCmd(c)
+		}
 	default:
 		err = dockerNativeCmd(c)
 	}
@@ -906,6 +1020,39 @@ func pushCmd(c *cli.Context, image string) (err error) {
 	return
 }
 
+func buildCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "dockerbuildhelp"); show || err != nil {
+		return err
+	}
+
+	// Extract build configuration and arguments
+	_, rtDetails, _, _, _, cleanArgs, buildConfiguration, err := extractDockerOptionsFromArgs(c.Args())
+	if err != nil {
+		return err
+	}
+	pushOption, dockerFilePath, imageTag, err := extractDockerBuildOptionsFromArgs(cleanArgs)
+	if err != nil {
+		return err
+	}
+
+	// Login to the docker registry
+	err = loginCmd(c)
+	if err != nil {
+		return err
+	}
+
+	dockerOptions := strategies.DockerBuildOptions{
+		DockerFilePath: dockerFilePath,
+		PushExpected:   pushOption,
+		ImageTag:       imageTag,
+	}
+
+	buildCommand := container.NewBuildCommand(cleanArgs).SetDockerBuildOptions(dockerOptions).SetBuildConfiguration(buildConfiguration)
+	buildCommand.SetServerDetails(rtDetails)
+
+	return commands.Exec(buildCommand)
+}
+
 func loginCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "dockerloginhelp"); show || err != nil {
 		return err
@@ -944,8 +1091,12 @@ func loginCmd(c *cli.Context) error {
 			return errors.New("you need to specify a registry for login using username and password")
 		}
 		cmd := exec.Command("docker", "login", registry, "-u", user, "-p", password)
-		_, err := cmd.CombinedOutput()
-		return err
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			return errorutils.CheckErrorf("%s, %s", output, err)
+		}
+		log.Info(string(output))
+		return nil
 	}
 
 	// if registry is not provided use the default from the server details
@@ -954,16 +1105,20 @@ func loginCmd(c *cli.Context) error {
 	}
 
 	loginCommand := container.NewContainerManagerCommand(containerutils.DockerClient)
+	loginCommand.SetPrintConsoleError(true)
 	loginCommand.SetServerDetails(rtDetails).SetLoginRegistry(registry)
 	// Perform login
 	if err := loginCommand.PerformLogin(rtDetails, containerutils.DockerClient); err != nil {
 		return err
 	}
-	log.Info("Login Succeeded.")
+	// here docker itself returns the login success message, so no need to print it again
 	return nil
 }
 
 func dockerScanCmd(c *cli.Context, imageTag string) error {
+	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), securityCLI.DockerScanCmdHiddenName); show || err != nil {
+		return err
+	}
 	convertedCtx, err := components.ConvertContext(c, securityDocs.GetCommandFlags(securityDocs.DockerScan)...)
 	if err != nil {
 		return err
@@ -1041,6 +1196,44 @@ func extractDockerLoginOptionsFromArgs(args []string) (user, password string, er
 	return
 }
 
+func extractDockerBuildOptionsFromArgs(args []string) (pushOption bool, dockerfilePath string, imageTag string, err error) {
+	// check for --push flag or output=type=registry or output=push=true flag, first is the shorthand operator of the later
+	_, pushOption, err = coreutils.FindBooleanFlag("--push", args)
+	if err != nil {
+		return
+	}
+	_, _, outputOption, err := coreutils.FindFlag("--output", args)
+	if err != nil {
+		return
+	}
+	if !pushOption && outputOption != "" &&
+		(strings.Contains(outputOption, "type=registry") ||
+			(strings.Contains(outputOption, "push=true") && strings.Contains(outputOption, "type=image"))) {
+		pushOption = true
+	}
+
+	// Check for -f or --file flag
+	_, _, dockerfilePath, err = coreutils.FindFlag("-f", args)
+	if err != nil || dockerfilePath == "" {
+		_, _, dockerfilePath, _ = coreutils.FindFlag("--file", args)
+	}
+	if dockerfilePath == "" {
+		// Default to Dockerfile in current directory
+		dockerfilePath = "Dockerfile"
+	}
+
+	// Extract image tag from command
+	_, _, imageTag, err = coreutils.FindFlag("-t", args)
+	if err != nil || imageTag == "" {
+		// Try --tag flag as alternative
+		_, _, imageTag, _ = coreutils.FindFlag("--tag", args)
+	}
+	if imageTag == "" {
+		err = errors.New("could not find image tag in the command arguments. Please provide an image tag using the '-t' or '--tag' flag")
+	}
+	return
+}
+
 // Assuming command name is the first argument that isn't a flag.
 // Returns the command name, and the filtered arguments slice without it.
 func getCommandName(orgArgs []string) (string, []string) {
@@ -1052,6 +1245,49 @@ func getCommandName(orgArgs []string) (string, []string) {
 		}
 	}
 	return "", cmdArgs
+}
+
+// getPrimarySourceFromToml reads pyproject.toml and returns the name of the primary source
+// Returns (sourceName, isPrimary) where isPrimary indicates if source has priority='primary'
+func getPrimarySourceFromToml() (string, bool) {
+	type PyProjectSource struct {
+		Name     string `toml:"name"`
+		URL      string `toml:"url"`
+		Priority string `toml:"priority"`
+	}
+
+	type PyProject struct {
+		Tool struct {
+			Poetry struct {
+				Source []PyProjectSource `toml:"source"`
+			} `toml:"poetry"`
+		} `toml:"tool"`
+	}
+
+	tomlPath := filepath.Join(".", "pyproject.toml")
+	tomlData, err := os.ReadFile(tomlPath)
+	if err != nil {
+		return "", false
+	}
+
+	var pyproject PyProject
+	if err := toml.Unmarshal(tomlData, &pyproject); err != nil {
+		return "", false
+	}
+
+	// Look for primary source
+	for _, source := range pyproject.Tool.Poetry.Source {
+		if source.Priority == "primary" {
+			return source.Name, true
+		}
+	}
+
+	// If no primary, use first source
+	if len(pyproject.Tool.Poetry.Source) > 0 {
+		return pyproject.Tool.Poetry.Source[0].Name, false
+	}
+
+	return "", false
 }
 
 func NpmInstallCmd(c *cli.Context) error {
@@ -1205,6 +1441,135 @@ func PoetryCmd(c *cli.Context) error {
 	return pythonCmd(c, project.Poetry)
 }
 
+// HelmCmd executes Helm commands with build info collection support
+func HelmCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+	if c.NArg() < 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	args := cliutils.ExtractCommand(c)
+	cmdName, helmArgs := getCommandName(args)
+
+	helmArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(helmArgs)
+	if err != nil {
+		return err
+	}
+
+	helmArgs, serverDetails, err := extractHelmServerDetails(helmArgs)
+	if err != nil {
+		return err
+	}
+
+	helmArgs, repositoryCachePath := extractRepositoryCacheFromArgs(helmArgs)
+
+	restoreEnv, err := setHelmRepositoryCache(repositoryCachePath)
+	if err != nil {
+		return err
+	}
+	defer restoreEnv()
+
+	workingDir, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("failed to get working directory: %w", err)
+	}
+
+	helmCmd := helmcmd.NewHelmCommand().
+		SetHelmArgs(helmArgs).
+		SetBuildConfiguration(buildConfiguration).
+		SetServerDetails(serverDetails).
+		SetWorkingDirectory(workingDir).
+		SetHelmCmdName(cmdName)
+
+	return commands.Exec(helmCmd)
+}
+
+// extractRepositoryCacheFromArgs extracts the --repository-cache flag value from Helm command arguments
+func extractRepositoryCacheFromArgs(args []string) ([]string, string) {
+	cleanedArgs, repositoryCachePath, err := coreutils.ExtractStringOptionFromArgs(args, "repository-cache")
+	if err != nil {
+		return args, ""
+	}
+	return cleanedArgs, repositoryCachePath
+}
+
+// extractHelmServerDetails extracts server ID from arguments and retrieves server details.
+func extractHelmServerDetails(args []string) ([]string, *coreConfig.ServerDetails, error) {
+	cleanedArgs, serverID, err := coreutils.ExtractServerIdFromCommand(args)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to extract server ID: %w", err)
+	}
+
+	if serverID == "" {
+		serverDetails, err := coreConfig.GetDefaultServerConf()
+		if err != nil {
+			return cleanedArgs, nil, err
+		}
+		if serverDetails == nil {
+			return cleanedArgs, nil, fmt.Errorf("no default server configuration found. Please configure a server using 'jfrog config add' or specify a server using --server-id")
+		}
+		return cleanedArgs, serverDetails, nil
+	}
+
+	serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, true)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get server configuration for ID '%s': %w", serverID, err)
+	}
+
+	return cleanedArgs, serverDetails, nil
+}
+
+// setHelmRepositoryCache sets or unsets HELM_REPOSITORY_CACHE environment variable.
+func setHelmRepositoryCache(cachePath string) (func(), error) {
+	const envVarName = "HELM_REPOSITORY_CACHE"
+	originalValue := os.Getenv(envVarName)
+
+	if cachePath != "" {
+		if err := os.Setenv(envVarName, cachePath); err != nil {
+			return nil, fmt.Errorf("failed to set %s environment variable: %w", envVarName, err)
+		}
+	} else {
+		if err := os.Unsetenv(envVarName); err != nil {
+			return nil, fmt.Errorf("failed to unset %s environment variable: %w", envVarName, err)
+		}
+	}
+	restoreFunc := func() {
+		if originalValue != "" {
+			_ = os.Setenv(envVarName, originalValue)
+		} else {
+			_ = os.Unsetenv(envVarName)
+		}
+	}
+
+	return restoreFunc, nil
+}
+
+func ConanCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+	if c.NArg() < 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	args := cliutils.ExtractCommand(c)
+
+	// Extract build flags (--build-name, --build-number) before passing to Conan
+	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
+	if err != nil {
+		return err
+	}
+
+	cmdName, conanArgs := getCommandName(filteredArgs)
+
+	// Use jfrog-cli-artifactory Conan command with build info support
+	conanCommand := conancommand.NewConanCommand().SetCommandName(cmdName).SetArgs(conanArgs).SetBuildConfiguration(buildConfiguration)
+
+	return commands.Exec(conanCommand)
+}
+
 func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
@@ -1214,7 +1579,7 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 	}
 
 	// FlexPack native mode for Poetry (bypasses config file requirements)
-	if os.Getenv("JFROG_RUN_NATIVE") == "true" && projectType == project.Poetry {
+	if artutils.ShouldRunNative("") && projectType == project.Poetry {
 		log.Debug("Routing to Poetry native implementation")
 		args := cliutils.ExtractCommand(c)
 		filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
@@ -1222,6 +1587,34 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 			return err
 		}
 		cmdName, poetryArgs := getCommandName(filteredArgs)
+
+		// Extract --repository flag for artifact collection (if publishing)
+		deployerRepo := ""
+		for i, arg := range poetryArgs {
+			if strings.HasPrefix(arg, "--repository=") {
+				deployerRepo = strings.TrimPrefix(arg, "--repository=")
+			} else if (arg == "--repository" || arg == "-r") && i+1 < len(poetryArgs) {
+				deployerRepo = poetryArgs[i+1]
+			}
+		}
+
+		// Auto-add repository flag if not provided and we're publishing
+		if cmdName == "publish" && deployerRepo == "" {
+			// Try to get primary source from pyproject.toml (same as native Poetry behavior)
+			if repoName, isPrimary := getPrimarySourceFromToml(); repoName != "" {
+				if isPrimary {
+					log.Info(fmt.Sprintf("No --repository flag specified. Using '%s' from pyproject.toml (priority='primary')", repoName))
+				} else {
+					log.Info(fmt.Sprintf("No --repository flag specified. Using '%s' from pyproject.toml (first source)", repoName))
+				}
+				poetryArgs = append([]string{"-r", repoName}, poetryArgs...)
+				deployerRepo = repoName
+			} else {
+				log.Warn("No repository specified and no sources found in pyproject.toml. Poetry will attempt to publish to PyPI.")
+			}
+		} else if cmdName == "publish" && deployerRepo != "" {
+			log.Info(fmt.Sprintf("Publishing to repository: %s (from --repository flag)", deployerRepo))
+		}
 
 		// Execute native poetry command directly (similar to Maven FlexPack)
 		log.Info(fmt.Sprintf("Running Poetry %s.", cmdName))
@@ -1239,7 +1632,7 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 				workingDir, err := os.Getwd()
 				if err != nil {
 					log.Warn("Failed to get working directory, skipping build info collection: " + err.Error())
-				} else if err := buildinfo.GetPoetryBuildInfo(workingDir, buildConfiguration); err != nil {
+				} else if err := buildinfo.GetPoetryBuildInfo(workingDir, buildConfiguration, deployerRepo); err != nil {
 					log.Warn("Failed to collect Poetry build info: " + err.Error())
 				} else {
 					buildNumber, err := buildConfiguration.GetBuildNumber()

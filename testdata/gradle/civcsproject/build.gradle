@@ -1,0 +1,59 @@
+import org.gradle.util.GradleVersion
+
+apply plugin: 'java'
+apply plugin: 'maven-publish'
+
+// Check if Gradle version supports allowInsecureProtocol (6.2+)
+def supportsInsecureProtocol = GradleVersion.current() >= GradleVersion.version("6.2")
+
+repositories {
+    mavenCentral()
+}
+
+allprojects {
+    repositories.all { repo ->
+        try {
+            def urlStr = repo.respondsTo('getUrl') && repo.url != null ? repo.url.toString() : ""
+            if (urlStr.startsWith("http://") && repo.hasProperty("allowInsecureProtocol")) {
+                repo.allowInsecureProtocol = true
+            }
+        } catch (Throwable ignored) {
+            // Best-effort; ignore repositories that don't support URL/allowInsecureProtocol.
+        }
+    }
+}
+
+group = 'org.jfrog.test'
+version = '1.0'
+
+dependencies {
+    implementation "junit:junit:4.7"
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            artifactId = 'civcs-example'
+        }
+    }
+    repositories {
+        maven {
+            name = "Artifactory"
+            // URL uses template variables replaced by test framework
+            url = uri("${URL}artifactory/${GRADLE_REPO}")
+            credentials {
+                username = "${USERNAME}"
+                password = "${PASSWORD}"
+            }
+            // Only set allowInsecureProtocol for Gradle 6.2+ (when using HTTP)
+            if (supportsInsecureProtocol) {
+                allowInsecureProtocol = true
+            }
+        }
+    }
+}
+
+tasks.withType(GenerateModuleMetadata) {
+    enabled = false
+}

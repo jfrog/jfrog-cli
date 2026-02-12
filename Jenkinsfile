@@ -39,19 +39,18 @@ node("docker-ubuntu20-xlarge") {
     identifier = 'v2-jf'
     nodeVersion = 'v8.17.0'
 
-    masterBranch = 'master'
-
     releaseVersion = ''
 
     repo = 'jfrog-cli'
     sh 'rm -rf temp'
     sh 'mkdir temp'
-    def goRoot = tool 'go-1.25.4'
+    def goRoot = tool 'go-1.25.5'
     env.GOROOT="$goRoot"
     env.PATH+=":${goRoot}/bin:/tmp/node-${nodeVersion}-linux-x64/bin"
     env.GO111MODULE="on"
     env.CI=true
-    env.JFROG_CLI_LOG_LEVEL="DEBUG"
+    env.JFROG_CLI_LOG_LEVEL="INFO"
+    env.JFROG_CLI_REPORT_USAGE="false"
 
     dir('temp') {
         sh "cat /etc/lsb-release"
@@ -160,6 +159,7 @@ def runRelease(architectures) {
             stage("Publish latest scripts") {
                 withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
                     options = "--url https://releases.jfrog.io/artifactory --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
+                    print "Copying latest scripts from jfrog-cli/$identifier/$version/scripts/ to jfrog-cli/$identifier/scripts/"
                     sh """#!/bin/bash
                         $builderPath rt cp jfrog-cli/$identifier/$version/scripts/getCli.sh jfrog-cli/$identifier/scripts/ --flat $options --fail-no-op
                         $builderPath rt cp jfrog-cli/$identifier/$version/scripts/install-cli.sh jfrog-cli/$identifier/scripts/ --flat $options --fail-no-op
@@ -212,7 +212,6 @@ def runRelease(architectures) {
 
 def setReleaseVersion() {
     dir("$cliWorkspace/$repo") {
-        sh "git checkout $masterBranch"
         sh "build/build.sh"
         releaseVersion = getCliVersion("./jf")
     }
@@ -311,8 +310,8 @@ def buildRpmAndDeb(version, architectures) {
             stage("Deploy deb and rpm") {
                def packageName = "jfrog-cli-$identifier"
                sh """#!/bin/bash
-                        $builderPath rt u $jfrogCliRepoDir/build/deb_rpm/$identifier/*.i386.deb ecosys-jfrog-debs/pool/$packageName/ --deb=xenial,bionic,eoan,focal/contrib/i386 --flat
-                        $builderPath rt u $jfrogCliRepoDir/build/deb_rpm/$identifier/*.x86_64.deb ecosys-jfrog-debs/pool/$packageName/ --deb=xenial,bionic,eoan,focal/contrib/amd64 --flat
+                        $builderPath rt u $jfrogCliRepoDir/build/deb_rpm/$identifier/*.i386.deb ecosys-jfrog-debs/pool/$packageName/ --deb=xenial,bionic,eoan,focal,jammy,noble/contrib/i386 --flat
+                        $builderPath rt u $jfrogCliRepoDir/build/deb_rpm/$identifier/*.x86_64.deb ecosys-jfrog-debs/pool/$packageName/ --deb=xenial,bionic,eoan,focal,jammy,noble/contrib/amd64 --flat
                         $builderPath rt u $jfrogCliRepoDir/build/deb_rpm/$identifier/*.rpm ecosys-jfrog-rpms/$packageName/ --flat
                """
             }
@@ -337,7 +336,9 @@ def uploadCli(architectures) {
         stage("Build and upload ${currentBuild.pkg}") {
             // MacOS binaries should be downloaded from GitHub packages, as they are signed there.
             if (currentBuild.goos == 'darwin') {
-                uploadSignedDarwinBinaries(currentBuild.goarch,currentBuild.pkg)
+                if (params.RUN_DARWIN_WORKFLOW) {
+                    uploadSignedDarwinBinaries(currentBuild.goarch,currentBuild.pkg)
+                }
             } else {
                 buildAndUpload(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, currentBuild.fileExtension)
             }
@@ -395,30 +396,35 @@ def pushDockerImageVersion(name, version) {
 }
 
 def uploadGetCliToJfrogRepo21() {
+    print "Uploading $jfrogCliRepoDir/build/getcli/${cliExecutableName}.sh to ecosys-jfrog-cli/$identifier/$version/scripts/getCli.sh"
     sh """#!/bin/bash
         $builderPath rt u $jfrogCliRepoDir/build/getcli/${cliExecutableName}.sh ecosys-jfrog-cli/$identifier/$version/scripts/getCli.sh --flat
     """
 }
 
 def uploadInstallCliToJfrogRepo21() {
+    print "Uploading $jfrogCliRepoDir/build/installcli/${cliExecutableName}.sh to ecosys-jfrog-cli/$identifier/$version/scripts/install-cli.sh"
     sh """#!/bin/bash
         $builderPath rt u $jfrogCliRepoDir/build/installcli/${cliExecutableName}.sh ecosys-jfrog-cli/$identifier/$version/scripts/install-cli.sh --flat
     """
 }
 
 def uploadSetupCliToJfrogRepo21() {
+    print "Uploading $jfrogCliRepoDir/build/setupcli/${cliExecutableName}.sh to ecosys-jfrog-cli/$identifier/$version/scripts/setup-cli.sh"
     sh """#!/bin/bash
         $builderPath rt u $jfrogCliRepoDir/build/setupcli/${cliExecutableName}.sh ecosys-jfrog-cli/$identifier/$version/scripts/setup-cli.sh --flat
     """
 }
 
 def uploadGitLabSetupToJfrogRepo21() {
+    print "Uploading $jfrogCliRepoDir/build/gitlab/(*) to ecosys-jfrog-cli/$identifier/$version/scripts/gitlab/{1}"
     sh """#!/bin/bash
         $builderPath rt u "$jfrogCliRepoDir/build/gitlab/(*)" "ecosys-jfrog-cli/$identifier/$version/scripts/gitlab/{1}"
     """
 }
 
 def uploadBinaryToJfrogRepo21(pkg, fileName) {
+    print "Uploading $jfrogCliRepoDir/$fileName to ecosys-jfrog-cli/$identifier/$version/$pkg/"
     sh """#!/bin/bash
         $builderPath rt u $jfrogCliRepoDir/$fileName ecosys-jfrog-cli/$identifier/$version/$pkg/ --flat
     """
@@ -428,6 +434,7 @@ def build(goos, goarch, pkg, fileName) {
     dir("${jfrogCliRepoDir}") {
         env.GOOS="$goos"
         env.GOARCH="$goarch"
+        print "Building $fileName on $goos $goarch"
         sh "build/build.sh $fileName"
         sh "chmod +x $fileName"
         // Remove goos and goarch env var to prevent interfering with following builds.
@@ -458,7 +465,21 @@ def buildAndUpload(goos, goarch, pkg, fileExtension) {
 }
 
 def distributeToReleases(stage, version, rbcSpecName) {
-    sh """$builderPath ds rbc $stage-rb-$identifier $version --spec=${cliWorkspace}/${repo}/build/release_specs/$rbcSpecName --spec-vars="VERSION=$version;IDENTIFIER=$identifier" --sign"""
+    sh """#!/bin/bash
+        output=\$($builderPath ds rbc $stage-rb-$identifier $version --spec=${cliWorkspace}/${repo}/build/release_specs/$rbcSpecName --spec-vars="VERSION=$version;IDENTIFIER=$identifier" --sign 2>&1)
+        exit_code=\$?
+        if [[ \$exit_code -ne 0 ]]; then
+            if echo "\$output" | grep -q "already exists"; then
+                echo "Release bundle creation skipped - already exists"
+                exit 0
+            else
+                echo "\$output"
+                exit \$exit_code
+            fi
+        else
+            echo "\$output"
+        fi
+    """
     sh "$builderPath ds rbd $stage-rb-$identifier $version --site=releases.jfrog.io --sync"
 }
 
@@ -468,7 +489,19 @@ def publishNpmPackage(jfrogCliRepoDir) {
             sh '''#!/bin/bash
                 echo "//registry.npmjs.org/:_authToken=$NPM_AUTH_TOKEN" > .npmrc
                 echo "registry=https://registry.npmjs.org" >> .npmrc
-                npm publish
+                output=$(npm publish 2>&1)
+                exit_code=$?
+                if [[ $exit_code -ne 0 ]]; then
+                    if echo "$output" | grep -qi "You cannot publish over the previously published versions"; then
+                        echo "NPM package publish skipped - already exists"
+                        exit 0
+                    else
+                        echo "$output"
+                        exit $exit_code
+                    fi
+                else
+                    echo "$output"
+                fi
             '''
         }
     }

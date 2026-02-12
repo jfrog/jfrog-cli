@@ -102,7 +102,7 @@ func testMultipleRepositoryUpdate(t *testing.T) {
 
 func testCreateWithDifferentRclass(t *testing.T) {
 	t.Skip("RTECO-525 - Skipping testCreateWithDifferentRclass")
-	
+
 	mvnRepoName := "test-mvn-local1"
 	dockerLocalRepoName := "test-docker-local1"
 	npmRepoName := "test-npm-local"
@@ -135,7 +135,7 @@ func testCreateWithDifferentRclass(t *testing.T) {
 
 func testUpdateWithDifferentRclass(t *testing.T) {
 	t.Skip("RTECO-525 - Skipping testUpdateWithDifferentRclass")
-	
+
 	mvnRepoName := "test-mvn-local-1"
 	dockerLocalRepoName := "test-docker-local-1"
 	npmRepoName := "test-npm-local"

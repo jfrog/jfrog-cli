@@ -53,13 +53,21 @@ func setupIntegrationTests() {
 		clientlog.Error(fmt.Sprintf("Couldn't set env: %s. Error: %s", coreutils.CI, err.Error()))
 		os.Exit(1)
 	}
+	// Disable CI VCS property collection by default for all tests.
+	// Tests that specifically test CI VCS props will unset this flag.
+	err = os.Setenv("JFROG_CLI_CI_VCS_PROPS_DISABLED", "true")
+	if err != nil {
+		clientlog.Error(fmt.Sprintf("Couldn't set env: JFROG_CLI_CI_VCS_PROPS_DISABLED. Error: %s", err.Error()))
+		os.Exit(1)
+	}
 	flag.Parse()
 	log.SetDefaultLogger()
 	validateCmdAliasesUniqueness()
 	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
 		InitArtifactoryTests()
 	}
-	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv || *tests.TestPoetry {
+
+	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv || *tests.TestPoetry || *tests.TestConan || *tests.TestHelm || (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
 		InitBuildToolsTests()
 	}
 	if *tests.TestDocker || *tests.TestPodman || *tests.TestDockerScan {
@@ -80,13 +88,19 @@ func setupIntegrationTests() {
 	if *tests.TestLifecycle {
 		InitLifecycleTests()
 	}
+	if *tests.TestEvidence {
+		InitEvidenceTests()
+	}
+	if *tests.TestHelm {
+		InitHelmTests()
+	}
 }
 
 func tearDownIntegrationTests() {
 	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
 		CleanArtifactoryTests()
 	}
-	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv || *tests.TestPoetry || *tests.TestDocker || *tests.TestPodman || *tests.TestDockerScan {
+	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv || *tests.TestPoetry || *tests.TestConan || *tests.TestHelm || *tests.TestDocker || *tests.TestPodman || *tests.TestDockerScan || (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
 		CleanBuildToolsTests()
 	}
 	if *tests.TestDistribution {
@@ -100,6 +114,12 @@ func tearDownIntegrationTests() {
 	}
 	if *tests.TestLifecycle {
 		CleanLifecycleTests()
+	}
+	if *tests.TestEvidence {
+		CleanEvidenceTests()
+	}
+	if *tests.TestHelm {
+		CleanHelmTests()
 	}
 }
 
@@ -184,7 +204,7 @@ func initArtifactoryCli() {
 	*tests.JfrogUrl = utils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
 	artifactoryCli = coreTests.NewJfrogCli(execMain, "jfrog rt", authenticate(false))
 	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestPlugins || *tests.TestArtifactoryProject ||
-		*tests.TestAccess || *tests.TestTransfer || *tests.TestLifecycle {
+		*tests.TestAccess || *tests.TestTransfer || *tests.TestLifecycle || *tests.TestHelm {
 		configCli = createConfigJfrogCLI(authenticate(true))
 		platformCli = coreTests.NewJfrogCli(execMain, "jfrog", authenticate(false))
 	}
@@ -390,6 +410,14 @@ func TestSurvey_NotDisplayedOnNonHelp(t *testing.T) {
 	_, contentErr, err := tests.GetCmdOutput(t, jfrogCli, "intro")
 	require.NoError(t, err)
 	assert.NotContains(t, string(contentErr), "https://")
+}
+
+func TestDockerScanHelp(t *testing.T) {
+	t.Setenv("CI", "false")
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+	content, _, err := tests.GetCmdOutput(t, jfrogCli, "docker", "scan", "--help")
+	require.NoError(t, err)
+	assert.Contains(t, string(content), "jfrog docker scan - Scan local docker image using the docker client and Xray.")
 }
 
 func TestSurvey_DisplayedOnHelp(t *testing.T) {
