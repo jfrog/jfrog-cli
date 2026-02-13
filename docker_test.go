@@ -138,7 +138,7 @@ func setupInsecureBuildxBuilder(t *testing.T, builderName string) func() {
   http = true
   insecure = true
 `, registryHost)
-	require.NoError(t, os.WriteFile(configPath, []byte(configContent), 0644)) //nolint:gosec // G703 - configPath is constructed from test temp directory, not user input
+	require.NoError(t, os.WriteFile(configPath, []byte(configContent), 0644)) /* #nosec G703 -- configPath is constructed from test temp directory, not user input */
 
 	// Remove builder if it exists (stop first, then remove)
 	_ = exec.Command("docker", "buildx", "stop", builderName).Run()
@@ -427,7 +427,7 @@ RUN echo "Built for nested path test"
 CMD ["echo", "Hello from nested path"]`, baseImage)
 
 	dockerfilePath := filepath.Join(workspace, "Dockerfile")
-	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644))
+	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644)) /* #nosec G703 -- dockerfilePath is constructed from test workspace, not user input */
 
 	// Cleanup old build
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
@@ -515,7 +515,7 @@ RUN echo "This is the nested base image"
 CMD ["echo", "base"]`, alpineBase)
 
 	baseDockerfilePath := filepath.Join(workspace, "Dockerfile.base")
-	assert.NoError(t, os.WriteFile(baseDockerfilePath, []byte(baseDockerfile), 0644))
+	assert.NoError(t, os.WriteFile(baseDockerfilePath, []byte(baseDockerfile), 0644)) /* #nosec G703 -- baseDockerfilePath is constructed from test workspace, not user input */
 
 	// Push base image to nested path
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, baseImageBuildName, artHttpDetails)
@@ -538,7 +538,7 @@ RUN echo "This is the child image using nested base"
 CMD ["echo", "child"]`, baseImageTag)
 
 	childDockerfilePath := filepath.Join(workspace, "Dockerfile.child")
-	assert.NoError(t, os.WriteFile(childDockerfilePath, []byte(childDockerfile), 0644))
+	assert.NoError(t, os.WriteFile(childDockerfilePath, []byte(childDockerfile), 0644)) /* #nosec G703 -- childDockerfilePath is constructed from test workspace, not user input */
 
 	// Build child image
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, childBuildName, artHttpDetails)
@@ -1092,7 +1092,7 @@ RUN echo "Hello from test"
 CMD ["sh"]`, baseImage)
 
 	dockerfilePath := filepath.Join(workspace, "Dockerfile")
-	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644)) //nolint:gosec // G703 - dockerfilePath is constructed from test workspace, not user input
+	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644)) /* #nosec G703 -- dockerfilePath is constructed from test workspace, not user input */
 
 	// clean build before test
 	runJfrogCli(t, "rt", "bc", buildName, buildNumber)
@@ -1141,11 +1141,11 @@ RUN echo "Hello from test"
 CMD ["sh"]`, baseImage)
 
 	dockerfilePath := filepath.Join(workspace, "Dockerfile")
-	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644)) //nolint:gosec // G703 - dockerfilePath is constructed from test workspace, not user input
+	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644)) /* #nosec G703 -- dockerfilePath is constructed from test workspace, not user input */
 
 	// Create test file
 	testFilePath := filepath.Join(workspace, "test.txt")
-	assert.NoError(t, os.WriteFile(testFilePath, []byte("Hello from Docker build test"), 0644)) //nolint:gosec // G703 - testFilePath is constructed from test workspace, not user input
+	assert.NoError(t, os.WriteFile(testFilePath, []byte("Hello from Docker build test"), 0644)) /* #nosec G703 -- testFilePath is constructed from test workspace, not user input */
 
 	// clean build before test
 	runJfrogCli(t, "rt", "bc", buildName, buildNumber)
@@ -1199,7 +1199,7 @@ FROM %s
 CMD ["hello"]`, golangImage, alpineImage)
 
 	dockerfilePath := filepath.Join(workspace, "Dockerfile")
-	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644)) //nolint:gosec // G703 - dockerfilePath is constructed from test workspace, not user input
+	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644)) /* #nosec G703 -- dockerfilePath is constructed from test workspace, not user input */
 
 	// clean build before test
 	runJfrogCli(t, "rt", "bc", buildName, buildNumber)
@@ -1251,7 +1251,7 @@ RUN echo "Built with buildx"
 CMD ["echo", "Hello from buildx"]`, baseImage)
 
 	dockerfilePath := filepath.Join(workspace, "Dockerfile")
-	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644)) //nolint:gosec // G703 - dockerfilePath is constructed from test workspace, not user input
+	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644)) /* #nosec G703 -- dockerfilePath is constructed from test workspace, not user input */
 
 	// Check if buildx is available
 	cmd := exec.Command("docker", "buildx", "version")
@@ -1310,7 +1310,7 @@ RUN echo "Testing virtual repo"
 CMD ["sh"]`, baseImage)
 
 	dockerfilePath := filepath.Join(workspace, "Dockerfile")
-	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644)) //nolint:gosec // G703 - dockerfilePath is constructed from test workspace, not user input
+	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644)) /* #nosec G703 -- dockerfilePath is constructed from test workspace, not user input */
 
 	// clean build before test
 	runJfrogCli(t, "rt", "bc", buildName, buildNumber)
@@ -1455,7 +1455,7 @@ func TestDockerBuildPublishWithCIVcsProps(t *testing.T) {
 CMD ["echo", "Hello from CI VCS test"]`, baseImage)
 
 	dockerfilePath := filepath.Join(workspace, "Dockerfile")
-	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644)) //nolint:gosec // G703 - dockerfilePath is constructed from test workspace, not user input
+	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644)) /* #nosec G703 -- dockerfilePath is constructed from test workspace, not user input */
 
 	// Clean build before test
 	runJfrogCli(t, "rt", "bc", buildName, buildNumber)
