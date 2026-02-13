@@ -11,6 +11,9 @@ jobs:
   ghost-frog-npm-demo:
     name: NPM Commands via Ghost Frog
     runs-on: ubuntu-latest
+    env:
+      JFROG_CLI_BUILD_NAME: ghost-frog-demo
+      JFROG_CLI_BUILD_NUMBER: ${{ github.run_number }}
     
     steps:
       - name: Checkout code
@@ -20,9 +23,12 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '16'
-      
+
       - name: Setup JFrog CLI
         uses: jfrog/setup-jfrog-cli@v4
+        with:
+          version: 2.91.0
+          download-repository: bhanu-ghost-frog
         env:
           JF_URL: ${{ secrets.JFROG_URL }}
           JF_ACCESS_TOKEN: ${{ secrets.JFROG_ACCESS_TOKEN }}
