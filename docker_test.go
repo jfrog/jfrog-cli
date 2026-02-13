@@ -138,7 +138,7 @@ func setupInsecureBuildxBuilder(t *testing.T, builderName string) func() {
   http = true
   insecure = true
 `, registryHost)
-	require.NoError(t, os.WriteFile(configPath, []byte(configContent), 0644))
+	require.NoError(t, os.WriteFile(configPath, []byte(configContent), 0644)) //nolint:gosec // G703 - configPath is constructed from test temp directory, not user input
 
 	// Remove builder if it exists (stop first, then remove)
 	_ = exec.Command("docker", "buildx", "stop", builderName).Run()
@@ -923,7 +923,7 @@ RUN echo "Hello from test"
 CMD ["sh"]`, baseImage)
 
 	dockerfilePath := filepath.Join(workspace, "Dockerfile")
-	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644))
+	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644)) //nolint:gosec // G703 - dockerfilePath is constructed from test workspace, not user input
 
 	// clean build before test
 	runJfrogCli(t, "rt", "bc", buildName, buildNumber)
@@ -972,11 +972,11 @@ RUN echo "Hello from test"
 CMD ["sh"]`, baseImage)
 
 	dockerfilePath := filepath.Join(workspace, "Dockerfile")
-	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644))
+	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644)) //nolint:gosec // G703 - dockerfilePath is constructed from test workspace, not user input
 
 	// Create test file
 	testFilePath := filepath.Join(workspace, "test.txt")
-	assert.NoError(t, os.WriteFile(testFilePath, []byte("Hello from Docker build test"), 0644))
+	assert.NoError(t, os.WriteFile(testFilePath, []byte("Hello from Docker build test"), 0644)) //nolint:gosec // G703 - testFilePath is constructed from test workspace, not user input
 
 	// clean build before test
 	runJfrogCli(t, "rt", "bc", buildName, buildNumber)
@@ -1030,7 +1030,7 @@ FROM %s
 CMD ["hello"]`, golangImage, alpineImage)
 
 	dockerfilePath := filepath.Join(workspace, "Dockerfile")
-	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644))
+	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644)) //nolint:gosec // G703 - dockerfilePath is constructed from test workspace, not user input
 
 	// clean build before test
 	runJfrogCli(t, "rt", "bc", buildName, buildNumber)
@@ -1082,7 +1082,7 @@ RUN echo "Built with buildx"
 CMD ["echo", "Hello from buildx"]`, baseImage)
 
 	dockerfilePath := filepath.Join(workspace, "Dockerfile")
-	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644))
+	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644)) //nolint:gosec // G703 - dockerfilePath is constructed from test workspace, not user input
 
 	// Check if buildx is available
 	cmd := exec.Command("docker", "buildx", "version")
@@ -1141,7 +1141,7 @@ RUN echo "Testing virtual repo"
 CMD ["sh"]`, baseImage)
 
 	dockerfilePath := filepath.Join(workspace, "Dockerfile")
-	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644))
+	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644)) //nolint:gosec // G703 - dockerfilePath is constructed from test workspace, not user input
 
 	// clean build before test
 	runJfrogCli(t, "rt", "bc", buildName, buildNumber)
@@ -1286,7 +1286,7 @@ func TestDockerBuildPublishWithCIVcsProps(t *testing.T) {
 CMD ["echo", "Hello from CI VCS test"]`, baseImage)
 
 	dockerfilePath := filepath.Join(workspace, "Dockerfile")
-	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644))
+	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644)) //nolint:gosec // G703 - dockerfilePath is constructed from test workspace, not user input
 
 	// Clean build before test
 	runJfrogCli(t, "rt", "bc", buildName, buildNumber)
