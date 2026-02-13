@@ -32,6 +32,7 @@ jobs:
         env:
           JF_URL: ${{ secrets.JFROG_URL }}
           JF_ACCESS_TOKEN: ${{ secrets.JFROG_ACCESS_TOKEN }}
+          JF_PROJECT: bhanu
       
       - name: Install Ghost Frog Package Aliases
         run: |
