@@ -6815,7 +6815,7 @@ func setupTestFilesForSearchPatterns(t *testing.T) {
 	tmpFile, err := os.CreateTemp("", "test-file-*.txt")
 	assert.NoError(t, err)
 	defer func(name string) {
-		_ = os.Remove(name)
+		_ = os.Remove(name) // #nosec G703 -- name is from CreateTemp, not user input
 	}(tmpFile.Name())
 	_, err = tmpFile.WriteString("test content")
 	if err != nil {

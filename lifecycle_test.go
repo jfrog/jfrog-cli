@@ -1641,5 +1641,5 @@ type KeyPairPayload struct {
 	Alias      string `json:"alias,omitempty"`
 	Passphrase string `json:"passphrase,omitempty"`
 	PublicKey  string `json:"publicKey,omitempty"`
-	PrivateKey string `json:"privateKey,omitempty"`
+	PrivateKey string `json:"privateKey,omitempty"` // #nosec G117 -- field name is for JSON serialization, not a hardcoded secret
 }

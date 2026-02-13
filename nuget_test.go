@@ -251,6 +251,7 @@ func runInitNewConfig(t *testing.T, testSuite testInitNewConfigDescriptor, baseR
 		return
 	}
 
+	// #nosec G703 -- configFile path is created by test setup, not user input
 	content, err := os.ReadFile(configFile.Name())
 	if err != nil {
 		assert.NoError(t, err)

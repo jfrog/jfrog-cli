@@ -164,6 +164,7 @@ func sendRestAPI(apiType ApiType, content interface{}) (response string, err err
 		req.Header.Set(askRateLimitHeader, "true")
 	}
 	log.Debug(fmt.Sprintf("Sending HTTP %s request to: %s", req.Method, req.URL))
+	// #nosec G704 -- URL is a constant CLI-AI endpoint, not user-controlled input
 	resp, err := client.GetClient().Do(req)
 	if err != nil {
 		err = errorutils.CheckErrorf("CLI-AI server is not available. Please check your network or try again later.")
