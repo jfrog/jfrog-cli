@@ -169,22 +169,24 @@ func TestHuggingFaceUpload(t *testing.T) {
 
 	// Create a temporary directory with test files to upload
 	tempDir, err := os.MkdirTemp("", "hf-upload-test-*")
-	require.NoError(t, err)
-	defer func() {
+	if err != nil {
+		require.NoError(t, err, "Failed to create temp directory")
+	}
+	t.Cleanup(func() {
 		if err := os.RemoveAll(tempDir); err != nil {
 			t.Logf("Warning: Failed to remove temp directory %s: %v", tempDir, err)
 		}
-	}()
+	})
 
 	// Create a test file in the temp directory
 	testFile := filepath.Join(tempDir, "test_model.txt")
 	err = os.WriteFile(testFile, []byte("test model content"), 0644)
-	require.NoError(t, err)
+	require.NoError(t, err, "Failed to create test model file")
 
 	// Create a model config file
 	configFile := filepath.Join(tempDir, "config.json")
 	err = os.WriteFile(configFile, []byte(`{"model_type": "test"}`), 0644)
-	require.NoError(t, err)
+	require.NoError(t, err, "Failed to create config file")
 
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 
@@ -214,17 +216,19 @@ func TestHuggingFaceUploadWithRevision(t *testing.T) {
 
 	// Create a temporary directory with test files to upload
 	tempDir, err := os.MkdirTemp("", "hf-upload-revision-test-*")
-	require.NoError(t, err)
-	defer func() {
+	if err != nil {
+		require.NoError(t, err, "Failed to create temp directory")
+	}
+	t.Cleanup(func() {
 		if err := os.RemoveAll(tempDir); err != nil {
 			t.Logf("Warning: Failed to remove temp directory %s: %v", tempDir, err)
 		}
-	}()
+	})
 
 	// Create a test file in the temp directory
 	testFile := filepath.Join(tempDir, "test_model.txt")
 	err = os.WriteFile(testFile, []byte("test model content for revision test"), 0644)
-	require.NoError(t, err)
+	require.NoError(t, err, "Failed to create test model file")
 
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 
@@ -253,21 +257,23 @@ func TestHuggingFaceUploadDataset(t *testing.T) {
 
 	// Create a temporary directory with test dataset files
 	tempDir, err := os.MkdirTemp("", "hf-upload-dataset-test-*")
-	require.NoError(t, err)
-	defer func() {
+	if err != nil {
+		require.NoError(t, err, "Failed to create temp directory")
+	}
+	t.Cleanup(func() {
 		if err := os.RemoveAll(tempDir); err != nil {
 			t.Logf("Warning: Failed to remove temp directory %s: %v", tempDir, err)
 		}
-	}()
+	})
 
 	// Create test dataset files
 	trainFile := filepath.Join(tempDir, "train.json")
 	err = os.WriteFile(trainFile, []byte(`[{"text": "sample training data"}]`), 0644)
-	require.NoError(t, err)
+	require.NoError(t, err, "Failed to create train file")
 
 	testFileData := filepath.Join(tempDir, "test.json")
 	err = os.WriteFile(testFileData, []byte(`[{"text": "sample test data"}]`), 0644)
-	require.NoError(t, err)
+	require.NoError(t, err, "Failed to create test file")
 
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 

@@ -1143,7 +1143,7 @@ func huggingFaceCmd(c *cli.Context) error {
 	case "d", "download":
 		return huggingFaceDownloadCmd(c, hfArgs)
 	default:
-		return errors.New("Wrong command: " + cmdName)
+		return errorutils.CheckErrorf("unknown HuggingFace command: '%s'. Valid commands are: upload (u), download (d)", cmdName)
 	}
 }
 
@@ -1177,6 +1177,7 @@ func huggingFaceDownloadCmd(c *cli.Context, hfArgs []string) error {
 	if len(hfArgs) < 1 {
 		return cliutils.PrintHelpAndReturnError("Model/Dataset name is required.", c)
 	}
+	const eTagTimeout = 86400
 	repoID := hfArgs[0]
 	if repoID == "" {
 		return cliutils.PrintHelpAndReturnError("Model/Dataset name cannot be empty.", c)
@@ -1185,7 +1186,7 @@ func huggingFaceDownloadCmd(c *cli.Context, hfArgs []string) error {
 	if c.String("revision") != "" {
 		revision = c.String("revision")
 	}
-	etagTimeout := 86400
+	etagTimeout := eTagTimeout
 	if c.String("etag-timeout") != "" {
 		var err error
 		etagTimeout, err = strconv.Atoi(c.String("etag-timeout"))

@@ -22,11 +22,11 @@ func GetArguments() string {
 
 	Command options:
 		--revision
-			[Optional] The revision (commit hash, branch name, or tag) to download/upload. If not specified, uses the default branch.
+			[Optional] The revision (commit hash, branch name, or tag) to download/upload. Defaults to main branch if not specified.
 
 		--repo-type
 			[Optional] The repository type. Can be 'model' or 'dataset'. Default: 'model'.
 
 		--etag-timeout
-			[Optional] [Download only] Timeout in seconds for ETag validation. Default: 86400 (24 hours).`
+			[Optional] [Download only] Timeout in seconds for ETag validation. Default: 86400 seconds (24 hours).`
 }

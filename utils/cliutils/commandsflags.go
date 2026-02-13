@@ -1757,7 +1757,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	Revision: cli.StringFlag{
 		Name:  Revision,
-		Usage: "[Default: main]The specific revision, branch, or tag to download. Defaults to main branch if not specified.` `",
+		Usage: "[Default: main] The specific revision, branch, or tag to download. Defaults to main branch if not specified.` `",
 	},
 	EtagTimeout: cli.StringFlag{
 		Name:  EtagTimeout,

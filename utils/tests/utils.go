@@ -362,7 +362,6 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestTransfer:           {&RtRepo1, &RtRepo2, &MvnRepo1, &MvnRemoteRepo, &DockerRemoteRepo},
 		TestLifecycle:          {&RtDevRepo, &RtProdRepo1, &RtProdRepo2},
 		TestHelm:               {&RtRepo1},
-		TestHuggingFace:        {},
 	}
 	return getNeededRepositories(nonVirtualReposMap)
 }
@@ -389,7 +388,6 @@ func GetVirtualRepositories() map[*string]string {
 		TestPlugins:      {},
 		TestXray:         {&GoVirtualRepo},
 		TestAccess:       {},
-		TestHuggingFace:  {},
 		TestHelm:         {},
 	}
 	return getNeededRepositories(virtualReposMap)
