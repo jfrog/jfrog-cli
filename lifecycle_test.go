@@ -569,6 +569,33 @@ func TestReleaseBundleUpdateWithFlags(t *testing.T) {
 	assertRbArtifacts(t, lcManager, tests.LcRbName2, number2, tests.GetExpectedLifecycleUpdateBuild2Artifacts())
 }
 
+func TestReleaseBundleFinalize(t *testing.T) {
+	cleanCallback := initLifecycleTest(t, draftBundleArtifactoryMinVersion)
+	defer cleanCallback()
+	lcManager := getLcServiceManager(t)
+
+	deleteBuilds := uploadBuilds(t)
+	defer deleteBuilds()
+
+	// Create a draft bundle from build 1
+	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, tests.LcRbName1, number1, "default", true, true, true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
+	assertStatusDraft(t, lcManager, tests.LcRbName1, number1)
+	assertRbArtifacts(t, lcManager, tests.LcRbName1, number1, tests.GetExpectedLifecycleBuild1Artifacts())
+
+	// Finalize the draft bundle (the command prints "Release Bundle successfully finalized" on success)
+	finalizeRbWithFlags(t, tests.LcRbName1, number1, "default", gpgKeyPairName, true)
+
+	// Verify the bundle's current status is COMPLETED after finalize
+	// Note: We use assertCurrentBundleStatusCompleted (not assertStatusCompleted) because
+	// the creation status endpoint returns the audit status of the creation operation (DRAFT),
+	// while we want to verify the bundle's actual current state (COMPLETED after finalize).
+	assertCurrentBundleStatusCompleted(t, lcManager, tests.LcRbName1, number1)
+
+	// Verify the bundle still exists and contains the same artifacts after finalize
+	assertRbArtifacts(t, lcManager, tests.LcRbName1, number1, tests.GetExpectedLifecycleBuild1Artifacts())
+}
+
 /*func deleteExportedReleaseBundle(t *testing.T, rbName string) {
 	assert.NoError(t, os.RemoveAll(rbName))
 }*/
@@ -719,6 +746,22 @@ func updateRbWithFlags(t *testing.T, specFilePath, rbName, rbVersion, project, s
 	assert.NoError(t, lcCli.Exec(argsAndOptions...))
 }
 
+func finalizeRbWithFlags(t *testing.T, rbName, rbVersion, project, signingKey string, sync bool) {
+	argsAndOptions := []string{
+		"rbf",
+		rbName,
+		rbVersion,
+	}
+	if signingKey != "" {
+		argsAndOptions = append(argsAndOptions, getOption(cliutils.SigningKey, signingKey))
+	}
+	if project != "" {
+		argsAndOptions = append(argsAndOptions, getOption(cliutils.Project, project))
+	}
+	argsAndOptions = append(argsAndOptions, getOption(cliutils.Sync, strconv.FormatBool(sync)))
+	assert.NoError(t, lcCli.Exec(argsAndOptions...))
+}
+
 /*func exportRb(t *testing.T, rbName, rbVersion, targetPath string) {
 	lcCli.RunCliCmdWithOutput(t, "rbe", rbName, rbVersion, targetPath+"/")
 	exists, err := fileutils.IsDirExists(path.Join(targetPath, rbName), false)
@@ -797,6 +840,35 @@ func assertStatusCompletedWithProject(t *testing.T, lcManager *lifecycle.Lifecyc
 		return
 	}
 	assert.Equal(t, services.Completed, resp.Status)
+}
+
+// assertCurrentBundleStatusCompleted asserts the bundle's current record status is COMPLETED.
+// This differs from assertStatusCompleted which checks the creation operation's audit status.
+// Use this after finalize to verify the bundle is now in COMPLETED state.
+func assertCurrentBundleStatusCompleted(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion string) {
+	status, err := getCurrentBundleRecordStatus(lcManager, rbName, rbVersion)
+	if !assert.NoError(t, err) {
+		return
+	}
+	assert.Equal(t, "COMPLETED", status, "Expected bundle current status to be COMPLETED after finalize")
+}
+
+// getCurrentBundleRecordStatus fetches the current bundle status from the bundle record.
+// This returns the actual current state of the bundle, not the creation operation status.
+func getCurrentBundleRecordStatus(lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion string) (string, error) {
+	params := services.GetSearchOptionalQueryParams{
+		Limit: 100,
+	}
+	resp, err := lcManager.ReleaseBundlesSearchVersions(rbName, params)
+	if err != nil {
+		return "", err
+	}
+	for _, bundle := range resp.ReleaseBundles {
+		if bundle.ReleaseBundleVersion == rbVersion {
+			return bundle.Status, nil
+		}
+	}
+	return "", fmt.Errorf("bundle version %s/%s not found", rbName, rbVersion)
 }
 
 func getLcServiceManager(t *testing.T) *lifecycle.LifecycleServicesManager {

@@ -396,6 +396,175 @@ func TestPushFatManifestImage(t *testing.T) {
 	assert.True(t, totalResults > 1)
 }
 
+// runNestedPathDockerBuildTest is a helper function for testing docker build --push with nested paths.
+// It handles common setup, build execution, validation, and cleanup.
+// platforms: empty string for single platform, or comma-separated platforms like "linux/amd64,linux/arm64"
+func runNestedPathDockerBuildTest(t *testing.T, buildNameSuffix, imageSuffix, nestedPath, platforms string) {
+	buildName := buildNameSuffix + tests.DockerBuildName
+	buildNumber := "1"
+
+	// Extract hostname from ContainerRegistry (remove protocol if present)
+	registryHost := *tests.ContainerRegistry
+	if parsedURL, err := url.Parse(registryHost); err == nil && parsedURL.Host != "" {
+		registryHost = parsedURL.Host
+	}
+
+	// Construct image name with nested path: repo/nestedPath/image
+	nestedImageName := path.Join(registryHost, tests.OciLocalRepo, nestedPath, imageSuffix)
+	imageTag := nestedImageName + ":v1"
+
+	// Create test workspace
+	workspace, err := filepath.Abs(tests.Out)
+	assert.NoError(t, err)
+	assert.NoError(t, fileutils.CreateDirIfNotExist(workspace))
+
+	// Construct base image with hostname
+	baseImage := path.Join(registryHost, tests.OciRemoteRepo, "alpine:latest")
+
+	// Create Dockerfile
+	dockerfileContent := fmt.Sprintf(`FROM %s
+RUN echo "Built for nested path test"
+CMD ["echo", "Hello from nested path"]`, baseImage)
+
+	dockerfilePath := filepath.Join(workspace, "Dockerfile")
+	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644))
+
+	// Cleanup old build
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	// Clean build before test
+	runJfrogCli(t, "rt", "bc", buildName, buildNumber)
+
+	// Run docker build --push (single or multiplatform based on platforms parameter)
+	if platforms != "" {
+		runJfrogCli(t, "docker", "buildx", "build", "--platform", platforms,
+			"-t", imageTag, "-f", dockerfilePath, "--push", "--build-name="+buildName, "--build-number="+buildNumber, workspace)
+	} else {
+		runJfrogCli(t, "docker", "build", "-t", imageTag, "-f", dockerfilePath, "--push",
+			"--build-name="+buildName, "--build-number="+buildNumber, workspace)
+	}
+
+	// Publish build info
+	runJfrogCli(t, "rt", "build-publish", buildName, buildNumber)
+
+	// Validate the published build-info exists
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	assert.NoError(t, err)
+	assert.True(t, found, "build info was expected to be found")
+	assert.True(t, len(publishedBuildInfo.BuildInfo.Modules) >= 1, "Expected at least 1 module in build info")
+
+	// Validate build-name & build-number properties in all image layers at nested path
+	searchSpec := spec.NewBuilder().Pattern(tests.OciLocalRepo + "/" + nestedPath + "/*").Build(buildName).Recursive(true).BuildSpec()
+	searchCmd := generic.NewSearchCommand()
+	searchCmd.SetServerDetails(serverDetails).SetSpec(searchSpec)
+	reader, err := searchCmd.Search()
+	assert.NoError(t, err)
+	totalResults, err := reader.Length()
+	assert.NoError(t, err)
+	assert.True(t, totalResults > 1, "Expected layers to be found at nested path "+nestedPath+"/")
+
+	// Cleanup image from Artifactory
+	inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, nestedPath+"/"+imageSuffix, buildName, tests.OciLocalRepo)
+}
+
+// TestDockerBuildPushWithNestedPath tests docker build --push with nested paths like repo/myorg/image.
+// This validates that layer fetching works correctly for single platform images with nested paths.
+func TestDockerBuildPushWithNestedPath(t *testing.T) {
+	cleanup := initDockerBuildTest(t)
+	defer cleanup()
+	runNestedPathDockerBuildTest(t, "docker-build-nested", "test-single-nested", "myorg", "")
+}
+
+// TestPushFatManifestImageWithNestedPath tests pushing fat-manifest (multi-platform) images with nested paths.
+// This validates that layer fetching works correctly for paths like <repository>/myorg/image
+// which was failing before the fix to FatManifestHandler.createSearchablePathForDockerManifestContents.
+func TestPushFatManifestImageWithNestedPath(t *testing.T) {
+	cleanup := initDockerBuildTest(t)
+	defer cleanup()
+	runNestedPathDockerBuildTest(t, "push-fat-manifest-nested", "test-multiarch-nested", "myorg", "linux/amd64,linux/arm64")
+}
+
+// TestDockerBuildWithNestedPathBaseImage tests that dependencies are correctly collected
+// when using a nested path image as a base layer in a Dockerfile.
+func TestDockerBuildWithNestedPathBaseImage(t *testing.T) {
+	cleanup := initDockerBuildTest(t)
+	defer cleanup()
+
+	// Extract hostname from ContainerRegistry
+	registryHost := *tests.ContainerRegistry
+	if parsedURL, err := url.Parse(registryHost); err == nil && parsedURL.Host != "" {
+		registryHost = parsedURL.Host
+	}
+
+	// Step 1: Push a base image to a nested path (myorg/base-image)
+	baseImageBuildName := "base-nested" + tests.DockerBuildName
+	baseImageBuildNumber := "1"
+	nestedBasePath := "myorg"
+	baseImageName := path.Join(registryHost, tests.OciLocalRepo, nestedBasePath, "base-image")
+	baseImageTag := baseImageName + ":v1"
+
+	workspace, err := filepath.Abs(tests.Out)
+	assert.NoError(t, err)
+	assert.NoError(t, fileutils.CreateDirIfNotExist(workspace))
+
+	// Create base Dockerfile
+	alpineBase := path.Join(registryHost, tests.OciRemoteRepo, "alpine:latest")
+	baseDockerfile := fmt.Sprintf(`FROM %s
+RUN echo "This is the nested base image"
+CMD ["echo", "base"]`, alpineBase)
+
+	baseDockerfilePath := filepath.Join(workspace, "Dockerfile.base")
+	assert.NoError(t, os.WriteFile(baseDockerfilePath, []byte(baseDockerfile), 0644))
+
+	// Push base image to nested path
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, baseImageBuildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, baseImageBuildName, artHttpDetails)
+
+	runJfrogCli(t, "rt", "bc", baseImageBuildName, baseImageBuildNumber)
+	runJfrogCli(t, "docker", "build", "-t", baseImageTag, "-f", baseDockerfilePath, "--push",
+		"--build-name="+baseImageBuildName, "--build-number="+baseImageBuildNumber, workspace)
+	runJfrogCli(t, "rt", "build-publish", baseImageBuildName, baseImageBuildNumber)
+
+	// Step 2: Build a new image using the nested path base image
+	childBuildName := "child-nested" + tests.DockerBuildName
+	childBuildNumber := "1"
+	childImageName := path.Join(registryHost, tests.OciLocalRepo, "child-image")
+	childImageTag := childImageName + ":v1"
+
+	// Create child Dockerfile that uses the nested path base image
+	childDockerfile := fmt.Sprintf(`FROM %s
+RUN echo "This is the child image using nested base"
+CMD ["echo", "child"]`, baseImageTag)
+
+	childDockerfilePath := filepath.Join(workspace, "Dockerfile.child")
+	assert.NoError(t, os.WriteFile(childDockerfilePath, []byte(childDockerfile), 0644))
+
+	// Build child image
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, childBuildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, childBuildName, artHttpDetails)
+
+	runJfrogCli(t, "rt", "bc", childBuildName, childBuildNumber)
+	runJfrogCli(t, "docker", "build", "-t", childImageTag, "-f", childDockerfilePath, "--push",
+		"--build-name="+childBuildName, "--build-number="+childBuildNumber, workspace)
+	runJfrogCli(t, "rt", "build-publish", childBuildName, childBuildNumber)
+
+	// Step 3: Validate build info has dependencies from the nested path base image
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, childBuildName, childBuildNumber)
+	assert.NoError(t, err)
+	assert.True(t, found, "build info was expected to be found")
+	assert.True(t, len(publishedBuildInfo.BuildInfo.Modules) >= 1, "Expected at least 1 module in build info")
+
+	// Check that dependencies exist (these come from the base image layers)
+	module := publishedBuildInfo.BuildInfo.Modules[0]
+	assert.True(t, len(module.Dependencies) > 0,
+		"Expected dependencies from nested path base image (myorg/base-image). ")
+
+	// Cleanup
+	inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, nestedBasePath+"/base-image", baseImageBuildName, tests.OciLocalRepo)
+	inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, "child-image", childBuildName, tests.OciLocalRepo)
+}
+
 func TestPushMultiTaggedImage(t *testing.T) {
 	if !*tests.TestDocker {
 		t.Skip("Skipping test. To run it, add the '-test.docker=true' option.")

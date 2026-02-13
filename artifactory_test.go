@@ -6885,3 +6885,80 @@ func validateSearchPatternWithAPI(t *testing.T, pattern string, recursive bool) 
 	readerGetErrorAndAssert(t, readerNoDate)
 	readerCloseAndAssert(t, readerNoDate)
 }
+
+// TestUploadMultipleFilesWithCIVcsProps tests that CI VCS properties are set on multiple uploaded files.
+// This test:
+// - Creates 15 files dynamically during the test
+// - Uploads all files using jf rt u
+// - Verifies vcs.provider, vcs.org, vcs.repo properties are set on ALL 15 files
+// - Fails if any property is missing on any file
+func TestUploadMultipleFilesWithCIVcsProps(t *testing.T) {
+	initArtifactoryTest(t, "")
+	const numFiles = 15
+
+	// Setup GitHub Actions environment (uses real env vars on CI, mock values locally)
+	cleanupEnv, actualOrg, actualRepo := tests.SetupGitHubActionsEnv(t)
+	defer cleanupEnv()
+
+	// Create temp directory for test files
+	tmpDir, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+
+	// Create 15 files dynamically
+	var createdFiles []string
+	for i := 1; i <= numFiles; i++ {
+		fileName := fmt.Sprintf("civcs-test-file-%d.txt", i)
+		filePath := filepath.Join(tmpDir, fileName)
+		content := fmt.Sprintf("Test file %d for CI VCS properties verification. Timestamp: %d", i, time.Now().UnixNano())
+		err := os.WriteFile(filePath, []byte(content), 0644)
+		require.NoError(t, err, "Failed to create test file: %s", fileName)
+		createdFiles = append(createdFiles, fileName)
+	}
+
+	// Upload all files to Artifactory
+	uploadPattern := filepath.Join(tmpDir, "civcs-test-file-*.txt")
+	targetPath := tests.RtRepo1 + "/civcs-multi-upload/"
+	runRt(t, "upload", uploadPattern, targetPath, "--flat")
+
+	// Create service manager for getting artifact properties
+	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
+	require.NoError(t, err, "Failed to create service manager")
+
+	// Verify CI VCS properties on each uploaded file
+	validatedCount := 0
+	for _, fileName := range createdFiles {
+		fullPath := tests.RtRepo1 + "/civcs-multi-upload/" + fileName
+
+		props, err := serviceManager.GetItemProps(fullPath)
+		require.NoError(t, err, "Failed to get properties for file: %s", fullPath)
+		require.NotNil(t, props, "Properties are nil for file: %s", fullPath)
+
+		// Validate vcs.provider property
+		require.Contains(t, props.Properties, "vcs.provider",
+			"Missing vcs.provider property on file: %s", fileName)
+		require.Contains(t, props.Properties["vcs.provider"], "github",
+			"Wrong vcs.provider value on file: %s. Expected 'github', got: %v", fileName, props.Properties["vcs.provider"])
+
+		// Validate vcs.org property
+		require.Contains(t, props.Properties, "vcs.org",
+			"Missing vcs.org property on file: %s", fileName)
+		require.Contains(t, props.Properties["vcs.org"], actualOrg,
+			"Wrong vcs.org value on file: %s. Expected '%s', got: %v", fileName, actualOrg, props.Properties["vcs.org"])
+
+		// Validate vcs.repo property
+		require.Contains(t, props.Properties, "vcs.repo",
+			"Missing vcs.repo property on file: %s", fileName)
+		require.Contains(t, props.Properties["vcs.repo"], actualRepo,
+			"Wrong vcs.repo value on file: %s. Expected '%s', got: %v", fileName, actualRepo, props.Properties["vcs.repo"])
+
+		validatedCount++
+	}
+
+	// Ensure we validated exactly the expected number of files
+	require.Equal(t, numFiles, validatedCount,
+		"Expected to validate %d files, but validated %d", numFiles, validatedCount)
+
+	t.Logf("Successfully validated CI VCS properties on all %d files", validatedCount)
+
+	cleanArtifactoryTest()
+}
