@@ -108,6 +108,9 @@ const (
 	PoetryLocalRepositoryConfig                           = "poetry_local_repository_config.json"
 	PoetryRemoteRepositoryConfig                          = "poetry_remote_repository_config.json"
 	PoetryVirtualRepositoryConfig                         = "poetry_virtual_repository_config.json"
+	ConanLocalRepositoryConfig                            = "conan_local_repository_config.json"
+	ConanRemoteRepositoryConfig                           = "conan_remote_repository_config.json"
+	ConanVirtualRepositoryConfig                          = "conan_virtual_repository_config.json"
 	HelmLocalRepositoryConfig                             = "helm_local_repository_config.json"
 	ReplicationTempCreate                                 = "replication_push_create.json"
 	Repo1RepositoryConfig                                 = "repo1_repository_config.json"
@@ -117,6 +120,7 @@ const (
 	SearchAllGradle                                       = "search_all_gradle.json"
 	SearchAllMaven                                        = "search_all_maven.json"
 	SearchAllNpm                                          = "search_all_npm.json"
+	SearchAllOci                                          = "search_all_oci.json"
 	SearchAllProdRepo1                                    = "search_all_prod_repo1.json"
 	SearchAllProdRepo2                                    = "search_all_prod_repo2.json"
 	SearchAllRepo1                                        = "search_all_repo1.json"
@@ -205,6 +209,9 @@ var (
 	PoetryLocalRepo                = "cli-poetry-local"
 	PoetryRemoteRepo               = "cli-poetry-remote"
 	PoetryVirtualRepo              = "cli-poetry-virtual"
+	ConanLocalRepo                 = "cli-conan-local"
+	ConanRemoteRepo                = "cli-conan-remote"
+	ConanVirtualRepo               = "cli-conan-virtual"
 	HelmLocalRepo                  = "cli-helm-local"
 	DockerLocalRepo                = "cli-docker-local"
 	DockerLocalPromoteRepo         = "cli-docker-local-promote"
@@ -239,6 +246,7 @@ var (
 	PipBuildName                = "cli-pip-build"
 	PipenvBuildName             = "cli-pipenv-build"
 	PoetryBuildName             = "cli-poetry-build"
+	ConanBuildName              = "cli-conan-build"
 	HelmBuildName               = "cli-helm-build"
 	RtBuildName1                = "cli-rt-build1"
 	RtBuildName2                = "cli-rt-build2"
@@ -2146,6 +2154,46 @@ func GetExpectedLifecycleCreationByArtifacts() []string {
 func GetExpectedLifecycleCreationByAql() []string {
 	return []string{
 		RtDevRepo + "/a2.in",
+	}
+}
+
+// GetExpectedLifecycleBuild1Artifacts returns expected artifacts from build 1 only.
+func GetExpectedLifecycleBuild1Artifacts() []string {
+	return []string{
+		RtDevRepo + "/a1.in",
+		RtDevRepo + "/a2.in",
+		RtDevRepo + "/a3.in",
+	}
+}
+
+// GetExpectedLifecycleUpdateArtifacts returns expected artifacts after updating a draft bundle
+// that was created from build 1 (a1.in, a2.in, a3.in) with build 3 (dep-file as dependency).
+func GetExpectedLifecycleUpdateArtifacts() []string {
+	return []string{
+		RtDevRepo + "/a1.in",
+		RtDevRepo + "/a2.in",
+		RtDevRepo + "/a3.in",
+		RtDevRepo + "/dep-file",
+	}
+}
+
+// GetExpectedLifecycleBuild2Artifacts returns expected artifacts from build 2 only.
+func GetExpectedLifecycleBuild2Artifacts() []string {
+	return []string{
+		RtDevRepo + "/b1.in",
+		RtDevRepo + "/b2.in",
+		RtDevRepo + "/b3.in",
+	}
+}
+
+// GetExpectedLifecycleUpdateBuild2Artifacts returns expected artifacts after updating a draft bundle
+// that was created from build 2 (b1.in, b2.in, b3.in) with build 3 (dep-file as dependency).
+func GetExpectedLifecycleUpdateBuild2Artifacts() []string {
+	return []string{
+		RtDevRepo + "/b1.in",
+		RtDevRepo + "/b2.in",
+		RtDevRepo + "/b3.in",
+		RtDevRepo + "/dep-file",
 	}
 }
 

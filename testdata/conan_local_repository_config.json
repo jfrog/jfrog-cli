@@ -1,0 +1,5 @@
+{
+  "key": "${CONAN_LOCAL_REPO}",
+  "rclass": "local",
+  "packageType": "conan"
+}

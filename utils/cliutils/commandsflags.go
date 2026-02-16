@@ -564,6 +564,7 @@ const (
 	ExcludeRepos    = "exclude-repos"
 	IncludeProjects = "include-projects"
 	ExcludeProjects = "exclude-projects"
+	IncludeFiles    = "include-files"
 
 	// *** JFrog Pipelines Commands' flags ***
 	// Base flags
@@ -591,6 +592,7 @@ const (
 	SigningKey     = "signing-key"
 	setupRepo      = repo
 	PromotionType  = "promotion-type"
+	Draft          = "draft"
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -1607,6 +1609,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  ExcludeProjects,
 		Usage: "[Optional] List of semicolon-separated(;) JFrog Projects to exclude from the transfer. You can use wildcards to specify patterns for the project keys.` `",
 	},
+	IncludeFiles: cli.StringFlag{
+		Name:  IncludeFiles,
+		Usage: "[Optional] List of semicolon-separated(;) path patterns to include in the transfer. Files will be filtered based on their directory path. Pattern examples: 'folder/subfolder/*', 'org/company/*'.` `",
+	},
 	IgnoreState: cli.BoolFlag{
 		Name:  IgnoreState,
 		Usage: "[Default: false] Set to true to ignore the saved state from previous transfer-files operations.` `",
@@ -1860,7 +1866,7 @@ var commandFlags = map[string][]string{
 		BuildName, BuildNumber, deploymentThreads, InsecureTls, Project, detailedSummary, xrayScan, xrOutput,
 	},
 	Gradle: {
-		BuildName, BuildNumber, deploymentThreads, Project, detailedSummary, xrayScan, xrOutput,
+		BuildName, BuildNumber, deploymentThreads, Project, serverId, detailedSummary, xrayScan, xrOutput,
 	},
 	Docker: {
 		BuildName, BuildNumber, module, Project,
@@ -2035,7 +2041,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, deleteQuiet,
 	},
 	TransferFiles: {
-		Filestore, IncludeRepos, ExcludeRepos, IgnoreState, ProxyKey, transferFilesStatus, Stop, PreChecks,
+		Filestore, IncludeRepos, ExcludeRepos, IncludeFiles, IgnoreState, ProxyKey, transferFilesStatus, Stop, PreChecks,
 	},
 	TransferInstall: {
 		installPluginVersion, InstallPluginSrcDir, InstallPluginHomeDir,

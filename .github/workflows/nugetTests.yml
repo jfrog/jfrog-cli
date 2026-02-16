@@ -44,6 +44,13 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
 
+      - name: Setup FastCI
+        if: matrix.os.name != 'macos'
+        uses: jfrog-fastci/fastci@v0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          fastci_otel_token: ${{ secrets.FASTCI_TOKEN }}
+
       # Prepare ubuntu by installing Mono and handle dotnet installation issues.
       - name: Prepare ubuntu
         if: matrix.os.name == 'ubuntu'

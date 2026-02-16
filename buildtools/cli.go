@@ -3,6 +3,7 @@ package buildtools
 import (
 	"errors"
 	"fmt"
+	conancommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/conan"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,6 +15,7 @@ import (
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/container/strategies"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/python"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/setup"
+	artutils "github.com/jfrog/jfrog-cli-artifactory/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-security/utils/techutils"
@@ -350,13 +352,14 @@ func GetCommands() []cli.Command {
 			UsageText:       helmcommand.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
-			Hidden:          true,
+			Hidden:          false,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
 			Action:          HelmCmd,
 		},
 		{
 			Name:            "conan",
+			Hidden:          false,
 			Flags:           cliutils.GetCommandFlags(cliutils.Conan),
 			Usage:           conan.GetDescription(),
 			HelpName:        corecommon.CreateUsage("conan", conan.GetDescription(), conan.Usage),
@@ -558,8 +561,13 @@ func MvnCmd(c *cli.Context) (err error) {
 		return err
 	}
 
-	// FlexPack bypasses all config file requirements
-	if os.Getenv("JFROG_RUN_NATIVE") == "true" {
+	configFilePath, configExists, err := project.GetProjectConfFilePath(project.Maven)
+	if err != nil {
+		return err
+	}
+
+	// FlexPack bypasses all config file requirements (only when no config exists)
+	if artutils.ShouldRunNative(configFilePath) && !configExists {
 		log.Debug("Routing to Maven native implementation")
 		// Extract build configuration for FlexPack
 		args := cliutils.ExtractCommand(c)
@@ -572,9 +580,11 @@ func MvnCmd(c *cli.Context) (err error) {
 		return commands.Exec(mvnCmd)
 	}
 
-	configFilePath, err := getProjectConfigPathOrThrow(project.Maven, "mvn", "mvn-config")
-	if err != nil {
-		return err
+	// If config file is missing and not in native mode, return the standard missing-config error.
+	if !configExists {
+		if configFilePath, err = getProjectConfigPathOrThrow(project.Maven, "mvn", "mvn-config"); err != nil {
+			return err
+		}
 	}
 
 	if c.NArg() < 1 {
@@ -629,9 +639,62 @@ func GradleCmd(c *cli.Context) (err error) {
 		return err
 	}
 
-	configFilePath, err := getProjectConfigPathOrThrow(project.Gradle, "gradle", "gradle-config")
+	resolveServer := func(args []string) ([]string, *coreConfig.ServerDetails, error) {
+		cleanedArgs, serverID, err := coreutils.ExtractServerIdFromCommand(args)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to extract server ID: %w", err)
+		}
+
+		if serverID == "" {
+			serverDetails, err := coreConfig.GetDefaultServerConf()
+			if err != nil {
+				return cleanedArgs, nil, err
+			}
+			if serverDetails == nil {
+				return cleanedArgs, nil, fmt.Errorf("no default server configuration found. Please configure a server using 'jfrog config add' or specify a server using --server-id")
+			}
+			return cleanedArgs, serverDetails, nil
+		}
+
+		serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, true)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to get server configuration for ID '%s': %w", serverID, err)
+		}
+		return cleanedArgs, serverDetails, nil
+	}
+
+	configFilePath, configExists, err := project.GetProjectConfFilePath(project.Gradle)
 	if err != nil {
 		return err
+	}
+	nativeMode := artutils.ShouldRunNative(configFilePath)
+
+	// FlexPack native mode for Gradle (bypasses config file requirements)
+	if nativeMode && !configExists {
+		log.Debug("Routing to Gradle FlexPack implementation")
+		if c.NArg() < 1 {
+			return cliutils.WrongNumberOfArgumentsHandler(c)
+		}
+		args := cliutils.ExtractCommand(c)
+		args, serverDetails, err := resolveServer(args)
+		if err != nil {
+			return err
+		}
+		filteredGradleArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
+		if err != nil {
+			return err
+		}
+
+		// Create Gradle command with FlexPack (no config file needed)
+		gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(filteredGradleArgs).SetConfigPath("").SetServerDetails(serverDetails)
+		return commands.Exec(gradleCmd)
+	}
+
+	// If config file is missing and not in native mode, return the standard missing-config error.
+	if !configExists {
+		if configFilePath, err = getProjectConfigPathOrThrow(project.Gradle, "gradle", "gradle-config"); err != nil {
+			return err
+		}
 	}
 
 	// Found a config file. Continue as native command.
@@ -868,14 +931,15 @@ func goCmdVerification(c *cli.Context) (string, error) {
 
 func dockerCmd(c *cli.Context) error {
 	args := cliutils.ExtractCommand(c)
-	var cmd, image string
+	var cmd, cmdArg string
 	// We may have prior flags before push/pull commands for the docker client.
+	// cmdArg is the second non-flag argument: image name for pull/push/scan, subcommand for buildx
 	for _, arg := range args {
 		if !strings.HasPrefix(arg, "-") {
 			if cmd == "" {
 				cmd = arg
 			} else {
-				image = arg
+				cmdArg = arg
 				break
 			}
 		}
@@ -883,16 +947,22 @@ func dockerCmd(c *cli.Context) error {
 	var err error
 	switch cmd {
 	case "pull":
-		err = pullCmd(c, image)
+		err = pullCmd(c, cmdArg)
 	case "push":
-		err = pushCmd(c, image)
+		err = pushCmd(c, cmdArg)
 	case "login":
 		err = loginCmd(c)
 	case "scan":
-		return dockerScanCmd(c, image)
-		// Handle both build and buildx with same handler
-	case "build", "buildx":
+		return dockerScanCmd(c, cmdArg)
+	case "build":
 		err = buildCmd(c)
+	case "buildx":
+		// Only intercept "buildx build", pass through other buildx subcommands (create, ls, rm, etc.)
+		if cmdArg == "build" {
+			err = buildCmd(c)
+		} else {
+			err = dockerNativeCmd(c)
+		}
 	default:
 		err = dockerNativeCmd(c)
 	}
@@ -1485,18 +1555,19 @@ func ConanCmd(c *cli.Context) error {
 	}
 
 	args := cliutils.ExtractCommand(c)
-	cmdName, conanArgs := getCommandName(args)
 
-	// Execute native conan command directly
-	log.Info(fmt.Sprintf("Running Conan %s.", cmdName))
-	conanCmd := exec.Command("conan", append([]string{cmdName}, conanArgs...)...)
-	conanCmd.Stdout = os.Stdout
-	conanCmd.Stderr = os.Stderr
-	if err := conanCmd.Run(); err != nil {
-		return fmt.Errorf("conan %s failed: %w", cmdName, err)
+	// Extract build flags (--build-name, --build-number) before passing to Conan
+	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
+	if err != nil {
+		return err
 	}
 
-	return nil
+	cmdName, conanArgs := getCommandName(filteredArgs)
+
+	// Use jfrog-cli-artifactory Conan command with build info support
+	conanCommand := conancommand.NewConanCommand().SetCommandName(cmdName).SetArgs(conanArgs).SetBuildConfiguration(buildConfiguration)
+
+	return commands.Exec(conanCommand)
 }
 
 func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
@@ -1508,7 +1579,7 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 	}
 
 	// FlexPack native mode for Poetry (bypasses config file requirements)
-	if os.Getenv("JFROG_RUN_NATIVE") == "true" && projectType == project.Poetry {
+	if artutils.ShouldRunNative("") && projectType == project.Poetry {
 		log.Debug("Routing to Poetry native implementation")
 		args := cliutils.ExtractCommand(c)
 		filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)

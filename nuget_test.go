@@ -3,9 +3,6 @@ package main
 import (
 	"encoding/xml"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
-	"github.com/jfrog/jfrog-client-go/http/httpclient"
-	"github.com/jfrog/jfrog-client-go/utils/io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -13,6 +10,10 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
+	"github.com/jfrog/jfrog-client-go/http/httpclient"
+	"github.com/jfrog/jfrog-client-go/utils/io"
 
 	dotnetUtils "github.com/jfrog/build-info-go/build/utils/dotnet"
 	buildInfo "github.com/jfrog/build-info-go/entities"
@@ -163,9 +164,8 @@ func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expe
 }
 
 // Add allow insecure connection for testings to work with localhost server
-func allowInsecureConnectionForTests(args *[]string) *[]string {
+func allowInsecureConnectionForTests(args *[]string) {
 	*args = append(*args, "--allow-insecure-connections")
-	return args
 }
 
 func assertNugetDependencies(t *testing.T, module buildInfo.Module, moduleName string) {
@@ -374,4 +374,163 @@ func prepareSetupTest(t *testing.T, packageManager project.ProjectType) func() {
 		assert.NoError(t, restoreConfigFunc())
 		restoreDir()
 	}
+}
+
+// TestDotnetRequestedByDeterminism verifies that the RequestedBy paths in build-info
+// are deterministic across multiple runs. This addresses the bug where dependencies
+// could flip between "direct" and "transitive" attribution due to non-deterministic
+// map iteration order in Go.
+//
+// The test uses the "determinism" project which has dependencies that are BOTH
+// direct AND transitive (e.g., Newtonsoft.Json is a direct dep and also a transitive
+// dep of NuGet.Core). This creates multiple RequestedBy paths that must be
+// consistently sorted across runs.
+func TestDotnetRequestedByDeterminism(t *testing.T) {
+	t.Skip("Skipping test temporarily")
+	initNugetTest(t)
+	const numRuns = 5
+	buildName := tests.DotnetBuildName + "-determinism"
+
+	// Use "determinism" project which has deps that are both direct AND transitive
+	projectPath := createNugetProject(t, "determinism")
+	err := createConfigFileForTest([]string{projectPath}, tests.NugetRemoteRepo, "", t, project.Dotnet, false)
+	require.NoError(t, err)
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+
+	// Store RequestedBy maps from each run for comparison
+	var allRunsRequestedBy []map[string][][]string
+
+	for i := 1; i <= numRuns; i++ {
+		buildNumber := strconv.Itoa(i)
+		args := []string{dotnetUtils.DotnetCore.String(), "restore"}
+		allowInsecureConnectionForTests(&args)
+		args = append(args, "--build-name="+buildName, "--build-number="+buildNumber)
+
+		err := runNuGet(t, args...)
+		require.NoError(t, err, "Run %d failed", i)
+
+		// Publish build info
+		require.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+		// Get published build info
+		publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+		require.NoError(t, err)
+		require.True(t, found, "Build info not found for run %d", i)
+
+		bi := publishedBuildInfo.BuildInfo
+		require.NotEmpty(t, bi.Modules, "No modules in build info for run %d", i)
+
+		// Extract RequestedBy for each dependency
+		requestedByMap := make(map[string][][]string)
+		for _, module := range bi.Modules {
+			for _, dep := range module.Dependencies {
+				requestedByMap[dep.Id] = dep.RequestedBy
+			}
+		}
+		allRunsRequestedBy = append(allRunsRequestedBy, requestedByMap)
+
+		// Clean up this build number
+		inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	}
+
+	// Compare all runs - they should be identical
+	firstRun := allRunsRequestedBy[0]
+	for i := 1; i < numRuns; i++ {
+		currentRun := allRunsRequestedBy[i]
+
+		// Check that all dependencies have the same RequestedBy paths
+		for depId, expectedRequestedBy := range firstRun {
+			actualRequestedBy, exists := currentRun[depId]
+			assert.True(t, exists, "Dependency %s missing in run %d", depId, i+1)
+			assert.Equal(t, expectedRequestedBy, actualRequestedBy,
+				"RequestedBy mismatch for %s between run 1 and run %d.\nExpected: %v\nActual: %v",
+				depId, i+1, expectedRequestedBy, actualRequestedBy)
+		}
+
+		// Also check for any extra dependencies in current run
+		for depId := range currentRun {
+			_, exists := firstRun[depId]
+			assert.True(t, exists, "Extra dependency %s found in run %d but not in run 1", depId, i+1)
+		}
+	}
+
+	// Verify that dependencies with multiple paths have direct path first
+	// Newtonsoft.Json should have direct path ["determinism"] before transitive paths
+	for depId, requestedBy := range firstRun {
+		if len(requestedBy) > 1 {
+			// Direct paths (length 1) should come before transitive paths (length > 1)
+			for j := 1; j < len(requestedBy); j++ {
+				assert.LessOrEqual(t, len(requestedBy[j-1]), len(requestedBy[j]),
+					"RequestedBy paths not sorted by length for %s: path %d has length %d, path %d has length %d",
+					depId, j-1, len(requestedBy[j-1]), j, len(requestedBy[j]))
+			}
+			t.Logf("Dependency %s has %d RequestedBy paths (verified sorted)", depId, len(requestedBy))
+		}
+	}
+
+	t.Logf("Successfully verified RequestedBy determinism across %d runs", numRuns)
+	cleanTestsHomeEnv()
+}
+
+// TestNugetBuildPublishWithCIVcsProps tests that CI VCS properties integration works
+// with NuGet in a CI environment (GitHub Actions).
+// Note: NuGet restore only has dependencies (not artifacts), so this test validates
+// that build-info collection works correctly in CI environment. CI VCS properties
+// are set on artifacts via build-publish when packages are pushed (nuget push).
+func TestNugetBuildPublishWithCIVcsProps(t *testing.T) {
+	initNugetTest(t)
+	defer cleanTestsHomeEnv()
+
+	buildName := tests.NuGetBuildName + "-civcs"
+	buildNumber := "1"
+
+	// Setup GitHub Actions environment (uses real env vars on CI, mock values locally)
+	cleanupEnv, actualOrg, actualRepo := tests.SetupGitHubActionsEnv(t)
+	defer cleanupEnv()
+
+	// Clean old build
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	// Create NuGet project and config
+	projectPath := createNugetProject(t, "reference")
+	err := createConfigFileForTest([]string{projectPath}, tests.NugetRemoteRepo, "", t, project.Nuget, false)
+	require.NoError(t, err)
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+
+	// Run NuGet restore with build info collection
+	args := []string{dotnetUtils.Nuget.String(), "restore"}
+	allowInsecureConnectionForTests(&args)
+	args = append(args, "--build-name="+buildName, "--build-number="+buildNumber)
+
+	err = runNuGet(t, args...)
+	require.NoError(t, err)
+
+	// Publish build info
+	require.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	// Get the published build info
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	require.NoError(t, err)
+	require.True(t, found, "Build info was not found")
+
+	// Validate build info was created correctly
+	require.NotEmpty(t, publishedBuildInfo.BuildInfo.Modules, "Build info should have modules")
+	assert.Greater(t, len(publishedBuildInfo.BuildInfo.Modules[0].Dependencies), 0, "Build info should have dependencies")
+	assert.Equal(t, buildName, publishedBuildInfo.BuildInfo.Name, "Build name should match")
+	assert.Equal(t, buildNumber, publishedBuildInfo.BuildInfo.Number, "Build number should match")
+
+	// Verify CI environment was detected (for nuget push scenarios, CI VCS props would be set)
+	assert.NotEmpty(t, actualOrg, "CI org should be detected")
+	assert.NotEmpty(t, actualRepo, "CI repo should be detected")
+	t.Logf("NuGet build info created with %d dependencies in CI environment (org=%s, repo=%s)",
+		len(publishedBuildInfo.BuildInfo.Modules[0].Dependencies), actualOrg, actualRepo)
 }

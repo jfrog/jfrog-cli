@@ -68,6 +68,7 @@ var (
 	TestPip                   *bool
 	TestPipenv                *bool
 	TestPoetry                *bool
+	TestConan                 *bool
 	TestHelm                  *bool
 	TestPlugins               *bool
 	TestXray                  *bool
@@ -106,6 +107,7 @@ func init() {
 	TestPip = flag.Bool("test.pip", false, "Test Pip")
 	TestPipenv = flag.Bool("test.pipenv", false, "Test Pipenv")
 	TestPoetry = flag.Bool("test.poetry", false, "Test Poetry")
+	TestConan = flag.Bool("test.conan", false, "Test Conan")
 	TestHelm = flag.Bool("test.helm", false, "Test Helm")
 	TestPlugins = flag.Bool("test.plugins", false, "Test Plugins")
 	TestXray = flag.Bool("test.xray", false, "Test Xray")
@@ -281,6 +283,9 @@ var reposConfigMap = map[*string]string{
 	&PoetryLocalRepo:                PoetryLocalRepositoryConfig,
 	&PoetryRemoteRepo:               PoetryRemoteRepositoryConfig,
 	&PoetryVirtualRepo:              PoetryVirtualRepositoryConfig,
+	&ConanLocalRepo:                 ConanLocalRepositoryConfig,
+	&ConanRemoteRepo:                ConanRemoteRepositoryConfig,
+	&ConanVirtualRepo:               ConanVirtualRepositoryConfig,
 	&HelmLocalRepo:                  HelmLocalRepositoryConfig,
 	&RtDebianRepo:                   DebianTestRepositoryConfig,
 	&RtLfsRepo:                      GitLfsTestRepositoryConfig,
@@ -346,6 +351,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestPip:                {&PypiLocalRepo, &PypiRemoteRepo},
 		TestPipenv:             {&PipenvRemoteRepo},
 		TestPoetry:             {&PoetryLocalRepo, &PoetryRemoteRepo},
+		TestConan:              {&ConanLocalRepo, &ConanRemoteRepo},
 		TestHelm:               {&HelmLocalRepo},
 		TestPlugins:            {&RtRepo1},
 		TestXray:               {&NpmRemoteRepo, &NugetRemoteRepo, &YarnRemoteRepo, &GradleRemoteRepo, &MvnRemoteRepo, &GoRepo, &GoRemoteRepo, &PypiRemoteRepo},
@@ -373,6 +379,7 @@ func GetVirtualRepositories() map[*string]string {
 		TestPip:          {&PypiVirtualRepo},
 		TestPipenv:       {&PipenvVirtualRepo},
 		TestPoetry:       {&PoetryVirtualRepo},
+		TestConan:        {&ConanVirtualRepo},
 		TestHelm:         {},
 		TestPlugins:      {},
 		TestXray:         {&GoVirtualRepo},
@@ -411,6 +418,7 @@ func GetBuildNames() []string {
 		TestPip:          {&PipBuildName},
 		TestPipenv:       {&PipenvBuildName},
 		TestPoetry:       {&PoetryBuildName},
+		TestConan:        {&ConanBuildName},
 		TestHelm:         {&HelmBuildName},
 		TestPlugins:      {},
 		TestXray:         {},
@@ -468,6 +476,9 @@ func getSubstitutionMap() map[string]string {
 		"${POETRY_LOCAL_REPO}":         PoetryLocalRepo,
 		"${POETRY_REMOTE_REPO}":        PoetryRemoteRepo,
 		"${POETRY_VIRTUAL_REPO}":       PoetryVirtualRepo,
+		"${CONAN_LOCAL_REPO}":          ConanLocalRepo,
+		"${CONAN_REMOTE_REPO}":         ConanRemoteRepo,
+		"${CONAN_VIRTUAL_REPO}":        ConanVirtualRepo,
 		"${HELM_REPO}":                 HelmLocalRepo,
 		"${BUILD_NAME1}":               RtBuildName1,
 		"${BUILD_NAME2}":               RtBuildName2,
@@ -534,6 +545,9 @@ func AddTimestampToGlobalVars() {
 	PoetryLocalRepo += uniqueSuffix
 	PoetryRemoteRepo += uniqueSuffix
 	PoetryVirtualRepo += uniqueSuffix
+	ConanLocalRepo += uniqueSuffix
+	ConanRemoteRepo += uniqueSuffix
+	ConanVirtualRepo += uniqueSuffix
 	HelmLocalRepo += uniqueSuffix
 	RtDebianRepo += uniqueSuffix
 	RtLfsRepo += uniqueSuffix
@@ -560,6 +574,7 @@ func AddTimestampToGlobalVars() {
 	PipBuildName += uniqueSuffix
 	PipenvBuildName += uniqueSuffix
 	PoetryBuildName += uniqueSuffix
+	ConanBuildName += uniqueSuffix
 	HelmBuildName += uniqueSuffix
 	RtBuildName1 += uniqueSuffix
 	RtBuildName2 += uniqueSuffix
@@ -754,4 +769,149 @@ func createFlagSet(t *testing.T, flags []string, args []string) *flag.FlagSet {
 func SkipTest(reason string) {
 	log.Info(reason)
 	os.Exit(0)
+}
+
+// SetupGitHubActionsEnv enables CI VCS property collection for a test.
+// When running on GitHub Actions, it uses the real environment variables.
+// When running locally, it sets mock CI environment variables.
+// Returns a cleanup function and the actual org/repo values to use for validation.
+func SetupGitHubActionsEnv(t *testing.T) (cleanup func(), actualOrg, actualRepo string) {
+	callbacks := []func(){}
+
+	// Enable CI VCS property collection for this test (unset the disable flag)
+	callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "JFROG_CLI_CI_VCS_PROPS_DISABLED", ""))
+
+	// Check if we're running on GitHub Actions
+	if os.Getenv("GITHUB_ACTIONS") == "true" {
+		// Running on CI - use real environment variables
+		ghRepo := os.Getenv("GITHUB_REPOSITORY")
+		if ghRepo != "" {
+			parts := strings.Split(ghRepo, "/")
+			if len(parts) == 2 {
+				actualOrg = parts[0]
+				actualRepo = parts[1]
+			}
+		}
+		if actualOrg == "" {
+			actualOrg = os.Getenv("GITHUB_REPOSITORY_OWNER")
+		}
+	} else {
+		// Running locally - set mock CI environment variables
+		actualOrg = "test-org"
+		actualRepo = "test-repo"
+
+		// Set the required CI environment variables for cienv.GetCIVcsInfo() to detect CI
+		callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "CI", "true"))
+		callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "GITHUB_ACTIONS", "true"))
+		callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "GITHUB_WORKFLOW", "test"))
+		callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "GITHUB_RUN_ID", "12345"))
+		callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "GITHUB_REPOSITORY_OWNER", actualOrg))
+		callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "GITHUB_REPOSITORY", actualOrg+"/"+actualRepo))
+	}
+
+	cleanup = func() {
+		for _, cb := range callbacks {
+			cb()
+		}
+	}
+	return cleanup, actualOrg, actualRepo
+}
+
+// ValidateCIVcsPropsOnArtifacts validates that CI VCS properties are set on artifacts.
+func ValidateCIVcsPropsOnArtifacts(t *testing.T, resultItems []utils.ResultItem, expectedProvider, expectedOrg, expectedRepo string) {
+	for _, item := range resultItems {
+		propertiesMap := ConvertPropertiesToMap(item.Properties)
+
+		// Validate vcs.provider
+		if expectedProvider != "" {
+			vals, ok := propertiesMap["vcs.provider"]
+			assert.True(t, ok, "Missing vcs.provider on %s", item.Name)
+			assert.Contains(t, vals, expectedProvider, "Wrong vcs.provider on %s", item.Name)
+		}
+
+		// Validate vcs.org
+		if expectedOrg != "" {
+			vals, ok := propertiesMap["vcs.org"]
+			assert.True(t, ok, "Missing vcs.org on %s", item.Name)
+			assert.Contains(t, vals, expectedOrg, "Wrong vcs.org on %s", item.Name)
+		}
+
+		// Validate vcs.repo
+		if expectedRepo != "" {
+			vals, ok := propertiesMap["vcs.repo"]
+			assert.True(t, ok, "Missing vcs.repo on %s", item.Name)
+			assert.Contains(t, vals, expectedRepo, "Wrong vcs.repo on %s", item.Name)
+		}
+	}
+}
+
+// ConvertPropertiesToMap converts a slice of Property to a map for easier lookup.
+func ConvertPropertiesToMap(properties []utils.Property) map[string][]string {
+	propsMap := make(map[string][]string)
+	for _, prop := range properties {
+		propsMap[prop.Key] = append(propsMap[prop.Key], prop.Value)
+	}
+	return propsMap
+}
+
+// ValidateNoCIVcsPropsOnArtifacts validates that CI VCS properties are NOT set on artifacts.
+func ValidateNoCIVcsPropsOnArtifacts(t *testing.T, resultItems []utils.ResultItem) {
+	for _, item := range resultItems {
+		propertiesMap := ConvertPropertiesToMap(item.Properties)
+		_, hasProvider := propertiesMap["vcs.provider"]
+		_, hasOrg := propertiesMap["vcs.org"]
+		_, hasRepo := propertiesMap["vcs.repo"]
+		assert.False(t, hasProvider, "vcs.provider should not be set when not in CI on %s", item.Name)
+		assert.False(t, hasOrg, "vcs.org should not be set when not in CI on %s", item.Name)
+		assert.False(t, hasRepo, "vcs.repo should not be set when not in CI on %s", item.Name)
+	}
+}
+
+// ValidateCIVcsPropsIfPresent validates CI VCS properties only if at least one artifact has them.
+// This is useful for build tools where OriginalDeploymentRepo may not always be set.
+// Logs a warning if no artifacts have CI VCS properties.
+func ValidateCIVcsPropsIfPresent(t *testing.T, resultItems []utils.ResultItem, expectedProvider, expectedOrg, expectedRepo string) {
+	// Check if any artifact has CI VCS properties
+	hasProps := false
+	for _, item := range resultItems {
+		propertiesMap := ConvertPropertiesToMap(item.Properties)
+		if _, ok := propertiesMap["vcs.provider"]; ok {
+			hasProps = true
+			break
+		}
+	}
+
+	if !hasProps {
+		t.Log("Warning: No artifacts have CI VCS properties set. " +
+			"This may indicate OriginalDeploymentRepo is not populated in build-info.")
+		return
+	}
+
+	// Validate all artifacts that have properties
+	for _, item := range resultItems {
+		propertiesMap := ConvertPropertiesToMap(item.Properties)
+
+		// Only validate if the artifact has any VCS property
+		if _, hasAny := propertiesMap["vcs.provider"]; !hasAny {
+			continue
+		}
+
+		if expectedProvider != "" {
+			vals, ok := propertiesMap["vcs.provider"]
+			assert.True(t, ok, "Missing vcs.provider on %s", item.Name)
+			assert.Contains(t, vals, expectedProvider, "Wrong vcs.provider on %s", item.Name)
+		}
+
+		if expectedOrg != "" {
+			vals, ok := propertiesMap["vcs.org"]
+			assert.True(t, ok, "Missing vcs.org on %s", item.Name)
+			assert.Contains(t, vals, expectedOrg, "Wrong vcs.org on %s", item.Name)
+		}
+
+		if expectedRepo != "" {
+			vals, ok := propertiesMap["vcs.repo"]
+			assert.True(t, ok, "Missing vcs.repo on %s", item.Name)
+			assert.Contains(t, vals, expectedRepo, "Wrong vcs.repo on %s", item.Name)
+		}
+	}
 }

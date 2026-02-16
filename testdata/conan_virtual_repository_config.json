@@ -1,0 +1,6 @@
+{
+  "key": "${CONAN_VIRTUAL_REPO}",
+  "rclass": "virtual",
+  "packageType": "conan",
+  "repositories": ["${CONAN_LOCAL_REPO}", "${CONAN_REMOTE_REPO}"]
+}
