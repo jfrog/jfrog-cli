@@ -1,0 +1,1291 @@
+resources:
+  - name: jfrog_cli
+    type: GitRepo
+    configuration:
+      path: jfrog/jfrog-cli
+      gitProvider: jfrog_cli_github
+      branches:
+        include: master
+  - name: cli_coreapps_env_details
+    type: PropertyBag
+    configuration:
+      suffix: "value_to_be_set"
+  - name: jfrog_oauth_token
+    type: PropertyBag
+    configuration:
+      token: "value_to_be_set"
+      url: "value_to_be_set"
+
+pipelines:
+  - name: jfrog_artifactory_ecomatrix_cli_e2e
+    configuration:
+      integrations:
+        - name: jfrog_cli_tests
+      environmentVariables:
+        readOnly:
+          JFROG_CLI_BUILD_PROJECT: ""
+          GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+          RT_VERSION:
+            default: "${RT_VERSION}"
+            description: "Artifactory version for warm environment deployment"
+            allowCustom: true
+          SKIP_ENV_SETUP: 
+            default: "false"
+            description: "Skip environment setup"
+            allowCustom: true
+          MASTER_KEY:
+            default: "${int_jfrog_cli_tests_master_key}"
+            description: "Master key to use for tests (required)"
+            allowCustom: true
+          JFROG_ADMIN_USERNAME:
+            default: "${int_jfrog_cli_tests_username}"
+            description: "JFrog admin username (required for tests)"
+            allowCustom: true
+          JFROG_ADMIN_PASSWORD:
+            default: "${int_jfrog_cli_tests_password}"
+            description: "JFrog admin password (required for tests)"
+            allowCustom: true
+
+    steps:
+      - name: setup_cli_test
+        type: Bash
+        configuration:
+          nodePool: k8s_u20
+          integrations:
+            - name: docker_jfrog_io_reader
+          outputResources:
+            - name: cli_coreapps_env_details
+          environmentVariables:
+            ARTIFACTORY_URL:
+              default: "https://servername.jfrogdev.org"
+              description: "Artifactory URL to use for tests (required)"
+              allowCustom: true
+            JFROG_ADMIN_TOKEN:
+              default: "${int_jfrog_cli_tests_token}"
+              description: "JFrog admin access token (required for tests)"
+              allowCustom: true
+        execution:
+          onStart:
+            - echo "Starting CLI tests"
+            - echo "Using RT_VERSION=${RT_VERSION}"
+            - |
+              # Generate unique suffix and set variables
+              suffix=$(date +%s)
+              server_name="cli${suffix}"
+              env_url="https://${server_name}.jfrogdev.org"
+              
+              echo "Generated suffix: ${suffix}"
+              echo "Server name: ${server_name}"
+              echo "Environment URL: ${env_url}"
+              
+              # Write to resource
+              write_output "cli_coreapps_env_details" "suffix=${suffix}"
+              write_output "cli_coreapps_env_details" "env_url=${env_url}"
+              
+              # Set pipeline variables
+              add_pipeline_variables server_name="${server_name}"
+              
+              # Set ARTIFACTORY_URL based on SKIP_ENV_SETUP
+              if [[ "${SKIP_ENV_SETUP}" == "true" ]]; then
+                echo "SKIP_ENV_SETUP is true, using provided ARTIFACTORY_URL"
+                # ARTIFACTORY_URL should already be set via pipeline environment variable
+              else
+                echo "Setting ARTIFACTORY_URL to ${env_url}"
+                add_pipeline_variables ARTIFACTORY_URL="${env_url}"
+              fi
+
+      - name: deploy_environment
+        type: Jenkins
+        configuration:
+          condition: 'SKIP_ENV_SETUP != "true"'
+          integrations:
+            - name: jenkins_entplus_rt
+          inputResources:
+            - name: cli_coreapps_env_details
+          inputSteps:
+            - name: setup_cli_test
+              status:
+                - success
+          jenkinsJobName: tools/platform/environment_setup_gen2
+          buildParameters:
+            SERVER_NAME: "cli${res_cli_coreapps_env_details_suffix}"
+            DEPLOYMENT_TYPE: onprem
+            ACCOUNT_TYPE: "enterprise_plus"
+            GROUP: "ARTIFACTORY"
+            EXPIRY: 2d
+            EXTRA_PARAMS: "conf_artifactory_unified_version=${RT_VERSION} master_key=${MASTER_KEY}"
+      
+      - name: setup_environment
+        type: Bash
+        configuration:
+          environmentVariables:
+            ART_URL:
+              default: "${res_cli_coreapps_env_details_env_url}"
+              description: "Artifactory URL to use for tests (required)"
+              allowCustom: true
+            JOIN_KEY:
+              default: "${MASTER_KEY}"
+              description: "Join key to use for tests (required)"
+              allowCustom: true
+          inputSteps:
+            - name: deploy_environment
+              status:
+                - success
+                - skipped
+          outputResources:
+            - name: jfrog_oauth_token
+          inputResources:
+            - name: cli_coreapps_env_details
+          nodePool: k8s_u20
+          integrations:
+            - name: docker_jfrog_io_reader
+        execution:
+          onStart:
+            - echo "Setting up environment"
+            - |
+              # Determine Artifactory URL
+              if [[ -n "${ART_URL}" ]]; then
+                echo "Using custom ART_URL=${ART_URL}"
+              elif [[ -n "${res_cli_coreapps_env_details_env_url}" ]]; then
+                echo "ART_URL not set, using env_url from cli_coreapps_env_details resource"
+                ART_URL="${res_cli_coreapps_env_details_env_url}"
+                echo "ART_URL=${ART_URL}"
+              else
+                echo "ERROR: Neither ART_URL nor cli_coreapps_env_details.env_url is set"
+                exit 1
+              fi
+              
+              # Install JFrog CLI
+              echo "Installing JFrog CLI, Version: 2.54.0"
+              curl -fL https://getcli.jfrog.io/v2 | sh -s 2.54.0
+              export PATH=$PATH:$HOME/.jfrog
+              
+              # Install JFrog CLI Access Plugin
+              echo "Installing JFrog CLI Access Plugin, Version: 7.66.0"
+              jfrog plugin install access@v7.66.0
+              
+              # Generate tokens
+              JOIN_KEY="${JOIN_KEY:-${MASTER_KEY}}"
+              echo "Generating support token for ${ART_URL}"
+
+              # Run support-token command and capture output + exit code
+              SUPPORT_OUTPUT=$(jfrog access support-token --url="${ART_URL}/access" --join-key="${JOIN_KEY}" 2>&1) || {
+                echo "ERROR: Failed to generate support token"
+                echo "Output: ${SUPPORT_OUTPUT}"
+                echo "Support_token=${SUPPORT_OUTPUT}"
+                exit 1
+              }
+                            
+              # Fixed parsing - extract everything after JF_ACCESS_ADMIN_TOKEN=
+              SUPPORT_TOKEN=$(echo "${SUPPORT_OUTPUT}" | grep -o 'JF_ACCESS_ADMIN_TOKEN=.*' | cut -d'=' -f2-)
+
+              if [[ -z "${SUPPORT_TOKEN}" ]]; then
+                echo "ERROR: Support token is empty"
+                echo "Command output: ${SUPPORT_OUTPUT}"
+                exit 1
+              fi
+              echo "Support token generated: ${SUPPORT_TOKEN:0:20}..."
+
+              echo "Generating OAuth token..."
+              OAUTH_RESPONSE=$(curl -s -w "\nHTTP_CODE:%{http_code}" --location "${ART_URL}/access/api/v1/oauth/token" \
+                --header 'Content-Type: application/x-www-form-urlencoded' \
+                --header "Authorization: Bearer ${SUPPORT_TOKEN}" \
+                --data-urlencode 'username=${JFROG_ADMIN_USERNAME}' \
+                --data-urlencode 'scope=applied-permissions/admin' \
+                --data-urlencode 'expires_in=36000' \
+                --data-urlencode 'grant_type=client_credentials' \
+                --data-urlencode 'audience=*@*')
+
+              OAUTH_HTTP_CODE=$(echo "${OAUTH_RESPONSE}" | grep "HTTP_CODE:" | cut -d':' -f2)
+              OAUTH_BODY=$(echo "${OAUTH_RESPONSE}" | grep -v "HTTP_CODE:")
+
+              if [[ "${OAUTH_HTTP_CODE}" != "200" ]]; then
+                echo "ERROR: OAuth token request failed with HTTP ${OAUTH_HTTP_CODE}"
+                echo "Response: ${OAUTH_BODY}"
+                exit 1
+              fi
+
+              OAUTH_TOKEN=$(echo "${OAUTH_BODY}" | jq -r .access_token)
+
+              if [[ -z "${OAUTH_TOKEN}" || "${OAUTH_TOKEN}" == "null" ]]; then
+                echo "ERROR: Failed to parse OAuth token from response"
+                echo "Response: ${OAUTH_BODY}"
+                echo "OAUTH_TOKEN=${OAUTH_TOKEN}"
+                exit 1
+              fi
+
+              echo "OAuth Token generated successfully: ${OAUTH_TOKEN:0:20}..."
+              echo "Access Token generated successfully: ${OAUTH_TOKEN}"
+              
+              # Write OAUTH_TOKEN and ART_URL to jfrog_oauth_token resource
+              write_output jfrog_oauth_token "token=${OAUTH_TOKEN}"
+              write_output jfrog_oauth_token "url=${ART_URL}"
+              echo "OAUTH_TOKEN and URL written to jfrog_oauth_token"
+
+      - name: gradle_cli_tests
+        type: Matrix
+        stepMode: Bash
+        configuration:
+          nodePool: k8s_u20
+          multiNode: true
+          integrations:
+            - name: docker_jfrog_io_reader
+          inputResources:
+            - name: jfrog_cli
+            - name: jfrog_oauth_token
+          inputSteps:
+            - name: setup_environment
+              status:
+                - success
+                - skipped
+        stepletMultipliers:
+          environmentVariables:
+            - GRADLE_VERSION: "5.6.4"
+            - GRADLE_VERSION: "8.3"
+        execution:
+          onStart:
+            - echo "Starting Gradle tests with version=${GRADLE_VERSION}"
+            - |
+              # Validate ARTIFACTORY_URL
+              if [[ -z "${ARTIFACTORY_URL}" ]]; then
+                echo "ERROR: ARTIFACTORY_URL is required but not set"
+                exit 1
+              fi
+              echo "Using ARTIFACTORY_URL: ${ARTIFACTORY_URL}"
+            
+            # Update package lists
+            - apt-get update
+            
+            # Setup Java 11
+            - echo "Setting up Java 11..."
+            - apt-get install -y wget apt-transport-https
+            - mkdir -p /etc/apt/keyrings
+            - wget -O - https://packages.adoptium.net/artifactory/api/gpg/key/public | tee /etc/apt/keyrings/adoptium.asc
+            - echo "deb [signed-by=/etc/apt/keyrings/adoptium.asc] https://packages.adoptium.net/artifactory/deb $(awk -F= '/^VERSION_CODENAME/{print$2}' /etc/os-release) main" | tee /etc/apt/sources.list.d/adoptium.list
+            - apt-get update
+            - apt-get install -y temurin-11-jdk
+            - export JAVA_HOME=/usr/lib/jvm/temurin-11-jdk-amd64
+            - export PATH=$JAVA_HOME/bin:$PATH
+            - java -version
+            
+            # Setup Gradle
+            - echo "Setting up Gradle ${GRADLE_VERSION}..."
+            - wget -q https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip
+            - apt-get install -y unzip
+            - unzip -q gradle-${GRADLE_VERSION}-bin.zip -d /opt
+            - export GRADLE_HOME=/opt/gradle-${GRADLE_VERSION}
+            - export PATH=$GRADLE_HOME/bin:$PATH
+            - gradle --version
+            
+            # Setup Go
+            - echo "Setting up Go..."
+            - wget -q https://go.dev/dl/go1.21.5.linux-amd64.tar.gz
+            - tar -C /usr/local -xzf go1.21.5.linux-amd64.tar.gz
+            - export PATH=$PATH:/usr/local/go/bin
+            - export GOPATH=$HOME/go
+            - export PATH=$PATH:$GOPATH/bin
+            - go version
+            
+            - cd ${res_jfrog_cli_resourcePath}
+            
+          onExecute:
+            - echo "Running Gradle tests..."
+            - |
+              # Get OAUTH_TOKEN and URL from jfrog_oauth_token resource
+              OAUTH_TOKEN="${res_jfrog_oauth_token_token}"
+              JFROG_URL="${res_jfrog_oauth_token_url}"
+              
+              if [[ -z "${OAUTH_TOKEN}" || "${OAUTH_TOKEN}" == "null" ]]; then
+                echo "ERROR: OAUTH_TOKEN not found in jfrog_oauth_token resource"
+                exit 1
+              fi
+              if [[ -z "${JFROG_URL}" ]]; then
+                echo "ERROR: URL not found in jfrog_oauth_token resource"
+                exit 1
+              fi
+              echo "Token loaded from resource (length: ${#OAUTH_TOKEN})"
+              echo "URL loaded from resource: ${JFROG_URL}"
+              
+              export JAVA_HOME=/usr/lib/jvm/temurin-11-jdk-amd64
+              export GRADLE_HOME=/opt/gradle-${GRADLE_VERSION}
+              export PATH=$JAVA_HOME/bin:$GRADLE_HOME/bin:/usr/local/go/bin:$GOPATH/bin:$PATH
+              export GOPATH=$HOME/go
+              
+              # Run the Gradle tests with JFrog URL and admin token
+              echo "Running Gradle tests against ${JFROG_URL}"
+              go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.gradle -jfrog.url=${JFROG_URL} -jfrog.adminToken=${OAUTH_TOKEN}
+            
+          onSuccess:
+            - echo "JFrog CLI tests completed successfully!"
+            
+          onFailure:
+            - echo "JFrog CLI tests failed"
+            - exit 1
+            
+          onComplete:
+            - echo "Gradle tests execution completed for version ${GRADLE_VERSION}"
+
+      - name: docker_cli_tests
+        type: Bash
+        configuration:
+          nodePool: k8s_u20
+          integrations:
+            - name: docker_jfrog_io_reader
+            - name: jfrog_cli_tests
+          inputResources:
+            - name: jfrog_cli
+          inputSteps:
+            - name: setup_environment
+              status:
+                - success
+                - skipped
+          environmentVariables:
+            GOPROXY: direct
+        execution:
+          onStart:
+            - echo "Starting Docker CLI tests (using local containerized Artifactory)"
+            - apt-get update
+            - apt-get install -y curl wget ca-certificates
+            
+            # Check if Docker is already available, if not install it
+            - echo "Checking Docker availability..."
+            - |
+              if command -v docker &> /dev/null && docker version &> /dev/null; then
+                echo "Docker is already installed and running"
+                docker version
+              else
+                echo "Docker not found or not running, installing..."
+                
+                # Remove any existing broken docker installation
+                rm -f /usr/bin/docker 2>/dev/null || true
+                apt-get remove -y docker docker-engine docker.io containerd runc 2>/dev/null || true
+                
+                # Install using the convenience script (handles cross-device link issues)
+                curl -fsSL https://get.docker.com -o get-docker.sh
+                sh get-docker.sh
+                rm get-docker.sh
+                
+                echo "Docker installed successfully"
+              fi
+            
+            # Start Docker daemon if not running
+            - echo "Ensuring Docker daemon is running..."
+            - |
+              if ! docker info &> /dev/null; then
+                echo "Starting Docker daemon..."
+                dockerd > /var/log/dockerd.log 2>&1 &
+                sleep 15
+              fi
+              docker version
+            
+            # Setup Go
+            - echo "Setting up Go..."
+            - wget -q https://go.dev/dl/go1.21.5.linux-amd64.tar.gz
+            - tar -C /usr/local -xzf go1.21.5.linux-amd64.tar.gz
+            - export PATH=$PATH:/usr/local/go/bin
+            - export GOPATH=$HOME/go
+            - export PATH=$PATH:$GOPATH/bin
+            - go version
+            
+            # Change to repository directory
+            - cd ${res_jfrog_cli_resourcePath}
+            
+            # Containerize Artifactory (local instance for Docker tests)
+            - echo "Containerizing Artifactory on localhost..."
+            - |
+              cd ./testdata/docker/artifactory/
+              chmod +x start.sh
+              
+              # Check if RTLIC is set
+              if [[ -z "${int_jfrog_cli_tests_RTLIC}" ]]; then
+                echo "WARNING: RTLIC is not set! Artifactory may not start properly."
+              else
+                echo "RTLIC is set (length: ${#int_jfrog_cli_tests_RTLIC})"
+              fi
+              
+              export RTLIC="${int_jfrog_cli_tests_RTLIC}"
+              
+              echo "=== Running start.sh ==="
+              cat start.sh
+              echo "========================"
+              ./start.sh
+              
+              echo "=== Docker containers after start.sh ==="
+              docker ps -a
+              echo "========================================="
+            
+            # Wait for Artifactory to be ready
+            - echo "Waiting for Artifactory to start..."
+            - |
+              # Get the Artifactory container's IP address using jq (avoids YAML template issues)
+              CONTAINER_ID=$(docker ps -q --filter "name=artifactory" | head -1)
+              if [[ -z "$CONTAINER_ID" ]]; then
+                echo "ERROR: Artifactory container not found"
+                docker ps -a
+                exit 1
+              fi
+              
+              # Connect this pipeline step container to the test-network so it can reach Artifactory
+              STEP_CONTAINER_ID=$(hostname)
+              echo "Pipeline step container: $STEP_CONTAINER_ID"
+              echo "Connecting to test-network..."
+              docker network connect test-network "$STEP_CONTAINER_ID" 2>/dev/null || echo "Already connected or cannot connect"
+              
+              # Use jq to extract IP from any network the container is on
+              ARTIFACTORY_IP=$(docker inspect "$CONTAINER_ID" | jq -r '.[0].NetworkSettings.Networks | to_entries[0].value.IPAddress')
+              if [[ -z "$ARTIFACTORY_IP" ]] || [[ "$ARTIFACTORY_IP" == "null" ]]; then
+                echo "ERROR: Could not get Artifactory container IP"
+                echo "Full network settings:"
+                docker inspect "$CONTAINER_ID" | jq '.[0].NetworkSettings'
+                exit 1
+              fi
+              
+              echo "Artifactory container ID: $CONTAINER_ID"
+              echo "Artifactory container IP: $ARTIFACTORY_IP"
+              
+              # Export for use in onExecute
+              export ARTIFACTORY_LOCAL_URL="http://${ARTIFACTORY_IP}:8082"
+              echo "ARTIFACTORY_LOCAL_URL=${ARTIFACTORY_LOCAL_URL}"
+              
+              # Save to file for use in onExecute
+              echo "${ARTIFACTORY_IP}" > /tmp/artifactory_ip.txt
+              
+              timeout=600
+              interval=10
+              elapsed=0
+              
+              while [ $elapsed -lt $timeout ]; do
+                HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://${ARTIFACTORY_IP}:8082" 2>/dev/null || echo "000")
+                
+                if [[ "$HTTP_CODE" == "200" ]]; then
+                  echo "✓ Artifactory is ready at http://${ARTIFACTORY_IP}:8082!"
+                  break
+                fi
+                
+                echo "Waiting for Artifactory... ($elapsed/$timeout seconds) - HTTP: $HTTP_CODE"
+                
+                # Show debug info every 60 seconds
+                if (( elapsed % 60 == 0 )); then
+                  echo "=== DEBUG INFO at $elapsed seconds ==="
+                  echo "Docker containers:"
+                  docker ps -a
+                  echo ""
+                  echo "Docker logs (last 20 lines):"
+                  docker logs "$CONTAINER_ID" --tail 20 2>&1 || echo "No container logs"
+                  echo "======================================="
+                fi
+                
+                sleep $interval
+                elapsed=$((elapsed + interval))
+              done
+              
+              if [ $elapsed -ge $timeout ]; then
+                echo "✗ Timeout waiting for Artifactory to start"
+                echo ""
+                echo "=== FINAL DEBUG INFO ==="
+                echo "Docker containers:"
+                docker ps -a
+                echo ""
+                echo "Docker logs (full):"
+                docker logs "$CONTAINER_ID" 2>&1 || echo "No container logs"
+                echo "========================="
+                exit 1
+              fi
+            
+          onExecute:
+            - echo "Running Docker tests against local Artifactory..."
+            - |
+              cd ${res_jfrog_cli_resourcePath}
+              export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
+              export GOPATH=$HOME/go
+              
+              # Get Artifactory container IP from saved file
+              ARTIFACTORY_IP=$(cat /tmp/artifactory_ip.txt)
+              ARTIFACTORY_LOCAL_URL="http://${ARTIFACTORY_IP}:8082"
+              echo "Using Artifactory at: ${ARTIFACTORY_LOCAL_URL}"
+              
+              # Run the Docker tests against local containerized Artifactory
+              echo "Running Docker CLI tests against ${ARTIFACTORY_LOCAL_URL}"
+              go test -v -timeout 0 --test.docker -jfrog.url=${ARTIFACTORY_LOCAL_URL}
+            
+          onSuccess:
+            - echo "Docker CLI tests completed successfully!"
+            
+          onFailure:
+            - echo "Docker CLI tests failed"
+            - cat /var/log/dockerd.log || true
+            - exit 1
+            
+          onComplete:
+            - echo "Docker tests execution completed"
+            - docker ps -a || true
+            - docker logs $(docker ps -aq) 2>/dev/null || true
+
+      - name: artifactory_cli_tests
+        type: Bash
+        configuration:
+          nodePool: k8s_u20
+          integrations:
+            - name: docker_jfrog_io_reader
+          inputResources:
+            - name: jfrog_cli
+            - name: jfrog_oauth_token
+          inputSteps:
+            - name: setup_environment
+              status:
+                - success
+                - skipped
+          environmentVariables:
+            GOPROXY: direct
+            JFROG_CLI_LOG_LEVEL: DEBUG
+        execution:
+          onStart:
+            - echo "Starting Artifactory CLI tests"
+            - apt-get update
+            
+            # Setup Go
+            - echo "Setting up Go..."
+            - wget -q https://go.dev/dl/go1.21.5.linux-amd64.tar.gz
+            - tar -C /usr/local -xzf go1.21.5.linux-amd64.tar.gz
+            - export PATH=$PATH:/usr/local/go/bin
+            - export GOPATH=$HOME/go
+            - export PATH=$PATH:$GOPATH/bin
+            - go version
+            
+            - cd ${res_jfrog_cli_resourcePath}
+            
+          onExecute:
+            - echo "Running Artifactory CLI tests..."
+            - |
+              # Get OAUTH_TOKEN and URL from jfrog_oauth_token resource
+              OAUTH_TOKEN="${res_jfrog_oauth_token_token}"
+              JFROG_URL="${res_jfrog_oauth_token_url}"
+              
+              if [[ -z "${OAUTH_TOKEN}" || "${OAUTH_TOKEN}" == "null" ]]; then
+                echo "ERROR: OAUTH_TOKEN not found in jfrog_oauth_token resource"
+                exit 1
+              fi
+              if [[ -z "${JFROG_URL}" ]]; then
+                echo "ERROR: URL not found in jfrog_oauth_token resource"
+                exit 1
+              fi
+              echo "Token loaded from resource (length: ${#OAUTH_TOKEN})"
+              echo "URL loaded from resource: ${JFROG_URL}"
+              
+              cd ${res_jfrog_cli_resourcePath}
+              export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
+              export GOPATH=$HOME/go
+              
+              # Run Artifactory tests
+              echo "=== Running Artifactory tests ==="
+              go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.artifactory -jfrog.url=${JFROG_URL} -jfrog.adminToken=${OAUTH_TOKEN}
+              
+              echo ""
+              echo "=== Running Artifactory Project tests ==="
+              go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.artifactoryProject -jfrog.url=${JFROG_URL} -jfrog.adminToken=${OAUTH_TOKEN} --ci.runId=ubuntu-artifactory
+            
+          onSuccess:
+            - echo "Artifactory CLI tests completed successfully!"
+            
+          onFailure:
+            - echo "Artifactory CLI tests failed"
+            - exit 1
+            
+          onComplete:
+            - echo "Artifactory tests execution completed"
+
+      - name: go_cli_tests
+        type: Bash
+        configuration:
+          nodePool: k8s_u20
+          integrations:
+            - name: docker_jfrog_io_reader
+          inputResources:
+            - name: jfrog_cli
+            - name: jfrog_oauth_token
+          inputSteps:
+            - name: setup_environment
+              status:
+                - success
+                - skipped
+        execution:
+          onStart:
+            - echo "Starting Go CLI tests"
+            
+            # Setup Go
+            - echo "Setting up Go..."
+            - wget -q https://go.dev/dl/go1.21.5.linux-amd64.tar.gz
+            - tar -C /usr/local -xzf go1.21.5.linux-amd64.tar.gz
+            - export PATH=$PATH:/usr/local/go/bin
+            - export GOPATH=$HOME/go
+            - export PATH=$PATH:$GOPATH/bin
+            - go version
+            
+            # Change to repository directory
+            - cd ${res_jfrog_cli_resourcePath}
+            
+          onExecute:
+            - echo "Running Go tests..."
+            - |
+              # Get OAUTH_TOKEN and URL from jfrog_oauth_token resource
+              OAUTH_TOKEN="${res_jfrog_oauth_token_token}"
+              JFROG_URL="${res_jfrog_oauth_token_url}"
+              
+              if [[ -z "${OAUTH_TOKEN}" || "${OAUTH_TOKEN}" == "null" ]]; then
+                echo "ERROR: OAUTH_TOKEN not found in jfrog_oauth_token resource"
+                exit 1
+              fi
+              if [[ -z "${JFROG_URL}" ]]; then
+                echo "ERROR: URL not found in jfrog_oauth_token resource"
+                exit 1
+              fi
+              echo "Token loaded from resource (length: ${#OAUTH_TOKEN})"
+              echo "URL loaded from resource: ${JFROG_URL}"
+              
+              export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
+              export GOPATH=$HOME/go
+              
+              # Run the Go tests with JFrog URL and admin token
+              echo "Running Go CLI tests against ${JFROG_URL}"
+              go test -v -timeout 0 --test.go --jfrog.url=${JFROG_URL} --jfrog.adminToken=${OAUTH_TOKEN} --ci.runId=ubuntu-go
+            
+          onSuccess:
+            - echo "Go CLI tests completed successfully!"
+            
+          onFailure:
+            - echo "Go CLI tests failed"
+            - exit 1
+            
+          onComplete:
+            - echo "Go tests execution completed"
+
+      - name: maven_cli_tests
+        type: Bash
+        configuration:
+          nodePool: k8s_u20
+          integrations:
+            - name: docker_jfrog_io_reader
+          inputResources:
+            - name: jfrog_cli
+            - name: jfrog_oauth_token
+          inputSteps:
+            - name: setup_environment
+              status:
+                - success
+                - skipped
+        execution:
+          onStart:
+            - echo "Starting Maven CLI tests"
+            - apt-get update
+            - apt-get install -y wget apt-transport-https
+            
+            # Setup Java 11
+            - echo "Setting up Java 11..."
+            - mkdir -p /etc/apt/keyrings
+            - wget -O - https://packages.adoptium.net/artifactory/api/gpg/key/public | tee /etc/apt/keyrings/adoptium.asc
+            - echo "deb [signed-by=/etc/apt/keyrings/adoptium.asc] https://packages.adoptium.net/artifactory/deb $(awk -F= '/^VERSION_CODENAME/{print$2}' /etc/os-release) main" | tee /etc/apt/sources.list.d/adoptium.list
+            - apt-get update
+            - apt-get install -y temurin-11-jdk
+            - export JAVA_HOME=/usr/lib/jvm/temurin-11-jdk-amd64
+            - export PATH=$JAVA_HOME/bin:$PATH
+            - java -version
+            
+            # Setup Maven 3.8.8 (fixed version to avoid breaking changes in 3.9)
+            - echo "Setting up Maven 3.8.8..."
+            - wget -q https://archive.apache.org/dist/maven/maven-3/3.8.8/binaries/apache-maven-3.8.8-bin.tar.gz
+            - tar -xzf apache-maven-3.8.8-bin.tar.gz -C /opt
+            - export MAVEN_HOME=/opt/apache-maven-3.8.8
+            - export PATH=$MAVEN_HOME/bin:$PATH
+            - mvn --version
+            
+            # Setup Go
+            - echo "Setting up Go..."
+            - wget -q https://go.dev/dl/go1.21.5.linux-amd64.tar.gz
+            - tar -C /usr/local -xzf go1.21.5.linux-amd64.tar.gz
+            - export PATH=$PATH:/usr/local/go/bin
+            - export GOPATH=$HOME/go
+            - export PATH=$PATH:$GOPATH/bin
+            - go version
+            
+            # Change to repository directory
+            - cd ${res_jfrog_cli_resourcePath}
+            
+          onExecute:
+            - echo "Running Maven tests..."
+            - |
+              # Get OAUTH_TOKEN and URL from jfrog_oauth_token resource
+              OAUTH_TOKEN="${res_jfrog_oauth_token_token}"
+              JFROG_URL="${res_jfrog_oauth_token_url}"
+              
+              if [[ -z "${OAUTH_TOKEN}" || "${OAUTH_TOKEN}" == "null" ]]; then
+                echo "ERROR: OAUTH_TOKEN not found in jfrog_oauth_token resource"
+                exit 1
+              fi
+              if [[ -z "${JFROG_URL}" ]]; then
+                echo "ERROR: URL not found in jfrog_oauth_token resource"
+                exit 1
+              fi
+              echo "Token loaded from resource (length: ${#OAUTH_TOKEN})"
+              echo "URL loaded from resource: ${JFROG_URL}"
+              
+              export JAVA_HOME=/usr/lib/jvm/temurin-11-jdk-amd64
+              export MAVEN_HOME=/opt/apache-maven-3.8.8
+              export PATH=$JAVA_HOME/bin:$MAVEN_HOME/bin:/usr/local/go/bin:$GOPATH/bin:$PATH
+              export GOPATH=$HOME/go
+
+              # Run the Maven tests with JFrog URL and admin token
+              echo "Running Maven CLI tests against ${JFROG_URL}"
+              go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.maven --jfrog.url=${JFROG_URL} --jfrog.adminToken=${OAUTH_TOKEN}
+            
+          onSuccess:
+            - echo "Maven CLI tests completed successfully!"
+            
+          onFailure:
+            - echo "Maven CLI tests failed"
+            - exit 1
+            
+          onComplete:
+            - echo "Maven tests execution completed"
+
+      - name: npm_cli_tests
+        type: Bash
+        configuration:
+          nodePool: k8s_u20
+          integrations:
+            - name: docker_jfrog_io_reader
+          inputResources:
+            - name: jfrog_cli
+            - name: jfrog_oauth_token
+          inputSteps:
+            - name: setup_environment
+              status:
+                - success
+                - skipped
+          environmentVariables:
+            YARN_IGNORE_NODE: 1
+        execution:
+          onStart:
+            - echo "Starting npm CLI tests"
+            - apt-get update
+            - apt-get install -y curl wget
+            
+            # Setup Node.js v16 (for npm)
+            - echo "Setting up Node.js v16..."
+            - |
+              curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
+              apt-get install -y nodejs
+              node --version
+              npm --version
+            
+            # Setup Go
+            - echo "Setting up Go..."
+            - wget -q https://go.dev/dl/go1.21.5.linux-amd64.tar.gz
+            - tar -C /usr/local -xzf go1.21.5.linux-amd64.tar.gz
+            - export PATH=$PATH:/usr/local/go/bin
+            - export GOPATH=$HOME/go
+            - export PATH=$PATH:$GOPATH/bin
+            - go version
+            
+            # Change to repository directory
+            - cd ${res_jfrog_cli_resourcePath}
+            
+          onExecute:
+            - echo "Running npm tests..."
+            - |
+              # Get OAUTH_TOKEN and URL from jfrog_oauth_token resource
+              OAUTH_TOKEN="${res_jfrog_oauth_token_token}"
+              JFROG_URL="${res_jfrog_oauth_token_url}"
+              
+              if [[ -z "${OAUTH_TOKEN}" || "${OAUTH_TOKEN}" == "null" ]]; then
+                echo "ERROR: OAUTH_TOKEN not found in jfrog_oauth_token resource"
+                exit 1
+              fi
+              if [[ -z "${JFROG_URL}" ]]; then
+                echo "ERROR: URL not found in jfrog_oauth_token resource"
+                exit 1
+              fi
+              echo "Token loaded from resource (length: ${#OAUTH_TOKEN})"
+              echo "URL loaded from resource: ${JFROG_URL}"
+              
+              export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
+              export GOPATH=$HOME/go
+              export YARN_IGNORE_NODE=1
+              
+              # Run the npm tests with JFrog URL and admin token
+              echo "Running npm CLI tests against ${JFROG_URL}"
+              # go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.npm --jfrog.url=${JFROG_URL} --jfrog.adminToken=${OAUTH_TOKEN}
+              go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.npm --jfrog.url=${JFROG_URL} --jfrog.user=${JFROG_ADMIN_USERNAME} --jfrog.password=${JFROG_ADMIN_PASSWORD}
+            
+          onSuccess:
+            - echo "npm CLI tests completed successfully!"
+            
+          onFailure:
+            - echo "npm CLI tests failed"
+            - exit 1
+            
+          onComplete:
+            - echo "npm tests execution completed"
+
+      - name: nuget_cli_tests
+        type: Bash
+        configuration:
+          nodePool: k8s_u20
+          integrations:
+            - name: docker_jfrog_io_reader
+          inputResources:
+            - name: jfrog_cli
+            - name: jfrog_oauth_token
+          inputSteps:
+            - name: setup_environment
+              status:
+                - success
+                - skipped
+        execution:
+          onStart:
+            - echo "Starting NuGet CLI tests"
+            - apt-get update
+            - apt-get install -y wget apt-transport-https dirmngr gnupg ca-certificates
+            
+            # Install Mono (required for NuGet on Ubuntu)
+            - echo "Installing Mono..."
+            - |
+              apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
+              echo "deb https://download.mono-project.com/repo/ubuntu stable-focal main" | tee /etc/apt/sources.list.d/mono-official-stable.list
+              apt-get update
+              apt-get install -y mono-complete
+              mono --version
+            
+            # Prepare for .NET installation (fixes installation issues)
+            # See https://github.com/jfrog/jfrog-cli/pull/2808 for details
+            - echo "Preparing for .NET installation..."
+            - |
+              export DOTNET_INSTALL_DIR=/usr/share/dotnet
+              mkdir -p /usr/share/dotnet
+              chmod 777 /usr/share/dotnet
+            
+            # Install .NET 8.x
+            - echo "Installing .NET 8.x..."
+            - |
+              export DOTNET_INSTALL_DIR=/usr/share/dotnet
+              wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh
+              chmod +x dotnet-install.sh
+              ./dotnet-install.sh --channel 8.0 --install-dir $DOTNET_INSTALL_DIR
+              export PATH=$DOTNET_INSTALL_DIR:$PATH
+              dotnet --version
+            
+            # Install NuGet 6.x
+            - echo "Installing NuGet 6.x..."
+            - |
+              wget https://dist.nuget.org/win-x86-commandline/v6.11.1/nuget.exe
+              mkdir -p /usr/local/lib/nuget
+              mv nuget.exe /usr/local/lib/nuget/
+              cat > /usr/local/bin/nuget << 'EOF'
+              #!/bin/bash
+              mono /usr/local/lib/nuget/nuget.exe "$@"
+              EOF
+              chmod +x /usr/local/bin/nuget
+              nuget help || echo "NuGet installed"
+            
+            # Setup Go
+            - echo "Setting up Go..."
+            - wget -q https://go.dev/dl/go1.21.5.linux-amd64.tar.gz
+            - tar -C /usr/local -xzf go1.21.5.linux-amd64.tar.gz
+            - export PATH=$PATH:/usr/local/go/bin
+            - export GOPATH=$HOME/go
+            - export PATH=$PATH:$GOPATH/bin
+            - go version
+            
+            # Change to repository directory
+            - cd ${res_jfrog_cli_resourcePath}
+            
+          onExecute:
+            - echo "Running NuGet tests..."
+            - |
+              # Get OAUTH_TOKEN and URL from jfrog_oauth_token resource
+              OAUTH_TOKEN="${res_jfrog_oauth_token_token}"
+              JFROG_URL="${res_jfrog_oauth_token_url}"
+              
+              if [[ -z "${OAUTH_TOKEN}" || "${OAUTH_TOKEN}" == "null" ]]; then
+                echo "ERROR: OAUTH_TOKEN not found in jfrog_oauth_token resource"
+                exit 1
+              fi
+              if [[ -z "${JFROG_URL}" ]]; then
+                echo "ERROR: URL not found in jfrog_oauth_token resource"
+                exit 1
+              fi
+              echo "Token loaded from resource (length: ${#OAUTH_TOKEN})"
+              echo "URL loaded from resource: ${JFROG_URL}"
+              
+              export DOTNET_INSTALL_DIR=/usr/share/dotnet
+              export PATH=$DOTNET_INSTALL_DIR:/usr/local/go/bin:$GOPATH/bin:$PATH
+              export GOPATH=$HOME/go
+              
+              # Run the NuGet tests with JFrog URL and admin token
+              echo "Running NuGet CLI tests against ${JFROG_URL}"
+              go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.nuget --jfrog.url=${JFROG_URL} --jfrog.adminToken=${OAUTH_TOKEN}
+            
+          onSuccess:
+            - echo "NuGet CLI tests completed successfully!"
+            
+          onFailure:
+            - echo "NuGet CLI tests failed"
+            - exit 1
+            
+          onComplete:
+            - echo "NuGet tests execution completed"
+
+      - name: podman_cli_tests
+        type: Bash
+        configuration:
+          nodePool: k8s_u20
+          integrations:
+            - name: docker_jfrog_io_reader
+          inputResources:
+            - name: jfrog_cli
+            - name: jfrog_oauth_token
+          inputSteps:
+            - name: setup_environment
+              status:
+                - success
+                - skipped
+        execution:
+          onStart:
+            - echo "Starting Podman CLI tests"
+            
+            # Setup Go
+            - echo "Setting up Go..."
+            - wget -q https://go.dev/dl/go1.21.5.linux-amd64.tar.gz
+            - tar -C /usr/local -xzf go1.21.5.linux-amd64.tar.gz
+            - export PATH=$PATH:/usr/local/go/bin
+            - export GOPATH=$HOME/go
+            - export PATH=$PATH:$GOPATH/bin
+            - go version
+            
+            # Change to repository directory
+            - cd ${res_jfrog_cli_resourcePath}
+            
+          onExecute:
+            - echo "Running Podman tests..."
+            - |
+              # Get OAUTH_TOKEN and URL from jfrog_oauth_token resource
+              OAUTH_TOKEN="${res_jfrog_oauth_token_token}"
+              JFROG_URL="${res_jfrog_oauth_token_url}"
+              
+              if [[ -z "${OAUTH_TOKEN}" || "${OAUTH_TOKEN}" == "null" ]]; then
+                echo "ERROR: OAUTH_TOKEN not found in jfrog_oauth_token resource"
+                exit 1
+              fi
+              if [[ -z "${JFROG_URL}" ]]; then
+                echo "ERROR: URL not found in jfrog_oauth_token resource"
+                exit 1
+              fi
+              echo "Token loaded from resource (length: ${#OAUTH_TOKEN})"
+              echo "URL loaded from resource: ${JFROG_URL}"
+              
+              # Derive CONTAINER_REGISTRY from JFROG_URL by stripping https:// or http://
+              CONTAINER_REGISTRY=$(echo "${JFROG_URL}" | sed 's|https://||' | sed 's|http://||')
+              echo "Using CONTAINER_REGISTRY: ${CONTAINER_REGISTRY}"
+              
+              export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
+              export GOPATH=$HOME/go
+              
+              # Run the Podman tests with JFrog URL, admin token, and container registry
+              echo "Running Podman CLI tests against ${JFROG_URL} with registry ${CONTAINER_REGISTRY}"
+              go test -v -timeout 0 --test.podman --jfrog.url=${JFROG_URL} --jfrog.adminToken=${OAUTH_TOKEN} --test.containerRegistry=${CONTAINER_REGISTRY}
+            
+          onSuccess:
+            - echo "Podman CLI tests completed successfully!"
+            
+          onFailure:
+            - echo "Podman CLI tests failed"
+            - exit 1
+            
+          onComplete:
+            - echo "Podman tests execution completed"
+
+      - name: pip_cli_tests
+        type: Bash
+        configuration:
+          nodePool: k8s_u20
+          integrations:
+            - name: docker_jfrog_io_reader
+          inputResources:
+            - name: jfrog_cli
+            - name: jfrog_oauth_token
+          inputSteps:
+            - name: setup_environment
+              status:
+                - success
+                - skipped
+        execution:
+          onStart:
+            - echo "Starting pip CLI tests"
+            - apt-get update
+            - apt-get install -y wget build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev curl libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
+            
+            # Setup Python 3.11 using pyenv
+            - echo "Setting up Python 3.11 using pyenv..."
+            - |
+              # Install pyenv
+              curl https://pyenv.run | bash
+              export PYENV_ROOT="$HOME/.pyenv"
+              export PATH="$PYENV_ROOT/bin:$PATH"
+              eval "$(pyenv init -)"
+              
+              # Install Python 3.11.5
+              pyenv install 3.11.5
+              pyenv global 3.11.5
+              
+              # Verify installation
+              python --version
+              pip --version
+            
+            # Install Twine (required for pip tests)
+            - echo "Installing Twine..."
+            - |
+              export PYENV_ROOT="$HOME/.pyenv"
+              export PATH="$PYENV_ROOT/bin:$PATH"
+              eval "$(pyenv init -)"
+              pip install twine
+            
+            # Setup Go
+            - echo "Setting up Go..."
+            - wget -q https://go.dev/dl/go1.21.5.linux-amd64.tar.gz
+            - tar -C /usr/local -xzf go1.21.5.linux-amd64.tar.gz
+            - export PATH=$PATH:/usr/local/go/bin
+            - export GOPATH=$HOME/go
+            - export PATH=$PATH:$GOPATH/bin
+            - go version
+            
+            # Change to repository directory
+            - cd ${res_jfrog_cli_resourcePath}
+            
+          onExecute:
+            - echo "Running pip tests..."
+            - |
+              # Get OAUTH_TOKEN and URL from jfrog_oauth_token resource
+              OAUTH_TOKEN="${res_jfrog_oauth_token_token}"
+              JFROG_URL="${res_jfrog_oauth_token_url}"
+              
+              if [[ -z "${OAUTH_TOKEN}" || "${OAUTH_TOKEN}" == "null" ]]; then
+                echo "ERROR: OAUTH_TOKEN not found in jfrog_oauth_token resource"
+                exit 1
+              fi
+              if [[ -z "${JFROG_URL}" ]]; then
+                echo "ERROR: URL not found in jfrog_oauth_token resource"
+                exit 1
+              fi
+              echo "Token loaded from resource (length: ${#OAUTH_TOKEN})"
+              echo "URL loaded from resource: ${JFROG_URL}"
+              
+              # Setup pyenv in PATH
+              export PYENV_ROOT="$HOME/.pyenv"
+              export PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
+              eval "$(pyenv init -)"
+              
+              export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
+              export GOPATH=$HOME/go
+              
+              # Run the pip tests with JFrog URL and admin token
+              echo "Running pip CLI tests against ${JFROG_URL}"
+              go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.pip --jfrog.url=${JFROG_URL} --jfrog.adminToken=${OAUTH_TOKEN}
+            
+          onSuccess:
+            - echo "pip CLI tests completed successfully!"
+            
+          onFailure:
+            - echo "pip CLI tests failed"
+            - exit 1
+            
+          onComplete:
+            - echo "pip tests execution completed"
+
+      - name: pipenv_cli_tests
+        type: Bash
+        configuration:
+          nodePool: k8s_u20
+          integrations:
+            - name: docker_jfrog_io_reader
+          inputResources:
+            - name: jfrog_cli
+            - name: jfrog_oauth_token
+          inputSteps:
+            - name: setup_environment
+              status:
+                - success
+                - skipped
+        execution:
+          onStart:
+            - echo "Starting pipenv CLI tests"
+            - apt-get update
+            - apt-get install -y wget build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev curl libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
+            
+            # Setup Python 3.11 using pyenv
+            - echo "Setting up Python 3.11 using pyenv..."
+            - |
+              # Install pyenv
+              curl https://pyenv.run | bash
+              export PYENV_ROOT="$HOME/.pyenv"
+              export PATH="$PYENV_ROOT/bin:$PATH"
+              eval "$(pyenv init -)"
+              
+              # Install Python 3.11.5
+              pyenv install 3.11.5
+              pyenv global 3.11.5
+              
+              # Verify installation
+              python --version
+              pip --version
+            
+            # Install Pipenv (required for pipenv tests)
+            - echo "Installing Pipenv..."
+            - |
+              export PYENV_ROOT="$HOME/.pyenv"
+              export PATH="$PYENV_ROOT/bin:$PATH"
+              eval "$(pyenv init -)"
+              pip install pipenv
+            
+            # Setup Go
+            - echo "Setting up Go..."
+            - wget -q https://go.dev/dl/go1.21.5.linux-amd64.tar.gz
+            - tar -C /usr/local -xzf go1.21.5.linux-amd64.tar.gz
+            - export PATH=$PATH:/usr/local/go/bin
+            - export GOPATH=$HOME/go
+            - export PATH=$PATH:$GOPATH/bin
+            - go version
+            
+            # Change to repository directory
+            - cd ${res_jfrog_cli_resourcePath}
+            
+          onExecute:
+            - echo "Running pipenv tests..."
+            - |
+              # Get OAUTH_TOKEN and URL from jfrog_oauth_token resource
+              OAUTH_TOKEN="${res_jfrog_oauth_token_token}"
+              JFROG_URL="${res_jfrog_oauth_token_url}"
+              
+              if [[ -z "${OAUTH_TOKEN}" || "${OAUTH_TOKEN}" == "null" ]]; then
+                echo "ERROR: OAUTH_TOKEN not found in jfrog_oauth_token resource"
+                exit 1
+              fi
+              if [[ -z "${JFROG_URL}" ]]; then
+                echo "ERROR: URL not found in jfrog_oauth_token resource"
+                exit 1
+              fi
+              echo "Token loaded from resource (length: ${#OAUTH_TOKEN})"
+              echo "URL loaded from resource: ${JFROG_URL}"
+              
+              # Setup pyenv in PATH
+              export PYENV_ROOT="$HOME/.pyenv"
+              export PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
+              eval "$(pyenv init -)"
+              
+              export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
+              export GOPATH=$HOME/go
+              
+              # Run the pipenv tests with JFrog URL and admin token
+              echo "Running pipenv CLI tests against ${JFROG_URL}"
+              go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.pipenv --jfrog.url=${JFROG_URL} --jfrog.adminToken=${OAUTH_TOKEN}
+            
+          onSuccess:
+            - echo "pipenv CLI tests completed successfully!"
+            
+          onFailure:
+            - echo "pipenv CLI tests failed"
+            - exit 1
+            
+          onComplete:
+            - echo "pipenv tests execution completed"
+
+      - name: teardown_env
+        type: Jenkins
+        configuration:
+          condition: 'SKIP_ENV_SETUP != "true"'
+          inputSteps:
+            - name: gradle_cli_tests
+              status:
+                - success
+                - failure
+                - error
+                - cancelled
+                - skipped
+                - unstable
+                - timeout
+            - name: artifactory_cli_tests
+              status:
+                - success
+                - failure
+                - error
+                - cancelled
+                - skipped
+                - unstable
+                - timeout
+            - name: go_cli_tests
+              status:
+                - success
+                - failure
+                - error
+                - cancelled
+                - skipped
+                - unstable
+                - timeout
+            - name: maven_cli_tests
+              status:
+                - success
+                - failure
+                - error
+                - cancelled
+                - skipped
+                - unstable
+                - timeout
+            - name: npm_cli_tests
+              status:
+                - success
+                - failure
+                - error
+                - cancelled
+                - skipped
+                - unstable
+                - timeout
+            - name: nuget_cli_tests
+              status:
+                - success
+                - failure
+                - error
+                - cancelled
+                - skipped
+                - unstable
+                - timeout
+            - name: podman_cli_tests
+              status:
+                - success
+                - failure
+                - error
+                - cancelled
+                - skipped
+                - unstable
+                - timeout
+            - name: pip_cli_tests
+              status:
+                - success
+                - failure
+                - error
+                - cancelled
+                - skipped
+                - unstable
+                - timeout
+            - name: pipenv_cli_tests
+              status:
+                - success
+                - failure
+                - error
+                - cancelled
+                - skipped
+                - unstable
+                - timeout
+          integrations:
+            - name: jenkins_entplus_rt
+          jenkinsJobName: tools/platform/environment_operate
+          buildParameters:
+            SERVER_NAME: "${server_name}"
+            ACTION: "delete"
