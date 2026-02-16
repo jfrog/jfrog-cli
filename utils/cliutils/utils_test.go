@@ -297,7 +297,7 @@ func TestAuthorizationHeaderInCliVersionCheck(t *testing.T) {
 		// Return a valid JSON response
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_, err := w.Write([]byte(`{"tag_name": "v1.0.0"}`))
+		_, err := w.Write([]byte(`{"url":"https://api.github.com/repos/jfrog/jfrog-cli/releases/1","tag_name":"v1.0.0"}`))
 		if err != nil {
 			return
 		}
