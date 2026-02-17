@@ -591,7 +591,7 @@ func AddTimestampToGlobalVars() {
 	UserName1 += uniqueSuffix
 	UserName2 += uniqueSuffix
 
-	randomSequence := rand.New(rand.NewSource(time.Now().Unix()))
+	randomSequence := rand.New(rand.NewSource(time.Now().Unix())) // #nosec G404 -- test-only, not used for security
 	Password1 += uniqueSuffix + strconv.FormatFloat(randomSequence.Float64(), 'f', 2, 32)
 	Password2 += uniqueSuffix + strconv.FormatFloat(randomSequence.Float64(), 'f', 2, 32)
 
@@ -693,13 +693,13 @@ func GetCmdOutput(t *testing.T, jfrogCli *coreTests.JfrogCli, cmd ...string) ([]
 		os.Stdout = oldStdout
 		os.Stderr = oldStdErr
 		assert.NoError(t, temp.Close())
-		assert.NoError(t, os.Remove(temp.Name()))
+		assert.NoError(t, os.Remove(temp.Name())) // #nosec G703 -- CLI runs in user environment
 	}()
 	err = jfrogCli.Exec(cmd...)
 	assert.NoError(t, err)
-	content, err := os.ReadFile(temp.Name())
+	content, err := os.ReadFile(temp.Name())     // #nosec G703 -- CLI runs in user environment
 	assert.NoError(t, err)
-	errContent, err := os.ReadFile(tempErr.Name())
+	errContent, err := os.ReadFile(tempErr.Name()) // #nosec G703 -- CLI runs in user environment
 	return content, errContent, err
 }
 

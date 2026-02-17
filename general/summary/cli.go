@@ -131,7 +131,7 @@ func saveFile(content, filePath string) (err error) {
 	if content == "" {
 		return nil
 	}
-	file, err := os.Create(filePath)
+	file, err := os.Create(filePath) // #nosec G703 -- CLI runs in user environment
 	if err != nil {
 		return err
 	}
@@ -146,11 +146,11 @@ func saveFile(content, filePath string) (err error) {
 
 func getSectionMarkdownContent(section MarkdownSection) (string, error) {
 	sectionFilepath := filepath.Join(os.Getenv(coreutils.SummaryOutputDirPathEnv), commandsummary.OutputDirName, string(section), markdownFileName)
-	if _, err := os.Stat(sectionFilepath); os.IsNotExist(err) {
+	if _, err := os.Stat(sectionFilepath); os.IsNotExist(err) { // #nosec G703 -- CLI runs in user environment
 		return "", nil
 	}
 
-	contentBytes, err := os.ReadFile(sectionFilepath)
+	contentBytes, err := os.ReadFile(sectionFilepath) // #nosec G703 -- CLI runs in user environment
 	if err != nil {
 		return "", fmt.Errorf("error reading markdown file for section %s: %w", section, err)
 	}
@@ -280,7 +280,7 @@ func processScan(index commandsummary.Index, filePath string, scannedName string
 // shouldGenerateUploadSummary checks if upload summary should be generated.
 func shouldGenerateUploadSummary() (bool, error) {
 	buildInfoPath := filepath.Join(os.Getenv(coreutils.SummaryOutputDirPathEnv), commandsummary.OutputDirName, string(BuildInfo))
-	if _, err := os.Stat(buildInfoPath); os.IsNotExist(err) {
+	if _, err := os.Stat(buildInfoPath); os.IsNotExist(err) { // #nosec G703 -- CLI runs in user environment
 		return true, nil
 	}
 	dirEntries, err := os.ReadDir(buildInfoPath)

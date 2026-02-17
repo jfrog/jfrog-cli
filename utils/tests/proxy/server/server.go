@@ -28,7 +28,7 @@ func handleReverseProxyHttps(reverseProxy *httputil.ReverseProxy) httpResponse {
 		clilog.Info("URI:     ", req.RequestURI)
 		clilog.Info("Agent:   ", req.UserAgent())
 		clilog.Info("*********************************************************")
-		reverseProxy.ServeHTTP(rw, req)
+		reverseProxy.ServeHTTP(rw, req) // #nosec G704 -- CLI tool; URL from user, runs in user environment
 	}
 }
 
@@ -47,7 +47,7 @@ func getReverseProxyHandler(targetUrl string) (*httputil.ReverseProxy, error) {
 		req.URL.Scheme = target.Scheme
 	}
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // #nosec G402 -- test proxy; cert verification disabled on purpose
 	}
 	proxyErrLogger := log.New(os.Stdout, "PROXY-LOGGER", log.Ldate|log.Ltime|log.Lshortfile)
 	p := &httputil.ReverseProxy{Director: d, Transport: tr, ErrorLog: proxyErrLogger}
@@ -122,7 +122,7 @@ func (t *testProxy) ServeHTTP(responseWriter http.ResponseWriter, request *http.
 	} else {
 		host := request.URL.Host
 		request.Host = "https://" + request.Host
-		targetSiteCon, err := net.Dial("tcp", host)
+		targetSiteCon, err := net.Dial("tcp", host) // #nosec G704 -- CLI tool; URL from user, runs in user environment
 		if err != nil {
 			clilog.Error(err)
 			return
