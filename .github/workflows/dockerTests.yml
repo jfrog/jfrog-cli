@@ -22,13 +22,18 @@ jobs:
       matrix:
         os:
           - name: ubuntu
-            version: 24.04@20260201.15.1
+            version: 24.04
     runs-on: ${{ matrix.os.name }}-${{ matrix.os.version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
+
+      - name: Fix Docker 29 insecure registry issue
+        run: |
+          echo '{"features":{"containerd-snapshotter":false}}' | sudo tee /etc/docker/daemon.json
+          sudo systemctl restart docker
 
       - name: Setup FastCI
         uses: jfrog-fastci/fastci@v0
