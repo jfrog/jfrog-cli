@@ -149,7 +149,7 @@ func getSectionMarkdownContent(section MarkdownSection) (string, error) {
 	if _, err := os.Stat(sectionFilepath); os.IsNotExist(err) {
 		return "", nil
 	}
-
+// #nosec G703 -- sectionFilepath is constructed from SummaryOutputDirPathEnv set by CLI, not arbitrary user input
 	contentBytes, err := os.ReadFile(sectionFilepath)
 	if err != nil {
 		return "", fmt.Errorf("error reading markdown file for section %s: %w", section, err)
