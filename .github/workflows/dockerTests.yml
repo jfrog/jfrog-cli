@@ -30,46 +30,17 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
 
-      - name: Downgrade Docker to v28 and Configure Insecure Registry
+      - name: Configure Docker 29 for Legacy Support
         run: |
-          # 1. Add Docker's official GPG key
-          sudo apt-get update
-          sudo apt-get install -y ca-certificates curl gnupg
-          sudo install -m 0755 -d /etc/apt/keyrings
-          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-          sudo chmod a+r /etc/apt/keyrings/docker.gpg
-
-          # 2. Add the repository to Apt sources
-          echo \
-            "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-            $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-            sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-          # 3. Update and Install Docker 28
-          DOCKER_VER="5:28.0.1-1~ubuntu.24.04~noble"
-          sudo apt-get update
-          sudo apt-get install -y --allow-downgrades \
-            docker-ce=$DOCKER_VER \
-            docker-ce-cli=$DOCKER_VER \
-            containerd.io
-
-          # 4. Lock the version
-          sudo apt-mark hold docker-ce docker-ce-cli
-
-          # 5. Configure Insecure Registry
-          # This creates/overwrites the daemon.json specifically for Docker 28
           sudo bash -c 'cat <<EOF > /etc/docker/daemon.json
           {
-            "insecure-registries": ["localhost:8082"]
+            "insecure-registries": ["localhost:8082"],
+            "features": {
+              "containerd-snapshotter": false
+            }
           }
           EOF'
-
-          # 6. Restart and Verify
           sudo systemctl restart docker
-          echo "Docker Version:"
-          docker version --format '{{.Server.Version}}'
-          echo "Insecure Registries:"
-          docker info | grep -A 1 "Insecure Registries"
 
       - name: Setup FastCI
         uses: jfrog-fastci/fastci@v0
@@ -89,13 +60,9 @@ jobs:
           RTLIC: ${{secrets.RTLIC}}
           GOPROXY: direct
 
-      - name: Wait for Artifactory to finish loading
-        uses: nev7n/wait_for_response@v1
-        with:
-          url: "http://localhost:8082"
-          responseCode: 200
-          timeout: 600000
-          interval: 500
+      - name: Wait for Artifactory (Native)
+        run: |
+          timeout 600s bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:8082)" != "200" ]]; do sleep 5; done'
 
       - name: Run Docker tests
         run: go test -v -timeout 0 --test.docker
