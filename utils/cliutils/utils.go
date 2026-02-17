@@ -668,7 +668,7 @@ func getLatestCliVersionFromGithubAPI() (githubVersionInfo githubResponse, err e
 func doHttpRequest(client *http.Client, req *http.Request) (resp *http.Response, body []byte, err error) {
 	const maxResponseSize = 10 * 1024 * 1024 // 10MB limit
 	req.Close = true
-	resp, err = client.Do(req)
+	resp, err = client.Do(req) //#nosec G704 -- URL is constructed internally from validated version API endpoint
 	if errorutils.CheckError(err) != nil {
 		return
 	}
