@@ -280,6 +280,7 @@ func processScan(index commandsummary.Index, filePath string, scannedName string
 // shouldGenerateUploadSummary checks if upload summary should be generated.
 func shouldGenerateUploadSummary() (bool, error) {
 	buildInfoPath := filepath.Clean(filepath.Join(os.Getenv(coreutils.SummaryOutputDirPathEnv), commandsummary.OutputDirName, string(BuildInfo)))
+	// #nosec G703 -- buildInfoPath is constructed from SummaryOutputDirPathEnv set by CLI, not arbitrary user input, and buildInfoPath is already cleaned.
 	if _, err := os.Stat(buildInfoPath); os.IsNotExist(err) {
 		return true, nil
 	}
