@@ -30,36 +30,17 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
 
-      - name: Downgrade Docker to v28
+      - name: Fix Docker 29 Insecure Registry (Legacy Mode)
         run: |
-          # 1. Add Docker's official GPG key
-          sudo apt-get update
-          sudo apt-get install -y ca-certificates curl gnupg
-          sudo install -m 0755 -d /etc/apt/keyrings
-          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-          sudo chmod a+r /etc/apt/keyrings/docker.gpg
-      
-          # 2. Add the repository to Apt sources
-          echo \
-            "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-            $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-            sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-      
-          # 3. Update and Install Docker 28
-          # We use 28.0.1 as a verified stable version for Noble
-          DOCKER_VER="5:28.0.1-1~ubuntu.24.04~noble"
-          sudo apt-get update
-          sudo apt-get install -y --allow-downgrades \
-            docker-ce=$DOCKER_VER \
-            docker-ce-cli=$DOCKER_VER \
-            containerd.io
-      
-          # 4. Lock the version so it doesn't auto-upgrade during other apt commands
-          sudo apt-mark hold docker-ce docker-ce-cli
-      
-          # 5. Restart and Verify
+          sudo bash -c 'cat <<EOF > /etc/docker/daemon.json
+          {
+            "insecure-registries": ["localhost:8082"],
+            "features": {
+              "containerd-snapshotter": false
+            }
+          }
+          EOF'
           sudo systemctl restart docker
-          docker version --format '{{.Server.Version}}'
 
       - name: Setup FastCI
         uses: jfrog-fastci/fastci@v0
