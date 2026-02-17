@@ -146,6 +146,7 @@ func saveFile(content, filePath string) (err error) {
 
 func getSectionMarkdownContent(section MarkdownSection) (string, error) {
 	sectionFilepath := filepath.Clean(filepath.Join(os.Getenv(coreutils.SummaryOutputDirPathEnv), commandsummary.OutputDirName, string(section), markdownFileName))
+	// #nosec G703 -- sectionFilepath is constructed from SummaryOutputDirPathEnv set by CLI, not arbitrary user input and sectionFilepath is already cleaned.
 	if _, err := os.Stat(sectionFilepath); os.IsNotExist(err) {
 		return "", nil
 	}
