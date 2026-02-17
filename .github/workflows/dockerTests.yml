@@ -30,10 +30,29 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
 
-      - name: Fix Docker 29 insecure registry issue
+      - name: Downgrade Docker to v28
         run: |
-          echo '{"features":{"containerd-snapshotter":false}}' | sudo tee /etc/docker/daemon.json
+          # 1. Define the specific version for Ubuntu 24.04 (Noble)
+          DOCKER_VER="5:28.5.2-1~ubuntu.24.04~noble"
+          
+          # 2. Prevent 'needrestart' from killing the runner during the install
+          export NEEDRESTART_MODE=l
+          
+          # 3. Install specific versions with --allow-downgrades
+          sudo apt-get update
+          sudo apt-get install -y --allow-downgrades \
+            docker-ce=$DOCKER_VER \
+            docker-ce-cli=$DOCKER_VER \
+            docker-ce-rootless-extras=$DOCKER_VER \
+            containerd.io \
+            docker-buildx-plugin \
+            docker-compose-plugin
+
+          # 4. Restart Docker to apply changes
           sudo systemctl restart docker
+          
+          # 5. Verify the version
+          docker version --format '{{.Server.Version}}'
 
       - name: Setup FastCI
         uses: jfrog-fastci/fastci@v0
