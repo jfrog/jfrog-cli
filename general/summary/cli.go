@@ -131,6 +131,7 @@ func saveFile(content, filePath string) (err error) {
 	if content == "" {
 		return nil
 	}
+// #nosec G703 -- filePath is constructed from SummaryOutputDirPathEnv set by CLI, not arbitrary user input and filePath is already cleaned.
 	file, err := os.Create(filepath.Clean(filePath))
 	if err != nil {
 		return err
