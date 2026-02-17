@@ -22,7 +22,7 @@ jobs:
       matrix:
         os:
           - name: ubuntu
-            version: 24.04
+            version: 24.04-20260201.15.1
     runs-on: ${{ matrix.os.name }}-${{ matrix.os.version }}
     steps:
       - name: Checkout code
