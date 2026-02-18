@@ -251,7 +251,7 @@ func runInitNewConfig(t *testing.T, testSuite testInitNewConfigDescriptor, baseR
 		return
 	}
 
-	content, err := os.ReadFile(configFile.Name())
+	content, err := os.ReadFile(configFile.Name()) //#nosec G703 -- test code, path from temp file
 	if err != nil {
 		assert.NoError(t, err)
 		return

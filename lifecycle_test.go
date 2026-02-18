@@ -1713,5 +1713,5 @@ type KeyPairPayload struct {
 	Alias      string `json:"alias,omitempty"`
 	Passphrase string `json:"passphrase,omitempty"`
 	PublicKey  string `json:"publicKey,omitempty"`
-	PrivateKey string `json:"privateKey,omitempty"`
+	PrivateKey string `json:"privateKey,omitempty"` //#nosec G117 -- test struct, not a real secret
 }

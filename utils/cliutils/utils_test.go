@@ -365,7 +365,8 @@ type redirectingTransport struct {
 func (t *redirectingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if req.URL.String() == t.targetURL {
 		// Create a new request to the redirect URL
-		redirectReq, err := http.NewRequest(req.Method, t.redirectURL, req.Body)
+        // #nosec G704 -- redirectURL is a controlled test value, not user input
+		redirectReq, err := http.NewRequest(req.Method, t.redirectURL, req.Body) //nolint:gosec // G704 - URL is a test-controlled constant
 		if err != nil {
 			return nil, err
 		}

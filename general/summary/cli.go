@@ -131,7 +131,8 @@ func saveFile(content, filePath string) (err error) {
 	if content == "" {
 		return nil
 	}
-	file, err := os.Create(filePath)
+// #nosec G703 -- filePath is constructed from SummaryOutputDirPathEnv set by CLI, not arbitrary user input and filePath is already cleaned.
+	file, err := os.Create(filepath.Clean(filePath))
 	if err != nil {
 		return err
 	}
@@ -145,11 +146,12 @@ func saveFile(content, filePath string) (err error) {
 }
 
 func getSectionMarkdownContent(section MarkdownSection) (string, error) {
-	sectionFilepath := filepath.Join(os.Getenv(coreutils.SummaryOutputDirPathEnv), commandsummary.OutputDirName, string(section), markdownFileName)
+	sectionFilepath := filepath.Clean(filepath.Join(os.Getenv(coreutils.SummaryOutputDirPathEnv), commandsummary.OutputDirName, string(section), markdownFileName))
+	// #nosec G703 -- sectionFilepath is constructed from SummaryOutputDirPathEnv set by CLI, not arbitrary user input and sectionFilepath is already cleaned.
 	if _, err := os.Stat(sectionFilepath); os.IsNotExist(err) {
 		return "", nil
 	}
-
+// #nosec G703 -- sectionFilepath is constructed from SummaryOutputDirPathEnv set by CLI, not arbitrary user input
 	contentBytes, err := os.ReadFile(sectionFilepath)
 	if err != nil {
 		return "", fmt.Errorf("error reading markdown file for section %s: %w", section, err)
@@ -279,7 +281,8 @@ func processScan(index commandsummary.Index, filePath string, scannedName string
 
 // shouldGenerateUploadSummary checks if upload summary should be generated.
 func shouldGenerateUploadSummary() (bool, error) {
-	buildInfoPath := filepath.Join(os.Getenv(coreutils.SummaryOutputDirPathEnv), commandsummary.OutputDirName, string(BuildInfo))
+	buildInfoPath := filepath.Clean(filepath.Join(os.Getenv(coreutils.SummaryOutputDirPathEnv), commandsummary.OutputDirName, string(BuildInfo)))
+	// #nosec G703 -- buildInfoPath is constructed from SummaryOutputDirPathEnv set by CLI, not arbitrary user input, and buildInfoPath is already cleaned.
 	if _, err := os.Stat(buildInfoPath); os.IsNotExist(err) {
 		return true, nil
 	}
