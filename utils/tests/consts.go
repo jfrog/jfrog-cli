@@ -248,6 +248,7 @@ var (
 	PoetryBuildName             = "cli-poetry-build"
 	ConanBuildName              = "cli-conan-build"
 	HelmBuildName               = "cli-helm-build"
+	HuggingFaceBuildName        = "cli-huggingface-build"
 	RtBuildName1                = "cli-rt-build1"
 	RtBuildName2                = "cli-rt-build2"
 	RtBuildNameWithSpecialChars = "cli-rt-a$+~&^a#-build3"
