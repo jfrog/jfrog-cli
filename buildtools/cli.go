@@ -32,6 +32,7 @@ import (
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/mvn"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/npm"
 	containerutils "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/ocicontainer"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/pnpm"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/terraform"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/yarn"
 	commandsUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
@@ -70,6 +71,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pipenvconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pipenvinstall"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pipinstall"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/pnpmcommand"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pnpmconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/poetry"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/poetryconfig"
@@ -426,6 +428,23 @@ func GetCommands() []cli.Command {
 			Category:     buildToolsCategory,
 			Action: func(c *cli.Context) error {
 				return cliutils.CreateConfigCmd(c, project.Pnpm)
+			},
+		},
+		{
+			Name:            "pnpm",
+			Usage:           pnpmcommand.GetDescription(),
+			HelpName:        corecommon.CreateUsage("pnpm", pnpmcommand.GetDescription(), pnpmcommand.Usage),
+			UsageText:       pnpmcommand.GetArguments(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc("install", "i", "add", "ci", "publish", "p"),
+			Category:        buildToolsCategory,
+			Action: func(c *cli.Context) (errFromCmd error) {
+				cmdName, _ := getCommandName(c.Args())
+				return securityCLI.WrapCmdWithCurationPostFailureRun(c,
+					func(c *cli.Context) error {
+						return pnpmGenericCmd(c, cmdName, false)
+					},
+					techutils.Pnpm, cmdName)
 			},
 		},
 		{
@@ -1509,6 +1528,74 @@ func selectPackageManagerInteractively() (selectedPackageManager project.Project
 
 func GetNpmConfigAndArgs(c *cli.Context) (configFilePath string, args []string, err error) {
 	configFilePath, err = getProjectConfigPathOrThrow(project.Npm, "npm", "npm-config")
+	if err != nil {
+		return
+	}
+	_, args = getCommandName(c.Args())
+	return
+}
+
+func pnpmGenericCmd(c *cli.Context, cmdName string, collectBuildInfoIfRequested bool) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+	switch cmdName {
+	// Aliases accepted by pnpm.
+	case "i", "add", "install":
+		cmdName = "install"
+		collectBuildInfoIfRequested = true
+	case "ci":
+		collectBuildInfoIfRequested = true
+	case "publish", "p":
+		return PnpmPublishCmd(c)
+	}
+
+	// Run generic pnpm command.
+	pnpmCmd := pnpm.NewPnpmCommand(cmdName, collectBuildInfoIfRequested)
+
+	configFilePath, args, err := GetPnpmConfigAndArgs(c)
+	if err != nil {
+		return err
+	}
+	pnpmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
+	if err = pnpmCmd.Init(); err != nil {
+		return err
+	}
+	return commands.Exec(pnpmCmd)
+}
+
+func PnpmPublishCmd(c *cli.Context) (err error) {
+	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "pnpmpublishhelp"); show || err != nil {
+		return err
+	}
+
+	configFilePath, args, err := GetPnpmConfigAndArgs(c)
+	if err != nil {
+		return err
+	}
+
+	pnpmCmd := pnpm.NewPnpmPublishCommand()
+	pnpmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
+	if err = pnpmCmd.Init(); err != nil {
+		return err
+	}
+	if pnpmCmd.GetXrayScan() {
+		commandsUtils.ConditionalUploadScanFunc = scan.ConditionalUploadDefaultScanFunc
+	}
+	// deployment view are not available for native pnpm commands
+	printDeploymentView, detailedSummary := log.IsStdErrTerminal() && !pnpmCmd.UseNative(), pnpmCmd.IsDetailedSummary()
+	if !detailedSummary {
+		pnpmCmd.SetDetailedSummary(printDeploymentView)
+	}
+	err = commands.Exec(pnpmCmd)
+	result := pnpmCmd.Result()
+	defer cliutils.CleanupResult(result, &err)
+	err = cliutils.PrintCommandSummary(pnpmCmd.Result(), detailedSummary, printDeploymentView, false, err)
+	return
+}
+
+func GetPnpmConfigAndArgs(c *cli.Context) (configFilePath string, args []string, err error) {
+	configFilePath, err = getProjectConfigPathOrThrow(project.Pnpm, "pnpm", "pnpm-config")
 	if err != nil {
 		return
 	}
