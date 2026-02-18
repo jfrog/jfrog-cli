@@ -652,10 +652,8 @@ func getLatestCliVersionFromGithubAPI() (githubVersionInfo githubResponse, err e
 	if err != nil {
 		return
 	}
-	// Use json.Decoder with DisallowUnknownFields for safer deserialization
-	decoder := json.NewDecoder(bytes.NewReader(body))
-	decoder.DisallowUnknownFields()
-	if err = decoder.Decode(&githubVersionInfo); err != nil {
+	// Parse the GitHub response while tolerating additional fields we do not use.
+	if err = json.NewDecoder(bytes.NewReader(body)).Decode(&githubVersionInfo); err != nil {
 		return
 	}
 	// Validate the received version tag format
