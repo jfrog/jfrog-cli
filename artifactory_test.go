@@ -1663,11 +1663,28 @@ func TestArtifactoryClientCert(t *testing.T) {
 
 	// The server is requiring client certificates
 	// Without loading a valid client certificate, we expect all actions to fail due to error: "tls: bad certificate"
+	// On Windows, the error can be "wsarecv: An established connection was aborted" (flaky).
 	searchCmd := generic.NewSearchCommand()
 	searchCmd.SetServerDetails(serverDetails).SetSpec(fileSpec)
+
 	reader, err := searchCmd.Search()
 	if reader != nil {
 		readerCloseAndAssert(t, reader)
+	}
+	require.Error(t, err, "Expected a connection failure, since client did not provide a client certificate. Connection however is successful")
+
+	if runtime.GOOS == "windows" && strings.Contains(err.Error(), "wsarecv") {
+		for attempt := 1; attempt < 3; attempt++ {
+			reader, err = searchCmd.Search()
+			if reader != nil {
+				readerCloseAndAssert(t, reader)
+			}
+			require.Error(t, err, "Expected a connection failure, since client did not provide a client certificate. Connection however is successful")
+			if !strings.Contains(err.Error(), "wsarecv") {
+				break
+			}
+			time.Sleep(200 * time.Millisecond)
+		}
 	}
 	assert.ErrorContains(t, err, "certificate", "Expected a connection failure, since client did not provide a client certificate. Connection however is successful")
 
