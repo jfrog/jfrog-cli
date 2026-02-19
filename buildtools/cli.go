@@ -398,6 +398,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "npm",
+			Flags:           cliutils.GetCommandFlags(cliutils.NpmInstallCi),
 			Usage:           npmcommand.GetDescription(),
 			HelpName:        corecommon.CreateUsage("npm", npmcommand.GetDescription(), npmcommand.Usage),
 			UsageText:       npmcommand.GetArguments(),
