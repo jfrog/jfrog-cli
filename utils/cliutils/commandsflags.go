@@ -78,6 +78,7 @@ const (
 	PoetryConfig           = "poetry-config"
 	Poetry                 = "poetry"
 	Helm                   = "helm"
+	HuggingFace            = "hugging-face"
 	RubyConfig             = "ruby-config"
 	Conan                  = "conan"
 	Ping                   = "ping"
@@ -593,6 +594,12 @@ const (
 	SigningKey     = "signing-key"
 	setupRepo      = repo
 	PromotionType  = "promotion-type"
+	Draft          = "draft"
+
+	// HuggingFace flags
+	Revision    = "revision"
+	RepoType    = "repo-type"
+	EtagTimeout = "etag-timeout"
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -1739,7 +1746,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	runNative: cli.BoolFlag{
 		Name:  runNative,
-		Usage: "[Default: false] Set to true if you'd like to use the native client configurations. Note: This flag would invoke native client behind the scenes, has performance implications and does not support deployment view and detailed summary` `",
+		Usage: "[Default: false][DEPRECATED: Use JFROG_RUN_NATIVE=true environment variable instead] Set to true if you'd like to use the native client configurations. Note: This flag would invoke native client behind the scenes, has performance implications and does not support deployment view and detailed summary` `",
 	},
 	disableCVSCheck: cli.BoolFlag{
 		Name:  disableCVSCheck,
@@ -1752,6 +1759,18 @@ var flagsMap = map[string]cli.Flag{
 	validateSha: cli.BoolFlag{
 		Name:  validateSha,
 		Usage: "[Default: false] Set to true to enable SHA validation during Docker push.` `",
+	},
+	Revision: cli.StringFlag{
+		Name:  Revision,
+		Usage: "[Default: main] The specific revision, branch, or tag to download. Defaults to main branch if not specified.` `",
+	},
+	EtagTimeout: cli.StringFlag{
+		Name:  EtagTimeout,
+		Usage: "Timeout in seconds for ETag validation. Defaults to 86400 (24 hours).` `",
+	},
+	RepoType: cli.StringFlag{
+		Name:  RepoType,
+		Usage: "[Default: model] Type of repository. Can be 'model', 'dataset'.` `",
 	},
 }
 
@@ -1984,6 +2003,9 @@ var commandFlags = map[string][]string{
 	},
 	Helm: {
 		BuildName, BuildNumber, module, Project, serverId, username, password,
+	},
+	HuggingFace: {
+		Revision, RepoType, EtagTimeout,
 	},
 	RubyConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,

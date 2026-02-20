@@ -652,10 +652,8 @@ func getLatestCliVersionFromGithubAPI() (githubVersionInfo githubResponse, err e
 	if err != nil {
 		return
 	}
-	// Use json.Decoder with DisallowUnknownFields for safer deserialization
-	decoder := json.NewDecoder(bytes.NewReader(body))
-	decoder.DisallowUnknownFields()
-	if err = decoder.Decode(&githubVersionInfo); err != nil {
+	// Parse the GitHub response while tolerating additional fields we do not use.
+	if err = json.NewDecoder(bytes.NewReader(body)).Decode(&githubVersionInfo); err != nil {
 		return
 	}
 	// Validate the received version tag format
@@ -668,7 +666,7 @@ func getLatestCliVersionFromGithubAPI() (githubVersionInfo githubResponse, err e
 func doHttpRequest(client *http.Client, req *http.Request) (resp *http.Response, body []byte, err error) {
 	const maxResponseSize = 10 * 1024 * 1024 // 10MB limit
 	req.Close = true
-	resp, err = client.Do(req)
+	resp, err = client.Do(req) //#nosec G704 -- URL is constructed internally from validated version API endpoint
 	if errorutils.CheckError(err) != nil {
 		return
 	}

@@ -1,0 +1,8 @@
+{
+  "files": [
+    {
+      "pattern": "${OCI_LOCAL_REPO}/*",
+      "exclusions": ["${OCI_LOCAL_REPO}/repository.catalog"]
+    }
+  ]
+}

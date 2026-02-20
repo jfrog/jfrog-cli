@@ -235,14 +235,18 @@ func TestNpmInstallClientNative(t *testing.T) {
 
 	packageJsonPath := npmProjectDirectory + "/package.json"
 	moduleName := readModuleId(t, packageJsonPath, npmVersion)
-	runJfrogCli(t, "npm", "i", "--run-native=true", "--build-name="+tests.NpmBuildName, "--build-number="+buildNumber)
+	// Set JFROG_RUN_NATIVE=true for native npm mode
+	clientTestUtils.SetEnvAndAssert(t, "JFROG_RUN_NATIVE", "true")
+	defer clientTestUtils.UnSetEnvAndAssert(t, "JFROG_RUN_NATIVE")
+
+	runJfrogCli(t, "npm", "i", "--build-name="+tests.NpmBuildName, "--build-number="+buildNumber)
 	validateNpmLocalBuildInfo(t, tests.NpmBuildName, buildNumber, moduleName)
 	assert.NoError(t, artifactoryCli.Exec("bp", tests.NpmBuildName, buildNumber))
 
 	npmTest := npmTestParams{
-		testName:    "npm with run-native",
+		testName:    "npm with run-native (JFROG_RUN_NATIVE=true)",
 		buildNumber: buildNumber,
-		npmArgs:     "--run-native=true",
+		npmArgs:     "",
 	}
 
 	validateNpmInstall(t, npmTest, isNpm7(npmVersion))
@@ -265,6 +269,7 @@ func createNpmrcForTesting(t *testing.T, configFilePath string) (err error) {
 }
 
 func publishUsingNpmrc(configFilePath string, buildNumber string) (npm.NpmPublishCommand, error) {
+	// Use deprecated --run-native flag to test backward compatibility (shows deprecation warning)
 	args := []string{"--run-native=true", "--build-name=" + tests.NpmBuildName, "--build-number=" + buildNumber}
 	npmpCmd := npm.NewNpmPublishCommand()
 	npmpCmd.SetConfigFilePath(configFilePath).SetArgs(args)
@@ -578,6 +583,8 @@ func initNpmTest(t *testing.T) {
 	if !*tests.TestNpm {
 		t.Skip("Skipping Npm test. To run Npm test add the '-test.npm=true' option.")
 	}
+	// Ensure JFROG_RUN_NATIVE is not set (clean state for non-native tests)
+	_ = os.Unsetenv("JFROG_RUN_NATIVE")
 	createJfrogHomeConfig(t, true)
 }
 
@@ -681,15 +688,14 @@ func TestNpmPublishWithDeploymentView(t *testing.T) {
 	defer cleanNpmTest(t)
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
-	defer clientTestUtils.ChangeDirAndAssert(t, wd)
-	initNpmProjectTest(t)
+	npmPath := initNpmProjectTest(t)
+	chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, npmPath)
+	defer chdirCallBack()
 	assertPrintedDeploymentViewFunc, cleanupFunc := initDeploymentViewTest(t)
 	defer cleanupFunc()
 	runGenericNpm(t, "npm", "publish")
 	// Check deployment view
 	assertPrintedDeploymentViewFunc()
-	// Restore workspace
-	clientTestUtils.ChangeDirAndAssert(t, wd)
 }
 
 func TestNpmPackInstall(t *testing.T) {
@@ -852,14 +858,18 @@ func TestNpmPublishWithWorkspacesRunNative(t *testing.T) {
 	npmProjectPath := initNpmWorkspacesProjectTest(t)
 	configFilePath := filepath.Join(npmProjectPath, ".jfrog", "projects", "npm.yaml")
 
-	// Create npmrc for run-native functionality
+	// Create npmrc for native functionality
 	err = createNpmrcForTesting(t, configFilePath)
 	assert.NoError(t, err)
 
-	// Add build info parameters with run-native flag
+	// Set JFROG_RUN_NATIVE=true for native npm mode
+	clientTestUtils.SetEnvAndAssert(t, "JFROG_RUN_NATIVE", "true")
+	defer clientTestUtils.UnSetEnvAndAssert(t, "JFROG_RUN_NATIVE")
+
+	// Add build info parameters
 	buildName := tests.NpmBuildName + "-workspaces-native"
 	buildNumber := "890"
-	args := []string{"--workspaces", "--build-name=" + buildName, "--build-number=" + buildNumber, "--run-native"}
+	args := []string{"--workspaces", "--build-name=" + buildName, "--build-number=" + buildNumber}
 
 	npmpCmd := npm.NewNpmPublishCommand()
 	npmpCmd.SetConfigFilePath(configFilePath).SetArgs(args)
@@ -1207,9 +1217,9 @@ func isNpm7(npmVersion *version.Version) bool {
 func TestGenericNpm(t *testing.T) {
 	initNpmTest(t)
 	defer cleanNpmTest(t)
-	npmPath := initNpmProjectTest(t)
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
+	npmPath := initNpmProjectTest(t)
 	chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, npmPath)
 	defer chdirCallBack()
 
@@ -1271,4 +1281,73 @@ func containsTarName(tarName string, expectedTars []string) bool {
 		break
 	}
 	return isTarPresent
+}
+
+// TestNpmBuildPublishWithCIVcsProps tests that CI VCS properties are set on npm artifacts
+// when running build-publish in a CI environment (GitHub Actions).
+func TestNpmBuildPublishWithCIVcsProps(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+
+	buildName := "npm-civcs-test"
+	buildNumber := "1"
+
+	// Setup GitHub Actions environment (uses real env vars on CI, mock values locally)
+	cleanupEnv, actualOrg, actualRepo := tests.SetupGitHubActionsEnv(t)
+	defer cleanupEnv()
+
+	// Clean old build
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+
+	// Setup npm project and change to that directory
+	npmPath := initNpmProjectTest(t)
+	chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, npmPath)
+	defer chdirCallBack()
+
+	// Run npm publish with build info collection
+	runJfrogCli(t, "npm", "publish", "--build-name="+buildName, "--build-number="+buildNumber)
+
+	// Publish build info - should set CI VCS props on artifacts
+	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	// Restore working directory before getting build info
+	clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	// Get the published build info to find artifact paths
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	assert.NoError(t, err)
+	assert.True(t, found, "Build info was not found")
+
+	// Create service manager for getting artifact properties
+	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
+	assert.NoError(t, err)
+
+	// Verify VCS properties on each artifact from build info
+	artifactCount := 0
+	for _, module := range publishedBuildInfo.BuildInfo.Modules {
+		for _, artifact := range module.Artifacts {
+			fullPath := artifact.OriginalDeploymentRepo + "/" + artifact.Path
+
+			props, err := serviceManager.GetItemProps(fullPath)
+			assert.NoError(t, err, "Failed to get properties for artifact: %s", fullPath)
+			assert.NotNil(t, props, "Properties are nil for artifact: %s", fullPath)
+
+			// Validate VCS properties
+			assert.Contains(t, props.Properties, "vcs.provider", "Missing vcs.provider on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.provider"], "github", "Wrong vcs.provider on %s", artifact.Name)
+
+			assert.Contains(t, props.Properties, "vcs.org", "Missing vcs.org on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.org"], actualOrg, "Wrong vcs.org on %s", artifact.Name)
+
+			assert.Contains(t, props.Properties, "vcs.repo", "Missing vcs.repo on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.repo"], actualRepo, "Wrong vcs.repo on %s", artifact.Name)
+
+			artifactCount++
+		}
+	}
+	assert.Greater(t, artifactCount, 0, "No artifacts in build info")
 }

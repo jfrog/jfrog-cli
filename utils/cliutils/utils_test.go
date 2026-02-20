@@ -297,7 +297,7 @@ func TestAuthorizationHeaderInCliVersionCheck(t *testing.T) {
 		// Return a valid JSON response
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_, err := w.Write([]byte(`{"tag_name": "v1.0.0"}`))
+		_, err := w.Write([]byte(`{"url":"https://api.github.com/repos/jfrog/jfrog-cli/releases/1","tag_name":"v1.0.0"}`))
 		if err != nil {
 			return
 		}
@@ -365,7 +365,8 @@ type redirectingTransport struct {
 func (t *redirectingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if req.URL.String() == t.targetURL {
 		// Create a new request to the redirect URL
-		redirectReq, err := http.NewRequest(req.Method, t.redirectURL, req.Body)
+        // #nosec G704 -- redirectURL is a controlled test value, not user input
+		redirectReq, err := http.NewRequest(req.Method, t.redirectURL, req.Body) //nolint:gosec // G704 - URL is a test-controlled constant
 		if err != nil {
 			return nil, err
 		}

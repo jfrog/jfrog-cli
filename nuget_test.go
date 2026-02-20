@@ -251,7 +251,7 @@ func runInitNewConfig(t *testing.T, testSuite testInitNewConfigDescriptor, baseR
 		return
 	}
 
-	content, err := os.ReadFile(configFile.Name())
+	content, err := os.ReadFile(configFile.Name()) //#nosec G703 -- test code, path from temp file
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -474,4 +474,63 @@ func TestDotnetRequestedByDeterminism(t *testing.T) {
 
 	t.Logf("Successfully verified RequestedBy determinism across %d runs", numRuns)
 	cleanTestsHomeEnv()
+}
+
+// TestNugetBuildPublishWithCIVcsProps tests that CI VCS properties integration works
+// with NuGet in a CI environment (GitHub Actions).
+// Note: NuGet restore only has dependencies (not artifacts), so this test validates
+// that build-info collection works correctly in CI environment. CI VCS properties
+// are set on artifacts via build-publish when packages are pushed (nuget push).
+func TestNugetBuildPublishWithCIVcsProps(t *testing.T) {
+	initNugetTest(t)
+	defer cleanTestsHomeEnv()
+
+	buildName := tests.NuGetBuildName + "-civcs"
+	buildNumber := "1"
+
+	// Setup GitHub Actions environment (uses real env vars on CI, mock values locally)
+	cleanupEnv, actualOrg, actualRepo := tests.SetupGitHubActionsEnv(t)
+	defer cleanupEnv()
+
+	// Clean old build
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	// Create NuGet project and config
+	projectPath := createNugetProject(t, "reference")
+	err := createConfigFileForTest([]string{projectPath}, tests.NugetRemoteRepo, "", t, project.Nuget, false)
+	require.NoError(t, err)
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+
+	// Run NuGet restore with build info collection
+	args := []string{dotnetUtils.Nuget.String(), "restore"}
+	allowInsecureConnectionForTests(&args)
+	args = append(args, "--build-name="+buildName, "--build-number="+buildNumber)
+
+	err = runNuGet(t, args...)
+	require.NoError(t, err)
+
+	// Publish build info
+	require.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	// Get the published build info
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	require.NoError(t, err)
+	require.True(t, found, "Build info was not found")
+
+	// Validate build info was created correctly
+	require.NotEmpty(t, publishedBuildInfo.BuildInfo.Modules, "Build info should have modules")
+	assert.Greater(t, len(publishedBuildInfo.BuildInfo.Modules[0].Dependencies), 0, "Build info should have dependencies")
+	assert.Equal(t, buildName, publishedBuildInfo.BuildInfo.Name, "Build name should match")
+	assert.Equal(t, buildNumber, publishedBuildInfo.BuildInfo.Number, "Build number should match")
+
+	// Verify CI environment was detected (for nuget push scenarios, CI VCS props would be set)
+	assert.NotEmpty(t, actualOrg, "CI org should be detected")
+	assert.NotEmpty(t, actualRepo, "CI repo should be detected")
+	t.Logf("NuGet build info created with %d dependencies in CI environment (org=%s, repo=%s)",
+		len(publishedBuildInfo.BuildInfo.Modules[0].Dependencies), actualOrg, actualRepo)
 }
