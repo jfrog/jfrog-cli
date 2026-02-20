@@ -446,7 +446,7 @@ func addArtifactsToBuildInfo(buildInfo *buildinfo.BuildInfo, serverDetails *conf
 	log.Debug("Collecting artifacts for build info...")
 
 	if len(buildInfo.Modules) == 0 {
-		return fmt.Errorf("no modules found in build info")
+		return fmt.Errorf("no modules found in build info. Ensure you ran a build command (e.g., jf mvn, jf npm) with --build-name and --build-number before publishing")
 	}
 
 	// Get the main module (should be the Poetry module)
@@ -697,7 +697,7 @@ func inferPoetryConfigFromToml(_ project.ProjectType) (*project.RepositoryConfig
 
 	sources := viper.Get("tool.poetry.source")
 	if sources == nil {
-		return nil, fmt.Errorf("no Poetry sources found in pyproject.toml")
+		return nil, fmt.Errorf("no Poetry sources found in pyproject.toml. Add a source pointing to your JFrog repository. See 'jf poetry-config --help' for details")
 	}
 
 	// Get list of configured servers from jf config

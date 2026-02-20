@@ -245,7 +245,7 @@ func ValidateServerId(serverId string) error {
 	reservedIds := []string{"delete", "use", "show", "clear"}
 	for _, reservedId := range reservedIds {
 		if serverId == reservedId {
-			return fmt.Errorf("server can't have one of the following ID's: %s\n%s", strings.Join(reservedIds, ", "), cliutils.GetDocumentationMessage())
+			return fmt.Errorf("'%s' is a reserved name and cannot be used as a server ID. Reserved names: %s", serverId, strings.Join(reservedIds, ", "))
 		}
 	}
 	return nil
@@ -265,7 +265,7 @@ func validateServerExistence(serverId string, operation configOperation) error {
 func validateConfigFlags(configCommandConfiguration *commands.ConfigCommandConfiguration) error {
 	// Validate the option is not used along with access token
 	if configCommandConfiguration.BasicAuthOnly && configCommandConfiguration.ServerDetails.AccessToken != "" {
-		return errorutils.CheckErrorf("the --%s option is only supported when username and password/API key are provided", cliutils.BasicAuthOnly)
+		return errorutils.CheckErrorf("the --%s option is only supported when username and password/access token are provided", cliutils.BasicAuthOnly)
 	}
 	if err := validatePathsExist(configCommandConfiguration.ServerDetails.SshKeyPath, configCommandConfiguration.ServerDetails.ClientCertPath, configCommandConfiguration.ServerDetails.ClientCertKeyPath); err != nil {
 		return err
@@ -300,7 +300,7 @@ func validatePathsExist(paths ...string) error {
 				return err
 			}
 			if !exists {
-				return errorutils.CheckErrorf("file does not exit at %s", path)
+				return errorutils.CheckErrorf("file does not exist at %s", path)
 			}
 		}
 	}
