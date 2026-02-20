@@ -1743,7 +1743,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	disableCVSCheck: cli.BoolFlag{
 		Name:  disableCVSCheck,
-		Usage: "[Default: false] Set to true to disable the CVS check that verifies if 404 errors are due to blocked packages.` `",
+		Usage: "Set to true to disable the CVS check that verifies if 404 errors are due to blocked packages.` `",
 	},
 	npmWorkspaces: cli.BoolFlag{
 		Name:  npmWorkspaces,
