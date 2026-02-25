@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
@@ -64,6 +65,34 @@ func checkHuggingFaceHubAvailable(t *testing.T) {
 	}
 }
 
+// isExpectedUploadError checks if the error is an expected error for upload without credentials
+// Returns true if the error is expected (authentication/authorization related), false otherwise
+func isExpectedUploadError(err error) bool {
+	if err == nil {
+		return false
+	}
+	errStr := strings.ToLower(err.Error())
+	// Expected errors when uploading without proper credentials
+	expectedPatterns := []string{
+		"401",
+		"403",
+		"unauthorized",
+		"authentication",
+		"permission",
+		"access denied",
+		"forbidden",
+		"credentials",
+		"token",
+		"login",
+	}
+	for _, pattern := range expectedPatterns {
+		if strings.Contains(errStr, pattern) {
+			return true
+		}
+	}
+	return false
+}
+
 // TestHuggingFaceDownload tests the HuggingFace download command
 func TestHuggingFaceDownload(t *testing.T) {
 	initHuggingFaceTest(t)
@@ -75,24 +104,16 @@ func TestHuggingFaceDownload(t *testing.T) {
 	// Test download with a small test model
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 
-	// Test basic download command structure (dry run style test)
+	// Test basic download command structure
 	// Using a well-known small model for testing
 	args := []string{
 		"hf", "d", "gpt2",
 		"--repo-type=model",
 	}
 
-	// Execute and check for proper command handling
-	// Note: This test verifies command parsing and execution flow
-	// Actual download depends on HuggingFace Hub availability
+	// Execute and verify success
 	err := jfrogCli.Exec(args...)
-
-	// The command should either succeed or fail gracefully with a network/auth error
-	// We're testing the CLI integration, not the actual HuggingFace Hub connectivity
-	if err != nil {
-		// Check if error is due to missing HuggingFace token (expected in CI)
-		t.Logf("HuggingFace download command returned: %v (this may be expected in CI without HF token)", err)
-	}
+	assert.NoError(t, err, "HuggingFace download command should succeed")
 }
 
 // TestHuggingFaceDownloadWithRevision tests the HuggingFace download command with revision parameter
@@ -113,9 +134,7 @@ func TestHuggingFaceDownloadWithRevision(t *testing.T) {
 	}
 
 	err := jfrogCli.Exec(args...)
-	if err != nil {
-		t.Logf("HuggingFace download with revision command returned: %v (this may be expected in CI without HF token)", err)
-	}
+	assert.NoError(t, err, "HuggingFace download with revision should succeed")
 }
 
 // TestHuggingFaceDownloadDataset tests the HuggingFace download command for datasets
@@ -135,9 +154,7 @@ func TestHuggingFaceDownloadDataset(t *testing.T) {
 	}
 
 	err := jfrogCli.Exec(args...)
-	if err != nil {
-		t.Logf("HuggingFace download dataset command returned: %v (this may be expected in CI without HF token)", err)
-	}
+	assert.NoError(t, err, "HuggingFace download dataset should succeed")
 }
 
 // TestHuggingFaceDownloadWithEtagTimeout tests the HuggingFace download command with etag-timeout
@@ -158,9 +175,7 @@ func TestHuggingFaceDownloadWithEtagTimeout(t *testing.T) {
 	}
 
 	err := jfrogCli.Exec(args...)
-	if err != nil {
-		t.Logf("HuggingFace download with etag-timeout command returned: %v (this may be expected in CI without HF token)", err)
-	}
+	assert.NoError(t, err, "HuggingFace download with etag-timeout should succeed")
 }
 
 // TestHuggingFaceUpload tests the HuggingFace upload command
@@ -173,13 +188,9 @@ func TestHuggingFaceUpload(t *testing.T) {
 
 	// Create a temporary directory with test files to upload
 	tempDir, err := os.MkdirTemp("", "hf-upload-test-*")
-	if err != nil {
-		require.NoError(t, err, "Failed to create temp directory")
-	}
+	require.NoError(t, err, "Failed to create temp directory")
 	t.Cleanup(func() {
-		if err := os.RemoveAll(tempDir); err != nil {
-			t.Logf("Warning: Failed to remove temp directory %s: %v", tempDir, err)
-		}
+		_ = os.RemoveAll(tempDir)
 	})
 
 	// Create a test file in the temp directory
@@ -195,16 +206,16 @@ func TestHuggingFaceUpload(t *testing.T) {
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 
 	// Test upload command structure
-	// Note: This will require HuggingFace credentials to actually upload
 	args := []string{
 		"hf", "u", tempDir, "test-org/test-model",
 		"--repo-type=model",
 	}
 
 	err = jfrogCli.Exec(args...)
+	// Upload should either succeed (with credentials) or fail with an auth error (without credentials)
 	if err != nil {
-		// Expected to fail without proper HuggingFace credentials
-		t.Logf("HuggingFace upload command returned: %v (this is expected without HF credentials)", err)
+		assert.True(t, isExpectedUploadError(err),
+			"Upload failed with unexpected error: %v. Expected either success or authentication-related error", err)
 	}
 }
 
@@ -218,13 +229,9 @@ func TestHuggingFaceUploadWithRevision(t *testing.T) {
 
 	// Create a temporary directory with test files to upload
 	tempDir, err := os.MkdirTemp("", "hf-upload-revision-test-*")
-	if err != nil {
-		require.NoError(t, err, "Failed to create temp directory")
-	}
+	require.NoError(t, err, "Failed to create temp directory")
 	t.Cleanup(func() {
-		if err := os.RemoveAll(tempDir); err != nil {
-			t.Logf("Warning: Failed to remove temp directory %s: %v", tempDir, err)
-		}
+		_ = os.RemoveAll(tempDir)
 	})
 
 	// Create a test file in the temp directory
@@ -242,8 +249,10 @@ func TestHuggingFaceUploadWithRevision(t *testing.T) {
 	}
 
 	err = jfrogCli.Exec(args...)
+	// Upload should either succeed (with credentials) or fail with an auth error (without credentials)
 	if err != nil {
-		t.Logf("HuggingFace upload with revision command returned: %v (this is expected without HF credentials)", err)
+		assert.True(t, isExpectedUploadError(err),
+			"Upload with revision failed with unexpected error: %v. Expected either success or authentication-related error", err)
 	}
 }
 
@@ -257,13 +266,9 @@ func TestHuggingFaceUploadDataset(t *testing.T) {
 
 	// Create a temporary directory with test dataset files
 	tempDir, err := os.MkdirTemp("", "hf-upload-dataset-test-*")
-	if err != nil {
-		require.NoError(t, err, "Failed to create temp directory")
-	}
+	require.NoError(t, err, "Failed to create temp directory")
 	t.Cleanup(func() {
-		if err := os.RemoveAll(tempDir); err != nil {
-			t.Logf("Warning: Failed to remove temp directory %s: %v", tempDir, err)
-		}
+		_ = os.RemoveAll(tempDir)
 	})
 
 	// Create test dataset files
@@ -284,8 +289,10 @@ func TestHuggingFaceUploadDataset(t *testing.T) {
 	}
 
 	err = jfrogCli.Exec(args...)
+	// Upload should either succeed (with credentials) or fail with an auth error (without credentials)
 	if err != nil {
-		t.Logf("HuggingFace upload dataset command returned: %v (this is expected without HF credentials)", err)
+		assert.True(t, isExpectedUploadError(err),
+			"Upload dataset failed with unexpected error: %v. Expected either success or authentication-related error", err)
 	}
 }
 
