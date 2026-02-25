@@ -50,15 +50,27 @@ func cleanHuggingFaceTest(t *testing.T) {
 	tests.CleanFileSystem()
 }
 
+// checkHuggingFaceHubAvailable checks if python3 and huggingface_hub library are available
+func checkHuggingFaceHubAvailable(t *testing.T) {
+	// Check if python3 is available
+	if _, err := exec.LookPath("python3"); err != nil {
+		t.Skip("python3 not found in PATH, skipping HuggingFace test")
+	}
+
+	// Check if huggingface_hub library is installed
+	cmd := exec.Command("python3", "-c", "import huggingface_hub")
+	if err := cmd.Run(); err != nil {
+		t.Skip("huggingface_hub library not installed, skipping HuggingFace test. Install with: pip install huggingface_hub")
+	}
+}
+
 // TestHuggingFaceDownload tests the HuggingFace download command
 func TestHuggingFaceDownload(t *testing.T) {
 	initHuggingFaceTest(t)
 	defer cleanHuggingFaceTest(t)
 
-	// Check if huggingface-cli is available
-	if _, err := exec.LookPath("huggingface-cli"); err != nil {
-		t.Skip("huggingface-cli not found in PATH, skipping HuggingFace download test")
-	}
+	// Check if python3 and huggingface_hub are available
+	checkHuggingFaceHubAvailable(t)
 
 	// Test download with a small test model
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
@@ -88,10 +100,8 @@ func TestHuggingFaceDownloadWithRevision(t *testing.T) {
 	initHuggingFaceTest(t)
 	defer cleanHuggingFaceTest(t)
 
-	// Check if huggingface-cli is available
-	if _, err := exec.LookPath("huggingface-cli"); err != nil {
-		t.Skip("huggingface-cli not found in PATH, skipping HuggingFace download test")
-	}
+	// Check if python3 and huggingface_hub are available
+	checkHuggingFaceHubAvailable(t)
 
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 
@@ -113,10 +123,8 @@ func TestHuggingFaceDownloadDataset(t *testing.T) {
 	initHuggingFaceTest(t)
 	defer cleanHuggingFaceTest(t)
 
-	// Check if huggingface-cli is available
-	if _, err := exec.LookPath("huggingface-cli"); err != nil {
-		t.Skip("huggingface-cli not found in PATH, skipping HuggingFace download test")
-	}
+	// Check if python3 and huggingface_hub are available
+	checkHuggingFaceHubAvailable(t)
 
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 
@@ -137,10 +145,8 @@ func TestHuggingFaceDownloadWithEtagTimeout(t *testing.T) {
 	initHuggingFaceTest(t)
 	defer cleanHuggingFaceTest(t)
 
-	// Check if huggingface-cli is available
-	if _, err := exec.LookPath("huggingface-cli"); err != nil {
-		t.Skip("huggingface-cli not found in PATH, skipping HuggingFace download test")
-	}
+	// Check if python3 and huggingface_hub are available
+	checkHuggingFaceHubAvailable(t)
 
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 
@@ -162,10 +168,8 @@ func TestHuggingFaceUpload(t *testing.T) {
 	initHuggingFaceTest(t)
 	defer cleanHuggingFaceTest(t)
 
-	// Check if huggingface-cli is available
-	if _, err := exec.LookPath("huggingface-cli"); err != nil {
-		t.Skip("huggingface-cli not found in PATH, skipping HuggingFace upload test")
-	}
+	// Check if python3 and huggingface_hub are available
+	checkHuggingFaceHubAvailable(t)
 
 	// Create a temporary directory with test files to upload
 	tempDir, err := os.MkdirTemp("", "hf-upload-test-*")
@@ -209,10 +213,8 @@ func TestHuggingFaceUploadWithRevision(t *testing.T) {
 	initHuggingFaceTest(t)
 	defer cleanHuggingFaceTest(t)
 
-	// Check if huggingface-cli is available
-	if _, err := exec.LookPath("huggingface-cli"); err != nil {
-		t.Skip("huggingface-cli not found in PATH, skipping HuggingFace upload test")
-	}
+	// Check if python3 and huggingface_hub are available
+	checkHuggingFaceHubAvailable(t)
 
 	// Create a temporary directory with test files to upload
 	tempDir, err := os.MkdirTemp("", "hf-upload-revision-test-*")
@@ -250,10 +252,8 @@ func TestHuggingFaceUploadDataset(t *testing.T) {
 	initHuggingFaceTest(t)
 	defer cleanHuggingFaceTest(t)
 
-	// Check if huggingface-cli is available
-	if _, err := exec.LookPath("huggingface-cli"); err != nil {
-		t.Skip("huggingface-cli not found in PATH, skipping HuggingFace upload test")
-	}
+	// Check if python3 and huggingface_hub are available
+	checkHuggingFaceHubAvailable(t)
 
 	// Create a temporary directory with test dataset files
 	tempDir, err := os.MkdirTemp("", "hf-upload-dataset-test-*")

@@ -417,8 +417,6 @@ github.com/jfrog/jfrog-apps-config v1.0.1 h1:mtv6k7g8A8BVhlHGlSveapqf4mJfonwvXYL
 github.com/jfrog/jfrog-apps-config v1.0.1/go.mod h1:8AIIr1oY9JuH5dylz2S6f8Ym2MaadPLR6noCBO4C22w=
 github.com/jfrog/jfrog-cli-application v1.0.2-0.20260216085810-1ade6c26b3df h1:raSyae8/h1y8HtzFLf7vZZj91fP/qD94AX+biwBJiqs=
 github.com/jfrog/jfrog-cli-application v1.0.2-0.20260216085810-1ade6c26b3df/go.mod h1:xum2HquWO5uExa/A7MQs3TgJJVEeoqTR+6Z4mfBr1Xw=
-github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260218070105-39c72c2c8214 h1:XFWrW8nmKheIs3jdiphozbagBXEgybafcb0eFatkKQ4=
-github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260218070105-39c72c2c8214/go.mod h1:qEUp3kyKkocqvf7xErppgAtkmudZR1TMaQUvDTGYCUI=
 github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260218080258-3bf55ed18973 h1:fOlWUGkCuujnIcE3166gpTdvicwv1wAZhLrfbm+f6rY=
 github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260218080258-3bf55ed18973/go.mod h1:GDveG1xAoiM12JlSx8RE0OcJ6Ov+xcmpmGv84we3pMA=
 github.com/jfrog/jfrog-cli-evidence v0.8.3-0.20260202100913-d9ee9476845a h1:lTOAhUjKcOmM/0Kbj4V+I/VHPlW7YNAhIEVpGnCM5mI=
@@ -520,6 +518,8 @@ github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
 github.com/natefinch/atomic v1.0.1 h1:ZPYKxkqQOx3KZ+RsbnP/YsgvxWQPGxjC0oBt2AhwV0A=
 github.com/natefinch/atomic v1.0.1/go.mod h1:N/D/ELrljoqDyT3rZrsUmtsuzvHkeB/wWjHV22AZRbM=
+github.com/naveenku-jfrog/jfrog-cli-artifactory v0.0.0-20260225125310-730cf0976af9 h1:yG26QXarphDNM4FMkMx8vd/nABBw2K61GlP97iJt5nA=
+github.com/naveenku-jfrog/jfrog-cli-artifactory v0.0.0-20260225125310-730cf0976af9/go.mod h1:qEUp3kyKkocqvf7xErppgAtkmudZR1TMaQUvDTGYCUI=
 github.com/nwaples/rardecode/v2 v2.2.2 h1:/5oL8dzYivRM/tqX9VcTSWfbpwcbwKG1QtSJr3b3KcU=
 github.com/nwaples/rardecode/v2 v2.2.2/go.mod h1:7uz379lSxPe6j9nvzxUZ+n7mnJNgjsRNb6IbvGVHRmw=
 github.com/oklog/run v1.0.0 h1:Ru7dDtJNOyC66gQ5dQmaCa0qIsAUFY3sFpK1Xk8igrw=
