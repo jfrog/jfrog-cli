@@ -1156,10 +1156,6 @@ func huggingFaceUploadCmd(c *cli.Context, hfArgs []string) error {
 	if folderPath == "" {
 		return cliutils.PrintHelpAndReturnError("Folder path cannot be empty.", c)
 	}
-	// Convert Windows backslashes to forward slashes to avoid JSON escaping issues
-	// when the path is used in JSON payloads by the huggingface_hub library
-	folderPath = filepath.ToSlash(folderPath)
-
 	repoID := hfArgs[1]
 	if repoID == "" {
 		return cliutils.PrintHelpAndReturnError("Repository ID cannot be empty.", c)
