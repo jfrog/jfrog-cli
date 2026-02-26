@@ -378,6 +378,7 @@ const (
 	npmPrefix          = "npm-"
 	npmDetailedSummary = npmPrefix + detailedSummary
 	runNative          = "run-native"
+	disableCVSCheck    = "disable-cvs-check"
 	npmWorkspaces      = "workspaces"
 
 	// Unique nuget/dotnet config flags
@@ -1747,6 +1748,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  runNative,
 		Usage: "[Default: false][DEPRECATED: Use JFROG_RUN_NATIVE=true environment variable instead] Set to true if you'd like to use the native client configurations. Note: This flag would invoke native client behind the scenes, has performance implications and does not support deployment view and detailed summary` `",
 	},
+	disableCVSCheck: cli.BoolFlag{
+		Name:  disableCVSCheck,
+		Usage: "Set to true to disable the CVS check that verifies if 404 errors are due to blocked packages.` `",
+	},
 	npmWorkspaces: cli.BoolFlag{
 		Name:  npmWorkspaces,
 		Usage: "[Default: false] Set to true if you'd like to use npm workspaces.` `",
@@ -1920,7 +1925,7 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	NpmInstallCi: {
-		BuildName, BuildNumber, module, Project, runNative,
+		BuildName, BuildNumber, module, Project, runNative, disableCVSCheck,
 	},
 	NpmPublish: {
 		BuildName, BuildNumber, module, Project, npmDetailedSummary, xrayScan, xrOutput, runNative, npmWorkspaces,
