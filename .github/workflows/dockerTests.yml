@@ -16,13 +16,14 @@ concurrency:
   cancel-in-progress: true
 jobs:
   Docker-tests:
-    name: Docker tests (${{ matrix.os.name }})
+    name: Docker tests (${{ matrix.os.name }}, containerd-snapshotter=${{ !matrix.disable-containerd-snapshotter }})
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'safe to test')
     strategy:
       matrix:
         os:
           - name: ubuntu
             version: 24.04
+        disable-containerd-snapshotter: [true, false]
     runs-on: ${{ matrix.os.name }}-${{ matrix.os.version }}
     steps:
       - name: Checkout code
@@ -31,6 +32,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
 
       - name: Configure Docker 29 for Legacy Support
+        if: matrix.disable-containerd-snapshotter == true
         run: |
           sudo bash -c 'cat <<EOF > /etc/docker/daemon.json
           {
