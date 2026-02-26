@@ -2000,7 +2000,7 @@ var commandFlags = map[string][]string{
 		BuildName, BuildNumber, module, Project, serverId, username, password,
 	},
 	HuggingFace: {
-		Revision, RepoType, EtagTimeout,
+		BuildName, BuildNumber, module, Project, serverId, Revision, RepoType, EtagTimeout,
 	},
 	RubyConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,

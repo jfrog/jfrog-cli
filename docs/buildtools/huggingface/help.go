@@ -1,19 +1,19 @@
 package huggingface
 
-var Usage = []string{"hf d <model-name>",
-	"hf u <folder-path> <repo-id>"}
+var Usage = []string{"hf download <model-name>",
+	"hf upload <folder-path> <repo-id>"}
 
 func GetDescription() string {
 	return `Download or upload models/datasets from/to HuggingFace Hub.`
 }
 
 func GetArguments() string {
-	return `	d <model-name>
+	return `	download <model-name>
 		Download a model/dataset from HuggingFace Hub.
 		model-name
 			The HuggingFace model repository ID (e.g., 'bert-base-uncased' or 'username/model-name').
 
-	u <folder-path> <repo-id>
+	upload <folder-path> <repo-id>
 		Upload a model or dataset folder to HuggingFace Hub.
 		folder-path
 			Path to the folder to upload.
