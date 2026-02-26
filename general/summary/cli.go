@@ -191,7 +191,7 @@ func invokeSectionMarkdownGeneration(section MarkdownSection) error {
 	case Evidence:
 		return generateEvidenceMarkdown()
 	default:
-		return fmt.Errorf("unknown section: %s", section)
+		return fmt.Errorf("unknown section: %s. Valid sections: security, build-info, upload, evidence", section)
 	}
 }
 

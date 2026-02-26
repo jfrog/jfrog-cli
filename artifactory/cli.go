@@ -610,7 +610,7 @@ func createLifecycleDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, e
 		return nil, err
 	}
 	if lcDetails.Url == "" {
-		return nil, errors.New("platform URL is mandatory for lifecycle commands")
+		return nil, errors.New("platform URL is mandatory for lifecycle commands. Configure it via the --url flag or by running 'jf config add'")
 	}
 	PlatformToLifecycleUrls(lcDetails)
 	return lcDetails, nil
@@ -878,7 +878,7 @@ func usersCreateCmd(c *cli.Context) error {
 	usersCreateCmd := usersmanagement.NewUsersCreateCommand()
 	csvFilePath := c.String("csv")
 	if csvFilePath == "" {
-		return cliutils.PrintHelpAndReturnError("missing --csv <File Path>", c)
+		return cliutils.PrintHelpAndReturnError("missing --csv <File Path>. The CSV file must include a header row with the columns: username, password, email", c)
 	}
 	usersList, err := parseCSVToUsersList(csvFilePath)
 	if err != nil {
@@ -928,7 +928,7 @@ func usersDeleteCmd(c *cli.Context) error {
 	}
 
 	if len(usersNamesList) < 1 {
-		return cliutils.PrintHelpAndReturnError("missing <users list> OR --csv <users details file path>", c)
+		return cliutils.PrintHelpAndReturnError("missing <users list> OR --csv <users details file path>. Example: jf rt udel 'user1,user2' or jf rt udel --csv users.csv", c)
 	}
 
 	if !cliutils.GetQuietValue(c) && !coreutils.AskYesNo("This command will delete users. Are you sure you want to continue?\n"+
