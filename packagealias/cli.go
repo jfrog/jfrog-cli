@@ -17,10 +17,16 @@ const (
 func GetCommands() []cli.Command {
 	return cliutils.GetSortedCommands(cli.CommandsByName{
 		{
-			Name:         "install",
-			Usage:        "Install package manager aliases",
-			HelpName:     corecommon.CreateUsage("package-alias install", "Install package manager aliases", []string{}),
-			ArgsUsage:    "",
+			Name:      "install",
+			Usage:     "Install package manager aliases",
+			HelpName:  corecommon.CreateUsage("package-alias install", "Install package manager aliases", []string{}),
+			ArgsUsage: "",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "packages",
+					Usage: "Comma-separated list of package managers to alias (default: all supported package managers)",
+				},
+			},
 			Category:     packageAliasCategory,
 			Action:       installCmd,
 			BashComplete: corecommon.CreateBashCompletionFunc(),
@@ -83,7 +89,7 @@ func GetCommands() []cli.Command {
 }
 
 func installCmd(c *cli.Context) error {
-	installCmd := NewInstallCommand()
+	installCmd := NewInstallCommand(c.String("packages"))
 	return commands.Exec(installCmd)
 }
 

@@ -292,6 +292,102 @@ $ mvn clean install
 
 ---
 
+### **9.1 GitHub Actions integration: setup-jfrog-cli and automatic build-info publish**
+
+In GitHub Actions, using the official **setup-jfrog-cli** action together with Package Aliasing gives **zero-change enablement** and **automatic build-info publication**. The action installs and configures JFrog CLI, and at job end it automatically publishes collected build-info to Artifactory. You do not need to add build name/number to individual commands or run `jf rt build-publish` manually unless you want a custom publish step.
+
+**Auto-publish behavior:**
+
+- Build-related operations (e.g. `npm install`, `mvn install`, `go build`) are recorded during the job when run via the aliases.
+- The **setup-jfrog-cli** action sets `JFROG_CLI_BUILD_NAME` and `JFROG_CLI_BUILD_NUMBER` by default from workflow metadata; you may override them via `env` if needed.
+- Collected build-info is **published automatically** when the job completes. If you run `jf rt build-publish` yourself in the workflow, that run’s behavior takes precedence and the action will not publish again for that job.
+- To disable automatic publish, set the action input: `disable-auto-build-publish: true`.
+
+**Native Package Alias integration (setup-jfrog-cli):**
+
+When **setup-jfrog-cli** is used with the input `enable-package-alias: true`, the action will automatically:
+
+1. Run `jf package-alias install` after installing and configuring JFrog CLI.
+2. Append the alias directory (`~/.jfrog/package-alias/bin` on Linux/macOS, `%USERPROFILE%\.jfrog\package-alias\bin` on Windows) to the file pointed to by `GITHUB_PATH`.
+
+GitHub Actions **prepends** paths added via `GITHUB_PATH` to `PATH` for all subsequent steps. So the alias directory is at the **front** of `PATH`; commands like `mvn`, `npm`, and `go` resolve to the Ghost Frog aliases first, and the real system binaries are not used until the alias invokes them internally. No separate workflow step is required.
+
+**Flow: how the optional input drives setup-jfrog-cli behavior**
+
+```mermaid
+flowchart LR
+  subgraph workflow [Workflow]
+    A[setup-jfrog-cli]
+    B["Build steps"]
+  end
+  subgraph action [setup-jfrog-cli main]
+    A1[Install CLI]
+    A2[Configure servers]
+    A3["enable-package-alias?"]
+    A4["jf package-alias install"]
+    A5[Append path to GITHUB_PATH]
+  end
+  A --> A1
+  A1 --> A2
+  A2 --> A3
+  A3 -->|"true"| A4
+  A4 --> A5
+  A5 --> B
+  A3 -->|"false" or unset| B
+  B -->|"npm install etc."| Intercept[Intercepted by jf]
+```
+
+**Recommended pattern for Ghost Frog pipelines:**
+
+- Use `jfrog/setup-jfrog-cli@v4` with your chosen authentication (e.g. `JF_URL`, `JF_ACCESS_TOKEN`).
+- Set `enable-package-alias: true` on the action to enable Package Aliasing in one step; or, if you prefer or use an older action version, run `jf package-alias install` and append the alias directory to `GITHUB_PATH` in a separate step.
+- Keep existing build steps unchanged (e.g. `npm install`, `mvn package`). Prefer letting the action auto-publish build-info unless you need a custom publish stage.
+
+**Minimal workflow (one step — using native integration):**
+
+```yaml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup JFrog CLI and Package Aliasing
+        uses: jfrog/setup-jfrog-cli@v4
+        with:
+          enable-package-alias: true
+        env:
+          JF_URL: ${{ secrets.JFROG_URL }}
+          JF_ACCESS_TOKEN: ${{ secrets.JFROG_ACCESS_TOKEN }}
+
+      - name: Build
+        run: |
+          npm install
+          npm run build
+          # Build-info collected above is published automatically at job end
+```
+
+**Alternative: manual Package Alias step** (e.g. when not using `enable-package-alias` or on older action versions):
+
+```yaml
+      - name: Setup JFrog CLI
+        uses: jfrog/setup-jfrog-cli@v4
+        env:
+          JF_URL: ${{ secrets.JFROG_URL }}
+          JF_ACCESS_TOKEN: ${{ secrets.JFROG_ACCESS_TOKEN }}
+
+      - name: Enable Ghost Frog package aliases
+        run: |
+          jf package-alias install
+          echo "$HOME/.jfrog/package-alias/bin" >> $GITHUB_PATH
+
+      - name: Build
+        run: |
+          npm install
+          npm run build
+```
+
+---
 
 ## **10. Future Enhancements**
 
@@ -459,6 +555,7 @@ sequenceDiagram
 - [Go syscall.Exec Documentation](https://pkg.go.dev/syscall#Exec)
 - [JFrog CLI Documentation](https://docs.jfrog.io/jfrog-cli)
 - [Microsoft CreateProcess API](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-createprocessa)
+- [setup-jfrog-cli GitHub Action](https://github.com/jfrog/setup-jfrog-cli) (install, configure, and auto publish build-info in GitHub Actions)
 
 ---
 
@@ -474,6 +571,104 @@ sequenceDiagram
 | **Configuration** | Hybrid (default map + optional YAML override) |
 | **Disable/Enable** | Config flag or uninstall |
 | **Platform Support** | Linux, macOS, Windows |
+
+---
+
+## **15. End-to-End Test Cases (User-Centric + Edge Cases)**
+
+This section defines E2E scenarios for validating Ghost Frog (`jf package-alias`) from an end-user perspective across local development and CI usage patterns.
+
+### **15.1 Test Environment Matrix**
+
+Run the suite across:
+
+- OS: Linux, macOS, Windows
+- Shells: bash, zsh, fish, PowerShell, cmd.exe
+- Execution contexts: interactive terminal, CI runners (GitHub Actions, Jenkins)
+- Tool availability states:
+  - Tool installed and present in PATH
+  - Tool missing from system
+  - Multiple versions installed (alias + system package manager + custom install path)
+
+### **15.2 Core E2E Scenarios**
+
+| ID | Scenario | Steps | Expected Result |
+|----|----------|-------|-----------------|
+| E2E-001 | Install aliases on clean user | Run `jf package-alias install`; prepend alias dir to PATH; run `hash -r`; run `which mvn` / `which npm` | Alias dir exists; alias binaries exist; lookup resolves to alias path |
+| E2E-002 | Idempotent reinstall | Run install twice | No corruption; links/copies remain valid; command returns success |
+| E2E-003 | Uninstall rollback | Install, then run `jf package-alias uninstall`; refresh shell hash | Alias dir entries removed; commands resolve to real binaries |
+| E2E-004 | Enable/disable switch | Install; run `jf package-alias disable`; run `mvn -v`; run `jf package-alias enable`; run `mvn -v` again | Disable path bypasses integration and executes real tool; enable restores interception |
+| E2E-005 | Alias dispatch by argv[0] | Invoke `mvn`, `npm`, `go` from alias-enabled shell | JFrog CLI dispatches based on invoked alias tool name |
+| E2E-006 | PATH filter per process | Run aliased command that spawns child command (`mvn` invoking plugin subprocesses) | Parent and children use filtered PATH; no recursive alias bounce |
+| E2E-007 | Recursion prevention under fallback | Force integration failure (missing server config), run `mvn clean install` | Command falls back to real `mvn`; no infinite loop; process exits with real tool exit code |
+| E2E-008 | Real binary missing | Remove/rename real `mvn`, keep alias active, run `mvn -v` | Clear actionable error stating real binary is not found |
+| E2E-009 | PATH contains alias dir multiple times | Add alias dir 2-3 times in PATH; run aliased command | Filter removes all alias entries for current process; no recursion |
+| E2E-010 | PATH contains relative alias path | Add alias dir through relative form and normalized form; run command | Filter handles normalized path equivalence and removes alias visibility |
+| E2E-011 | Shell hash cache stale path | Install alias without `hash -r`; run `mvn`; then run `hash -r`; rerun | Behavior documented: stale cache may hit old path first; after hash refresh alias is used |
+| E2E-012 | Mixed mode policies (`jf`/`env`/`pass`) | Configure per-tool policy map and run `mvn`, `npm`, `go` | Each tool follows configured mode; no cross-tool leakage |
+
+### **15.3 Parallelism and Concurrency E2E**
+
+These scenarios validate the core design claim that PATH filtering is process-local and safe under concurrent runs.
+
+| ID | Scenario | Steps | Expected Result |
+|----|----------|-------|-----------------|
+| E2E-020 | Parallel same tool invocations | Run two `mvn` builds in parallel from same shell | Both complete without recursion, deadlock, or shared-state corruption |
+| E2E-021 | Parallel mixed tools from same shell | Run `mvn clean install`, `npm ci`, and `go build` concurrently | Each process independently filters its own PATH; all commands resolve correctly |
+| E2E-022 | Parallel mixed tools + extra native command | Start `mvn` and `npm` via aliases plus a non-aliased command (for example `curl`) in parallel | Alias logic only affects aliased process trees; unrelated process behavior unchanged |
+| E2E-023 | Concurrent enable/disable race | While two aliased builds run, toggle `jf package-alias disable/enable` in another terminal | Running processes stay stable; new invocations follow latest state flag |
+| E2E-024 | One process fails, others continue | Launch three parallel aliased commands; force one to fail | Failing process exits correctly; other processes continue unaffected |
+| E2E-025 | High fan-out stress | Run 20+ short aliased commands in parallel (matrix: mvn/npm/go) | No recursion, no hangs, deterministic completion, acceptable overhead |
+
+### **15.4 CI/CD E2E Scenarios**
+
+| ID | Scenario | Steps | Expected Result |
+|----|----------|-------|-----------------|
+| E2E-030 | setup-jfrog-cli native integration | In GitHub Actions use `enable-package-alias: true`; run native `npm install`/`mvn test` | Build steps are intercepted through aliases without command rewrites |
+| E2E-031 | Auto build-info publish | Run build workflow with setup action defaults and no explicit `build-publish` | Build-info published once at job end |
+| E2E-032 | Manual publish precedence | Same as above but include explicit `jf rt build-publish` step | Explicit publish takes precedence; no duplicate publish event |
+| E2E-033 | Auto publish disabled | Set `disable-auto-build-publish: true`; run build | Build executes; no automatic publish at end |
+| E2E-034 | Jenkins pipeline compatibility | In Jenkins agent PATH prepend alias dir and run existing native package commands | Existing scripts continue with zero/minimal edits; interception works |
+
+### **15.5 Security, Safety, and Isolation E2E**
+
+| ID | Scenario | Steps | Expected Result |
+|----|----------|-------|-----------------|
+| E2E-040 | Non-root installation | Install aliases as non-admin user | No sudo/system dir modifications required |
+| E2E-041 | System binary integrity | Capture checksum/path for real `mvn` before/after install | Real binaries unchanged |
+| E2E-042 | User-scope cleanup | Delete `~/.jfrog/package-alias/bin` manually and re-run native commands | System returns to native behavior without residual side effects |
+| E2E-043 | Child env inheritance | Aliased command launches nested subprocess chain | Filtered PATH inherited down process tree; aliases not rediscovered |
+| E2E-044 | Cross-session isolation | Run aliased command in shell A and native command in shell B | PATH mutation inside aliased process does not globally mutate user session PATH |
+
+### **15.6 Platform-Specific Edge Cases**
+
+| ID | Scenario | Steps | Expected Result |
+|----|----------|-------|-----------------|
+| E2E-050 | Windows copy-based aliases | Install on Windows and run `where mvn` + `mvn -v` | `.exe` copies dispatch through CLI and resolve real binary after filter |
+| E2E-051 | Windows PATH case-insensitivity | Add alias dir with different casing variants | Filter still removes alias dir logically |
+| E2E-052 | Spaces in user home path | Run on machine with space in home path; install aliases and execute tools | Alias creation and PATH filtering remain correct |
+| E2E-053 | Symlink unsupported environment fallback | Simulate symlink restriction on POSIX-like env and install | Installer fails with clear guidance or uses supported fallback strategy |
+| E2E-054 | Tool name collision | Existing shell alias/function named `mvn` plus package-alias enabled | Behavior is deterministic and documented; CLI path-based interception still verifiable |
+
+### **15.7 Negative and Recovery Cases**
+
+| ID | Scenario | Steps | Expected Result |
+|----|----------|-------|-----------------|
+| E2E-060 | Corrupt state/config file | Corrupt `state.json` or policy config; run aliased command | Clear error and/or safe fallback to real binary; no recursion |
+| E2E-061 | Partial install damage | Remove one alias binary from alias dir and run that tool | Tool-specific error is explicit; other aliases keep working |
+| E2E-062 | Interrupted install | Kill install midway, rerun install | Recovery succeeds; end state consistent |
+| E2E-063 | Broken PATH ordering | Alias dir appended (not prepended) then run tool | Native binary may be used; CLI emits diagnostic/help to fix PATH order |
+| E2E-064 | Unsupported tool invocation | Invoke tool not in alias set | Command behaves natively with no Ghost Frog interference |
+
+### **15.8 Recommended Observability Assertions**
+
+For each E2E case, validate with at least one of:
+
+- Process logs showing detected alias invocation (`argv[0]` tool identity)
+- Diagnostic marker confirming alias dir removed from current process PATH
+- Resolved real binary path used for fallback/exec
+- Exit code parity with native command semantics
+- Timing/throughput comparison under parallel stress (for regression detection)
 
 ---
 

@@ -1,7 +1,6 @@
 package packagealias
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -66,19 +65,12 @@ func (ic *IncludeCommand) ServerDetails() (*config.ServerDetails, error) {
 func setToolMode(tool string, mode AliasMode) error {
 	// Validate tool name
 	tool = strings.ToLower(tool)
-	isValid := false
-	for _, supportedTool := range SupportedTools {
-		if tool == supportedTool {
-			isValid = true
-			break
-		}
-	}
-	if !isValid {
+	if !isSupportedTool(tool) {
 		return errorutils.CheckError(fmt.Errorf("unsupported tool: %s. Supported tools: %s", tool, strings.Join(SupportedTools, ", ")))
 	}
 
 	// Validate mode
-	if mode != ModeJF && mode != ModeEnv && mode != ModePass {
+	if !validateAliasMode(mode) {
 		return errorutils.CheckError(fmt.Errorf("invalid mode: %s. Valid modes: jf, env, pass", mode))
 	}
 
@@ -93,42 +85,32 @@ func setToolMode(tool string, mode AliasMode) error {
 		return errorutils.CheckError(fmt.Errorf("package aliases are not installed. Run 'jf package-alias install' first"))
 	}
 
-	// Load existing config or create new one
-	configPath := filepath.Join(aliasDir, configFile)
-	cfg := &Config{
-		ToolModes: make(map[string]AliasMode),
-		Enabled:   true,
-	}
-
-	if data, err := os.ReadFile(configPath); err == nil {
-		if err := json.Unmarshal(data, cfg); err != nil {
-			log.Warn(fmt.Sprintf("Failed to parse existing config, creating new one: %v", err))
+	// Load and update config under lock
+	if err = withConfigLock(aliasDir, func() error {
+		cfg, loadErr := loadConfig(aliasDir)
+		if loadErr != nil {
+			return loadErr
 		}
-	}
+		if !isConfiguredTool(cfg, tool) {
+			return errorutils.CheckError(fmt.Errorf("tool %s is not currently configured for aliasing. Reinstall with --packages to include it", tool))
+		}
 
-	// Update tool mode
-	cfg.ToolModes[tool] = mode
-
-	// Save config
-	jsonData, err := json.MarshalIndent(cfg, "", "  ")
-	if err != nil {
-		return errorutils.CheckError(err)
-	}
-
-	if err := os.WriteFile(configPath, jsonData, 0644); err != nil {
-		return errorutils.CheckError(err)
+		cfg.ToolModes[tool] = mode
+		return writeConfig(aliasDir, cfg)
+	}); err != nil {
+		return err
 	}
 
 	// Show result
 	modeDescription := map[AliasMode]string{
-		ModeJF:  "intercepted by JFrog CLI",
-		ModeEnv: "run natively with environment injection",
+		ModeJF:   "intercepted by JFrog CLI",
+		ModeEnv:  "run natively with environment injection",
 		ModePass: "run natively (excluded from interception)",
 	}
 
 	log.Info(fmt.Sprintf("Tool '%s' is now configured to: %s", tool, modeDescription[mode]))
 	log.Info(fmt.Sprintf("Mode: %s", mode))
-	
+
 	if mode == ModePass {
 		log.Info(fmt.Sprintf("When you run '%s', it will execute the native tool directly without JFrog CLI interception.", tool))
 	} else if mode == ModeJF {
@@ -137,4 +119,3 @@ func setToolMode(tool string, mode AliasMode) error {
 
 	return nil
 }
-

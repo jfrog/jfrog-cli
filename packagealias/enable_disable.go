@@ -1,7 +1,6 @@
 package packagealias
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -72,16 +71,14 @@ func setEnabledState(enabled bool) error {
 		return errorutils.CheckError(fmt.Errorf("package aliases are not installed. Run 'jf package-alias install' first"))
 	}
 
-	// Update state file
-	statePath := filepath.Join(aliasDir, stateFile)
-	state := &State{Enabled: enabled}
-
-	jsonData, err := json.MarshalIndent(state, "", "  ")
-	if err != nil {
-		return errorutils.CheckError(err)
-	}
-
-	if err := os.WriteFile(statePath, jsonData, 0644); err != nil {
+	if err := withConfigLock(aliasDir, func() error {
+		config, loadErr := loadConfig(aliasDir)
+		if loadErr != nil {
+			return loadErr
+		}
+		config.Enabled = enabled
+		return writeConfig(aliasDir, config)
+	}); err != nil {
 		return errorutils.CheckError(err)
 	}
 

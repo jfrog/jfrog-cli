@@ -1,12 +1,12 @@
 package packagealias
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -14,10 +14,11 @@ import (
 )
 
 type InstallCommand struct {
+	packagesArg string
 }
 
-func NewInstallCommand() *InstallCommand {
-	return &InstallCommand{}
+func NewInstallCommand(packagesArg string) *InstallCommand {
+	return &InstallCommand{packagesArg: packagesArg}
 }
 
 func (ic *InstallCommand) CommandName() string {
@@ -52,24 +53,42 @@ func (ic *InstallCommand) Run() error {
 	}
 	log.Debug(fmt.Sprintf("Using jf binary at: %s", jfPath))
 
-	// 3. Create symlinks/copies for each supported tool
+	selectedTools, err := parsePackageList(ic.packagesArg)
+	if err != nil {
+		return err
+	}
+
+	// 3. Create symlinks/copies for selected tools and remove unselected aliases
+	selectedToolsSet := make(map[string]struct{}, len(selectedTools))
+	for _, tool := range selectedTools {
+		selectedToolsSet[tool] = struct{}{}
+	}
+
 	createdCount := 0
 	for _, tool := range SupportedTools {
-		// Create alias
 		aliasPath := filepath.Join(binDir, tool)
 		if runtime.GOOS == "windows" {
 			aliasPath += ".exe"
+		}
+
+		if _, shouldInstall := selectedToolsSet[tool]; !shouldInstall {
+			if removeErr := os.Remove(aliasPath); removeErr != nil && !os.IsNotExist(removeErr) {
+				log.Warn(fmt.Sprintf("Failed to remove alias for %s: %v", tool, removeErr))
+			}
+			continue
+		}
+
+		if runtime.GOOS == "windows" {
 			// On Windows, we need to copy the binary
-			if err := copyFile(jfPath, aliasPath); err != nil {
-				log.Warn(fmt.Sprintf("Failed to create alias for %s: %v", tool, err))
+			if copyErr := copyFile(jfPath, aliasPath); copyErr != nil {
+				log.Warn(fmt.Sprintf("Failed to create alias for %s: %v", tool, copyErr))
 				continue
 			}
 		} else {
 			// On Unix, create symlink
-			// Remove existing symlink if any
-			os.Remove(aliasPath)
-			if err := os.Symlink(jfPath, aliasPath); err != nil {
-				log.Warn(fmt.Sprintf("Failed to create alias for %s: %v", tool, err))
+			_ = os.Remove(aliasPath)
+			if symlinkErr := os.Symlink(jfPath, aliasPath); symlinkErr != nil {
+				log.Warn(fmt.Sprintf("Failed to create alias for %s: %v", tool, symlinkErr))
 				continue
 			}
 		}
@@ -77,29 +96,35 @@ func (ic *InstallCommand) Run() error {
 		log.Debug(fmt.Sprintf("Created alias: %s -> %s", aliasPath, jfPath))
 	}
 
-	// 4. Create default config
-	config := &Config{
-		Enabled:   true,
-		ToolModes: make(map[string]AliasMode),
-	}
-	// Set default modes
-	for _, tool := range SupportedTools {
-		config.ToolModes[tool] = ModeJF
-	}
-	configPath := filepath.Join(aliasDir, configFile)
-	if err := saveJSON(configPath, config); err != nil {
-		return errorutils.CheckError(err)
+	jfHash, err := computeFileSHA256(jfPath)
+	if err != nil {
+		log.Warn(fmt.Sprintf("Failed computing jf binary hash: %v", err))
 	}
 
-	// 5. Create enabled state
-	state := &State{Enabled: true}
-	statePath := filepath.Join(aliasDir, stateFile)
-	if err := saveJSON(statePath, state); err != nil {
+	// 4. Load and update config under lock
+	if err = withConfigLock(aliasDir, func() error {
+		config, loadErr := loadConfig(aliasDir)
+		if loadErr != nil {
+			return loadErr
+		}
+
+		for _, tool := range selectedTools {
+			if _, exists := config.ToolModes[tool]; !exists {
+				config.ToolModes[tool] = ModeJF
+			}
+		}
+
+		config.EnabledTools = append([]string(nil), selectedTools...)
+		config.JfBinarySHA256 = jfHash
+		config.Enabled = true
+		return writeConfig(aliasDir, config)
+	}); err != nil {
 		return errorutils.CheckError(err)
 	}
 
 	// Success message
 	log.Info(fmt.Sprintf("Created %d aliases in %s", createdCount, binDir))
+	log.Info(fmt.Sprintf("Configured packages: %s", strings.Join(selectedTools, ", ")))
 	log.Info("\nTo enable package aliasing, add this to your shell configuration:")
 
 	if runtime.GOOS == "windows" {
@@ -142,12 +167,4 @@ func copyFile(src, dst string) error {
 
 	_, err = io.Copy(dstFile, srcFile)
 	return err
-}
-
-func saveJSON(path string, data interface{}) error {
-	jsonData, err := json.MarshalIndent(data, "", "  ")
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(path, jsonData, 0644)
 }

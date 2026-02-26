@@ -1,11 +1,9 @@
 package packagealias
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"syscall"
 
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -23,13 +21,7 @@ func DispatchIfAlias() error {
 	log.Debug(fmt.Sprintf("Detected running as alias: %s", tool))
 	log.Info(fmt.Sprintf("👻 Ghost Frog: Intercepting '%s' command", tool))
 
-	// CRITICAL: Remove alias directory from PATH to prevent recursion
-	// When jf mvn internally needs to execute the real mvn command, it will use
-	// exec.LookPath("mvn") or exec.Command("mvn", ...). These functions use the
-	// current process's PATH environment variable. By filtering out the alias
-	// directory from PATH here (in the same process), we ensure that subsequent
-	// lookups will find the real mvn binary, not our alias, preventing infinite
-	// recursion: mvn → jf mvn → mvn → jf mvn → ...
+	// Filter alias dir from PATH to prevent recursion.
 	if err := DisableAliasesForThisProcess(); err != nil {
 		log.Warn(fmt.Sprintf("Failed to filter PATH: %v", err))
 	}
@@ -41,7 +33,7 @@ func DispatchIfAlias() error {
 	}
 
 	// Load tool configuration
-	mode := getToolMode(tool)
+	mode := getToolMode(tool, os.Args[1:])
 
 	switch mode {
 	case ModeJF:
@@ -65,57 +57,28 @@ func isEnabled() bool {
 	if err != nil {
 		return false
 	}
-
-	statePath := filepath.Join(aliasDir, stateFile)
-	data, err := os.ReadFile(statePath)
-	if err != nil {
-		// If state file doesn't exist, assume enabled
-		return true
-	}
-
-	var state State
-	if err := json.Unmarshal(data, &state); err != nil {
-		return true
-	}
-
-	return state.Enabled
+	return getEnabledState(aliasDir)
 }
 
-// getToolMode returns the configured mode for a tool
-func getToolMode(tool string) AliasMode {
+// getToolMode returns the effective mode for a tool.
+func getToolMode(tool string, args []string) AliasMode {
 	aliasDir, err := GetAliasHomeDir()
 	if err != nil {
 		return ModeJF
 	}
 
-	configPath := filepath.Join(aliasDir, configFile)
-	data, err := os.ReadFile(configPath)
+	config, err := loadConfig(aliasDir)
 	if err != nil {
-		// Default to JF mode if no config
+		log.Warn(fmt.Sprintf("Failed to read package-alias config: %v. Falling back to default mode.", err))
 		return ModeJF
 	}
-
-	var config Config
-	if err := json.Unmarshal(data, &config); err != nil {
-		return ModeJF
-	}
-
-	if mode, ok := config.ToolModes[tool]; ok {
-		return mode
-	}
-
-	return ModeJF
+	return getModeForTool(config, tool, args)
 }
 
-// runJFMode runs the tool through JFrog CLI integration
+// runJFMode rewrites invocation to `jf <tool> <args>`.
 func runJFMode(tool string, args []string) error {
-	// Transform os.Args to look like "jf <tool> <args>"
-	// Use os.Executable() to get the actual executable path (handles symlinks)
-	// Original: ["mvn", "clean", "install"] or ["/path/to/mvn", "clean", "install"]
-	// Result:   ["/path/to/jf", "mvn", "clean", "install"]
 	execPath, err := os.Executable()
 	if err != nil {
-		// Fallback to os.Args[0] if Executable() fails
 		execPath = os.Args[0]
 	}
 
@@ -129,7 +92,6 @@ func runJFMode(tool string, args []string) error {
 	log.Debug(fmt.Sprintf("Running in JF mode: %v", os.Args))
 	log.Info(fmt.Sprintf("👻 Ghost Frog: Transforming '%s' to 'jf %s'", tool, tool))
 
-	// Return nil to continue with normal jf command processing
 	return nil
 }
 
@@ -140,9 +102,8 @@ func runEnvMode(tool string, args []string) error {
 	return execRealTool(tool, args)
 }
 
-// execRealTool executes the real binary, replacing the current process
+// execRealTool replaces current process with real tool binary.
 func execRealTool(tool string, args []string) error {
-	// Find the real tool (PATH has been filtered)
 	realPath, err := exec.LookPath(tool)
 	if err != nil {
 		return fmt.Errorf("could not find real %s: %w", tool, err)
@@ -150,10 +111,6 @@ func execRealTool(tool string, args []string) error {
 
 	log.Debug(fmt.Sprintf("Executing real tool: %s", realPath))
 
-	// Prepare arguments - first arg should be the tool name
 	argv := append([]string{tool}, args...)
-
-	// On Unix, use syscall.Exec to replace the process
-	// This is the cleanest way - no subprocess, just exec
 	return syscall.Exec(realPath, argv, os.Environ())
 }
