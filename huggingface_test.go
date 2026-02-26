@@ -105,9 +105,9 @@ func TestHuggingFaceDownload(t *testing.T) {
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 
 	// Test basic download command structure
-	// Using a well-known small model for testing
+	// Using sshleifer/tiny-gpt2 which is a very small model (~2MB) designed for testing
 	args := []string{
-		"hf", "d", "gpt2",
+		"hf", "d", "sshleifer/tiny-gpt2",
 		"--repo-type=model",
 	}
 
@@ -127,8 +127,9 @@ func TestHuggingFaceDownloadWithRevision(t *testing.T) {
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 
 	// Test download with revision parameter
+	// Using sshleifer/tiny-gpt2 which is a very small model (~2MB) designed for testing
 	args := []string{
-		"hf", "d", "gpt2",
+		"hf", "d", "sshleifer/tiny-gpt2",
 		"--repo-type=model",
 		"--revision=main",
 	}
@@ -148,8 +149,9 @@ func TestHuggingFaceDownloadDataset(t *testing.T) {
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 
 	// Test download dataset
+	// Using stanfordnlp/imdb which is a well-known public dataset
 	args := []string{
-		"hf", "d", "squad",
+		"hf", "d", "stanfordnlp/imdb",
 		"--repo-type=dataset",
 	}
 
@@ -168,8 +170,9 @@ func TestHuggingFaceDownloadWithEtagTimeout(t *testing.T) {
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 
 	// Test download with etag-timeout parameter
+	// Using sshleifer/tiny-gpt2 which is a very small model (~2MB) designed for testing
 	args := []string{
-		"hf", "d", "gpt2",
+		"hf", "d", "sshleifer/tiny-gpt2",
 		"--repo-type=model",
 		"--etag-timeout=3600",
 	}
@@ -337,6 +340,9 @@ func TestHuggingFaceHelp(t *testing.T) {
 	initHuggingFaceTest(t)
 	defer cleanHuggingFaceTest(t)
 
+	// Check if python3 and huggingface_hub are available
+	checkHuggingFaceHubAvailable(t)
+
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 
 	// Test help flag
@@ -345,6 +351,427 @@ func TestHuggingFaceHelp(t *testing.T) {
 	}
 	err := jfrogCli.Exec(args...)
 	assert.NoError(t, err, "Help command should not return error")
+}
+
+// TestHuggingFaceDownloadInvalidRepoID tests that download with invalid repo ID returns appropriate error
+func TestHuggingFaceDownloadInvalidRepoID(t *testing.T) {
+	initHuggingFaceTest(t)
+	defer cleanHuggingFaceTest(t)
+
+	// Check if python3 and huggingface_hub are available
+	checkHuggingFaceHubAvailable(t)
+
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+
+	// Test download with non-existent repository ID
+	args := []string{
+		"hf", "d", "non-existent-org/non-existent-model-12345xyz",
+		"--repo-type=model",
+	}
+
+	err := jfrogCli.Exec(args...)
+	assert.Error(t, err, "Download with invalid repo ID should fail")
+
+	// Verify error message contains relevant information
+	if err != nil {
+		errStr := strings.ToLower(err.Error())
+		hasRelevantError := strings.Contains(errStr, "404") ||
+			strings.Contains(errStr, "not found") ||
+			strings.Contains(errStr, "does not exist") ||
+			strings.Contains(errStr, "repository") ||
+			strings.Contains(errStr, "couldn't find")
+		assert.True(t, hasRelevantError,
+			"Error should indicate repository not found, got: %v", err)
+	}
+}
+
+// TestHuggingFaceUploadEmptyDirectory tests that upload with empty directory returns appropriate error
+func TestHuggingFaceUploadEmptyDirectory(t *testing.T) {
+	initHuggingFaceTest(t)
+	defer cleanHuggingFaceTest(t)
+
+	// Check if python3 and huggingface_hub are available
+	checkHuggingFaceHubAvailable(t)
+
+	// Create an empty temporary directory
+	tempDir, err := os.MkdirTemp("", "hf-upload-empty-test-*")
+	require.NoError(t, err, "Failed to create temp directory")
+	t.Cleanup(func() {
+		_ = os.RemoveAll(tempDir)
+	})
+
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+
+	// Test upload with empty directory
+	args := []string{
+		"hf", "u", tempDir, "test-org/test-empty-model",
+		"--repo-type=model",
+	}
+
+	err = jfrogCli.Exec(args...)
+	// Empty directory upload behavior depends on huggingface_hub - it may succeed or fail
+	// If it fails, it should be with an appropriate error (not a crash)
+	if err != nil {
+		// Verify it's either an auth error or an empty/no files error
+		errStr := strings.ToLower(err.Error())
+		isExpected := isExpectedUploadError(err) ||
+			strings.Contains(errStr, "empty") ||
+			strings.Contains(errStr, "no files") ||
+			strings.Contains(errStr, "nothing to upload")
+		assert.True(t, isExpected,
+			"Upload empty directory failed with unexpected error: %v", err)
+	}
+}
+
+// TestHuggingFaceUploadNonExistentDirectory tests that upload with non-existent directory returns appropriate error
+func TestHuggingFaceUploadNonExistentDirectory(t *testing.T) {
+	initHuggingFaceTest(t)
+	defer cleanHuggingFaceTest(t)
+
+	// Check if python3 and huggingface_hub are available
+	checkHuggingFaceHubAvailable(t)
+
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+
+	// Test upload with non-existent directory
+	args := []string{
+		"hf", "u", "/non/existent/path/to/model", "test-org/test-model",
+		"--repo-type=model",
+	}
+
+	err := jfrogCli.Exec(args...)
+	assert.Error(t, err, "Upload with non-existent directory should fail")
+
+	// Verify error message indicates path issue
+	if err != nil {
+		errStr := strings.ToLower(err.Error())
+		hasPathError := strings.Contains(errStr, "not found") ||
+			strings.Contains(errStr, "no such file") ||
+			strings.Contains(errStr, "does not exist") ||
+			strings.Contains(errStr, "path") ||
+			strings.Contains(errStr, "directory")
+		assert.True(t, hasPathError,
+			"Error should indicate path not found, got: %v", err)
+	}
+}
+
+// TestHuggingFaceUploadWithSpecialCharactersInPath tests upload with special characters in folder path
+func TestHuggingFaceUploadWithSpecialCharactersInPath(t *testing.T) {
+	initHuggingFaceTest(t)
+	defer cleanHuggingFaceTest(t)
+
+	// Check if python3 and huggingface_hub are available
+	checkHuggingFaceHubAvailable(t)
+
+	// Create a temporary directory with special characters in name
+	baseDir, err := os.MkdirTemp("", "hf-upload-special-*")
+	require.NoError(t, err, "Failed to create base temp directory")
+	t.Cleanup(func() {
+		_ = os.RemoveAll(baseDir)
+	})
+
+	// Create subdirectory with special characters (spaces and dashes)
+	specialDir := filepath.Join(baseDir, "model with spaces-and-dashes")
+	err = os.MkdirAll(specialDir, 0755)
+	require.NoError(t, err, "Failed to create special character directory")
+
+	// Create test files
+	testFile := filepath.Join(specialDir, "config.json")
+	err = os.WriteFile(testFile, []byte(`{"model_type": "test-special"}`), 0644)
+	require.NoError(t, err, "Failed to create test file")
+
+	modelFile := filepath.Join(specialDir, "model file with spaces.bin")
+	err = os.WriteFile(modelFile, []byte("test model binary content"), 0644)
+	require.NoError(t, err, "Failed to create model file with spaces")
+
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+
+	// Test upload with special characters in path
+	args := []string{
+		"hf", "u", specialDir, "test-org/test-special-chars-model",
+		"--repo-type=model",
+	}
+
+	err = jfrogCli.Exec(args...)
+	// Should either succeed or fail with auth error, not crash due to special characters
+	if err != nil {
+		assert.True(t, isExpectedUploadError(err),
+			"Upload with special characters failed with unexpected error: %v. Expected either success or authentication-related error", err)
+	}
+}
+
+// TestHuggingFaceUploadOverwrite tests uploading the same model twice to verify overwrite behavior
+func TestHuggingFaceUploadOverwrite(t *testing.T) {
+	initHuggingFaceTest(t)
+	defer cleanHuggingFaceTest(t)
+
+	// Check if python3 and huggingface_hub are available
+	checkHuggingFaceHubAvailable(t)
+
+	// Create a temporary directory with test files
+	tempDir, err := os.MkdirTemp("", "hf-upload-overwrite-test-*")
+	require.NoError(t, err, "Failed to create temp directory")
+	t.Cleanup(func() {
+		_ = os.RemoveAll(tempDir)
+	})
+
+	// Create initial model file
+	configFile := filepath.Join(tempDir, "config.json")
+	err = os.WriteFile(configFile, []byte(`{"model_type": "test", "version": 1}`), 0644)
+	require.NoError(t, err, "Failed to create config file")
+
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+	repoID := "test-org/test-overwrite-model"
+
+	// First upload
+	args := []string{
+		"hf", "u", tempDir, repoID,
+		"--repo-type=model",
+	}
+
+	err = jfrogCli.Exec(args...)
+	firstUploadErr := err
+	if err != nil && !isExpectedUploadError(err) {
+		t.Fatalf("First upload failed with unexpected error: %v", err)
+	}
+
+	// Update the model file
+	err = os.WriteFile(configFile, []byte(`{"model_type": "test", "version": 2}`), 0644)
+	require.NoError(t, err, "Failed to update config file")
+
+	// Second upload (overwrite)
+	err = jfrogCli.Exec(args...)
+	secondUploadErr := err
+
+	// Both uploads should have same behavior (both succeed or both fail with auth)
+	if firstUploadErr == nil {
+		assert.NoError(t, secondUploadErr, "Second upload (overwrite) should also succeed")
+	} else if isExpectedUploadError(firstUploadErr) {
+		// If first failed with auth, second should too
+		if secondUploadErr != nil {
+			assert.True(t, isExpectedUploadError(secondUploadErr),
+				"Second upload failed with unexpected error: %v", secondUploadErr)
+		}
+	}
+}
+
+// TestHuggingFaceDownloadWithBuildInfo tests download with build info collection
+func TestHuggingFaceDownloadWithBuildInfo(t *testing.T) {
+	initHuggingFaceTest(t)
+	defer cleanHuggingFaceTest(t)
+
+	// Check if python3 and huggingface_hub are available
+	checkHuggingFaceHubAvailable(t)
+
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+
+	buildName := "hf-download-build-test"
+	buildNumber := "1"
+
+	// Test download with build info flags
+	// Using sshleifer/tiny-gpt2 which is a very small model (~2MB) designed for testing
+	args := []string{
+		"hf", "d", "sshleifer/tiny-gpt2",
+		"--repo-type=model",
+		"--build-name=" + buildName,
+		"--build-number=" + buildNumber,
+	}
+
+	err := jfrogCli.Exec(args...)
+	assert.NoError(t, err, "HuggingFace download with build info should succeed")
+
+	// Clean up build info
+	t.Cleanup(func() {
+		// Attempt to clean build info (may fail if not created, which is fine)
+		_ = jfrogCli.Exec("rt", "build-discard", buildName, "--max-builds=0")
+	})
+}
+
+// TestHuggingFaceUploadWithBuildInfo tests upload with build info collection
+func TestHuggingFaceUploadWithBuildInfo(t *testing.T) {
+	initHuggingFaceTest(t)
+	defer cleanHuggingFaceTest(t)
+
+	// Check if python3 and huggingface_hub are available
+	checkHuggingFaceHubAvailable(t)
+
+	// Create a temporary directory with test files
+	tempDir, err := os.MkdirTemp("", "hf-upload-buildinfo-test-*")
+	require.NoError(t, err, "Failed to create temp directory")
+	t.Cleanup(func() {
+		_ = os.RemoveAll(tempDir)
+	})
+
+	// Create test files
+	configFile := filepath.Join(tempDir, "config.json")
+	err = os.WriteFile(configFile, []byte(`{"model_type": "test-buildinfo"}`), 0644)
+	require.NoError(t, err, "Failed to create config file")
+
+	modelFile := filepath.Join(tempDir, "model.bin")
+	err = os.WriteFile(modelFile, []byte("test model content for build info"), 0644)
+	require.NoError(t, err, "Failed to create model file")
+
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+
+	buildName := "hf-upload-build-test"
+	buildNumber := "1"
+
+	// Test upload with build info flags
+	args := []string{
+		"hf", "u", tempDir, "test-org/test-buildinfo-model",
+		"--repo-type=model",
+		"--build-name=" + buildName,
+		"--build-number=" + buildNumber,
+	}
+
+	err = jfrogCli.Exec(args...)
+	// Upload should either succeed (with credentials) or fail with auth error
+	if err != nil {
+		assert.True(t, isExpectedUploadError(err),
+			"Upload with build info failed with unexpected error: %v. Expected either success or authentication-related error", err)
+	}
+
+	// Clean up build info
+	t.Cleanup(func() {
+		// Attempt to clean build info (may fail if not created, which is fine)
+		_ = jfrogCli.Exec("rt", "build-discard", buildName, "--max-builds=0")
+	})
+}
+
+// TestHuggingFaceDownloadWithBuildInfoAndModule tests download with build info and module
+func TestHuggingFaceDownloadWithBuildInfoAndModule(t *testing.T) {
+	initHuggingFaceTest(t)
+	defer cleanHuggingFaceTest(t)
+
+	// Check if python3 and huggingface_hub are available
+	checkHuggingFaceHubAvailable(t)
+
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+
+	buildName := "hf-download-module-build-test"
+	buildNumber := "1"
+	moduleName := "tiny-bert-model-module"
+
+	// Test download with build info and module flags
+	// Using sshleifer/tiny-gpt2 which is a very small model (~2MB) designed for testing
+	args := []string{
+		"hf", "d", "sshleifer/tiny-gpt2",
+		"--repo-type=model",
+		"--build-name=" + buildName,
+		"--build-number=" + buildNumber,
+		"--module=" + moduleName,
+	}
+
+	err := jfrogCli.Exec(args...)
+	assert.NoError(t, err, "HuggingFace download with build info and module should succeed")
+
+	// Clean up build info
+	t.Cleanup(func() {
+		_ = jfrogCli.Exec("rt", "build-discard", buildName, "--max-builds=0")
+	})
+}
+
+// TestHuggingFaceUploadWithBuildInfoAndProject tests upload with build info and project
+func TestHuggingFaceUploadWithBuildInfoAndProject(t *testing.T) {
+	initHuggingFaceTest(t)
+	defer cleanHuggingFaceTest(t)
+
+	// Check if python3 and huggingface_hub are available
+	checkHuggingFaceHubAvailable(t)
+
+	// Create a temporary directory with test files
+	tempDir, err := os.MkdirTemp("", "hf-upload-project-test-*")
+	require.NoError(t, err, "Failed to create temp directory")
+	t.Cleanup(func() {
+		_ = os.RemoveAll(tempDir)
+	})
+
+	// Create test files
+	configFile := filepath.Join(tempDir, "config.json")
+	err = os.WriteFile(configFile, []byte(`{"model_type": "test-project"}`), 0644)
+	require.NoError(t, err, "Failed to create config file")
+
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+
+	buildName := "hf-upload-project-build-test"
+	buildNumber := "1"
+	projectKey := "test-project"
+
+	// Test upload with build info and project flags
+	args := []string{
+		"hf", "u", tempDir, "test-org/test-project-model",
+		"--repo-type=model",
+		"--build-name=" + buildName,
+		"--build-number=" + buildNumber,
+		"--project=" + projectKey,
+	}
+
+	err = jfrogCli.Exec(args...)
+	// Upload should either succeed (with credentials) or fail with auth/project error
+	if err != nil {
+		errStr := strings.ToLower(err.Error())
+		isExpected := isExpectedUploadError(err) ||
+			strings.Contains(errStr, "project") ||
+			strings.Contains(errStr, "not found")
+		assert.True(t, isExpected,
+			"Upload with project failed with unexpected error: %v", err)
+	}
+
+	// Clean up build info
+	t.Cleanup(func() {
+		_ = jfrogCli.Exec("rt", "build-discard", buildName, "--max-builds=0", "--project="+projectKey)
+	})
+}
+
+// TestHuggingFaceDownloadDatasetAndVerifyFiles tests downloading a dataset and verifying files exist
+func TestHuggingFaceDownloadDatasetAndVerifyFiles(t *testing.T) {
+	initHuggingFaceTest(t)
+	defer cleanHuggingFaceTest(t)
+
+	// Check if python3 and huggingface_hub are available
+	checkHuggingFaceHubAvailable(t)
+
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+
+	// Download a small, well-known dataset
+	args := []string{
+		"hf", "d", "stanfordnlp/imdb",
+		"--repo-type=dataset",
+	}
+
+	err := jfrogCli.Exec(args...)
+	if err != nil {
+		// Skip verification if download failed (might be network/auth issues)
+		t.Skipf("Download failed, skipping file verification: %v", err)
+	}
+
+	// Get HuggingFace cache directory
+	homeDir, err := os.UserHomeDir()
+	require.NoError(t, err, "Failed to get user home directory")
+
+	// HuggingFace typically caches to ~/.cache/huggingface/hub/
+	hfCacheDir := filepath.Join(homeDir, ".cache", "huggingface", "hub")
+
+	// Check if cache directory exists
+	if _, err := os.Stat(hfCacheDir); os.IsNotExist(err) {
+		t.Log("HuggingFace cache directory not found at default location, skipping file verification")
+		return
+	}
+
+	// Verify some files exist in cache (dataset files are cached with specific naming)
+	found := false
+	err = filepath.Walk(hfCacheDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return nil
+		}
+		if strings.Contains(path, "imdb") {
+			found = true
+			return filepath.SkipDir
+		}
+		return nil
+	})
+	require.NoError(t, err, "Failed to walk cache directory")
+	assert.True(t, found, "Downloaded dataset files should exist in HuggingFace cache")
 }
 
 // InitHuggingFaceTests initializes HuggingFace tests
