@@ -16,13 +16,15 @@ concurrency:
   cancel-in-progress: true
 jobs:
   Docker-tests:
-    name: Docker tests (${{ matrix.os.name }})
+    name: Docker tests (${{ matrix.os.name }}, containerd-snapshotter=${{ !matrix.disable-containerd-snapshotter }})
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'safe to test')
     strategy:
+      fail-fast: false
       matrix:
         os:
           - name: ubuntu
             version: 24.04
+        disable-containerd-snapshotter: [true, false]
     runs-on: ${{ matrix.os.name }}-${{ matrix.os.version }}
     steps:
       - name: Checkout code
@@ -30,7 +32,8 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
 
-      - name: Configure Docker 29 for Legacy Support
+      - name: Configure Docker with legacy snapshotter
+        if: matrix.disable-containerd-snapshotter == true
         run: |
           sudo bash -c 'cat <<EOF > /etc/docker/daemon.json
           {
@@ -38,6 +41,16 @@ jobs:
             "features": {
               "containerd-snapshotter": false
             }
+          }
+          EOF'
+          sudo systemctl restart docker
+
+      - name: Configure Docker with containerd snapshotter
+        if: matrix.disable-containerd-snapshotter == false
+        run: |
+          sudo bash -c 'cat <<EOF > /etc/docker/daemon.json
+          {
+            "insecure-registries": ["localhost:8082"]
           }
           EOF'
           sudo systemctl restart docker
