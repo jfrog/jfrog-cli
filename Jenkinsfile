@@ -447,7 +447,26 @@ def build(goos, goarch, pkg, fileName) {
                 sh "mv ${jfrogCliRepoDir}${fileName} ${fileName}.unsigned"
                 sh "docker build -t jfrog-cli-sign-tool ."
                 // Run the built image in order to signs the JFrog CLI binary.
-                sh "docker run -v ${jfrogCliRepoDir}build/sign/:/home/frogger jfrog-cli-sign-tool -in ${fileName}.unsigned -out $fileName"
+                def signingExitCode = sh(
+                    script: "docker run -v ${jfrogCliRepoDir}build/sign/:/home/frogger jfrog-cli-sign-tool -in ${fileName}.unsigned -out $fileName",
+                    returnStatus: true
+                )
+                if (signingExitCode != 0) {
+                    echo "=========================================="
+                    echo "Signing failed! Displaying smpkcs11.log:"
+                    echo "=========================================="
+                    sh """#!/bin/bash
+                        if [ -f smpkcs11.log ]; then
+                            cat smpkcs11.log
+                        else
+                            echo "Warning: smpkcs11.log file not found in current directory"
+                            echo "Listing files in current directory:"
+                            ls -la
+                        fi
+                    """
+                    echo "=========================================="
+                    error "Signing failed with exit code ${signingExitCode}"
+                }
                 // Move the JFrog CLI binary from the 'sign' directory, back to its original location.
                 sh "mv $fileName $jfrogCliRepoDir"
             }
