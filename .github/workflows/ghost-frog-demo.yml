@@ -36,9 +36,9 @@ jobs:
           JF_ACCESS_TOKEN: ${{ secrets.JFROG_ACCESS_TOKEN }}
           JF_PROJECT: bhanu
 
-          # Show installation status
-          jf package-alias status
-      
+      - name: Show package-alias status
+        run: jf package-alias status
+
       - name: Verify NPM Interception
         run: |
           echo "🔍 Verifying NPM command interception..."
