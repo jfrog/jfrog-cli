@@ -12,8 +12,15 @@ jobs:
     if: ${{ github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
+          
       - name: Setup Go with cache
         uses: jfrog/.github/actions/install-go-with-cache@main
+        with:
+          go-version-file: go.mod
 
       - uses: jfrog/frogbot@v2
         env:
