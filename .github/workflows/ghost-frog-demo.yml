@@ -25,7 +25,7 @@ jobs:
           node-version: '16'
 
       - name: Setup JFrog CLI
-        uses: jfrog/setup-jfrog-cli@ghost-frog
+        uses: jfrog/setup-jfrog-cli@add-package-alias
         with:
           version: 2.91.0
           download-repository: bhanu-ghost-frog
