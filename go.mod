@@ -1,6 +1,6 @@
 module github.com/jfrog/jfrog-cli
 
-go 1.25.5
+go 1.25.7
 
 replace (
 	// Should not be updated to 0.2.6 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
@@ -16,15 +16,15 @@ require (
 	github.com/docker/docker v28.5.2+incompatible
 	github.com/gocarina/gocsv v0.0.0-20240520201108-78e41c74b4b1
 	github.com/jfrog/archiver/v3 v3.6.3
-	github.com/jfrog/build-info-go v1.13.1-0.20260130140656-2d0d5593fccf
+	github.com/jfrog/build-info-go v1.13.1-0.20260216093441-40a4dc563294
 	github.com/jfrog/gofrog v1.7.6
-	github.com/jfrog/jfrog-cli-application v1.0.2-0.20260202095705-3657239cde88
-	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260206111107-7a05b41040dd
-	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260202114755-cec5fd702f50
+	github.com/jfrog/jfrog-cli-application v1.0.2-0.20260216085810-1ade6c26b3df
+	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260220110856-b6523f01f9c7
+	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260218080258-3bf55ed18973
 	github.com/jfrog/jfrog-cli-evidence v0.8.3-0.20260202100913-d9ee9476845a
-	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20251205121610-171eb9b0000e
-	github.com/jfrog/jfrog-cli-security v1.26.0
-	github.com/jfrog/jfrog-client-go v1.55.1-0.20260203140014-21fa138b604e
+	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260213131956-d1d39bf3a042
+	github.com/jfrog/jfrog-cli-security v1.26.2
+	github.com/jfrog/jfrog-client-go v1.55.1-0.20260225080504-17057750d47b
 	github.com/jszwec/csvutil v1.10.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/spf13/viper v1.21.0
@@ -32,7 +32,7 @@ require (
 	github.com/testcontainers/testcontainers-go v0.35.0
 	github.com/urfave/cli v1.22.17
 	github.com/xeipuuv/gojsonschema v1.2.0
-	golang.org/x/exp v0.0.0-20260112195511-716be5621a96
+	golang.org/x/exp v0.0.0-20260212183809-81e46e3db34a
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -42,7 +42,7 @@ require (
 	dario.cat/mergo v1.0.2 // indirect
 	github.com/AdaLogics/go-fuzz-headers v0.0.0-20240806141605-e8a1dd7889d6 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c // indirect
-	github.com/CycloneDX/cyclonedx-go v0.9.3 // indirect
+	github.com/CycloneDX/cyclonedx-go v0.10.0 // indirect
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.3.0 // indirect
@@ -57,8 +57,7 @@ require (
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/chzyer/readline v1.5.1 // indirect
-	github.com/clipperhouse/stringish v0.1.1 // indirect
-	github.com/clipperhouse/uax29/v2 v2.4.0 // indirect
+	github.com/clipperhouse/uax29/v2 v2.6.0 // indirect
 	github.com/cloudflare/circl v1.6.3 // indirect
 	github.com/containerd/containerd v1.7.29 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
@@ -87,7 +86,7 @@ require (
 	github.com/gfleury/go-bitbucket-v1 v0.0.0-20240917142304-df385efaac68 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.7.0 // indirect
-	github.com/go-git/go-git/v5 v5.16.4 // indirect
+	github.com/go-git/go-git/v5 v5.16.5 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
@@ -141,7 +140,7 @@ require (
 	github.com/jfrog/go-mockhttp v0.3.1 // indirect
 	github.com/jfrog/jfrog-apps-config v1.0.1 // indirect
 	github.com/kevinburke/ssh_config v1.4.0 // indirect
-	github.com/klauspost/compress v1.18.3 // indirect
+	github.com/klauspost/compress v1.18.4 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/klauspost/pgzip v1.2.6 // indirect
 	github.com/ktrysmt/go-bitbucket v0.9.88 // indirect
@@ -229,14 +228,14 @@ require (
 	go.opentelemetry.io/proto/otlp v1.9.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/crypto v0.47.0 // indirect
-	golang.org/x/mod v0.32.0 // indirect
-	golang.org/x/net v0.49.0 // indirect
+	golang.org/x/crypto v0.48.0 // indirect
+	golang.org/x/mod v0.33.0 // indirect
+	golang.org/x/net v0.50.0 // indirect
 	golang.org/x/oauth2 v0.34.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
-	golang.org/x/sys v0.40.0 // indirect
-	golang.org/x/term v0.39.0 // indirect
-	golang.org/x/text v0.33.0 // indirect
+	golang.org/x/sys v0.41.0 // indirect
+	golang.org/x/term v0.40.0 // indirect
+	golang.org/x/text v0.34.0 // indirect
 	golang.org/x/time v0.14.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260122232226-8e98ce8d340d // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260122232226-8e98ce8d340d // indirect
