@@ -40,15 +40,15 @@ jobs:
     name: OIDC tests (${{ matrix.os.name }})
     runs-on: ${{ matrix.os.name }}-${{ matrix.os.version }}
     steps:
-      - name: Setup Go with cache
-        uses: jfrog/.github/actions/install-go-with-cache@main
-        with:
-          go-version-file: go.mod
-
       - name: Checkout the repository
         uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
+          
+      - name: Setup Go with cache
+        uses: jfrog/.github/actions/install-go-with-cache@main
+        with:
+          go-version-file: go.mod
 
       - name: Setup FastCI
         uses: jfrog-fastci/fastci@v0
