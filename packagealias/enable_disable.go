@@ -71,10 +71,15 @@ func setEnabledState(enabled bool) error {
 		return errorutils.CheckError(fmt.Errorf("package aliases are not installed. Run 'jf package-alias install' first"))
 	}
 
-	// Update state file
-	statePath := filepath.Join(aliasDir, stateFile)
-	state := &State{Enabled: enabled}
-	if err := writeJSONAtomic(statePath, state); err != nil {
+	// Update config
+	if err := withConfigLock(aliasDir, func() error {
+		config, loadErr := loadConfig(aliasDir)
+		if loadErr != nil {
+			return loadErr
+		}
+		config.Enabled = enabled
+		return writeConfig(aliasDir, config)
+	}); err != nil {
 		return errorutils.CheckError(err)
 	}
 

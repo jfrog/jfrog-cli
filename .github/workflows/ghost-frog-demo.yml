@@ -31,6 +31,7 @@ jobs:
           download-repository: bhanu-ghost-frog
           enable-package-alias: true
           package-alias-tools: npm,mvn,go,pip,docker
+          custom-server-id: ghost-demo
         env:
           JF_URL: ${{ secrets.JFROG_URL }}
           JF_ACCESS_TOKEN: ${{ secrets.JFROG_ACCESS_TOKEN }}
