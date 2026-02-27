@@ -25,23 +25,17 @@ jobs:
           node-version: '16'
 
       - name: Setup JFrog CLI
-        uses: jfrog/setup-jfrog-cli@v4
+        uses: jfrog/setup-jfrog-cli@ghost-frog
         with:
           version: 2.91.0
           download-repository: bhanu-ghost-frog
+          enable-package-alias: true
+          package-alias-tools: npm,mvn,go,pip,docker
         env:
           JF_URL: ${{ secrets.JFROG_URL }}
           JF_ACCESS_TOKEN: ${{ secrets.JFROG_ACCESS_TOKEN }}
           JF_PROJECT: bhanu
-      
-      - name: Install Ghost Frog Package Aliases
-        run: |
-          echo "👻 Installing Ghost Frog package aliases..."
-          jf package-alias install
-          
-          # Add alias directory to PATH for this job
-          echo "$HOME/.jfrog/package-alias/bin" >> $GITHUB_PATH
-          
+
           # Show installation status
           jf package-alias status
       
