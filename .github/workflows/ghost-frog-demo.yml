@@ -27,7 +27,7 @@ jobs:
       - name: Setup JFrog CLI
         uses: bhanurp/setup-jfrog-cli@add-package-alias
         with:
-          version: 2.91.0
+          version: 2.93.0
           download-repository: bhanu-ghost-frog
           enable-package-alias: true
           package-alias-tools: npm,mvn,go,pip,docker
