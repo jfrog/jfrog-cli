@@ -19,9 +19,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Default HuggingFace repository name in Artifactory
-const defaultHuggingFaceRepo = "huggingface-remote"
-
 func initHuggingFaceTest(t *testing.T) {
 	if !*tests.TestHuggingFace {
 		t.Skip("Skipping HuggingFace test. To run HuggingFace test add the '-test.huggingface=true' option.")
@@ -52,14 +49,6 @@ func initHuggingFaceTest(t *testing.T) {
 	// If HF_ENDPOINT is not set, downloads go directly to HuggingFace Hub (huggingface.co)
 	// If HF_ENDPOINT is set (by user/CI), downloads go through Artifactory
 	// Build info tests will skip if HF_ENDPOINT is not set since they require Artifactory
-}
-
-// getHuggingFaceEndpoint returns the HF_ENDPOINT for Artifactory, constructing it from JFrog URL if not set
-func getHuggingFaceEndpoint() string {
-	if endpoint := os.Getenv("HF_ENDPOINT"); endpoint != "" {
-		return endpoint
-	}
-	return strings.TrimSuffix(*tests.JfrogUrl, "/") + "/artifactory/api/huggingface/" + defaultHuggingFaceRepo
 }
 
 func cleanHuggingFaceTest(t *testing.T) {
@@ -856,9 +845,10 @@ func TestHuggingFaceDownloadAndVerifyCache(t *testing.T) {
 
 	// Verify some files exist in cache (model files are cached with specific naming)
 	found := false
-	err = filepath.Walk(hfCacheDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return nil
+	err = filepath.Walk(hfCacheDir, func(path string, info os.FileInfo, walkErr error) error {
+		if walkErr != nil {
+			// Skip inaccessible directories/files and continue walking
+			return filepath.SkipDir
 		}
 		if strings.Contains(path, "tiny-gpt2") {
 			found = true
