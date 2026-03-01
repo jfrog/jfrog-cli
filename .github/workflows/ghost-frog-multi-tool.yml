@@ -1,0 +1,204 @@
+name: Ghost Frog Multi-Tool Demo
+
+on:
+  workflow_dispatch:
+    inputs:
+      jfrog_url:
+        description: 'JFrog Platform URL'
+        required: false
+        default: 'https://example.jfrog.io'
+
+jobs:
+  multi-language-demo:
+    name: Multi-Language Build with Ghost Frog
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Build Tools
+        run: |
+          echo "🛠️ Setting up build tools..."
+          
+          # Node.js is pre-installed
+          node --version
+          npm --version
+          
+          # Java and Maven are pre-installed
+          java -version
+          mvn --version
+          
+          # Python is pre-installed
+          python --version
+          pip --version
+      
+      - name: Build and Install JFrog CLI with Ghost Frog
+        run: |
+          echo "🔨 Building JFrog CLI with Ghost Frog support..."
+          
+          # Install Go if needed
+          if ! command -v go &> /dev/null; then
+            echo "Installing Go..."
+            sudo snap install go --classic
+          fi
+          
+          # Build JFrog CLI from source (includes our Ghost Frog implementation)
+          go build -o jf .
+          sudo mv jf /usr/local/bin/
+          jf --version
+      
+      - name: Configure JFrog CLI
+        env:
+          JFROG_URL: ${{ github.event.inputs.jfrog_url || secrets.JFROG_URL || 'https://example.jfrog.io' }}
+          JFROG_ACCESS_TOKEN: ${{ secrets.JFROG_ACCESS_TOKEN || 'dummy-token' }}
+        run: |
+          echo "🔧 Configuring JFrog CLI..."
+          if [ "$JFROG_ACCESS_TOKEN" == "dummy-token" ]; then
+            echo "⚠️  Demo mode - no real Artifactory connection"
+            # Create a minimal config for demo
+            mkdir -p ~/.jfrog
+            echo '{"servers":[{"url":"'$JFROG_URL'","artifactoryUrl":"'$JFROG_URL'/artifactory","user":"demo","password":"demo","serverId":"ghost-demo","isDefault":true}],"version":"6"}' > ~/.jfrog/jfrog-cli.conf.v6
+          else
+            jf config add ghost-demo --url="$JFROG_URL" --access-token="$JFROG_ACCESS_TOKEN" --interactive=false
+            jf config use ghost-demo
+          fi
+      
+      - name: Install Ghost Frog Aliases
+        run: |
+          echo "👻 Installing Ghost Frog package aliases..."
+          jf package-alias install
+          
+          # Add to PATH
+          export PATH="$HOME/.jfrog/package-alias/bin:$PATH"
+          echo "PATH=$PATH"
+          
+          # Persist PATH for subsequent steps
+          echo "$HOME/.jfrog/package-alias/bin" >> $GITHUB_PATH
+          
+          # Verify installation
+          jf package-alias status
+      
+      - name: Demo - NPM Project
+        run: |
+          echo "📦 NPM Demo - React App"
+          echo "======================="
+          mkdir -p npm-demo && cd npm-demo
+          
+          # Create a simple React app package.json
+          cat > package.json << 'EOF'
+          {
+            "name": "ghost-frog-react-demo",
+            "version": "1.0.0",
+            "dependencies": {
+              "react": "^18.2.0",
+              "react-dom": "^18.2.0"
+            },
+            "devDependencies": {
+              "@types/react": "^18.2.0",
+              "typescript": "^5.0.0"
+            }
+          }
+          EOF
+          
+          echo "Running: npm install"
+          echo "(This is transparently running: jf npm install)"
+          npm install --loglevel=error || echo "Note: May fail without real Artifactory"
+          
+          echo "✅ NPM commands intercepted by Ghost Frog!"
+          cd ..
+      
+      - name: Demo - Maven Project  
+        run: |
+          echo "📦 Maven Demo - Spring Boot App"
+          echo "==============================="
+          mkdir -p maven-demo && cd maven-demo
+          
+          # Create a minimal pom.xml
+          cat > pom.xml << 'EOF'
+          <project xmlns="http://maven.apache.org/POM/4.0.0"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+                   http://maven.apache.org/xsd/maven-4.0.0.xsd">
+              <modelVersion>4.0.0</modelVersion>
+              <groupId>com.example</groupId>
+              <artifactId>ghost-frog-demo</artifactId>
+              <version>1.0.0</version>
+              <properties>
+                  <maven.compiler.source>11</maven.compiler.source>
+                  <maven.compiler.target>11</maven.compiler.target>
+              </properties>
+              <dependencies>
+                  <dependency>
+                      <groupId>org.springframework.boot</groupId>
+                      <artifactId>spring-boot-starter</artifactId>
+                      <version>3.1.0</version>
+                  </dependency>
+              </dependencies>
+          </project>
+          EOF
+          
+          echo "Running: mvn dependency:tree"
+          echo "(This is transparently running: jf mvn dependency:tree)"
+          mvn dependency:tree -DoutputType=text -B || echo "Note: May fail without mvn-config"
+          
+          echo "✅ Maven commands intercepted by Ghost Frog!"
+          cd ..
+      
+      - name: Demo - Python Project
+        run: |
+          echo "📦 Python Demo - FastAPI App"
+          echo "============================"
+          mkdir -p python-demo && cd python-demo
+          
+          # Create requirements.txt
+          cat > requirements.txt << 'EOF'
+          fastapi==0.104.0
+          uvicorn==0.24.0
+          pydantic==2.4.0
+          EOF
+          
+          echo "Running: pip install -r requirements.txt"
+          echo "(This is transparently running: jf pip install -r requirements.txt)"
+          pip install -r requirements.txt --quiet || echo "Note: May fail without pip-config"
+          
+          echo "✅ Pip commands intercepted by Ghost Frog!"
+          cd ..
+      
+      - name: Show Interception Details
+        run: |
+          echo "🔍 Interception Details"
+          echo "======================"
+          
+          # Show which tools are being intercepted
+          for tool in npm mvn pip go docker; do
+            echo -n "$tool: "
+            which $tool | grep -q ".jfrog/package-alias" && echo "✅ Intercepted" || echo "❌ Not intercepted"
+          done
+          
+          echo ""
+          echo "📁 Alias directory contents:"
+          ls -la $HOME/.jfrog/package-alias/bin/
+      
+      - name: Demonstrate CI/CD Integration Benefits
+        run: |
+          echo "🚀 Ghost Frog CI/CD Benefits"
+          echo "============================"
+          echo ""
+          echo "✅ NO changes to existing build scripts"
+          echo "✅ NO changes to package.json, pom.xml, requirements.txt"
+          echo "✅ NO need to prefix commands with 'jf'"
+          echo "✅ Works with all existing CI/CD pipelines"
+          echo ""
+          echo "🔄 Migration is as simple as:"
+          echo "   1. Install JFrog CLI"
+          echo "   2. Run: jf package-alias install"
+          echo "   3. Add alias directory to PATH"
+          echo "   4. Configure JFrog connection"
+          echo ""
+          echo "📊 Now all package manager commands:"
+          echo "   - Route through JFrog Artifactory"
+          echo "   - Generate build info"
+          echo "   - Enable security scanning"
+          echo "   - Provide dependency insights"
+

@@ -38,6 +38,7 @@ import (
 	"github.com/jfrog/jfrog-cli/general/summary"
 	"github.com/jfrog/jfrog-cli/general/token"
 	"github.com/jfrog/jfrog-cli/missioncontrol"
+	"github.com/jfrog/jfrog-cli/packagealias"
 	"github.com/jfrog/jfrog-cli/pipelines"
 	"github.com/jfrog/jfrog-cli/plugins"
 	"github.com/jfrog/jfrog-cli/plugins/utils"
@@ -81,6 +82,13 @@ func main() {
 }
 
 func execMain() error {
+	// CRITICAL: Check if we're running as a package manager alias FIRST
+	// This must happen before anything else to properly handle interception
+	if err := packagealias.DispatchIfAlias(); err != nil {
+		// If dispatch fails, log but continue (might be a real jf command)
+		clientlog.Debug(fmt.Sprintf("Alias dispatch check: %v", err))
+	}
+
 	// Set JFrog CLI's user-agent on the jfrog-client-go.
 	clientutils.SetUserAgent(coreutils.GetCliUserAgent())
 
@@ -264,6 +272,12 @@ func getCommands() ([]cli.Command, error) {
 			Aliases:     []string{"c"},
 			Usage:       "Server configurations commands.",
 			Subcommands: config.GetCommands(),
+			Category:    commandNamespacesCategory,
+		},
+		{
+			Name:        "package-alias",
+			Usage:       "Transparent package manager interception (Ghost Frog).",
+			Subcommands: packagealias.GetCommands(),
 			Category:    commandNamespacesCategory,
 		},
 		{
