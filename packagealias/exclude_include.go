@@ -111,9 +111,10 @@ func setToolMode(tool string, mode AliasMode) error {
 	log.Info(fmt.Sprintf("Tool '%s' is now configured to: %s", tool, modeDescription[mode]))
 	log.Info(fmt.Sprintf("Mode: %s", mode))
 
-	if mode == ModePass {
+	switch mode {
+	case ModePass:
 		log.Info(fmt.Sprintf("When you run '%s', it will execute the native tool directly without JFrog CLI interception.", tool))
-	} else if mode == ModeJF {
+	case ModeJF:
 		log.Info(fmt.Sprintf("When you run '%s', it will be intercepted and run as 'jf %s'.", tool, tool))
 	}
 

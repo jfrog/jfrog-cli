@@ -84,13 +84,13 @@ func TestWriteConfigCreatesYamlConfig(t *testing.T) {
 }
 
 func TestGetDurationFromEnv(t *testing.T) {
-	require.Equal(t, configLockTimeout, getDurationFromEnv("NON_EXISTENT_ENV", configLockTimeout))
+	require.Equal(t, configLockTimeout, getDurationFromEnv("NON_EXISTENT_ENV"))
 
 	t.Setenv(configLockTimeoutEnv, "2s")
-	require.Equal(t, 2*time.Second, getDurationFromEnv(configLockTimeoutEnv, configLockTimeout))
+	require.Equal(t, 2*time.Second, getDurationFromEnv(configLockTimeoutEnv))
 
 	t.Setenv(configLockTimeoutEnv, "bad-value")
-	require.Equal(t, configLockTimeout, getDurationFromEnv(configLockTimeoutEnv, configLockTimeout))
+	require.Equal(t, configLockTimeout, getDurationFromEnv(configLockTimeoutEnv))
 }
 
 func TestWithConfigLockTimeoutWhenLockExists(t *testing.T) {

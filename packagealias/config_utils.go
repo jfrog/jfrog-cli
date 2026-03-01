@@ -139,18 +139,18 @@ func withConfigLock(aliasDir string, action func() error) error {
 }
 
 func getConfigLockTimeout() time.Duration {
-	return getDurationFromEnv(configLockTimeoutEnv, configLockTimeout)
+	return getDurationFromEnv(configLockTimeoutEnv)
 }
 
-func getDurationFromEnv(envVarName string, defaultValue time.Duration) time.Duration {
+func getDurationFromEnv(envVarName string) time.Duration {
 	rawValue := strings.TrimSpace(os.Getenv(envVarName))
 	if rawValue == "" {
-		return defaultValue
+		return configLockTimeout
 	}
 	parsedValue, err := time.ParseDuration(rawValue)
 	if err != nil || parsedValue <= 0 {
-		log.Warn(fmt.Sprintf("Invalid %s value '%s'. Falling back to default %s.", envVarName, rawValue, defaultValue))
-		return defaultValue
+		log.Warn(fmt.Sprintf("Invalid %s value '%s'. Falling back to default %s.", envVarName, rawValue, configLockTimeout))
+		return configLockTimeout
 	}
 	return parsedValue
 }
@@ -300,7 +300,9 @@ func computeFileSHA256(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	hash := sha256.New()
 	if _, err = io.Copy(hash, file); err != nil {
