@@ -19,18 +19,19 @@ func DispatchIfAlias() error {
 	}
 
 	log.Debug(fmt.Sprintf("Detected running as alias: %s", tool))
-	log.Info(fmt.Sprintf("👻 Ghost Frog: Intercepting '%s' command", tool))
 
 	// Filter alias dir from PATH to prevent recursion.
 	if err := DisableAliasesForThisProcess(); err != nil {
 		log.Warn(fmt.Sprintf("Failed to filter PATH: %v", err))
 	}
 
-	// Check if aliasing is enabled
+	// Check if aliasing is enabled before intercepting
 	if !isEnabled() {
-		log.Debug("Package aliasing is disabled, running native tool")
+		log.Info(fmt.Sprintf("Package aliasing is disabled - running native '%s'", tool))
 		return execRealTool(tool, os.Args[1:])
 	}
+
+	log.Info(fmt.Sprintf("👻 Ghost Frog: Intercepting '%s' command", tool))
 
 	// Load tool configuration
 	mode := getToolMode(tool, os.Args[1:])

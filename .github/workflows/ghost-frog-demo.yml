@@ -14,6 +14,7 @@ jobs:
     env:
       JFROG_CLI_BUILD_NAME: ghost-frog-demo
       JFROG_CLI_BUILD_NUMBER: ${{ github.run_number }}
+      JFROG_CLI_HOME_DIR: ${{ runner.temp }}/jfrog-cli-home
     
     steps:
       - name: Checkout code
