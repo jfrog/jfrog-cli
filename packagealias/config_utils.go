@@ -124,7 +124,7 @@ func withConfigLock(aliasDir string, action func() error) error {
 			}()
 			return action()
 		}
-		if !os.IsExist(err) {
+		if !isLockContention(err) {
 			return errorutils.CheckError(err)
 		}
 		if time.Now().After(deadline) {
@@ -136,6 +136,20 @@ func withConfigLock(aliasDir string, action func() error) error {
 		}
 		time.Sleep(configLockRetryWait)
 	}
+}
+
+// isLockContention returns true when the error from creating the lock file
+// indicates another process/goroutine holds the lock. On Unix this is
+// always os.IsExist. On Windows, a pending-delete lock file can also
+// cause ERROR_ACCESS_DENIED, which we must treat as contention to retry.
+func isLockContention(err error) bool {
+	if os.IsExist(err) {
+		return true
+	}
+	if runtime.GOOS == "windows" && os.IsPermission(err) {
+		return true
+	}
+	return false
 }
 
 func getConfigLockTimeout() time.Duration {
