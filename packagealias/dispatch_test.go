@@ -49,4 +49,3 @@ func TestGetToolModeInvalidFallsBackToDefault(t *testing.T) {
 
 	require.Equal(t, ModeJF, getToolMode("npm", []string{"install"}))
 }
-

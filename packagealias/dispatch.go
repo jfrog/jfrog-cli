@@ -113,5 +113,6 @@ func execRealTool(tool string, args []string) error {
 	log.Debug(fmt.Sprintf("Executing real tool: %s", realPath))
 
 	argv := append([]string{tool}, args...)
+	// #nosec G702 -- realPath is resolved via exec.LookPath from a controlled tool name, not arbitrary user input.
 	return syscall.Exec(realPath, argv, os.Environ())
 }

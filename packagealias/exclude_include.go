@@ -101,7 +101,7 @@ func setToolMode(tool string, mode AliasMode) error {
 		return err
 	}
 
-	// Show result
+	// #nosec G101 -- False positive: map values are UI descriptions, not credentials.
 	modeDescription := map[AliasMode]string{
 		ModeJF:   "intercepted by JFrog CLI",
 		ModeEnv:  "run natively with environment injection",
