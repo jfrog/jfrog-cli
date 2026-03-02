@@ -74,6 +74,19 @@ func GetAliasBinDir() (string, error) {
 
 // IsRunningAsAlias returns whether the current process was invoked through
 // a package-alias entry and, if so, the detected tool name.
+// jfrogCLINames are binary names that must never be treated as aliases.
+// Checking these first avoids iterating SupportedTools on every normal
+// CLI invocation (the overwhelmingly common case).
+var jfrogCLINames = map[string]struct{}{
+	"jf":    {},
+	"jfrog": {},
+}
+
+func isJFrogCLIName(name string) bool {
+	_, found := jfrogCLINames[name]
+	return found
+}
+
 func IsRunningAsAlias() (bool, string) {
 	if len(os.Args) == 0 {
 		return false, ""
@@ -81,9 +94,12 @@ func IsRunningAsAlias() (bool, string) {
 
 	invokeName := filepath.Base(os.Args[0])
 
-	// Remove .exe extension on Windows
 	if runtime.GOOS == "windows" {
 		invokeName = strings.TrimSuffix(invokeName, ".exe")
+	}
+
+	if isJFrogCLIName(invokeName) {
+		return false, ""
 	}
 
 	for _, tool := range SupportedTools {
