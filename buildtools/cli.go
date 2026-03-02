@@ -1160,15 +1160,32 @@ func huggingFaceUploadCmd(c *cli.Context, hfArgs []string) error {
 	if repoID == "" {
 		return cliutils.PrintHelpAndReturnError("Repository ID cannot be empty.", c)
 	}
-	revision := ""
-	if c.String("revision") != "" {
-		revision = c.String("revision")
+	serverDetails, err := coreConfig.GetDefaultServerConf()
+	if err != nil {
+		return err
+	}
+	if serverDetails == nil {
+		return fmt.Errorf("no default server configuration found. Please configure a server using 'jfrog config add' or specify a server using --server-id")
+	}
+	buildConfiguration, err := cliutils.CreateBuildConfigurationWithModule(c)
+	if err != nil {
+		return err
+	}
+	revision := c.String("revision")
+	if revision == "" {
+		revision = "main"
 	}
 	repoType := c.String("repo-type")
 	if repoType == "" {
 		repoType = "model"
 	}
-	huggingFaceUploadCmd := huggingfaceCommands.NewHuggingFaceUpload().SetFolderPath(folderPath).SetRepoId(repoID).SetRepoType(repoType).SetRevision(revision)
+	huggingFaceUploadCmd := huggingfaceCommands.NewHuggingFaceUpload().
+		SetFolderPath(folderPath).
+		SetRepoId(repoID).
+		SetRepoType(repoType).
+		SetRevision(revision).
+		SetServerDetails(serverDetails).
+		SetBuildConfiguration(buildConfiguration)
 	return commands.Exec(huggingFaceUploadCmd)
 }
 
@@ -1177,18 +1194,24 @@ func huggingFaceDownloadCmd(c *cli.Context, hfArgs []string) error {
 	if len(hfArgs) < 1 {
 		return cliutils.PrintHelpAndReturnError("Model/Dataset name is required.", c)
 	}
-	const eTagTimeout = 86400
+	const defaultETagTimeout = 86400
 	repoID := hfArgs[0]
 	if repoID == "" {
 		return cliutils.PrintHelpAndReturnError("Model/Dataset name cannot be empty.", c)
 	}
-	revision := ""
-	if c.String("revision") != "" {
-		revision = c.String("revision")
+	serverDetails, err := coreConfig.GetDefaultServerConf()
+	if err != nil {
+		return err
 	}
-	etagTimeout := eTagTimeout
+	if serverDetails == nil {
+		return fmt.Errorf("no default server configuration found. Please configure a server using 'jfrog config add' or specify a server using --server-id")
+	}
+	buildConfiguration, err := cliutils.CreateBuildConfigurationWithModule(c)
+	if err != nil {
+		return err
+	}
+	etagTimeout := defaultETagTimeout
 	if c.String("etag-timeout") != "" {
-		var err error
 		etagTimeout, err = strconv.Atoi(c.String("etag-timeout"))
 		if err != nil {
 			return errorutils.CheckErrorf("invalid etag-timeout value: %s", c.String("etag-timeout"))
@@ -1198,7 +1221,17 @@ func huggingFaceDownloadCmd(c *cli.Context, hfArgs []string) error {
 	if repoType == "" {
 		repoType = "model"
 	}
-	huggingFaceDownloadCmd := huggingfaceCommands.NewHuggingFaceDownload().SetRepoId(repoID).SetRepoType(repoType).SetRevision(revision).SetEtagTimeout(etagTimeout)
+	revision := c.String("revision")
+	if revision == "" {
+		revision = "main"
+	}
+	huggingFaceDownloadCmd := huggingfaceCommands.NewHuggingFaceDownload().
+		SetRepoId(repoID).
+		SetRepoType(repoType).
+		SetRevision(revision).
+		SetEtagTimeout(etagTimeout).
+		SetServerDetails(serverDetails).
+		SetBuildConfiguration(buildConfiguration)
 	return commands.Exec(huggingFaceDownloadCmd)
 }
 
