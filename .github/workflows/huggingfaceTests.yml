@@ -62,7 +62,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install HuggingFace CLI
+      - name: Install HuggingFace Library
         if: matrix.os.name != 'macos'
         run: |
           pip install huggingface_hub
