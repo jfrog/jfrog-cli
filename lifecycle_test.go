@@ -1700,7 +1700,7 @@ func sendGpgKeyPair() {
 		PublicKey:  string(publicKey),
 		PrivateKey: string(privateKey),
 	}
-	content, err := json.Marshal(payload)
+	content, err := json.Marshal(payload) // #nosec G117 -- Test keypair payload intentionally contains private key
 	coreutils.ExitOnErr(err)
 	resp, body, err = client.SendPost(*tests.JfrogUrl+"artifactory/api/security/keypair", content, artHttpDetails, "")
 	coreutils.ExitOnErr(err)
