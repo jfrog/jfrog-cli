@@ -3,6 +3,7 @@ package packagealias
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -47,8 +48,14 @@ func TestFindRealToolPathFiltersAliasDirectory(t *testing.T) {
 	realDir := t.TempDir()
 	toolName := "fake-tool"
 
-	aliasToolPath := filepath.Join(aliasDir, toolName)
-	realToolPath := filepath.Join(realDir, toolName)
+	toolFileName := toolName
+	if runtime.GOOS == "windows" {
+		toolFileName += ".exe"
+		t.Setenv("PATHEXT", ".exe")
+	}
+
+	aliasToolPath := filepath.Join(aliasDir, toolFileName)
+	realToolPath := filepath.Join(realDir, toolFileName)
 	require.NoError(t, os.WriteFile(aliasToolPath, []byte("#!/bin/sh\necho alias\n"), 0755))
 	require.NoError(t, os.WriteFile(realToolPath, []byte("#!/bin/sh\necho real\n"), 0755))
 
