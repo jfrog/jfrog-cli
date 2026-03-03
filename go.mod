@@ -19,7 +19,7 @@ require (
 	github.com/jfrog/build-info-go v1.13.1-0.20260216093441-40a4dc563294
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-application v1.0.2-0.20260216085810-1ade6c26b3df
-	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260303052518-917c005de223
+	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260303081233-aefbc2d40c47
 	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260218080258-3bf55ed18973
 	github.com/jfrog/jfrog-cli-evidence v0.8.3-0.20260202100913-d9ee9476845a
 	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260213131956-d1d39bf3a042
@@ -29,7 +29,7 @@ require (
 	github.com/manifoldco/promptui v0.9.0
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
-	github.com/testcontainers/testcontainers-go v0.35.0
+	github.com/testcontainers/testcontainers-go v0.40.0
 	github.com/urfave/cli v1.22.17
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/exp v0.0.0-20260212183809-81e46e3db34a
@@ -40,7 +40,6 @@ require (
 require (
 	cloud.google.com/go/auth v0.18.1 // indirect
 	dario.cat/mergo v1.0.2 // indirect
-	github.com/AdaLogics/go-fuzz-headers v0.0.0-20240806141605-e8a1dd7889d6 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c // indirect
 	github.com/CycloneDX/cyclonedx-go v0.10.0 // indirect
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
@@ -61,6 +60,7 @@ require (
 	github.com/cloudflare/circl v1.6.3 // indirect
 	github.com/containerd/containerd v1.7.29 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
+	github.com/containerd/errdefs/pkg v0.3.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/platforms v0.2.1 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.18.1 // indirect
@@ -75,9 +75,10 @@ require (
 	github.com/docker/cli v29.0.3+incompatible // indirect
 	github.com/docker/distribution v2.8.3+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.9.3 // indirect
-	github.com/docker/go-connections v0.5.0 // indirect
+	github.com/docker/go-connections v0.6.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dsnet/compress v0.0.2-0.20230904184137-39efe44ab707 // indirect
+	github.com/ebitengine/purego v0.8.4 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
@@ -112,7 +113,6 @@ require (
 	github.com/go-openapi/swag/yamlutils v0.25.4 // indirect
 	github.com/go-openapi/validate v0.25.1 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
-	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
@@ -155,6 +155,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
+	github.com/moby/go-archive v0.1.0 // indirect
 	github.com/moby/patternmatcher v0.6.0 // indirect
 	github.com/moby/sys/sequential v0.6.0 // indirect
 	github.com/moby/sys/user v0.4.0 // indirect
@@ -183,8 +184,7 @@ require (
 	github.com/secure-systems-lab/go-securesystemslib v0.10.0 // indirect
 	github.com/sergi/go-diff v1.4.0 // indirect
 	github.com/shibumi/go-pathspec v1.3.0 // indirect
-	github.com/shirou/gopsutil/v3 v3.23.12 // indirect
-	github.com/shoenig/go-m1cpu v0.1.6 // indirect
+	github.com/shirou/gopsutil/v4 v4.25.6 // indirect
 	github.com/sigstore/protobuf-specs v0.5.0 // indirect
 	github.com/sigstore/rekor v1.5.0 // indirect
 	github.com/sigstore/rekor-tiles/v2 v2.1.0 // indirect
@@ -213,7 +213,7 @@ require (
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
-	github.com/yusufpapurcu/wmi v1.2.3 // indirect
+	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.mongodb.org/mongo-driver v1.17.7 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.64.0 // indirect
@@ -243,22 +243,19 @@ require (
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/ini.v1 v1.67.1 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
-	gotest.tools/v3 v3.5.2 // indirect
 	helm.sh/helm/v3 v3.19.2 // indirect
 	k8s.io/client-go v0.34.0 // indirect
 	oras.land/oras-go/v2 v2.6.0 // indirect
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
 
-replace github.com/docker/docker => github.com/docker/docker v27.5.1+incompatible
-
 replace github.com/gfleury/go-bitbucket-v1 => github.com/gfleury/go-bitbucket-v1 v0.0.0-20230825095122-9bc1711434ab
 
 replace github.com/ktrysmt/go-bitbucket => github.com/ktrysmt/go-bitbucket v0.9.80
 
-// replace github.com/jfrog/jfrog-cli-artifactory => github.com/reshmifrog/jfrog-cli-artifactory v0.0.0-20260302170823-db801936b182
+//replace github.com/jfrog/jfrog-cli-core/v2 => ../jfrog-cli-core
 
-replace github.com/jfrog/jfrog-cli-artifactory => github.com/reshmifrog/jfrog-cli-artifactory v0.0.0-20260303033708-e017a3cf15e2
+replace github.com/jfrog/jfrog-cli-artifactory => github.com/reshmifrog/jfrog-cli-artifactory v0.0.0-20260303084642-b208fbba798b
 
 replace github.com/jfrog/build-info-go => github.com/reshmifrog/build-info-go v1.10.11-0.20260303032831-71878c7210bf
 
