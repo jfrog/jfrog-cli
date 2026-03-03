@@ -1163,9 +1163,9 @@ func huggingFaceUploadCmd(c *cli.Context, hfArgs []string) error {
 	if repoID == "" {
 		return cliutils.PrintHelpAndReturnError("Repository ID cannot be empty.", c)
 	}
-	hfArgs, serverDetails, err := getHuggingFaceServerDetails(hfArgs)
-	if serverDetails == nil {
-		return fmt.Errorf("no default server configuration found. Please configure a server using 'jfrog config add' or specify a server using --server-id")
+	serverDetails, err := getHuggingFaceServerDetails(hfArgs)
+	if err != nil {
+		return err
 	}
 	err = updateHuggingFaceEnv(c, serverDetails)
 	if err != nil {
@@ -1203,9 +1203,9 @@ func huggingFaceDownloadCmd(c *cli.Context, hfArgs []string) error {
 	if repoID == "" {
 		return cliutils.PrintHelpAndReturnError("Model/Dataset name cannot be empty.", c)
 	}
-	hfArgs, serverDetails, err := getHuggingFaceServerDetails(hfArgs)
-	if serverDetails == nil {
-		return fmt.Errorf("no default server configuration found. Please configure a server using 'jfrog config add' or specify a server using --server-id")
+	serverDetails, err := getHuggingFaceServerDetails(hfArgs)
+	if err != nil {
+		return err
 	}
 	err = updateHuggingFaceEnv(c, serverDetails)
 	if err != nil {
@@ -1240,26 +1240,26 @@ func huggingFaceDownloadCmd(c *cli.Context, hfArgs []string) error {
 	return commands.Exec(huggingFaceDownloadCmd)
 }
 
-func getHuggingFaceServerDetails(args []string) ([]string, *coreConfig.ServerDetails, error) {
-	cleanedArgs, serverID, err := coreutils.ExtractServerIdFromCommand(args)
+func getHuggingFaceServerDetails(args []string) (*coreConfig.ServerDetails, error) {
+	_, serverID, err := coreutils.ExtractServerIdFromCommand(args)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to extract server ID: %w", err)
+		return nil, fmt.Errorf("failed to extract server ID: %w", err)
 	}
 	if serverID == "" {
 		serverDetails, err := coreConfig.GetDefaultServerConf()
 		if err != nil {
-			return cleanedArgs, nil, err
+			return nil, err
 		}
 		if serverDetails == nil {
-			return cleanedArgs, nil, fmt.Errorf("no default server configuration found. Please configure a server using 'jfrog config add' or specify a server using --server-id")
+			return nil, fmt.Errorf("no default server configuration found. Please configure a server using 'jfrog config add' or specify a server using --server-id")
 		}
-		return cleanedArgs, serverDetails, nil
+		return serverDetails, nil
 	}
 	serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, true)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get server configuration for ID '%s': %w", serverID, err)
+		return nil, fmt.Errorf("failed to get server configuration for ID '%s': %w", serverID, err)
 	}
-	return cleanedArgs, serverDetails, nil
+	return serverDetails, nil
 }
 
 func updateHuggingFaceEnv(c *cli.Context, serverDetails *coreConfig.ServerDetails) error {
