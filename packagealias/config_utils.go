@@ -118,10 +118,10 @@ func withConfigLock(aliasDir string, action func() error) error {
 	for {
 		lockFile, err := os.OpenFile(lockPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
 		if err == nil {
-			_ = lockFile.Close()
 			defer func() {
 				_ = os.Remove(lockPath)
 			}()
+			_ = lockFile.Close()
 			return action()
 		}
 		if !isLockContention(err) {

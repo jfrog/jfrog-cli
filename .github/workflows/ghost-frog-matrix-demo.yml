@@ -106,13 +106,6 @@ jobs:
           java-version: ${{ matrix.version }}
           distribution: 'temurin'
       
-      # Ghost Frog setup - same for all languages!
-      - name: Setup Ghost Frog
-        uses: ./ghost-frog-action
-        with:
-          jfrog-url: ${{ secrets.JFROG_URL || 'https://example.jfrog.io' }}
-          jfrog-access-token: ${{ secrets.JFROG_ACCESS_TOKEN }}
-      
       # Run language-specific build
       - name: Build with Ghost Frog
         run: |

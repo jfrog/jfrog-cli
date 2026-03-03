@@ -84,7 +84,7 @@ func main() {
 func execMain() error {
 	if err := packagealias.DispatchIfAlias(); err != nil {
 		clientlog.Error(fmt.Sprintf("Package alias execution failed: %v", err))
-		os.Exit(1)
+		return err
 	}
 
 	// Set JFrog CLI's user-agent on the jfrog-client-go.
@@ -277,6 +277,7 @@ func getCommands() ([]cli.Command, error) {
 			Usage:       "Transparent package manager interception (Ghost Frog).",
 			Subcommands: packagealias.GetCommands(),
 			Category:    commandNamespacesCategory,
+			Hidden:      true,
 		},
 		{
 			Name:   "intro",
