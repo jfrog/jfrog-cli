@@ -45,14 +45,12 @@ func initHuggingFaceTest(t *testing.T) {
 		serverDetails.Password = *tests.JfrogPassword
 	}
 
-	// NOTE: We do NOT auto-set HF_ENDPOINT here.
-	// If HF_ENDPOINT is not set, downloads go directly to HuggingFace Hub (huggingface.co)
-	// If HF_ENDPOINT is set (by user/CI), downloads go through Artifactory
-	// Build info tests will skip if HF_ENDPOINT is not set since they require Artifactory
 }
 
 func cleanHuggingFaceTest(t *testing.T) {
 	clientTestUtils.UnSetEnvAndAssert(t, coreutils.HomeDir)
+	clientTestUtils.UnSetEnvAndAssert(t, "HF_ENDPOINT")
+	clientTestUtils.UnSetEnvAndAssert(t, "HF_TOKEN")
 	tests.CleanFileSystem()
 }
 
@@ -136,6 +134,7 @@ func TestHuggingFaceDownload(t *testing.T) {
 	args := []string{
 		"hf", "d", "sshleifer/tiny-gpt2",
 		"--repo-type=model",
+		"--repo-key=" + tests.HuggingFaceRemoteRepo,
 	}
 
 	// Execute and verify success
@@ -162,6 +161,7 @@ func TestHuggingFaceDownloadWithRevision(t *testing.T) {
 		"hf", "d", "sshleifer/tiny-gpt2",
 		"--repo-type=model",
 		"--revision=main",
+		"--repo-key=" + tests.HuggingFaceRemoteRepo,
 	}
 
 	err := jfrogCli.Exec(args...)
@@ -186,6 +186,7 @@ func TestHuggingFaceDownloadDataset(t *testing.T) {
 	args := []string{
 		"hf", "d", "hf-internal-testing/fixtures_image_utils",
 		"--repo-type=dataset",
+		"--repo-key=" + tests.HuggingFaceRemoteRepo,
 	}
 
 	err := jfrogCli.Exec(args...)
@@ -219,6 +220,7 @@ func TestHuggingFaceDownloadWithEtagTimeout(t *testing.T) {
 		"hf", "d", "sshleifer/tiny-gpt2",
 		"--repo-type=model",
 		"--etag-timeout=3600",
+		"--repo-key=" + tests.HuggingFaceRemoteRepo,
 	}
 
 	err := jfrogCli.Exec(args...)
@@ -259,6 +261,7 @@ func TestHuggingFaceUpload(t *testing.T) {
 	args := []string{
 		"hf", "u", tempDir, "test-org/test-model",
 		"--repo-type=model",
+		"--repo-key=" + tests.HuggingFaceRemoteRepo,
 	}
 
 	err = jfrogCli.Exec(args...)
@@ -296,6 +299,7 @@ func TestHuggingFaceUploadWithRevision(t *testing.T) {
 		"hf", "u", tempDir, "test-org/test-model",
 		"--repo-type=model",
 		"--revision=test-branch",
+		"--repo-key=" + tests.HuggingFaceRemoteRepo,
 	}
 
 	err = jfrogCli.Exec(args...)
@@ -336,6 +340,7 @@ func TestHuggingFaceUploadDataset(t *testing.T) {
 	args := []string{
 		"hf", "u", tempDir, "test-org/test-dataset",
 		"--repo-type=dataset",
+		"--repo-key=" + tests.HuggingFaceRemoteRepo,
 	}
 
 	err = jfrogCli.Exec(args...)
@@ -414,6 +419,7 @@ func TestHuggingFaceDownloadInvalidRepoID(t *testing.T) {
 	args := []string{
 		"hf", "d", "non-existent-org/non-existent-model-12345xyz",
 		"--repo-type=model",
+		"--repo-key=" + tests.HuggingFaceRemoteRepo,
 	}
 
 	err := jfrogCli.Exec(args...)
@@ -460,6 +466,7 @@ func TestHuggingFaceUploadEmptyDirectory(t *testing.T) {
 	args := []string{
 		"hf", "u", tempDir, "test-org/test-empty-model",
 		"--repo-type=model",
+		"--repo-key=" + tests.HuggingFaceRemoteRepo,
 	}
 
 	err = jfrogCli.Exec(args...)
@@ -491,6 +498,7 @@ func TestHuggingFaceUploadNonExistentDirectory(t *testing.T) {
 	args := []string{
 		"hf", "u", "/non/existent/path/to/model", "test-org/test-model",
 		"--repo-type=model",
+		"--repo-key=" + tests.HuggingFaceRemoteRepo,
 	}
 
 	err := jfrogCli.Exec(args...)
@@ -544,6 +552,7 @@ func TestHuggingFaceUploadWithSpecialCharactersInPath(t *testing.T) {
 	args := []string{
 		"hf", "u", specialDir, "test-org/test-special-chars-model",
 		"--repo-type=model",
+		"--repo-key=" + tests.HuggingFaceRemoteRepo,
 	}
 
 	err = jfrogCli.Exec(args...)
@@ -581,6 +590,7 @@ func TestHuggingFaceUploadOverwrite(t *testing.T) {
 	args := []string{
 		"hf", "u", tempDir, repoID,
 		"--repo-type=model",
+		"--repo-key=" + tests.HuggingFaceRemoteRepo,
 	}
 
 	err = jfrogCli.Exec(args...)
@@ -617,15 +627,9 @@ func TestHuggingFaceDownloadWithBuildInfo(t *testing.T) {
 	// Check if python3 and huggingface_hub are available
 	checkHuggingFaceHubAvailable(t)
 
-	// Build info collection requires HF_ENDPOINT to be set (Artifactory HuggingFace remote)
-	// Skip if not configured - this test requires Artifactory setup
-	if os.Getenv("HF_ENDPOINT") == "" {
-		t.Skip("Skipping build info test: HF_ENDPOINT not set. Set HF_ENDPOINT to your Artifactory HuggingFace remote URL to run this test.")
-	}
-
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 
-	buildName := "hf-download-build-test"
+	buildName := tests.HuggingFaceBuildName + "-download"
 	buildNumber := "1"
 
 	// Test download with build info flags
@@ -635,6 +639,7 @@ func TestHuggingFaceDownloadWithBuildInfo(t *testing.T) {
 		"--repo-type=model",
 		"--build-name=" + buildName,
 		"--build-number=" + buildNumber,
+		"--repo-key=" + tests.HuggingFaceRemoteRepo,
 	}
 
 	err := jfrogCli.Exec(args...)
@@ -682,7 +687,7 @@ func TestHuggingFaceUploadWithBuildInfo(t *testing.T) {
 
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 
-	buildName := "hf-upload-build-test"
+	buildName := tests.HuggingFaceBuildName + "-upload"
 	buildNumber := "1"
 
 	// Test upload with build info flags
@@ -691,6 +696,7 @@ func TestHuggingFaceUploadWithBuildInfo(t *testing.T) {
 		"--repo-type=model",
 		"--build-name=" + buildName,
 		"--build-number=" + buildNumber,
+		"--repo-key=" + tests.HuggingFaceRemoteRepo,
 	}
 
 	err = jfrogCli.Exec(args...)
@@ -715,15 +721,9 @@ func TestHuggingFaceDownloadWithBuildInfoAndModule(t *testing.T) {
 	// Check if python3 and huggingface_hub are available
 	checkHuggingFaceHubAvailable(t)
 
-	// Build info collection requires HF_ENDPOINT to be set (Artifactory HuggingFace remote)
-	// Skip if not configured - this test requires Artifactory setup
-	if os.Getenv("HF_ENDPOINT") == "" {
-		t.Skip("Skipping build info test: HF_ENDPOINT not set. Set HF_ENDPOINT to your Artifactory HuggingFace remote URL to run this test.")
-	}
-
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 
-	buildName := "hf-download-module-build-test"
+	buildName := tests.HuggingFaceBuildName + "-download-module"
 	buildNumber := "1"
 	moduleName := "tiny-bert-model-module"
 
@@ -735,6 +735,7 @@ func TestHuggingFaceDownloadWithBuildInfoAndModule(t *testing.T) {
 		"--build-name=" + buildName,
 		"--build-number=" + buildNumber,
 		"--module=" + moduleName,
+		"--repo-key=" + tests.HuggingFaceRemoteRepo,
 	}
 
 	err := jfrogCli.Exec(args...)
@@ -777,7 +778,7 @@ func TestHuggingFaceUploadWithBuildInfoAndProject(t *testing.T) {
 
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 
-	buildName := "hf-upload-project-build-test"
+	buildName := tests.HuggingFaceBuildName + "-upload-project"
 	buildNumber := "1"
 	projectKey := "test-project"
 
@@ -788,6 +789,7 @@ func TestHuggingFaceUploadWithBuildInfoAndProject(t *testing.T) {
 		"--build-name=" + buildName,
 		"--build-number=" + buildNumber,
 		"--project=" + projectKey,
+		"--repo-key=" + tests.HuggingFaceRemoteRepo,
 	}
 
 	err = jfrogCli.Exec(args...)
@@ -822,6 +824,7 @@ func TestHuggingFaceDownloadAndVerifyCache(t *testing.T) {
 	args := []string{
 		"hf", "d", "sshleifer/tiny-gpt2",
 		"--repo-type=model",
+		"--repo-key=" + tests.HuggingFaceRemoteRepo,
 	}
 
 	err := jfrogCli.Exec(args...)
@@ -863,9 +866,13 @@ func TestHuggingFaceDownloadAndVerifyCache(t *testing.T) {
 // InitHuggingFaceTests initializes HuggingFace tests
 func InitHuggingFaceTests() {
 	initArtifactoryCli()
+	cleanUpOldBuilds()
+	cleanUpOldRepositories()
+	tests.AddTimestampToGlobalVars()
+	createRequiredRepos()
 }
 
 // CleanHuggingFaceTests cleans up after HuggingFace tests
 func CleanHuggingFaceTests() {
-	// Cleanup is handled per-test
+	deleteCreatedRepos()
 }
