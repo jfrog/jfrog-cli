@@ -103,7 +103,9 @@ func (c *ContainerRequest) Remove() *ContainerRequest {
 
 // Mounts the 'hostPath' working directory from localhost into the container.
 func (c *ContainerRequest) Mount(mounts ...mount.Mount) *ContainerRequest {
+	req := &c.request
 	c.request.HostConfigModifier = func(cfg *container.HostConfig) {
+		cfg.Privileged = req.Privileged
 		if cfg.Mounts == nil {
 			cfg.Mounts = make([]mount.Mount, 0)
 		}
