@@ -24,6 +24,13 @@ const (
 	configLockTimeoutEnv = "JFROG_CLI_PACKAGE_ALIAS_LOCK_TIMEOUT"
 )
 
+// defaultPassTools lists tools that default to ModePass (run natively) when not explicitly configured
+var defaultPassTools = map[string]struct{}{
+	"pnpm":   {},
+	"gem":    {},
+	"bundle": {},
+}
+
 func newDefaultConfig() *Config {
 	return &Config{
 		Enabled:         true,
@@ -292,6 +299,9 @@ func getModeForTool(config *Config, tool string, args []string) AliasMode {
 
 	mode, found := config.ToolModes[tool]
 	if !found {
+		if _, isDefaultPass := defaultPassTools[tool]; isDefaultPass {
+			return ModePass
+		}
 		return ModeJF
 	}
 	if !validateAliasMode(mode) {
