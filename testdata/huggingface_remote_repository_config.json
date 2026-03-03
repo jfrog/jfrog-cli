@@ -1,6 +1,0 @@
-{
-  "key": "${HUGGINGFACE_REMOTE_REPO}",
-  "rclass": "remote",
-  "packageType": "huggingfaceml",
-  "url": "https://huggingface.co"
-}
