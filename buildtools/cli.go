@@ -1163,7 +1163,7 @@ func huggingFaceUploadCmd(c *cli.Context, hfArgs []string) error {
 	if repoID == "" {
 		return cliutils.PrintHelpAndReturnError("Repository ID cannot be empty.", c)
 	}
-	hfArgs, serverDetails, err := getHuggingFaceServerDetails(hfArgs)
+	_, serverDetails, err := getHuggingFaceServerDetails(hfArgs)
 	if serverDetails == nil {
 		return fmt.Errorf("no default server configuration found. Please configure a server using 'jfrog config add' or specify a server using --server-id")
 	}
@@ -1203,7 +1203,7 @@ func huggingFaceDownloadCmd(c *cli.Context, hfArgs []string) error {
 	if repoID == "" {
 		return cliutils.PrintHelpAndReturnError("Model/Dataset name cannot be empty.", c)
 	}
-	hfArgs, serverDetails, err := getHuggingFaceServerDetails(hfArgs)
+	_, serverDetails, err := getHuggingFaceServerDetails(hfArgs)
 	if serverDetails == nil {
 		return fmt.Errorf("no default server configuration found. Please configure a server using 'jfrog config add' or specify a server using --server-id")
 	}
