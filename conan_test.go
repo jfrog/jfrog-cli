@@ -454,6 +454,18 @@ func createConanProject(t *testing.T, outputFolder string) string {
 	return projectPath
 }
 
+func createConanProjectSubdir(t *testing.T, outputFolder string) string {
+	projectSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "conan", "conanproject-subdir")
+	tmpDir, cleanupCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+
+	projectPath := filepath.Join(tmpDir, outputFolder)
+	require.NoError(t, biutils.CopyDir(projectSrc, projectPath, true, nil))
+
+	t.Cleanup(cleanupCallback)
+
+	return projectPath
+}
+
 func configureConanRemote(t *testing.T) {
 	// Remove existing remote if any
 	_ = exec.Command("conan", "remote", "remove", tests.ConanVirtualRepo).Run()
@@ -470,6 +482,167 @@ func configureConanRemote(t *testing.T) {
 func cleanupConanRemote() {
 	_ = exec.Command("conan", "remote", "remove", tests.ConanVirtualRepo).Run()
 	_ = exec.Command("conan", "remote", "remove", tests.ConanLocalRepo).Run()
+}
+
+// TestConanInstallRequiresNoRecipe tests 'jf conan install --requires' without any conanfile.
+func TestConanInstallRequiresNoRecipe(t *testing.T) {
+	initConanTest(t)
+	buildNumber := "1"
+
+	// Create empty project dir (no conanfile)
+	tmpDir, cleanupCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	t.Cleanup(cleanupCallback)
+	projectPath := filepath.Join(tmpDir, "no-recipe-test")
+	require.NoError(t, os.MkdirAll(projectPath, 0755))
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+
+	configureConanRemote(t)
+	defer cleanupConanRemote()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	args := []string{
+		"conan", "install",
+		"--requires", "zlib/1.3.1",
+		"--build", "missing",
+		"-r", tests.ConanVirtualRepo,
+		"--build-name=" + tests.ConanBuildName,
+		"--build-number=" + buildNumber,
+	}
+	require.NoError(t, jfrogCli.Exec(args...), "conan install --requires should succeed without a conanfile")
+
+	require.NoError(t, artifactoryCli.Exec("bp", tests.ConanBuildName, buildNumber))
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.ConanBuildName, artHttpDetails)
+
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.ConanBuildName, buildNumber)
+	require.NoError(t, err)
+	require.True(t, found, "build info was expected to be found")
+
+	buildInfoModules := publishedBuildInfo.BuildInfo.Modules
+	require.Len(t, buildInfoModules, 1, "Expected 1 module")
+	assert.Equal(t, buildinfo.Conan, buildInfoModules[0].Type, "Module type should be conan")
+	assert.GreaterOrEqual(t, len(buildInfoModules[0].Dependencies), 1, "Expected at least 1 dependency (zlib)")
+}
+
+// TestConanInstallRecipeInSubdir tests 'jf conan install <subdir>' where the recipe is not in cwd.
+func TestConanInstallRecipeInSubdir(t *testing.T) {
+	initConanTest(t)
+	buildNumber := "1"
+
+	projectPath := createConanProjectSubdir(t, "conan-subdir-install-test")
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+
+	configureConanRemote(t)
+	defer cleanupConanRemote()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	args := []string{
+		"conan", "install", "recipes/mylib",
+		"--build=missing",
+		"-r", tests.ConanVirtualRepo,
+		"--build-name=" + tests.ConanBuildName,
+		"--build-number=" + buildNumber,
+	}
+	require.NoError(t, jfrogCli.Exec(args...), "conan install with recipe in subdirectory should succeed")
+
+	require.NoError(t, artifactoryCli.Exec("bp", tests.ConanBuildName, buildNumber))
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.ConanBuildName, artHttpDetails)
+
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.ConanBuildName, buildNumber)
+	require.NoError(t, err)
+	require.True(t, found, "build info was expected to be found")
+
+	buildInfoModules := publishedBuildInfo.BuildInfo.Modules
+	require.Len(t, buildInfoModules, 1)
+	assert.Equal(t, buildinfo.Conan, buildInfoModules[0].Type)
+	assert.Equal(t, "cli-test-subdir-package:1.0.0", buildInfoModules[0].Id,
+		"Module ID should come from the subdirectory's conanfile.py")
+	assert.GreaterOrEqual(t, len(buildInfoModules[0].Dependencies), 1)
+}
+
+// TestConanCreateRecipeInSubdir tests 'jf conan create <subdir>' where the recipe is not in cwd.
+func TestConanCreateRecipeInSubdir(t *testing.T) {
+	initConanTest(t)
+	buildNumber := "1"
+
+	projectPath := createConanProjectSubdir(t, "conan-subdir-create-test")
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+
+	configureConanRemote(t)
+	defer cleanupConanRemote()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	createArgs := []string{
+		"conan", "create", "recipes/mylib",
+		"--build=missing",
+		"--build-name=" + tests.ConanBuildName,
+		"--build-number=" + buildNumber,
+	}
+	require.NoError(t, jfrogCli.Exec(createArgs...), "conan create with recipe in subdirectory should succeed")
+
+	require.NoError(t, artifactoryCli.Exec("bp", tests.ConanBuildName, buildNumber))
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.ConanBuildName, artHttpDetails)
+
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.ConanBuildName, buildNumber)
+	require.NoError(t, err)
+	require.True(t, found, "build info was expected to be found")
+
+	buildInfoModules := publishedBuildInfo.BuildInfo.Modules
+	require.Len(t, buildInfoModules, 1)
+	assert.Equal(t, "cli-test-subdir-package:1.0.0", buildInfoModules[0].Id)
+	assert.GreaterOrEqual(t, len(buildInfoModules[0].Dependencies), 1)
+}
+
+// TestConanInstallMultipleRequires tests --requires with multiple dependencies.
+func TestConanInstallMultipleRequires(t *testing.T) {
+	initConanTest(t)
+	buildNumber := "1"
+
+	tmpDir, cleanupCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	t.Cleanup(cleanupCallback)
+	projectPath := filepath.Join(tmpDir, "multi-requires-test")
+	require.NoError(t, os.MkdirAll(projectPath, 0755))
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+
+	configureConanRemote(t)
+	defer cleanupConanRemote()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	args := []string{
+		"conan", "install",
+		"--requires", "zlib/1.3.1",
+		"--requires", "bzip2/1.0.8",
+		"--build", "missing",
+		"-r", tests.ConanVirtualRepo,
+		"--build-name=" + tests.ConanBuildName,
+		"--build-number=" + buildNumber,
+	}
+	require.NoError(t, jfrogCli.Exec(args...))
+
+	require.NoError(t, artifactoryCli.Exec("bp", tests.ConanBuildName, buildNumber))
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.ConanBuildName, artHttpDetails)
+
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.ConanBuildName, buildNumber)
+	require.NoError(t, err)
+	require.True(t, found, "build info was expected to be found")
+
+	buildInfoModules := publishedBuildInfo.BuildInfo.Modules
+	require.Len(t, buildInfoModules, 1)
+	assert.GreaterOrEqual(t, len(buildInfoModules[0].Dependencies), 2,
+		"Expected at least 2 dependencies (zlib + bzip2)")
 }
 
 // TestConanCreateWithProjectKey tests that 'jf conan create --project=<key>' stores build info

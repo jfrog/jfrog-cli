@@ -407,8 +407,6 @@ github.com/jellydator/ttlcache/v3 v3.4.0 h1:YS4P125qQS0tNhtL6aeYkheEaB/m8HCqdMMP
 github.com/jellydator/ttlcache/v3 v3.4.0/go.mod h1:Hw9EgjymziQD3yGsQdf1FqFdpp7YjFMd4Srg5EJlgD4=
 github.com/jfrog/archiver/v3 v3.6.3 h1:hkAmPjBw393tPmQ07JknLNWFNZjXdy2xFEnOW9wwOxI=
 github.com/jfrog/archiver/v3 v3.6.3/go.mod h1:5V9l+Fte30Y4qe9dUOAd3yNTf8lmtVNuhKNrvI8PMhg=
-github.com/jfrog/build-info-go v1.13.1-0.20260216093441-40a4dc563294 h1:7aJGdrjibtWT1VPLH+GYyoZsAsoca8/fMrvGIvkZ8Fs=
-github.com/jfrog/build-info-go v1.13.1-0.20260216093441-40a4dc563294/go.mod h1:+OCtMb22/D+u7Wne5lzkjJjaWr0LRZcHlDwTH86Mpwo=
 github.com/jfrog/froggit-go v1.21.0 h1:OFz5eqK1zgqrzXtPdyStVKSMqNJg96RNqRKmXSXOHsk=
 github.com/jfrog/froggit-go v1.21.0/go.mod h1:obSG1SlsWjktkuqmKtpq7MNTTL63e0ot+ucTnlOMV88=
 github.com/jfrog/go-mockhttp v0.3.1 h1:/wac8v4GMZx62viZmv4wazB5GNKs+GxawuS1u3maJH8=
@@ -419,8 +417,6 @@ github.com/jfrog/jfrog-apps-config v1.0.1 h1:mtv6k7g8A8BVhlHGlSveapqf4mJfonwvXYL
 github.com/jfrog/jfrog-apps-config v1.0.1/go.mod h1:8AIIr1oY9JuH5dylz2S6f8Ym2MaadPLR6noCBO4C22w=
 github.com/jfrog/jfrog-cli-application v1.0.2-0.20260216085810-1ade6c26b3df h1:raSyae8/h1y8HtzFLf7vZZj91fP/qD94AX+biwBJiqs=
 github.com/jfrog/jfrog-cli-application v1.0.2-0.20260216085810-1ade6c26b3df/go.mod h1:xum2HquWO5uExa/A7MQs3TgJJVEeoqTR+6Z4mfBr1Xw=
-github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260303081233-aefbc2d40c47 h1:sVnpvQhg+jGkd8Vvww3+z+DZS3UBFi+0qCUKl6jKOmk=
-github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260303081233-aefbc2d40c47/go.mod h1:IRUe9nYwCUq8V2WRDUd4bddwiXXdkxvNQ36+0U0uHqI=
 github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260218080258-3bf55ed18973 h1:fOlWUGkCuujnIcE3166gpTdvicwv1wAZhLrfbm+f6rY=
 github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260218080258-3bf55ed18973/go.mod h1:GDveG1xAoiM12JlSx8RE0OcJ6Ov+xcmpmGv84we3pMA=
 github.com/jfrog/jfrog-cli-evidence v0.8.3-0.20260202100913-d9ee9476845a h1:lTOAhUjKcOmM/0Kbj4V+I/VHPlW7YNAhIEVpGnCM5mI=
@@ -576,6 +572,10 @@ github.com/redis/go-redis/extra/redisotel/v9 v9.0.5 h1:EfpWLLCyXw8PSM2/XNJLjI3Pb
 github.com/redis/go-redis/extra/redisotel/v9 v9.0.5/go.mod h1:WZjPDy7VNzn77AAfnAfVjZNvfJTYfPetfZk5yoSTLaQ=
 github.com/redis/go-redis/v9 v9.17.2 h1:P2EGsA4qVIM3Pp+aPocCJ7DguDHhqrXNhVcEp4ViluI=
 github.com/redis/go-redis/v9 v9.17.2/go.mod h1:u410H11HMLoB+TP67dz8rL9s6QW2j76l0//kSOd3370=
+github.com/reshmifrog/build-info-go v1.10.11-0.20260303032831-71878c7210bf h1:MP+2sbP5rU66EXEG471hyk3VOSIBkm564EWFNhCCCIs=
+github.com/reshmifrog/build-info-go v1.10.11-0.20260303032831-71878c7210bf/go.mod h1:+OCtMb22/D+u7Wne5lzkjJjaWr0LRZcHlDwTH86Mpwo=
+github.com/reshmifrog/jfrog-cli-artifactory v0.0.0-20260303084642-b208fbba798b h1:ZLKQgpBEM5ah5JfP9+iUaRStDbuJF4q86eKOW8A/G0Q=
+github.com/reshmifrog/jfrog-cli-artifactory v0.0.0-20260303084642-b208fbba798b/go.mod h1:Iii9Mej7avjeYfYwKxCGbRM6lNf1lhHn3M5LmDOiHkE=
 github.com/rivo/uniseg v0.4.7 h1:WUdvkW8uEhrYfLC4ZzdpI2ztxP1I582+49Oc5Mq64VQ=
 github.com/rivo/uniseg v0.4.7/go.mod h1:FN3SvrM+Zdj16jyLfmOkMNblXMcoc8DfTHruCPUcx88=
 github.com/robfig/cron/v3 v3.0.1 h1:WdRxkvbJztn8LMz/QEvLN5sBU+xKpSqwwUO1Pjr4qDs=
