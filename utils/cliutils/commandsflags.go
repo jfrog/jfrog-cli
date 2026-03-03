@@ -599,6 +599,7 @@ const (
 	Revision    = "revision"
 	RepoType    = "repo-type"
 	EtagTimeout = "etag-timeout"
+	RepoKey     = "repo-key"
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -1767,6 +1768,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  RepoType,
 		Usage: "[Default: model] Type of repository. Can be 'model', 'dataset'.` `",
 	},
+	RepoKey: cli.StringFlag{
+		Name:  RepoKey,
+		Usage: "Repository Key for uploading/downloading dataset/models.",
+	},
 }
 
 var commandFlags = map[string][]string{
@@ -2000,7 +2005,7 @@ var commandFlags = map[string][]string{
 		BuildName, BuildNumber, module, Project, serverId, username, password,
 	},
 	HuggingFace: {
-		BuildName, BuildNumber, module, Project, serverId, Revision, RepoType, EtagTimeout,
+		BuildName, BuildNumber, module, Project, serverId, Revision, RepoType, EtagTimeout, RepoKey,
 	},
 	RubyConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
