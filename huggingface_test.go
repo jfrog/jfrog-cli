@@ -45,14 +45,12 @@ func initHuggingFaceTest(t *testing.T) {
 		serverDetails.Password = *tests.JfrogPassword
 	}
 
-	// NOTE: We do NOT auto-set HF_ENDPOINT here.
-	// If HF_ENDPOINT is not set, downloads go directly to HuggingFace Hub (huggingface.co)
-	// If HF_ENDPOINT is set (by user/CI), downloads go through Artifactory
-	// Build info tests will skip if HF_ENDPOINT is not set since they require Artifactory
 }
 
 func cleanHuggingFaceTest(t *testing.T) {
 	clientTestUtils.UnSetEnvAndAssert(t, coreutils.HomeDir)
+	clientTestUtils.UnSetEnvAndAssert(t, "HF_ENDPOINT")
+	clientTestUtils.UnSetEnvAndAssert(t, "HF_TOKEN")
 	tests.CleanFileSystem()
 }
 
@@ -120,29 +118,63 @@ func isArtifactoryAuthError(err error) bool {
 	return isArtifactoryRelated && isAuthError
 }
 
+// uploadTestModelToLocalRepo uploads minimal test model files to the local HuggingFace repo
+// so that subsequent download tests have something to retrieve.
+func uploadTestModelToLocalRepo(t *testing.T, jfrogCli *coreTests.JfrogCli, repoID string) {
+	t.Helper()
+	tempDir, err := os.MkdirTemp("", "hf-local-setup-*")
+	require.NoError(t, err, "Setup: failed to create temp dir")
+	t.Cleanup(func() { _ = os.RemoveAll(tempDir) })
+
+	require.NoError(t, os.WriteFile(filepath.Join(tempDir, "config.json"), []byte(`{"model_type":"test"}`), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(tempDir, "model.bin"), []byte("test model binary content"), 0644))
+
+	args := []string{
+		"hf", "u", tempDir, repoID,
+		"--repo-type=model",
+		"--repo-key=" + tests.HuggingFaceLocalRepo,
+	}
+	require.NoError(t, jfrogCli.Exec(args...), "Setup: upload to local repo failed for "+repoID)
+}
+
+// uploadTestDatasetToLocalRepo uploads minimal test dataset files to the local HuggingFace repo.
+func uploadTestDatasetToLocalRepo(t *testing.T, jfrogCli *coreTests.JfrogCli, repoID string) {
+	t.Helper()
+	tempDir, err := os.MkdirTemp("", "hf-local-dataset-setup-*")
+	require.NoError(t, err, "Setup: failed to create temp dir for dataset")
+	t.Cleanup(func() { _ = os.RemoveAll(tempDir) })
+
+	require.NoError(t, os.WriteFile(filepath.Join(tempDir, "train.json"), []byte(`[{"text":"sample training data"}]`), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(tempDir, "test.json"), []byte(`[{"text":"sample test data"}]`), 0644))
+
+	args := []string{
+		"hf", "u", tempDir, repoID,
+		"--repo-type=dataset",
+		"--repo-key=" + tests.HuggingFaceLocalRepo,
+	}
+	require.NoError(t, jfrogCli.Exec(args...), "Setup: upload dataset to local repo failed for "+repoID)
+}
+
 // TestHuggingFaceDownload tests the HuggingFace download command
 func TestHuggingFaceDownload(t *testing.T) {
 	initHuggingFaceTest(t)
 	defer cleanHuggingFaceTest(t)
 
-	// Check if python3 and huggingface_hub are available
 	checkHuggingFaceHubAvailable(t)
 
-	// Test download with a small test model
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+	repoID := "test-org/test-model"
 
-	// Test basic download command structure
-	// Using sshleifer/tiny-gpt2 which is a very small model (~2MB) designed for testing
+	// Upload test files to the local repo first
+	uploadTestModelToLocalRepo(t, jfrogCli, repoID)
+
+	// Download from the local repo
 	args := []string{
-		"hf", "d", "sshleifer/tiny-gpt2",
+		"hf", "d", repoID,
 		"--repo-type=model",
+		"--repo-key=" + tests.HuggingFaceLocalRepo,
 	}
-
-	// Execute and verify success
 	err := jfrogCli.Exec(args...)
-	if isArtifactoryAuthError(err) {
-		t.Skipf("Skipping: HF_ENDPOINT is set but Artifactory auth failed: %v", err)
-	}
 	assert.NoError(t, err, "HuggingFace download command should succeed")
 }
 
@@ -151,23 +183,22 @@ func TestHuggingFaceDownloadWithRevision(t *testing.T) {
 	initHuggingFaceTest(t)
 	defer cleanHuggingFaceTest(t)
 
-	// Check if python3 and huggingface_hub are available
 	checkHuggingFaceHubAvailable(t)
 
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+	repoID := "test-org/test-model-revision"
 
-	// Test download with revision parameter
-	// Using sshleifer/tiny-gpt2 which is a very small model (~2MB) designed for testing
+	// Upload test files to the local repo first (uploaded to default 'main' branch)
+	uploadTestModelToLocalRepo(t, jfrogCli, repoID)
+
+	// Download from the local repo specifying revision=main
 	args := []string{
-		"hf", "d", "sshleifer/tiny-gpt2",
+		"hf", "d", repoID,
 		"--repo-type=model",
 		"--revision=main",
+		"--repo-key=" + tests.HuggingFaceLocalRepo,
 	}
-
 	err := jfrogCli.Exec(args...)
-	if isArtifactoryAuthError(err) {
-		t.Skipf("Skipping: HF_ENDPOINT is set but Artifactory auth failed: %v", err)
-	}
 	assert.NoError(t, err, "HuggingFace download with revision should succeed")
 }
 
@@ -176,31 +207,22 @@ func TestHuggingFaceDownloadDataset(t *testing.T) {
 	initHuggingFaceTest(t)
 	defer cleanHuggingFaceTest(t)
 
-	// Check if python3 and huggingface_hub are available
 	checkHuggingFaceHubAvailable(t)
 
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+	repoID := "test-org/test-dataset"
 
-	// Test download dataset
-	// Using hf-internal-testing/fixtures_image_utils which is a tiny test dataset (~100KB)
+	// Upload test dataset files to the local repo first
+	uploadTestDatasetToLocalRepo(t, jfrogCli, repoID)
+
+	// Download the dataset from the local repo
 	args := []string{
-		"hf", "d", "hf-internal-testing/fixtures_image_utils",
+		"hf", "d", repoID,
 		"--repo-type=dataset",
+		"--repo-key=" + tests.HuggingFaceLocalRepo,
 	}
-
 	err := jfrogCli.Exec(args...)
-	if err != nil {
-		if isArtifactoryAuthError(err) {
-			t.Skipf("Skipping: HF_ENDPOINT is set but Artifactory auth failed: %v", err)
-		}
-		// Accept timeout errors as expected when running without HF_TOKEN (rate limiting)
-		errStr := strings.ToLower(err.Error())
-		if strings.Contains(errStr, "timeout") || strings.Contains(errStr, "timed out") {
-			t.Skipf("Dataset download timed out (likely due to HF rate limiting without HF_TOKEN): %v", err)
-		}
-		// Fail on other unexpected errors
-		assert.NoError(t, err, "HuggingFace download dataset should succeed")
-	}
+	assert.NoError(t, err, "HuggingFace download dataset should succeed")
 }
 
 // TestHuggingFaceDownloadWithEtagTimeout tests the HuggingFace download command with etag-timeout
@@ -208,23 +230,22 @@ func TestHuggingFaceDownloadWithEtagTimeout(t *testing.T) {
 	initHuggingFaceTest(t)
 	defer cleanHuggingFaceTest(t)
 
-	// Check if python3 and huggingface_hub are available
 	checkHuggingFaceHubAvailable(t)
 
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+	repoID := "test-org/test-model-etag"
 
-	// Test download with etag-timeout parameter
-	// Using sshleifer/tiny-gpt2 which is a very small model (~2MB) designed for testing
+	// Upload test files to the local repo first
+	uploadTestModelToLocalRepo(t, jfrogCli, repoID)
+
+	// Download from the local repo with etag-timeout parameter
 	args := []string{
-		"hf", "d", "sshleifer/tiny-gpt2",
+		"hf", "d", repoID,
 		"--repo-type=model",
 		"--etag-timeout=3600",
+		"--repo-key=" + tests.HuggingFaceLocalRepo,
 	}
-
 	err := jfrogCli.Exec(args...)
-	if isArtifactoryAuthError(err) {
-		t.Skipf("Skipping: HF_ENDPOINT is set but Artifactory auth failed: %v", err)
-	}
 	assert.NoError(t, err, "HuggingFace download with etag-timeout should succeed")
 }
 
@@ -259,6 +280,7 @@ func TestHuggingFaceUpload(t *testing.T) {
 	args := []string{
 		"hf", "u", tempDir, "test-org/test-model",
 		"--repo-type=model",
+		"--repo-key=" + tests.HuggingFaceLocalRepo,
 	}
 
 	err = jfrogCli.Exec(args...)
@@ -296,6 +318,7 @@ func TestHuggingFaceUploadWithRevision(t *testing.T) {
 		"hf", "u", tempDir, "test-org/test-model",
 		"--repo-type=model",
 		"--revision=test-branch",
+		"--repo-key=" + tests.HuggingFaceLocalRepo,
 	}
 
 	err = jfrogCli.Exec(args...)
@@ -336,6 +359,7 @@ func TestHuggingFaceUploadDataset(t *testing.T) {
 	args := []string{
 		"hf", "u", tempDir, "test-org/test-dataset",
 		"--repo-type=dataset",
+		"--repo-key=" + tests.HuggingFaceLocalRepo,
 	}
 
 	err = jfrogCli.Exec(args...)
@@ -414,6 +438,7 @@ func TestHuggingFaceDownloadInvalidRepoID(t *testing.T) {
 	args := []string{
 		"hf", "d", "non-existent-org/non-existent-model-12345xyz",
 		"--repo-type=model",
+		"--repo-key=" + tests.HuggingFaceLocalRepo,
 	}
 
 	err := jfrogCli.Exec(args...)
@@ -460,6 +485,7 @@ func TestHuggingFaceUploadEmptyDirectory(t *testing.T) {
 	args := []string{
 		"hf", "u", tempDir, "test-org/test-empty-model",
 		"--repo-type=model",
+		"--repo-key=" + tests.HuggingFaceLocalRepo,
 	}
 
 	err = jfrogCli.Exec(args...)
@@ -491,6 +517,7 @@ func TestHuggingFaceUploadNonExistentDirectory(t *testing.T) {
 	args := []string{
 		"hf", "u", "/non/existent/path/to/model", "test-org/test-model",
 		"--repo-type=model",
+		"--repo-key=" + tests.HuggingFaceLocalRepo,
 	}
 
 	err := jfrogCli.Exec(args...)
@@ -544,6 +571,7 @@ func TestHuggingFaceUploadWithSpecialCharactersInPath(t *testing.T) {
 	args := []string{
 		"hf", "u", specialDir, "test-org/test-special-chars-model",
 		"--repo-type=model",
+		"--repo-key=" + tests.HuggingFaceLocalRepo,
 	}
 
 	err = jfrogCli.Exec(args...)
@@ -581,6 +609,7 @@ func TestHuggingFaceUploadOverwrite(t *testing.T) {
 	args := []string{
 		"hf", "u", tempDir, repoID,
 		"--repo-type=model",
+		"--repo-key=" + tests.HuggingFaceLocalRepo,
 	}
 
 	err = jfrogCli.Exec(args...)
@@ -614,44 +643,29 @@ func TestHuggingFaceDownloadWithBuildInfo(t *testing.T) {
 	initHuggingFaceTest(t)
 	defer cleanHuggingFaceTest(t)
 
-	// Check if python3 and huggingface_hub are available
 	checkHuggingFaceHubAvailable(t)
 
-	// Build info collection requires HF_ENDPOINT to be set (Artifactory HuggingFace remote)
-	// Skip if not configured - this test requires Artifactory setup
-	if os.Getenv("HF_ENDPOINT") == "" {
-		t.Skip("Skipping build info test: HF_ENDPOINT not set. Set HF_ENDPOINT to your Artifactory HuggingFace remote URL to run this test.")
-	}
-
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+	repoID := "test-org/test-model-buildinfo"
 
-	buildName := "hf-download-build-test"
+	// Upload test files to the local repo first
+	uploadTestModelToLocalRepo(t, jfrogCli, repoID)
+
+	buildName := tests.HuggingFaceBuildName + "-download"
 	buildNumber := "1"
 
-	// Test download with build info flags
-	// Using sshleifer/tiny-gpt2 which is a very small model (~2MB) designed for testing
+	// Download from the local repo with build info flags
 	args := []string{
-		"hf", "d", "sshleifer/tiny-gpt2",
+		"hf", "d", repoID,
 		"--repo-type=model",
 		"--build-name=" + buildName,
 		"--build-number=" + buildNumber,
+		"--repo-key=" + tests.HuggingFaceLocalRepo,
 	}
-
 	err := jfrogCli.Exec(args...)
-	// Build info collection requires Artifactory HuggingFace remote repo to be configured
-	if err != nil {
-		errStr := strings.ToLower(err.Error())
-		if strings.Contains(errStr, "connection refused") || strings.Contains(errStr, "connection reset") ||
-			strings.Contains(errStr, "no such host") || strings.Contains(errStr, "aql") ||
-			strings.Contains(errStr, "401") || strings.Contains(errStr, "unauthorized") {
-			t.Skipf("Skipping: Artifactory HuggingFace remote repo not properly configured: %v", err)
-		}
-		assert.NoError(t, err, "HuggingFace download with build info should succeed")
-	}
+	assert.NoError(t, err, "HuggingFace download with build info should succeed")
 
-	// Clean up build info
 	t.Cleanup(func() {
-		// Attempt to clean build info (may fail if not created, which is fine)
 		_ = jfrogCli.Exec("rt", "build-discard", buildName, "--max-builds=0")
 	})
 }
@@ -682,7 +696,7 @@ func TestHuggingFaceUploadWithBuildInfo(t *testing.T) {
 
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 
-	buildName := "hf-upload-build-test"
+	buildName := tests.HuggingFaceBuildName + "-upload"
 	buildNumber := "1"
 
 	// Test upload with build info flags
@@ -691,6 +705,7 @@ func TestHuggingFaceUploadWithBuildInfo(t *testing.T) {
 		"--repo-type=model",
 		"--build-name=" + buildName,
 		"--build-number=" + buildNumber,
+		"--repo-key=" + tests.HuggingFaceLocalRepo,
 	}
 
 	err = jfrogCli.Exec(args...)
@@ -712,44 +727,30 @@ func TestHuggingFaceDownloadWithBuildInfoAndModule(t *testing.T) {
 	initHuggingFaceTest(t)
 	defer cleanHuggingFaceTest(t)
 
-	// Check if python3 and huggingface_hub are available
 	checkHuggingFaceHubAvailable(t)
 
-	// Build info collection requires HF_ENDPOINT to be set (Artifactory HuggingFace remote)
-	// Skip if not configured - this test requires Artifactory setup
-	if os.Getenv("HF_ENDPOINT") == "" {
-		t.Skip("Skipping build info test: HF_ENDPOINT not set. Set HF_ENDPOINT to your Artifactory HuggingFace remote URL to run this test.")
-	}
-
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+	repoID := "test-org/test-model-module"
 
-	buildName := "hf-download-module-build-test"
+	// Upload test files to the local repo first
+	uploadTestModelToLocalRepo(t, jfrogCli, repoID)
+
+	buildName := tests.HuggingFaceBuildName + "-download-module"
 	buildNumber := "1"
-	moduleName := "tiny-bert-model-module"
+	moduleName := "test-model-module"
 
-	// Test download with build info and module flags
-	// Using sshleifer/tiny-gpt2 which is a very small model (~2MB) designed for testing
+	// Download from the local repo with build info and module flags
 	args := []string{
-		"hf", "d", "sshleifer/tiny-gpt2",
+		"hf", "d", repoID,
 		"--repo-type=model",
 		"--build-name=" + buildName,
 		"--build-number=" + buildNumber,
 		"--module=" + moduleName,
+		"--repo-key=" + tests.HuggingFaceLocalRepo,
 	}
-
 	err := jfrogCli.Exec(args...)
-	// Build info collection requires Artifactory HuggingFace remote repo to be configured
-	if err != nil {
-		errStr := strings.ToLower(err.Error())
-		if strings.Contains(errStr, "connection refused") || strings.Contains(errStr, "connection reset") ||
-			strings.Contains(errStr, "no such host") || strings.Contains(errStr, "aql") ||
-			strings.Contains(errStr, "401") || strings.Contains(errStr, "unauthorized") {
-			t.Skipf("Skipping: Artifactory HuggingFace remote repo not properly configured: %v", err)
-		}
-		assert.NoError(t, err, "HuggingFace download with build info and module should succeed")
-	}
+	assert.NoError(t, err, "HuggingFace download with build info and module should succeed")
 
-	// Clean up build info
 	t.Cleanup(func() {
 		_ = jfrogCli.Exec("rt", "build-discard", buildName, "--max-builds=0")
 	})
@@ -777,7 +778,7 @@ func TestHuggingFaceUploadWithBuildInfoAndProject(t *testing.T) {
 
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 
-	buildName := "hf-upload-project-build-test"
+	buildName := tests.HuggingFaceBuildName + "-upload-project"
 	buildNumber := "1"
 	projectKey := "test-project"
 
@@ -788,6 +789,7 @@ func TestHuggingFaceUploadWithBuildInfoAndProject(t *testing.T) {
 		"--build-name=" + buildName,
 		"--build-number=" + buildNumber,
 		"--project=" + projectKey,
+		"--repo-key=" + tests.HuggingFaceLocalRepo,
 	}
 
 	err = jfrogCli.Exec(args...)
@@ -812,45 +814,41 @@ func TestHuggingFaceDownloadAndVerifyCache(t *testing.T) {
 	initHuggingFaceTest(t)
 	defer cleanHuggingFaceTest(t)
 
-	// Check if python3 and huggingface_hub are available
 	checkHuggingFaceHubAvailable(t)
 
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+	repoID := "test-org/test-model-cache"
 
-	// Download a small model (using model instead of dataset to avoid HF rate limiting issues)
-	// This test verifies that downloaded files are cached correctly
+	// Upload test files to the local repo first
+	uploadTestModelToLocalRepo(t, jfrogCli, repoID)
+
+	// Download from the local repo
 	args := []string{
-		"hf", "d", "sshleifer/tiny-gpt2",
+		"hf", "d", repoID,
 		"--repo-type=model",
+		"--repo-key=" + tests.HuggingFaceLocalRepo,
 	}
-
 	err := jfrogCli.Exec(args...)
 	if err != nil {
-		// Skip verification if download failed (might be network/auth issues)
 		t.Skipf("Download failed, skipping file verification: %v", err)
 	}
 
-	// Get HuggingFace cache directory
+	// Verify files are cached under ~/.cache/huggingface/hub/
 	homeDir, err := os.UserHomeDir()
 	require.NoError(t, err, "Failed to get user home directory")
 
-	// HuggingFace typically caches to ~/.cache/huggingface/hub/
 	hfCacheDir := filepath.Join(homeDir, ".cache", "huggingface", "hub")
-
-	// Check if cache directory exists
 	if _, err := os.Stat(hfCacheDir); os.IsNotExist(err) {
 		t.Log("HuggingFace cache directory not found at default location, skipping file verification")
 		return
 	}
 
-	// Verify some files exist in cache (model files are cached with specific naming)
 	found := false
 	err = filepath.Walk(hfCacheDir, func(path string, info os.FileInfo, walkErr error) error {
 		if walkErr != nil {
-			// Skip inaccessible directories/files and continue walking
 			return filepath.SkipDir
 		}
-		if strings.Contains(path, "tiny-gpt2") {
+		if strings.Contains(path, "test-model-cache") {
 			found = true
 			return filepath.SkipDir
 		}
@@ -863,9 +861,13 @@ func TestHuggingFaceDownloadAndVerifyCache(t *testing.T) {
 // InitHuggingFaceTests initializes HuggingFace tests
 func InitHuggingFaceTests() {
 	initArtifactoryCli()
+	cleanUpOldBuilds()
+	cleanUpOldRepositories()
+	tests.AddTimestampToGlobalVars()
+	createRequiredRepos()
 }
 
 // CleanHuggingFaceTests cleans up after HuggingFace tests
 func CleanHuggingFaceTests() {
-	// Cleanup is handled per-test
+	deleteCreatedRepos()
 }
