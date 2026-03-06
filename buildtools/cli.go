@@ -1142,15 +1142,15 @@ func huggingFaceCmd(c *cli.Context) error {
 	cmdName, hfArgs := getCommandName(args)
 	switch cmdName {
 	case "u", "upload":
-		return huggingFaceUploadCmd(c, hfArgs)
+		return huggingFaceUploadCmd(c, "upload", hfArgs)
 	case "d", "download":
-		return huggingFaceDownloadCmd(c, hfArgs)
+		return huggingFaceDownloadCmd(c, "download", hfArgs)
 	default:
 		return errorutils.CheckErrorf("unknown HuggingFace command: '%s'. Valid commands are: upload (u), download (d)", cmdName)
 	}
 }
 
-func huggingFaceUploadCmd(c *cli.Context, hfArgs []string) error {
+func huggingFaceUploadCmd(c *cli.Context, cmdName string, hfArgs []string) error {
 	// Upload requires folderPath and repoID
 	if len(hfArgs) < 2 {
 		return cliutils.PrintHelpAndReturnError("Folder path and repository ID are required.", c)
@@ -1184,6 +1184,7 @@ func huggingFaceUploadCmd(c *cli.Context, hfArgs []string) error {
 		repoType = "model"
 	}
 	huggingFaceUploadCmd := huggingfaceCommands.NewHuggingFaceUpload().
+		SetCommandName(cmdName).
 		SetFolderPath(folderPath).
 		SetRepoId(repoID).
 		SetRepoType(repoType).
@@ -1193,7 +1194,7 @@ func huggingFaceUploadCmd(c *cli.Context, hfArgs []string) error {
 	return commands.Exec(huggingFaceUploadCmd)
 }
 
-func huggingFaceDownloadCmd(c *cli.Context, hfArgs []string) error {
+func huggingFaceDownloadCmd(c *cli.Context, cmdName string, hfArgs []string) error {
 	// Download requires repoID
 	if len(hfArgs) < 1 {
 		return cliutils.PrintHelpAndReturnError("Model/Dataset name is required.", c)
@@ -1231,6 +1232,7 @@ func huggingFaceDownloadCmd(c *cli.Context, hfArgs []string) error {
 		revision = "main"
 	}
 	huggingFaceDownloadCmd := huggingfaceCommands.NewHuggingFaceDownload().
+		SetCommandName(cmdName).
 		SetRepoId(repoID).
 		SetRepoType(repoType).
 		SetRevision(revision).
