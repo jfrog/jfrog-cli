@@ -3,7 +3,7 @@ package groupcreate
 var Usage = []string{"rt gc <group name>"}
 
 func GetDescription() string {
-	return "Create new users group."
+	return "Create a new user group"
 }
 
 func GetArguments() string {
