@@ -407,7 +407,7 @@ func TestIntro(t *testing.T) {
 	defer setEnvCallBack()
 
 	runJfrogCli(t, "intro")
-	assert.Contains(t, buffer.String(), "Thank you for installing version")
+	assert.Contains(t, buffer.String(), "Thank you for installing JFrog CLI version")
 }
 
 func TestSurvey_NotDisplayedOnNonHelp(t *testing.T) {

@@ -3,7 +3,7 @@ package gocommand
 var Usage = []string{"rt go <go arguments> [command options]"}
 
 func GetDescription() string {
-	return "Runs go."
+	return "Run go"
 }
 
 func GetArguments() string {
