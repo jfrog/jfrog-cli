@@ -152,7 +152,7 @@ go test -v github.com/jfrog/jfrog-cli -test.npm [flags]
 
 ##### Requirements
 
-- The _java_ executable should be included in the system's `PATH` environment variable. Alternatively, set the `_JAVA_HOME` environment variable.
+- The _java_ executable should be included in the system's `PATH` environment variable. Alternatively, set the `JAVA_HOME` environment variable.
 
 ##### Limitations
 
@@ -219,9 +219,7 @@ go test -v github.com/jfrog/jfrog-cli -test.podman [flags]
 
 #### Go commands tests
 
-#####
-
-Requirements
+##### Requirements
 
 - The tests are compatible with Artifactory 6.10 and higher.
 - To run Go tests, use the following command:
