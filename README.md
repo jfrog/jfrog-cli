@@ -121,7 +121,7 @@
                 <td> 📃 Scripts</td>
                 <td>
                     <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/scriptTests.yml?query=branch%3Amaster">
-                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/goTests.yml/badge.svg?branch=master" alt="">
+                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/scriptTests.yml/badge.svg?branch=master" alt="">
                     </a>
                 </td>
             </tr>
@@ -168,7 +168,7 @@ JFrog CLI is a compact and smart client that provides a simple interface that au
 _Mission Control_ through their respective REST APIs.
 By using the JFrog CLI, you can greatly simplify your automation scripts making them more readable and easier to
 maintain.
-Several features of the JFrog CLI makes your scripts more efficient and reliable:
+Several features of the JFrog CLI make your scripts more efficient and reliable:
 
 - Multithreaded upload and download of artifacts make builds run faster
 - Checksum optimization reduces redundant file transfers
