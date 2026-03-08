@@ -1,4 +1,4 @@
-# Makefile for jfrog-client-go
+# Makefile for jfrog-cli
 
 .PHONY: $(MAKECMDGOALS)
 
@@ -17,6 +17,9 @@ help:
 	@echo "  clean                    - Clean build artifacts"
 	@echo "  test                     - Run tests"
 	@echo "  build                    - Build the project"
+	@echo "  lint                     - Run golangci-lint"
+	@echo "  vet                      - Run go vet"
+	@echo "  fmt                      - Run go fmt"
 
 # Update all JFrog dependencies
 update-all: update-build-info-go update-client-go update-gofrog update-core update-artifactory update-platform-services update-security update-apptrust update-evidence
@@ -29,7 +32,7 @@ update-build-info-go:
 	@GOPROXY=direct go get github.com/jfrog/build-info-go@main
 	@echo "build-info-go updated successfully!"
 
-# Update gofrog to latest main branch
+# Update jfrog-client-go to latest main branch
 update-client-go:
 	@echo "Updating client-go to latest main branch..."
 	@GOPROXY=direct go get github.com/jfrog/jfrog-client-go@master
@@ -94,3 +97,18 @@ test:
 build:
 	@echo "Building project..."
 	@go build ./...
+
+# Run golangci-lint
+lint:
+	@echo "Running golangci-lint..."
+	@golangci-lint run --timeout 5m ./...
+
+# Run go vet (see CONTRIBUTING.md)
+vet:
+	@echo "Running go vet..."
+	@go vet -v ./...
+
+# Run go fmt (see CONTRIBUTING.md)
+fmt:
+	@echo "Running go fmt..."
+	@go fmt ./...
