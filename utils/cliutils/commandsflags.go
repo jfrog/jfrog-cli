@@ -630,11 +630,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	passwordStdin: cli.BoolFlag{
 		Name:  passwordStdin,
-		Usage: "[Default: false] Set to true if you'd like to provide the password via stdin.` `",
+		Usage: "[Default: false] Set to true to provide the password via stdin.` `",
 	},
 	accessTokenStdin: cli.BoolFlag{
 		Name:  accessTokenStdin,
-		Usage: "[Default: false] Set to true if you'd like to provide the access token via stdin.` `",
+		Usage: "[Default: false] Set to true to provide the access token via stdin.` `",
 	},
 	// Artifactory's commands flags
 	url: cli.StringFlag{
@@ -715,11 +715,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	includeDirs: cli.BoolFlag{
 		Name:  includeDirs,
-		Usage: "[Default: false] Set to true if you'd like to also apply the source path pattern for directories and not just for files.` `",
+		Usage: "[Default: false] Set to true to also apply the source path pattern for directories.` `",
 	},
 	failNoOp: cli.BoolFlag{
 		Name:  failNoOp,
-		Usage: "[Default: false] Set to true if you'd like the command to return exit code 2 in case of no files are affected.` `",
+		Usage: "[Default: false] Set to true to return exit code 2 if no files are affected.` `",
 	},
 	threads: cli.StringFlag{
 		Name:  threads,
@@ -756,7 +756,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	interactive: cli.BoolTFlag{
 		Name:  interactive,
-		Usage: "[Default: true, unless $CI is true] Set to false if you do not want the config command to be interactive. If true, the --url option becomes optional.` `",
+		Usage: "[Default: true, unless $CI is true] Set to false if you don't want the config command to be interactive. If true, the --url option becomes optional.` `",
 	},
 	EncPassword: cli.BoolTFlag{
 		Name:  EncPassword,
@@ -782,7 +782,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	uploadRecursive: cli.BoolTFlag{
 		Name:  recursive,
-		Usage: "[Default: true] Set to false if you do not wish to collect artifacts in sub-folders to be uploaded to Artifactory.` `",
+		Usage: "[Default: true] Set to false if you don't wish to collect artifacts in sub-folders to be uploaded to Artifactory.` `",
 	},
 	uploadFlat: cli.BoolFlag{
 		Name:  flat,
@@ -838,11 +838,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	downloadRecursive: cli.BoolTFlag{
 		Name:  recursive,
-		Usage: "[Default: true] Set to false if you do not wish to include the download of artifacts inside sub-folders in Artifactory.` `",
+		Usage: "[Default: true] Set to false if you don't wish to include the download of artifacts inside sub-folders in Artifactory.` `",
 	},
 	downloadFlat: cli.BoolFlag{
 		Name:  flat,
-		Usage: "[Default: false] Set to true if you do not wish to have the Artifactory repository path structure created locally for your downloaded files.` `",
+		Usage: "[Default: false] Set to true if you don't wish to have the Artifactory repository path structure created locally for your downloaded files.` `",
 	},
 	downloadMinSplit: cli.StringFlag{
 		Name:  MinSplit,
@@ -884,7 +884,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	moveRecursive: cli.BoolTFlag{
 		Name:  recursive,
-		Usage: "[Default: true] Set to false if you do not wish to move artifacts inside sub-folders in Artifactory.` `",
+		Usage: "[Default: true] Set to false if you don't wish to move artifacts inside sub-folders in Artifactory.` `",
 	},
 	moveFlat: cli.BoolFlag{
 		Name:  flat,
@@ -900,7 +900,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	copyRecursive: cli.BoolTFlag{
 		Name:  recursive,
-		Usage: "[Default: true] Set to false if you do not wish to copy artifacts inside sub-folders in Artifactory.` `",
+		Usage: "[Default: true] Set to false if you don't wish to copy artifacts inside sub-folders in Artifactory.` `",
 	},
 	copyFlat: cli.BoolFlag{
 		Name:  flat,
@@ -916,7 +916,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	deleteRecursive: cli.BoolTFlag{
 		Name:  recursive,
-		Usage: "[Default: true] Set to false if you do not wish to delete artifacts inside sub-folders in Artifactory.` `",
+		Usage: "[Default: true] Set to false if you don't wish to delete artifacts inside sub-folders in Artifactory.` `",
 	},
 	deleteProps: cli.StringFlag{
 		Name:  props,
@@ -932,7 +932,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	searchRecursive: cli.BoolTFlag{
 		Name:  recursive,
-		Usage: "[Default: true] Set to false if you do not wish to search artifacts inside sub-folders in Artifactory.` `",
+		Usage: "[Default: true] Set to false if you don't wish to search artifacts inside sub-folders in Artifactory.` `",
 	},
 	count: cli.BoolFlag{
 		Name:  count,
@@ -1016,7 +1016,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	fail: cli.BoolTFlag{
 		Name:  fail,
-		Usage: "[Default: true] Set to false if you do not wish the command to return exit code 3, even if the 'Fail Build' rule is matched by Xray.` `",
+		Usage: "[Default: true] Set to false if you don't wish the command to return exit code 3, even if the 'Fail Build' rule is matched by Xray.` `",
 	},
 	Status: cli.StringFlag{
 		Name:  Status,
@@ -1104,7 +1104,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	global: cli.BoolFlag{
 		Name:  global,
-		Usage: "[Default: false] Set to true if you'd like the configuration to be global (for all projects). Specific projects can override the global configuration.` `",
+		Usage: "[Default: false] Set to true to make the configuration global (for all projects). Specific projects can override the global configuration.` `",
 	},
 	serverIdResolve: cli.StringFlag{
 		Name:  serverIdResolve,
@@ -1160,11 +1160,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	deployMavenDesc: cli.BoolTFlag{
 		Name:  deployMavenDesc,
-		Usage: "[Default: true] Set to false if you do not wish to deploy Maven descriptors.` `",
+		Usage: "[Default: true] Set to false if you don't wish to deploy Maven descriptors.` `",
 	},
 	deployIvyDesc: cli.BoolTFlag{
 		Name:  deployIvyDesc,
-		Usage: "[Default: true] Set to false if you do not wish to deploy Ivy descriptors.` `",
+		Usage: "[Default: true] Set to false if you don't wish to deploy Ivy descriptors.` `",
 	},
 	ivyDescPattern: cli.StringFlag{
 		Name:  ivyDescPattern,
@@ -1388,7 +1388,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	useWrapperAudit: cli.BoolTFlag{
 		Name:  UseWrapper,
-		Usage: "[Default: true] Set to false if you wish to not use the gradle or maven wrapper.` `",
+		Usage: "[Default: true] Set to false if you don't want to use the Gradle or Maven wrapper.` `",
 	},
 	ExcludeTestDeps: cli.BoolFlag{
 		Name:  ExcludeTestDeps,
@@ -1428,7 +1428,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	UseWrapper: cli.BoolFlag{
 		Name:  UseWrapper,
-		Usage: "[Default: false] Set to true if you wish to use the wrapper.` `",
+		Usage: "[Default: false] Set to true to use the wrapper.` `",
 	},
 	licenses: cli.BoolFlag{
 		Name:  licenses,
@@ -1444,7 +1444,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	scanRecursive: cli.BoolTFlag{
 		Name:  recursive,
-		Usage: "[Default: true] Set to false if you do not wish to collect artifacts in sub-folders to be scanned by Xray.` `",
+		Usage: "[Default: true] Set to false if you don't wish to collect artifacts in sub-folders to be scanned by Xray.` `",
 	},
 	scanRegexp: cli.BoolFlag{
 		Name:  regexpFlag,
@@ -1738,11 +1738,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	OidcProviderType: cli.StringFlag{
 		Name:  OidcProviderType,
-		Usage: "[Default: GitHub] The type of the OIDC provider.Possible values are: GitHub,Azure,GenericOidc` `",
+		Usage: "[Default: GitHub] The type of the OIDC provider. Possible values are: GitHub, Azure, GenericOidc` `",
 	},
 	ApplicationKey: cli.StringFlag{
 		Name:  ApplicationKey,
-		Usage: "[Optional] JFrog ApplicationKey Key` ` ",
+		Usage: "[Optional] JFrog application key` ` ",
 	},
 	runNative: cli.BoolFlag{
 		Name:  runNative,
