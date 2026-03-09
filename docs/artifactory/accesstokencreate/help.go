@@ -3,7 +3,7 @@ package accesstokencreate
 var Usage = []string{"rt atc", "rt atc <username>"}
 
 func GetDescription() string {
-	return "Creates an Artifactory access token. By default an user-scoped token will be created, unless the --groups and/or --grant-admin options are specified."
+	return "Creates an Artifactory access token. By default, a user-scoped token is created, unless the --groups and/or --grant-admin options are specified."
 }
 
 func GetArguments() string {
