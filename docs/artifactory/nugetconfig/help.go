@@ -3,5 +3,5 @@ package nugetconfig
 var Usage = []string{"rt nuget-config [command options]"}
 
 func GetDescription() string {
-	return "Generate NuGet configuration."
+	return "Generate NuGet configuration"
 }

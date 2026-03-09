@@ -3,5 +3,5 @@ package gradleconfig
 var Usage = []string{"rt gradle-config [command options]"}
 
 func GetDescription() string {
-	return "Generate Gradle build configuration."
+	return "Generate Gradle build configuration"
 }
