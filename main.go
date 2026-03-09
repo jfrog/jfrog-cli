@@ -86,7 +86,7 @@ func execMain() error {
 
 	app := cli.NewApp()
 	app.Name = jfrogAppName
-	app.Usage = "See https://docs.jfrog-applications.jfrog.io/jfrog-applications/jfrog-cli for full documentation."
+	app.Usage = "For full documentation, visit https://docs.jfrog.com/"
 	app.Version = cliutils.GetVersion()
 	args := os.Args
 	cliutils.SetCliExecutableName(args[0])

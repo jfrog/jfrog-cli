@@ -3,7 +3,7 @@ package token
 var Usage = []string{"atc", "atc <username>"}
 
 func GetDescription() string {
-	return `Creates an access token. By default, an user-scoped token will be created. Administrator may provide the scope explicitly with '--scope', or implicitly with '--groups', '--grant-admin'.`
+	return `Creates an access token. By default, a user-scoped token is created. Administrator may provide the scope explicitly with '--scope', or implicitly with '--groups', '--grant-admin'.`
 }
 
 func GetArguments() string {
