@@ -3,7 +3,7 @@ package terraformdocs
 var Usage = []string{"terraform <terraform arguments> [command options]"}
 
 func GetDescription() string {
-	return "Runs terraform "
+	return "Run Terraform"
 }
 
 func GetArguments() string {

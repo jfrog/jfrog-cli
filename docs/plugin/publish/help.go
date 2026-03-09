@@ -7,7 +7,7 @@ var Usage = []string{"plugin publish <plugin name> <plugin version>"}
 var EnvVar = []string{common.JfrogCliPluginsServer, common.JfrogCliPluginsRepo}
 
 func GetDescription() string {
-	return "Publishing a JFrog CLI plugin."
+	return "Publish a JFrog CLI plugin"
 }
 
 func GetArguments() string {

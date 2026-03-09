@@ -3,11 +3,12 @@ package artifactory
 import (
 	"errors"
 	"fmt"
+	"os"
+	"strings"
+
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/python"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/cocoapodsconfig"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/swiftconfig"
-	"os"
-	"strings"
 
 	"github.com/jfrog/jfrog-cli/utils/accesstoken"
 

@@ -3,7 +3,7 @@ package groupdelete
 var Usage = []string{"rt gdel <group name>"}
 
 func GetDescription() string {
-	return "Delete a users group."
+	return "Delete a user group"
 }
 
 func GetArguments() string {
