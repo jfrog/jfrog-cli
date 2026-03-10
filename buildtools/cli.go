@@ -85,6 +85,9 @@ import (
 
 const (
 	buildToolsCategory = "Package Managers:"
+	huggingfaceAPI     = "api/huggingfaceml"
+	HF_ENDPOINT        = "HF_ENDPOINT"
+	HF_TOKEN           = "HF_TOKEN"
 )
 
 func GetCommands() []cli.Command {
@@ -1139,15 +1142,15 @@ func huggingFaceCmd(c *cli.Context) error {
 	cmdName, hfArgs := getCommandName(args)
 	switch cmdName {
 	case "u", "upload":
-		return huggingFaceUploadCmd(c, hfArgs)
+		return huggingFaceUploadCmd(c, "upload", hfArgs)
 	case "d", "download":
-		return huggingFaceDownloadCmd(c, hfArgs)
+		return huggingFaceDownloadCmd(c, "download", hfArgs)
 	default:
 		return errorutils.CheckErrorf("unknown HuggingFace command: '%s'. Valid commands are: upload (u), download (d)", cmdName)
 	}
 }
 
-func huggingFaceUploadCmd(c *cli.Context, hfArgs []string) error {
+func huggingFaceUploadCmd(c *cli.Context, cmdName string, hfArgs []string) error {
 	// Upload requires folderPath and repoID
 	if len(hfArgs) < 2 {
 		return cliutils.PrintHelpAndReturnError("Folder path and repository ID are required.", c)
@@ -1160,12 +1163,13 @@ func huggingFaceUploadCmd(c *cli.Context, hfArgs []string) error {
 	if repoID == "" {
 		return cliutils.PrintHelpAndReturnError("Repository ID cannot be empty.", c)
 	}
-	serverDetails, err := coreConfig.GetDefaultServerConf()
+	serverDetails, err := getHuggingFaceServerDetails(hfArgs)
 	if err != nil {
 		return err
 	}
-	if serverDetails == nil {
-		return fmt.Errorf("no default server configuration found. Please configure a server using 'jfrog config add' or specify a server using --server-id")
+	err = updateHuggingFaceEnv(c, serverDetails)
+	if err != nil {
+		return err
 	}
 	buildConfiguration, err := cliutils.CreateBuildConfigurationWithModule(c)
 	if err != nil {
@@ -1180,6 +1184,7 @@ func huggingFaceUploadCmd(c *cli.Context, hfArgs []string) error {
 		repoType = "model"
 	}
 	huggingFaceUploadCmd := huggingfaceCommands.NewHuggingFaceUpload().
+		SetCommandName(cmdName).
 		SetFolderPath(folderPath).
 		SetRepoId(repoID).
 		SetRepoType(repoType).
@@ -1189,7 +1194,7 @@ func huggingFaceUploadCmd(c *cli.Context, hfArgs []string) error {
 	return commands.Exec(huggingFaceUploadCmd)
 }
 
-func huggingFaceDownloadCmd(c *cli.Context, hfArgs []string) error {
+func huggingFaceDownloadCmd(c *cli.Context, cmdName string, hfArgs []string) error {
 	// Download requires repoID
 	if len(hfArgs) < 1 {
 		return cliutils.PrintHelpAndReturnError("Model/Dataset name is required.", c)
@@ -1199,12 +1204,13 @@ func huggingFaceDownloadCmd(c *cli.Context, hfArgs []string) error {
 	if repoID == "" {
 		return cliutils.PrintHelpAndReturnError("Model/Dataset name cannot be empty.", c)
 	}
-	serverDetails, err := coreConfig.GetDefaultServerConf()
+	serverDetails, err := getHuggingFaceServerDetails(hfArgs)
 	if err != nil {
 		return err
 	}
-	if serverDetails == nil {
-		return fmt.Errorf("no default server configuration found. Please configure a server using 'jfrog config add' or specify a server using --server-id")
+	err = updateHuggingFaceEnv(c, serverDetails)
+	if err != nil {
+		return err
 	}
 	buildConfiguration, err := cliutils.CreateBuildConfigurationWithModule(c)
 	if err != nil {
@@ -1226,6 +1232,7 @@ func huggingFaceDownloadCmd(c *cli.Context, hfArgs []string) error {
 		revision = "main"
 	}
 	huggingFaceDownloadCmd := huggingfaceCommands.NewHuggingFaceDownload().
+		SetCommandName(cmdName).
 		SetRepoId(repoID).
 		SetRepoType(repoType).
 		SetRevision(revision).
@@ -1233,6 +1240,53 @@ func huggingFaceDownloadCmd(c *cli.Context, hfArgs []string) error {
 		SetServerDetails(serverDetails).
 		SetBuildConfiguration(buildConfiguration)
 	return commands.Exec(huggingFaceDownloadCmd)
+}
+
+func getHuggingFaceServerDetails(args []string) (*coreConfig.ServerDetails, error) {
+	_, serverID, err := coreutils.ExtractServerIdFromCommand(args)
+	if err != nil {
+		return nil, fmt.Errorf("failed to extract server ID: %w", err)
+	}
+	if serverID == "" {
+		serverDetails, err := coreConfig.GetDefaultServerConf()
+		if err != nil {
+			return nil, err
+		}
+		if serverDetails == nil {
+			return nil, fmt.Errorf("no default server configuration found. Please configure a server using 'jfrog config add' or specify a server using --server-id")
+		}
+		return serverDetails, nil
+	}
+	serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, true)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get server configuration for ID '%s': %w", serverID, err)
+	}
+	return serverDetails, nil
+}
+
+func updateHuggingFaceEnv(c *cli.Context, serverDetails *coreConfig.ServerDetails) error {
+	if os.Getenv(HF_ENDPOINT) == "" {
+		repoKey := c.String("repo-key")
+		if repoKey == "" {
+			return cliutils.PrintHelpAndReturnError("Please specify a repository key.", c)
+		}
+		hfEndpoint := serverDetails.GetArtifactoryUrl() + huggingfaceAPI + "/" + repoKey
+		err := os.Setenv(HF_ENDPOINT, hfEndpoint)
+		if err != nil {
+			return err
+		}
+	}
+	if os.Getenv(HF_TOKEN) == "" {
+		accessToken := serverDetails.GetAccessToken()
+		if accessToken == "" {
+			return cliutils.PrintHelpAndReturnError("You need to specify an access token.", c)
+		}
+		err := os.Setenv(HF_TOKEN, accessToken)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func dockerScanCmd(c *cli.Context, imageTag string) error {

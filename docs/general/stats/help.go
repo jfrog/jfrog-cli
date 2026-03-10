@@ -21,6 +21,6 @@ func GetArguments() string {
 	The output format in which you want statistics to be shown. Currently, Json, Table and Text (default) are supported.
 
 	--access-token(optional)
-	The access token using which you want statistics will be fetched from jfrog instance. By default, logged user access token is used. For some products, like JPDs, projects, user needs to provide admin token.
+	The access token using which you want statistics will be fetched from jfrog instance. By default, logged user access token is used. For some products, like JFrog Platform Deployments and projects, you need to provide an admin token.
 `
 }

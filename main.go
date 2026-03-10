@@ -92,7 +92,7 @@ func execMain() error {
 
 	app := cli.NewApp()
 	app.Name = jfrogAppName
-	app.Usage = "See https://docs.jfrog-applications.jfrog.io/jfrog-applications/jfrog-cli for full documentation."
+	app.Usage = "For full documentation, visit https://docs.jfrog.com/"
 	app.Version = cliutils.GetVersion()
 	args := os.Args
 	cliutils.SetCliExecutableName(args[0])
@@ -237,38 +237,38 @@ func getCommands() ([]cli.Command, error) {
 	cliNameSpaces := []cli.Command{
 		{
 			Name:        cliutils.CmdArtifactory,
-			Usage:       "Artifactory commands.",
+			Usage:       "Artifactory commands",
 			Subcommands: artifactory.GetCommands(),
 			Category:    commandNamespacesCategory,
 		},
 		{
 			Name:        cliutils.CmdMissionControl,
-			Usage:       "Mission Control commands.",
+			Usage:       "Mission Control commands",
 			Subcommands: missioncontrol.GetCommands(),
 			Category:    commandNamespacesCategory,
 		},
 		{
 			Name:        cliutils.CmdPipelines,
-			Usage:       "Pipelines commands.",
+			Usage:       "Pipelines commands",
 			Subcommands: pipelines.GetCommands(),
 			Category:    commandNamespacesCategory,
 		},
 		{
 			Name:        cliutils.CmdCompletion,
-			Usage:       "Generate autocomplete scripts.",
+			Usage:       "Generate autocomplete scripts",
 			Subcommands: completion.GetCommands(),
 			Category:    otherCategory,
 		},
 		{
 			Name:        cliutils.CmdPlugin,
-			Usage:       "Plugins handling commands.",
+			Usage:       "Plugin commands",
 			Subcommands: plugins.GetCommands(),
 			Category:    commandNamespacesCategory,
 		},
 		{
 			Name:        cliutils.CmdConfig,
 			Aliases:     []string{"c"},
-			Usage:       "Server configurations commands.",
+			Usage:       "Server configuration commands",
 			Subcommands: config.GetCommands(),
 			Category:    commandNamespacesCategory,
 		},
@@ -287,7 +287,7 @@ func getCommands() ([]cli.Command, error) {
 		},
 		{
 			Name:     cliutils.CmdOptions,
-			Usage:    "Show all supported environment variables.",
+			Usage:    "Show all supported environment variables",
 			Category: otherCategory,
 			Action: func(*cli.Context) {
 				fmt.Println(common.GetGlobalEnvVars())
@@ -450,7 +450,7 @@ func IntroCmd(_ *cli.Context) error {
 		return err
 	}
 	clientlog.Output()
-	clientlog.Output(coreutils.PrintTitle(fmt.Sprintf("Thank you for installing version %s of JFrog CLI! 🐸", cliutils.CliVersion)))
+	clientlog.Output(coreutils.PrintTitle(fmt.Sprintf("Thank you for installing JFrog CLI version %s 🐸", cliutils.CliVersion)))
 	var serverExists bool
 	serverExists, err = coreconfig.IsServerConfExists()
 	if serverExists || err != nil {
@@ -458,7 +458,7 @@ func IntroCmd(_ *cli.Context) error {
 	}
 	clientlog.Output(coreutils.PrintTitle("So what's next?"))
 	clientlog.Output()
-	clientlog.Output(coreutils.PrintTitle("Authenticate with your JFrog Platform by running one of the following two commands:"))
+	clientlog.Output(coreutils.PrintTitle("Authenticate with your JFrog Platform by running one of the following commands:"))
 	clientlog.Output()
 	clientlog.Output("jf login")
 	clientlog.Output(coreutils.PrintTitle("or"))

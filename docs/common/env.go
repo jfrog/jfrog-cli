@@ -80,12 +80,12 @@ const (
 
 	JfrogCliFailNoOp = `	JFROG_CLI_FAIL_NO_OP
 		[Default: false]
-		Set to true if you'd like the command to return exit code 2 in case of no files are affected.
+		Set to true to return exit code 2 if no files are affected.
 		Support by the following commands: copy, delete, delete-props, set-props, download, move, search and upload`
 
 	JfrogCliUploadEmptyArchive = `	` + services.JfrogCliUploadEmptyArchiveEnv + `
 		[Default: false]
-		Set to true if you'd like to upload an empty archive when '--archive' is set but all files were excluded by exclusions pattern.
+		Set to true to upload an empty archive when '--archive' is set but all files were excluded by exclusion patterns.
 		Supported by the upload command`
 
 	JfrogCliEncryptionKey = `   	JFROG_CLI_ENCRYPTION_KEY
@@ -93,7 +93,7 @@ const (
 
 	JfrogCliAvoidNewVersionWarning = `   	JFROG_CLI_AVOID_NEW_VERSION_WARNING
 		[Default: false]
-		Set to true if you'd like to avoid checking the latest available JFrog CLI version and printing warning when it newer than the current one. `
+		Set to true to skip checking for the latest JFrog CLI version. `
 
 	JfrogCliCommandSummaryOutputDirectory = `    JFROG_CLI_COMMAND_SUMMARY_OUTPUT_DIR
 		Defines the directory path where the command summaries data is stored.

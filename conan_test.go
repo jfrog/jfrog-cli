@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -10,6 +12,7 @@ import (
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	biutils "github.com/jfrog/build-info-go/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	coreBuild "github.com/jfrog/jfrog-cli-core/v2/common/build"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
@@ -467,6 +470,369 @@ func configureConanRemote(t *testing.T) {
 func cleanupConanRemote() {
 	_ = exec.Command("conan", "remote", "remove", tests.ConanVirtualRepo).Run()
 	_ = exec.Command("conan", "remote", "remove", tests.ConanLocalRepo).Run()
+}
+
+// TestConanCreateWithProjectKey tests that 'jf conan create --project=<key>' stores build info
+// in the correct local build dir (SHA includes the project key).
+func TestConanCreateWithProjectKey(t *testing.T) {
+	initConanTest(t)
+	buildName := tests.ConanBuildName + "-project"
+	buildNumber := "1"
+	projectKey := "testprj"
+
+	projectPath := createConanProject(t, "conan-create-project-test")
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+
+	configureConanRemote(t)
+	defer cleanupConanRemote()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	createArgs := []string{
+		"conan", "create", ".",
+		"--build=missing",
+		"--build-name=" + buildName,
+		"--build-number=" + buildNumber,
+		"--project=" + projectKey,
+	}
+	require.NoError(t, jfrogCli.Exec(createArgs...))
+
+	// Verify local build info was stored under the project-key-aware directory
+	builds, err := coreBuild.GetGeneratedBuildsInfo(buildName, buildNumber, projectKey)
+	require.NoError(t, err)
+	require.Len(t, builds, 1, "Expected 1 build info file stored with project key '%s'", projectKey)
+	assert.Equal(t, buildName, builds[0].Name)
+	assert.Equal(t, buildNumber, builds[0].Number)
+
+	// Verify that the build is NOT found under the empty-project directory
+	buildsNoProject, err := coreBuild.GetGeneratedBuildsInfo(buildName, buildNumber, "")
+	assert.NoError(t, err)
+	assert.Empty(t, buildsNoProject, "Build info should NOT exist under empty project key directory")
+
+	// Cleanup local build dir
+	assert.NoError(t, coreBuild.RemoveBuildDir(buildName, buildNumber, projectKey))
+}
+
+// TestConanCreateWithoutProjectKey verifies no regression: 'jf conan create' without --project
+// still stores build info in the default (empty project) directory.
+func TestConanCreateWithoutProjectKey(t *testing.T) {
+	initConanTest(t)
+	buildName := tests.ConanBuildName + "-noproject"
+	buildNumber := "1"
+
+	projectPath := createConanProject(t, "conan-create-noproject-test")
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+
+	configureConanRemote(t)
+	defer cleanupConanRemote()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	createArgs := []string{
+		"conan", "create", ".",
+		"--build=missing",
+		"--build-name=" + buildName,
+		"--build-number=" + buildNumber,
+	}
+	require.NoError(t, jfrogCli.Exec(createArgs...))
+
+	// Verify local build info was stored under the empty project directory
+	builds, err := coreBuild.GetGeneratedBuildsInfo(buildName, buildNumber, "")
+	require.NoError(t, err)
+	require.Len(t, builds, 1, "Expected 1 build info file stored without project key")
+	assert.Equal(t, buildName, builds[0].Name)
+
+	// Cleanup local build dir
+	assert.NoError(t, coreBuild.RemoveBuildDir(buildName, buildNumber, ""))
+}
+
+// TestConanInstallWithProjectKey tests that 'jf conan install --project=<key>' stores
+// build info in the project-key-aware directory.
+func TestConanInstallWithProjectKey(t *testing.T) {
+	initConanTest(t)
+	buildName := tests.ConanBuildName + "-install-project"
+	buildNumber := "1"
+	projectKey := "testprj"
+
+	projectPath := createConanProject(t, "conan-install-project-test")
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+
+	configureConanRemote(t)
+	defer cleanupConanRemote()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	installArgs := []string{
+		"conan", "install", ".",
+		"--build=missing",
+		"-r", tests.ConanVirtualRepo,
+		"--build-name=" + buildName,
+		"--build-number=" + buildNumber,
+		"--project=" + projectKey,
+	}
+	require.NoError(t, jfrogCli.Exec(installArgs...))
+
+	// Verify local build info was stored with project key
+	builds, err := coreBuild.GetGeneratedBuildsInfo(buildName, buildNumber, projectKey)
+	require.NoError(t, err)
+	require.Len(t, builds, 1, "Expected 1 build info file stored with project key '%s'", projectKey)
+
+	// Verify NOT stored under empty-project dir
+	buildsNoProject, err := coreBuild.GetGeneratedBuildsInfo(buildName, buildNumber, "")
+	assert.NoError(t, err)
+	assert.Empty(t, buildsNoProject, "Build info should NOT exist under empty project key directory")
+
+	// Cleanup
+	assert.NoError(t, coreBuild.RemoveBuildDir(buildName, buildNumber, projectKey))
+}
+
+// TestConanUploadWithProjectKey tests that 'jf conan upload --project=<key>' stores
+// build info in the project-key-aware directory.
+func TestConanUploadWithProjectKey(t *testing.T) {
+	initConanTest(t)
+	buildName := tests.ConanBuildName + "-upload-project"
+	buildNumber := "1"
+	projectKey := "testprj"
+
+	projectPath := createConanProject(t, "conan-upload-project-test")
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+
+	configureConanRemote(t)
+	defer cleanupConanRemote()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+
+	// First create the package so it can be uploaded
+	createArgs := []string{
+		"conan", "create", ".",
+		"--build=missing",
+		"--build-name=" + buildName,
+		"--build-number=" + buildNumber,
+		"--project=" + projectKey,
+	}
+	require.NoError(t, jfrogCli.Exec(createArgs...))
+
+	// Upload with --project
+	uploadArgs := []string{
+		"conan", "upload", "cli-test-package/*",
+		"-r", tests.ConanLocalRepo,
+		"--confirm",
+		"--build-name=" + buildName,
+		"--build-number=" + buildNumber,
+		"--project=" + projectKey,
+	}
+	require.NoError(t, jfrogCli.Exec(uploadArgs...))
+
+	// Verify local build info was stored with project key
+	builds, err := coreBuild.GetGeneratedBuildsInfo(buildName, buildNumber, projectKey)
+	require.NoError(t, err)
+	require.NotEmpty(t, builds, "Expected build info files stored with project key '%s'", projectKey)
+
+	// Cleanup
+	assert.NoError(t, coreBuild.RemoveBuildDir(buildName, buildNumber, projectKey))
+}
+
+// TestConanBuildPublishWithProjectKey verifies that build info stored with --project
+// is isolated from builds without --project.
+func TestConanBuildPublishWithProjectKey(t *testing.T) {
+	initConanTest(t)
+	buildName := tests.ConanBuildName + "-bp-project"
+	buildNumber := "1"
+	projectKey := "testprj"
+
+	projectPath := createConanProject(t, "conan-bp-project-test")
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+
+	configureConanRemote(t)
+	defer cleanupConanRemote()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+
+	// Create with --project so build info is stored with project key in the dir hash
+	createArgs := []string{
+		"conan", "create", ".",
+		"--build=missing",
+		"--build-name=" + buildName,
+		"--build-number=" + buildNumber,
+		"--project=" + projectKey,
+	}
+	require.NoError(t, jfrogCli.Exec(createArgs...))
+
+	// Verify the project-key-aware build dir has build info files
+	buildsInfo, err := coreBuild.GetGeneratedBuildsInfo(buildName, buildNumber, projectKey)
+	require.NoError(t, err)
+	assert.NotEmpty(t, buildsInfo, "Build info should exist in the project-key-aware build dir")
+
+	// Verify the build dir WITHOUT project key does NOT have build info files
+	buildsInfoNoProject, err := coreBuild.GetGeneratedBuildsInfo(buildName, buildNumber, "")
+	require.NoError(t, err)
+	assert.Empty(t, buildsInfoNoProject, "Build info should NOT exist in the non-project build dir")
+
+	// Cleanup
+	assert.NoError(t, coreBuild.RemoveBuildDir(buildName, buildNumber, projectKey))
+	assert.NoError(t, coreBuild.RemoveBuildDir(buildName, buildNumber, ""))
+}
+
+// TestConanProjectKeyBuildDirHash verifies the SHA256 directory name computation.
+// With --project=vsm the local build dir should be SHA256("buildName_buildNumber_vsm"),
+func TestConanProjectKeyBuildDirHash(t *testing.T) {
+	initConanTest(t)
+	buildName := tests.ConanBuildName + "-hash"
+	buildNumber := "1"
+	projectKey := "vsm"
+
+	projectPath := createConanProject(t, "conan-hash-test")
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+
+	configureConanRemote(t)
+	defer cleanupConanRemote()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	createArgs := []string{
+		"conan", "create", ".",
+		"--build=missing",
+		"--build-name=" + buildName,
+		"--build-number=" + buildNumber,
+		"--project=" + projectKey,
+	}
+	require.NoError(t, jfrogCli.Exec(createArgs...))
+
+	// Compute expected directory names
+	expectedWithProject := sha256.Sum256([]byte(buildName + "_" + buildNumber + "_" + projectKey))
+	expectedDirWithProject := hex.EncodeToString(expectedWithProject[:])
+	buggyNoProject := sha256.Sum256([]byte(buildName + "_" + buildNumber + "_"))
+	buggyDirNoProject := hex.EncodeToString(buggyNoProject[:])
+
+	// Get the actual build dir path (should include project key)
+	buildDir, err := coreBuild.GetBuildDir(buildName, buildNumber, projectKey)
+	require.NoError(t, err)
+	actualDirName := filepath.Base(buildDir)
+
+	assert.Equal(t, expectedDirWithProject, actualDirName,
+		"Build dir should be SHA256 of '%s_%s_%s'", buildName, buildNumber, projectKey)
+	assert.NotEqual(t, buggyDirNoProject, actualDirName,
+		"Build dir must NOT be SHA256 of '%s_%s_' (old bug)", buildName, buildNumber)
+
+	// Verify build info file exists in that directory
+	builds, err := coreBuild.GetGeneratedBuildsInfo(buildName, buildNumber, projectKey)
+	require.NoError(t, err)
+	require.Len(t, builds, 1, "Expected build info to exist in the project-key-aware directory")
+
+	assert.NoError(t, coreBuild.RemoveBuildDir(buildName, buildNumber, projectKey))
+}
+
+// TestConanMultipleProjectKeys tests that builds with different project keys
+// are stored in separate directories and don't interfere with each other.
+func TestConanMultipleProjectKeys(t *testing.T) {
+	initConanTest(t)
+	buildName := tests.ConanBuildName + "-multiproj"
+	buildNumber := "1"
+	projectKeys := []string{"proj1", "proj2", ""}
+
+	projectPath := createConanProject(t, "conan-multi-project-test")
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+
+	configureConanRemote(t)
+	defer cleanupConanRemote()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+
+	// Run create with different project keys
+	for _, pk := range projectKeys {
+		args := []string{
+			"conan", "create", ".",
+			"--build=missing",
+			"--build-name=" + buildName,
+			"--build-number=" + buildNumber,
+		}
+		if pk != "" {
+			args = append(args, "--project="+pk)
+		}
+		require.NoError(t, jfrogCli.Exec(args...), "Failed for project key '%s'", pk)
+	}
+
+	// Verify each project key has its own build info, isolated from the others
+	for _, pk := range projectKeys {
+		builds, err := coreBuild.GetGeneratedBuildsInfo(buildName, buildNumber, pk)
+		require.NoError(t, err)
+		require.Len(t, builds, 1, "Expected exactly 1 build info for project key '%s'", pk)
+		assert.Equal(t, buildName, builds[0].Name)
+	}
+
+	// Verify all build dirs are distinct (different SHA)
+	dirs := make(map[string]string)
+	for _, pk := range projectKeys {
+		buildDir, err := coreBuild.GetBuildDir(buildName, buildNumber, pk)
+		require.NoError(t, err)
+		dirName := filepath.Base(buildDir)
+		existingPk, exists := dirs[dirName]
+		assert.False(t, exists, "Project keys '%s' and '%s' produced the same build dir %s", existingPk, pk, dirName)
+		dirs[dirName] = pk
+	}
+
+	// Cleanup all
+	for _, pk := range projectKeys {
+		assert.NoError(t, coreBuild.RemoveBuildDir(buildName, buildNumber, pk))
+	}
+}
+
+// TestConanProjectKeySpaceSeparated tests that --project <value>
+// works the same as --project=<value>.
+func TestConanProjectKeySpaceSeparated(t *testing.T) {
+	initConanTest(t)
+	buildName := tests.ConanBuildName + "-space-project"
+	buildNumber := "1"
+	projectKey := "testprj"
+
+	projectPath := createConanProject(t, "conan-space-project-test")
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+
+	configureConanRemote(t)
+	defer cleanupConanRemote()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	// Note: --project testprj (space-separated, not --project=testprj)
+	createArgs := []string{
+		"conan", "create", ".",
+		"--build=missing",
+		"--build-name=" + buildName,
+		"--build-number=" + buildNumber,
+		"--project", projectKey,
+	}
+	require.NoError(t, jfrogCli.Exec(createArgs...))
+
+	// Verify local build info was stored with project key
+	builds, err := coreBuild.GetGeneratedBuildsInfo(buildName, buildNumber, projectKey)
+	require.NoError(t, err)
+	require.Len(t, builds, 1, "Expected 1 build info file stored with space-separated --project")
+
+	// Verify NOT stored under empty-project dir
+	buildsNoProject, err := coreBuild.GetGeneratedBuildsInfo(buildName, buildNumber, "")
+	assert.NoError(t, err)
+	assert.Empty(t, buildsNoProject, "Build info should NOT exist under empty project key directory")
+
+	assert.NoError(t, coreBuild.RemoveBuildDir(buildName, buildNumber, projectKey))
 }
 
 // TestConanBuildPublishWithCIVcsProps tests that CI VCS properties are set on Conan artifacts
