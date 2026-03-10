@@ -17,11 +17,15 @@ jobs:
       - name: Setup JFrog CLI
         uses: bhanurp/setup-jfrog-cli@add-package-alias
         with:
+          version: 2.93.0
+          download-repository: bhanu-ghost-frog
           enable-package-alias: true
           package-alias-tools: npm,mvn,pip
+          custom-server-id: ghost-demo
         env:
           JF_URL: ${{ secrets.JFROG_URL }}
           JF_ACCESS_TOKEN: ${{ secrets.JFROG_ACCESS_TOKEN }}
+          JF_PROJECT: bhanu
 
       - name: Show package-alias status
         run: jf package-alias status
