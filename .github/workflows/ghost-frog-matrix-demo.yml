@@ -18,6 +18,7 @@ jobs:
             version: '16'
             os: ubuntu-latest
             tool: npm
+            config_cmd: jf npmc --repo-resolve npm --server-id-resolve ghost-demo
             build_cmd: |
               echo '{"name":"test","version":"1.0.0","dependencies":{"express":"^4.18.0"}}' > package.json
               npm install
@@ -27,6 +28,7 @@ jobs:
             version: '18'
             os: ubuntu-latest
             tool: npm
+            config_cmd: jf npmc --repo-resolve npm --server-id-resolve ghost-demo
             build_cmd: |
               echo '{"name":"test","version":"1.0.0","dependencies":{"express":"^4.18.0"}}' > package.json
               npm install
@@ -37,6 +39,7 @@ jobs:
             version: '3.9'
             os: ubuntu-latest
             tool: pip
+            config_cmd: jf pipc --repo-resolve pypi --server-id-resolve ghost-demo
             build_cmd: |
               echo "requests==2.31.0" > requirements.txt
               pip install -r requirements.txt
@@ -46,6 +49,7 @@ jobs:
             version: '3.11'
             os: ubuntu-latest
             tool: pip
+            config_cmd: jf pipc --repo-resolve pypi --server-id-resolve ghost-demo
             build_cmd: |
               echo "requests==2.31.0" > requirements.txt
               pip install -r requirements.txt
@@ -56,6 +60,7 @@ jobs:
             version: '11'
             os: ubuntu-latest
             tool: mvn
+            config_cmd: jf mvnc --repo-resolve-releases libs-release --repo-resolve-snapshots libs-release --server-id-resolve ghost-demo
             build_cmd: |
               cat > pom.xml << 'EOF'
               <project>
@@ -75,6 +80,7 @@ jobs:
             version: '17'
             os: ubuntu-latest
             tool: mvn
+            config_cmd: jf mvnc --repo-resolve-releases libs-release --repo-resolve-snapshots libs-release --server-id-resolve ghost-demo
             build_cmd: |
               cat > pom.xml << 'EOF'
               <project>
@@ -129,6 +135,9 @@ jobs:
 
       - name: Show package-alias status
         run: jf package-alias status
+
+      - name: Configure ${{ matrix.tool }} for JFrog
+        run: ${{ matrix.config_cmd }}
 
       # Run language-specific build
       - name: Build with Ghost Frog

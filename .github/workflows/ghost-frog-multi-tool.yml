@@ -29,6 +29,15 @@ jobs:
 
       - name: Show package-alias status
         run: jf package-alias status
+
+      - name: Configure npm for JFrog
+        run: jf npmc --repo-resolve npm --server-id-resolve ghost-demo
+
+      - name: Configure Maven for JFrog
+        run: jf mvnc --repo-resolve-releases libs-release --repo-resolve-snapshots libs-release --server-id-resolve ghost-demo
+
+      - name: Configure pip for JFrog
+        run: jf pipc --repo-resolve pypi --server-id-resolve ghost-demo
       
       - name: Demo - NPM Project
         run: |
