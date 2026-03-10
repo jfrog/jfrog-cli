@@ -27,36 +27,47 @@ func (uc *UninstallCommand) Run() error {
 		return err
 	}
 
-	// Check if alias directory exists
 	if _, err := os.Stat(binDir); os.IsNotExist(err) {
 		log.Info("Package aliases are not installed.")
 		return nil
 	}
 
-	// Remove all aliases
-	removedCount := 0
-	for _, tool := range SupportedTools {
-		aliasPath := filepath.Join(binDir, tool)
-		if runtime.GOOS == "windows" {
-			aliasPath += ".exe"
-		}
-
-		if err := os.Remove(aliasPath); err != nil {
-			if !os.IsNotExist(err) {
-				log.Debug(fmt.Sprintf("Failed to remove %s: %v", aliasPath, err))
-			}
-		} else {
-			removedCount++
-			log.Debug(fmt.Sprintf("Removed alias: %s", aliasPath))
-		}
+	aliasDir, err := GetAliasHomeDir()
+	if err != nil {
+		return err
 	}
 
-	// Remove the entire package-alias directory
-	aliasDir, err := GetAliasHomeDir()
-	if err == nil {
-		if err := os.RemoveAll(aliasDir); err != nil {
-			log.Warn(fmt.Sprintf("Failed to remove alias directory: %v", err))
+	var removedCount int
+
+	// Hold the lock while removing aliases and the directory so a
+	// concurrent install doesn't recreate files mid-removal.
+	lockErr := withConfigLock(aliasDir, func() error {
+		for _, tool := range SupportedTools {
+			aliasPath := filepath.Join(binDir, tool)
+			if runtime.GOOS == "windows" {
+				aliasPath += ".exe"
+			}
+
+			if removeErr := os.Remove(aliasPath); removeErr != nil {
+				if !os.IsNotExist(removeErr) {
+					log.Debug(fmt.Sprintf("Failed to remove %s: %v", aliasPath, removeErr))
+				}
+			} else {
+				removedCount++
+				log.Debug(fmt.Sprintf("Removed alias: %s", aliasPath))
+			}
 		}
+		return nil
+	})
+
+	// Remove the entire directory tree after releasing the lock (the lock
+	// file itself lives inside aliasDir, so we can't delete it while held).
+	if removeErr := os.RemoveAll(aliasDir); removeErr != nil {
+		log.Warn(fmt.Sprintf("Failed to remove alias directory: %v", removeErr))
+	}
+
+	if lockErr != nil {
+		return lockErr
 	}
 
 	log.Info(fmt.Sprintf("Removed %d aliases", removedCount))

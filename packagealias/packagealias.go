@@ -140,7 +140,9 @@ func IsRunningAsAlias() (bool, string) {
 	return false, ""
 }
 
-// FilterOutDirFromPATH removes a directory from PATH
+// FilterOutDirFromPATH removes a directory from PATH.
+// On Windows the comparison is case-insensitive because the file system
+// and PATH entries frequently differ in casing (e.g. C:\Users vs c:\users).
 func FilterOutDirFromPATH(pathVal, rmDir string) string {
 	rmDir = filepath.Clean(rmDir)
 	parts := filepath.SplitList(pathVal)
@@ -150,13 +152,22 @@ func FilterOutDirFromPATH(pathVal, rmDir string) string {
 		if dir == "" {
 			continue
 		}
-		if filepath.Clean(dir) == rmDir {
+		if pathsEqual(filepath.Clean(dir), rmDir) {
 			continue
 		}
 		keep = append(keep, dir)
 	}
 
 	return strings.Join(keep, string(os.PathListSeparator))
+}
+
+// pathsEqual compares two cleaned paths. On Windows the comparison is
+// case-insensitive; on all other platforms it is exact.
+func pathsEqual(a, b string) bool {
+	if runtime.GOOS == "windows" {
+		return strings.EqualFold(a, b)
+	}
+	return a == b
 }
 
 // DisableAliasesForThisProcess removes the alias directory from PATH for the

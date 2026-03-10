@@ -5,62 +5,82 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strings"
 	"syscall"
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
-// DispatchIfAlias checks if we were invoked as an alias and handles it
-// This should be called very early in main() before any other logic
+const GhostFrogEnvVar = "JFROG_CLI_GHOST_FROG"
+
+const ghostFrogLogPrefix = "[GHOST_FROG]"
+
+// DispatchIfAlias checks if we were invoked as an alias and handles it.
+// This should be called very early in main() before any other logic.
+//
+// JFROG_CLI_GHOST_FROG values:
+//
+//	"false" - bypass alias interception entirely
+//	"audit" - log what would happen but run the native tool unchanged
+//	any other / unset - normal interception
 func DispatchIfAlias() error {
+	envVal := strings.ToLower(strings.TrimSpace(os.Getenv(GhostFrogEnvVar)))
+	if envVal == "false" {
+		log.Debug(ghostFrogLogPrefix + " Ghost Frog disabled via " + GhostFrogEnvVar + "=false")
+		return nil
+	}
+	auditMode := envVal == "audit"
+
 	isAlias, tool := IsRunningAsAlias()
 	if !isAlias {
-		// Not running as alias, continue normal jf execution
 		return nil
 	}
 
-	log.Debug(fmt.Sprintf("Detected running as alias: %s", tool))
+	log.Debug(fmt.Sprintf("%s Detected running as alias: %s", ghostFrogLogPrefix, tool))
 
 	// Filter alias dir from PATH to prevent recursion when execRealTool runs.
 	// If this fails, exec.LookPath may find the alias again instead of the real tool, causing infinite recursion.
 	pathFilterErr := DisableAliasesForThisProcess()
 	if pathFilterErr != nil {
-		log.Warn(fmt.Sprintf("Failed to filter PATH: %v", pathFilterErr))
+		log.Warn(fmt.Sprintf("%s Failed to filter PATH: %v", ghostFrogLogPrefix, pathFilterErr))
 	}
 
-	// Check if aliasing is enabled before intercepting
-	if !isEnabled() {
-		log.Info(fmt.Sprintf("Package aliasing is disabled - running native '%s'", tool))
+	if auditMode {
+		mode := getToolMode(tool, os.Args[1:])
+		log.Info(fmt.Sprintf("[GHOST_FROG_AUDIT] Would intercept '%s' (mode=%s) -- passing to native tool instead", tool, mode))
 		if pathFilterErr != nil {
-			return fmt.Errorf("cannot run native %s: failed to remove alias from PATH (would cause recursion): %w", tool, pathFilterErr)
+			return fmt.Errorf("%s cannot run native %s in audit mode: failed to remove alias from PATH (would cause recursion): %w", ghostFrogLogPrefix, tool, pathFilterErr)
 		}
 		return execRealTool(tool, os.Args[1:])
 	}
 
-	log.Info(fmt.Sprintf("👻 Ghost Frog: Intercepting '%s' command", tool))
+	if !isEnabled() {
+		log.Info(fmt.Sprintf("%s Package aliasing is disabled -- running native '%s'", ghostFrogLogPrefix, tool))
+		if pathFilterErr != nil {
+			return fmt.Errorf("%s cannot run native %s: failed to remove alias from PATH (would cause recursion): %w", ghostFrogLogPrefix, tool, pathFilterErr)
+		}
+		return execRealTool(tool, os.Args[1:])
+	}
 
-	// Load tool configuration
+	log.Info(fmt.Sprintf("%s Intercepting '%s' command", ghostFrogLogPrefix, tool))
+
 	mode := getToolMode(tool, os.Args[1:])
 
 	switch mode {
 	case ModeJF:
-		// Run through JFrog CLI integration
 		return runJFMode(tool, os.Args[1:])
 	case ModeEnv:
-		// Inject environment variables then run native
 		if pathFilterErr != nil {
-			return fmt.Errorf("cannot run native %s: failed to remove alias from PATH (would cause recursion): %w", tool, pathFilterErr)
+			return fmt.Errorf("%s cannot run native %s: failed to remove alias from PATH (would cause recursion): %w", ghostFrogLogPrefix, tool, pathFilterErr)
 		}
 		return runEnvMode(tool, os.Args[1:])
 	case ModePass:
-		// Pass through to native tool
 		if pathFilterErr != nil {
-			return fmt.Errorf("cannot run native %s: failed to remove alias from PATH (would cause recursion): %w", tool, pathFilterErr)
+			return fmt.Errorf("%s cannot run native %s: failed to remove alias from PATH (would cause recursion): %w", ghostFrogLogPrefix, tool, pathFilterErr)
 		}
 		return execRealTool(tool, os.Args[1:])
 	default:
-		// Default to JF mode
 		return runJFMode(tool, os.Args[1:])
 	}
 }
@@ -93,7 +113,7 @@ func getToolMode(tool string, args []string) AliasMode {
 func runJFMode(tool string, args []string) error {
 	execPath, err := os.Executable()
 	if err != nil {
-		return fmt.Errorf("could not determine executable path: %w", err)
+		return fmt.Errorf("%s could not determine executable path: %w", ghostFrogLogPrefix, err)
 	}
 
 	newArgs := make([]string, 0, len(os.Args)+1)
@@ -103,8 +123,8 @@ func runJFMode(tool string, args []string) error {
 
 	os.Args = newArgs
 
-	log.Debug(fmt.Sprintf("Running in JF mode: %v", os.Args))
-	log.Info(fmt.Sprintf("👻 Ghost Frog: Transforming '%s' to 'jf %s'", tool, tool))
+	log.Debug(fmt.Sprintf("%s Running in JF mode: %v", ghostFrogLogPrefix, os.Args))
+	log.Info(fmt.Sprintf("%s Transforming '%s' to 'jf %s'", ghostFrogLogPrefix, tool, tool))
 
 	return nil
 }
@@ -122,10 +142,10 @@ func runEnvMode(tool string, args []string) error {
 func execRealTool(tool string, args []string) error {
 	realPath, err := exec.LookPath(tool)
 	if err != nil {
-		return fmt.Errorf("could not find real %s: %w", tool, err)
+		return fmt.Errorf("%s could not find real '%s' binary on PATH (Ghost Frog shim cannot dispatch): %w", ghostFrogLogPrefix, tool, err)
 	}
 
-	log.Debug(fmt.Sprintf("Executing real tool: %s", realPath))
+	log.Debug(fmt.Sprintf("%s Executing real tool: %s", ghostFrogLogPrefix, realPath))
 
 	argv := append([]string{tool}, args...)
 

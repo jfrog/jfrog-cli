@@ -26,7 +26,6 @@ func (ic *InstallCommand) CommandName() string {
 }
 
 func (ic *InstallCommand) Run() error {
-	// 1. Create alias directories
 	aliasDir, err := GetAliasHomeDir()
 	if err != nil {
 		return err
@@ -41,12 +40,10 @@ func (ic *InstallCommand) Run() error {
 		return errorutils.CheckError(err)
 	}
 
-	// 2. Get the path of the current executable
 	jfPath, err := os.Executable()
 	if err != nil {
 		return errorutils.CheckError(fmt.Errorf("could not determine executable path: %w", err))
 	}
-	// Resolve any symlinks to get the real path
 	jfPath, err = filepath.EvalSymlinks(jfPath)
 	if err != nil {
 		return errorutils.CheckError(fmt.Errorf("could not resolve executable path: %w", err))
@@ -58,71 +55,69 @@ func (ic *InstallCommand) Run() error {
 		return err
 	}
 
-	// 3. Create symlinks/copies for selected tools and remove unselected aliases
-	selectedToolsSet := make(map[string]struct{}, len(selectedTools))
-	for _, tool := range selectedTools {
-		selectedToolsSet[tool] = struct{}{}
-	}
-
-	createdCount := 0
-	for _, tool := range SupportedTools {
-		aliasPath := filepath.Join(binDir, tool)
-		if runtime.GOOS == "windows" {
-			aliasPath += ".exe"
-		}
-
-		if _, shouldInstall := selectedToolsSet[tool]; !shouldInstall {
-			if removeErr := os.Remove(aliasPath); removeErr != nil && !os.IsNotExist(removeErr) {
-				log.Warn(fmt.Sprintf("Failed to remove alias for %s: %v", tool, removeErr))
-			}
-			continue
-		}
-
-		if runtime.GOOS == "windows" {
-			// On Windows, we need to copy the binary
-			if copyErr := copyFile(jfPath, aliasPath); copyErr != nil {
-				log.Warn(fmt.Sprintf("Failed to create alias for %s: %v", tool, copyErr))
-				continue
-			}
-		} else {
-			// On Unix, create symlink
-			_ = os.Remove(aliasPath)
-			if symlinkErr := os.Symlink(jfPath, aliasPath); symlinkErr != nil {
-				log.Warn(fmt.Sprintf("Failed to create alias for %s: %v", tool, symlinkErr))
-				continue
-			}
-		}
-		createdCount++
-		log.Debug(fmt.Sprintf("Created alias: %s -> %s", aliasPath, jfPath))
-	}
-
 	jfHash, err := computeFileSHA256(jfPath)
 	if err != nil {
 		log.Warn(fmt.Sprintf("Failed computing jf binary hash: %v", err))
 	}
 
-	// 4. Load and update config under lock
+	var createdCount int
+
+	// Hold the lock for the entire mutation: symlink/copy creation + config update.
+	// This prevents two parallel installs from racing on the bin directory.
 	if err = withConfigLock(aliasDir, func() error {
-		config, loadErr := loadConfig(aliasDir)
+		selectedToolsSet := make(map[string]struct{}, len(selectedTools))
+		for _, tool := range selectedTools {
+			selectedToolsSet[tool] = struct{}{}
+		}
+
+		for _, tool := range SupportedTools {
+			aliasPath := filepath.Join(binDir, tool)
+			if runtime.GOOS == "windows" {
+				aliasPath += ".exe"
+			}
+
+			if _, shouldInstall := selectedToolsSet[tool]; !shouldInstall {
+				if removeErr := os.Remove(aliasPath); removeErr != nil && !os.IsNotExist(removeErr) {
+					log.Warn(fmt.Sprintf("Failed to remove alias for %s: %v", tool, removeErr))
+				}
+				continue
+			}
+
+			if runtime.GOOS == "windows" {
+				if copyErr := copyFile(jfPath, aliasPath); copyErr != nil {
+					log.Warn(fmt.Sprintf("Failed to create alias for %s: %v", tool, copyErr))
+					continue
+				}
+			} else {
+				_ = os.Remove(aliasPath)
+				if symlinkErr := os.Symlink(jfPath, aliasPath); symlinkErr != nil {
+					log.Warn(fmt.Sprintf("Failed to create alias for %s: %v", tool, symlinkErr))
+					continue
+				}
+			}
+			createdCount++
+			log.Debug(fmt.Sprintf("Created alias: %s -> %s", aliasPath, jfPath))
+		}
+
+		cfg, loadErr := loadConfig(aliasDir)
 		if loadErr != nil {
 			return loadErr
 		}
 
 		for _, tool := range selectedTools {
-			if _, exists := config.ToolModes[tool]; !exists {
-				config.ToolModes[tool] = ModeJF
+			if _, exists := cfg.ToolModes[tool]; !exists {
+				cfg.ToolModes[tool] = ModeJF
 			}
 		}
 
-		config.EnabledTools = append([]string(nil), selectedTools...)
-		config.JfBinarySHA256 = jfHash
-		config.Enabled = true
-		return writeConfig(aliasDir, config)
+		cfg.EnabledTools = append([]string(nil), selectedTools...)
+		cfg.JfBinarySHA256 = jfHash
+		cfg.Enabled = true
+		return writeConfig(aliasDir, cfg)
 	}); err != nil {
 		return errorutils.CheckError(err)
 	}
 
-	// Success message
 	log.Info(fmt.Sprintf("Created %d aliases in %s", createdCount, binDir))
 	log.Info(fmt.Sprintf("Configured packages: %s", strings.Join(selectedTools, ", ")))
 	log.Info("\nTo enable package aliasing, add this to your shell configuration:")
