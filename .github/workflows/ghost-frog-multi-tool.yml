@@ -1,12 +1,9 @@
 name: Ghost Frog Multi-Tool Demo
 
 on:
+  push:
+    branches: [ ghost-frog ]
   workflow_dispatch:
-    inputs:
-      jfrog_url:
-        description: 'JFrog Platform URL'
-        required: false
-        default: 'https://example.jfrog.io'
 
 jobs:
   multi-language-demo:

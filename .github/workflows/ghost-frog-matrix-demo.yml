@@ -1,6 +1,8 @@
 name: Ghost Frog Matrix Build Demo
 
 on:
+  push:
+    branches: [ ghost-frog ]
   workflow_dispatch:
   
 jobs:
