@@ -17,67 +17,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       
-      - name: Setup Build Tools
-        run: |
-          echo "🛠️ Setting up build tools..."
-          
-          # Node.js is pre-installed
-          node --version
-          npm --version
-          
-          # Java and Maven are pre-installed
-          java -version
-          mvn --version
-          
-          # Python is pre-installed
-          python --version
-          pip --version
-      
-      - name: Build and Install JFrog CLI with Ghost Frog
-        run: |
-          echo "🔨 Building JFrog CLI with Ghost Frog support..."
-          
-          # Install Go if needed
-          if ! command -v go &> /dev/null; then
-            echo "Installing Go..."
-            sudo snap install go --classic
-          fi
-          
-          # Build JFrog CLI from source (includes our Ghost Frog implementation)
-          go build -o jf .
-          sudo mv jf /usr/local/bin/
-          jf --version
-      
-      - name: Configure JFrog CLI
+      - name: Setup JFrog CLI
+        uses: bhanurp/setup-jfrog-cli@add-package-alias
+        with:
+          enable-package-alias: true
+          package-alias-tools: npm,mvn,pip
         env:
-          JFROG_URL: ${{ github.event.inputs.jfrog_url || secrets.JFROG_URL || 'https://example.jfrog.io' }}
-          JFROG_ACCESS_TOKEN: ${{ secrets.JFROG_ACCESS_TOKEN || 'dummy-token' }}
-        run: |
-          echo "🔧 Configuring JFrog CLI..."
-          if [ "$JFROG_ACCESS_TOKEN" == "dummy-token" ]; then
-            echo "⚠️  Demo mode - no real Artifactory connection"
-            # Create a minimal config for demo
-            mkdir -p ~/.jfrog
-            echo '{"servers":[{"url":"'$JFROG_URL'","artifactoryUrl":"'$JFROG_URL'/artifactory","user":"demo","password":"demo","serverId":"ghost-demo","isDefault":true}],"version":"6"}' > ~/.jfrog/jfrog-cli.conf.v6
-          else
-            jf config add ghost-demo --url="$JFROG_URL" --access-token="$JFROG_ACCESS_TOKEN" --interactive=false
-            jf config use ghost-demo
-          fi
-      
-      - name: Install Ghost Frog Aliases
-        run: |
-          echo "👻 Installing Ghost Frog package aliases..."
-          jf package-alias install
-          
-          # Add to PATH
-          export PATH="$HOME/.jfrog/package-alias/bin:$PATH"
-          echo "PATH=$PATH"
-          
-          # Persist PATH for subsequent steps
-          echo "$HOME/.jfrog/package-alias/bin" >> $GITHUB_PATH
-          
-          # Verify installation
-          jf package-alias status
+          JF_URL: ${{ secrets.JFROG_URL }}
+          JF_ACCESS_TOKEN: ${{ secrets.JFROG_ACCESS_TOKEN }}
+
+      - name: Show package-alias status
+        run: jf package-alias status
       
       - name: Demo - NPM Project
         run: |

@@ -15,6 +15,7 @@ jobs:
           - language: node
             version: '16'
             os: ubuntu-latest
+            tool: npm
             build_cmd: |
               echo '{"name":"test","version":"1.0.0","dependencies":{"express":"^4.18.0"}}' > package.json
               npm install
@@ -23,6 +24,7 @@ jobs:
           - language: node
             version: '18'
             os: ubuntu-latest
+            tool: npm
             build_cmd: |
               echo '{"name":"test","version":"1.0.0","dependencies":{"express":"^4.18.0"}}' > package.json
               npm install
@@ -32,6 +34,7 @@ jobs:
           - language: python
             version: '3.9'
             os: ubuntu-latest
+            tool: pip
             build_cmd: |
               echo "requests==2.31.0" > requirements.txt
               pip install -r requirements.txt
@@ -40,6 +43,7 @@ jobs:
           - language: python
             version: '3.11'
             os: ubuntu-latest
+            tool: pip
             build_cmd: |
               echo "requests==2.31.0" > requirements.txt
               pip install -r requirements.txt
@@ -49,6 +53,7 @@ jobs:
           - language: java
             version: '11'
             os: ubuntu-latest
+            tool: mvn
             build_cmd: |
               cat > pom.xml << 'EOF'
               <project>
@@ -67,6 +72,7 @@ jobs:
           - language: java
             version: '17'
             os: ubuntu-latest
+            tool: mvn
             build_cmd: |
               cat > pom.xml << 'EOF'
               <project>
@@ -106,6 +112,18 @@ jobs:
           java-version: ${{ matrix.version }}
           distribution: 'temurin'
       
+      - name: Setup JFrog CLI
+        uses: bhanurp/setup-jfrog-cli@add-package-alias
+        with:
+          enable-package-alias: true
+          package-alias-tools: ${{ matrix.tool }}
+        env:
+          JF_URL: ${{ secrets.JFROG_URL }}
+          JF_ACCESS_TOKEN: ${{ secrets.JFROG_ACCESS_TOKEN }}
+
+      - name: Show package-alias status
+        run: jf package-alias status
+
       # Run language-specific build
       - name: Build with Ghost Frog
         run: |
