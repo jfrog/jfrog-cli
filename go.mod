@@ -19,12 +19,12 @@ require (
 	github.com/jfrog/build-info-go v1.13.1-0.20260216093441-40a4dc563294
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-application v1.0.2-0.20260216085810-1ade6c26b3df
-	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260306094346-2089d7332e94
+	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260310063831-ad6064f2f373
 	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260225195817-bc599cec3973
 	github.com/jfrog/jfrog-cli-evidence v0.8.3-0.20260202100913-d9ee9476845a
-	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260213131956-d1d39bf3a042
-	github.com/jfrog/jfrog-cli-security v1.26.3
-	github.com/jfrog/jfrog-client-go v1.55.1-0.20260305132144-f99feaed3f18
+	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260306102152-984d60a80cec
+	github.com/jfrog/jfrog-cli-security v1.26.4
+	github.com/jfrog/jfrog-client-go v1.55.1-0.20260310073256-b6a77f9c75e5
 	github.com/jszwec/csvutil v1.10.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/spf13/viper v1.21.0
@@ -134,7 +134,7 @@ require (
 	github.com/in-toto/in-toto-golang v0.10.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jedib0t/go-pretty/v6 v6.7.8 // indirect
-	github.com/jfrog/froggit-go v1.21.0 // indirect
+	github.com/jfrog/froggit-go v1.21.1 // indirect
 	github.com/jfrog/go-mockhttp v0.3.1 // indirect
 	github.com/jfrog/jfrog-apps-config v1.0.1 // indirect
 	github.com/kevinburke/ssh_config v1.4.0 // indirect
@@ -242,9 +242,9 @@ require (
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
 
-replace github.com/gfleury/go-bitbucket-v1 => github.com/gfleury/go-bitbucket-v1 v0.0.0-20230825095122-9bc1711434ab
+//replace github.com/gfleury/go-bitbucket-v1 => github.com/gfleury/go-bitbucket-v1 v0.0.0-20230825095122-9bc1711434ab
 
-replace github.com/ktrysmt/go-bitbucket => github.com/ktrysmt/go-bitbucket v0.9.80
+//replace github.com/ktrysmt/go-bitbucket => github.com/ktrysmt/go-bitbucket v0.9.80
 
 //replace github.com/jfrog/jfrog-cli-core/v2 => ../jfrog-cli-core
 
