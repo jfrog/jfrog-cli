@@ -23,7 +23,8 @@ func TestFileSpecSchema(t *testing.T) {
 				return nil
 			}
 
-			specFileContent, err := os.ReadFile(path) // #nosec G122 -- Test file with controlled testdata paths
+			//#nosec G122 -- test code walking controlled testdata directory
+			specFileContent, err := os.ReadFile(path)
 			assert.NoError(t, err)
 			documentLoader := gojsonschema.NewBytesLoader(specFileContent)
 			result, err := gojsonschema.Validate(schemaLoader, documentLoader)

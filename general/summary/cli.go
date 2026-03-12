@@ -131,7 +131,7 @@ func saveFile(content, filePath string) (err error) {
 	if content == "" {
 		return nil
 	}
-// #nosec G703 -- filePath is constructed from SummaryOutputDirPathEnv set by CLI, not arbitrary user input and filePath is already cleaned.
+	// #nosec G703 -- filePath is constructed from SummaryOutputDirPathEnv set by CLI, not arbitrary user input and filePath is already cleaned.
 	file, err := os.Create(filepath.Clean(filePath))
 	if err != nil {
 		return err
@@ -151,7 +151,7 @@ func getSectionMarkdownContent(section MarkdownSection) (string, error) {
 	if _, err := os.Stat(sectionFilepath); os.IsNotExist(err) {
 		return "", nil
 	}
-// #nosec G703 -- sectionFilepath is constructed from SummaryOutputDirPathEnv set by CLI, not arbitrary user input
+	// #nosec G703 -- sectionFilepath is constructed from SummaryOutputDirPathEnv set by CLI, not arbitrary user input
 	contentBytes, err := os.ReadFile(sectionFilepath)
 	if err != nil {
 		return "", fmt.Errorf("error reading markdown file for section %s: %w", section, err)

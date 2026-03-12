@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 )
 
@@ -280,5 +281,59 @@ func TestVisibility_GoBuild_Flags(t *testing.T) {
 		}
 	case <-time.After(15 * time.Second):
 		t.Fatal("timeout waiting for metric")
+	}
+}
+
+func TestVisibility_PackageAlias_Metrics(t *testing.T) {
+	srv, ch := startVisMockServer(t)
+	defer srv.Close()
+
+	home := t.TempDir()
+	_ = os.Setenv("JFROG_CLI_HOME_DIR", home)
+	_ = os.Setenv("JFROG_CLI_REPORT_USAGE", "true")
+
+	jf := coreTests.NewJfrogCli(execMain, "jf", "").WithoutCredentials()
+
+	platformURL := srv.URL + "/"
+	artURL := srv.URL + "/artifactory/"
+	if err := jf.Exec("c", "add", "mock", "--url", platformURL, "--artifactory-url", artURL,
+		"--access-token", "dummy", "--interactive=false", "--enc-password=false"); err != nil {
+		t.Fatalf("config add failed: %v", err)
+	}
+	if err := jf.Exec("c", "use", "mock"); err != nil {
+		t.Fatalf("config use failed: %v", err)
+	}
+
+	// Simulate what DispatchIfAlias -> runJFMode does when 'npm' alias is detected.
+	commands.SetPackageAliasContext("npm")
+
+	// Run a command that triggers usage reporting.
+	err := jf.Exec("rt", "ping", "--server-id", "mock")
+	if err != nil {
+		t.Logf("jf exec failed (expected on mock): %v", err)
+	}
+
+	select {
+	case req := <-ch:
+		if req.Path != "/jfconnect/api/v1/backoffice/metrics/log" {
+			t.Fatalf("unexpected path: %s", req.Path)
+		}
+		var payload struct {
+			Labels struct {
+				PackageAlias   string `json:"package_alias"`
+				PackageManager string `json:"package_manager"`
+			} `json:"labels"`
+		}
+		if err := json.Unmarshal(req.Body, &payload); err != nil {
+			t.Fatalf("bad JSON: %v", err)
+		}
+		if payload.Labels.PackageAlias != "true" {
+			t.Errorf("expected package_alias=true, got %q", payload.Labels.PackageAlias)
+		}
+		if payload.Labels.PackageManager != "npm" {
+			t.Errorf("expected package_manager=npm, got %q", payload.Labels.PackageManager)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("timeout waiting for metrics POST")
 	}
 }

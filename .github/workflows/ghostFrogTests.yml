@@ -1,0 +1,66 @@
+name: Ghost Frog Tests
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "master"
+    paths:
+      - "packagealias/**"
+      - "ghostfrog_test.go"
+      - ".github/workflows/ghostFrogTests.yml"
+  pull_request_target:
+    types: [labeled]
+    branches:
+      - "master"
+    paths:
+      - "packagealias/**"
+      - "ghostfrog_test.go"
+      - ".github/workflows/ghostFrogTests.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  Ghost-Frog-Tests:
+    name: Ghost Frog tests (${{ matrix.os.name }})
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'safe to test')
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - name: ubuntu
+            version: 24.04
+          - name: windows
+            version: 2022
+    runs-on: ${{ matrix.os.name }}-${{ matrix.os.version }}
+    env:
+      JFROG_CLI_LOG_LEVEL: DEBUG
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
+
+      - name: Setup Go with cache
+        uses: jfrog/.github/actions/install-go-with-cache@main
+
+      - name: Setup JFrog CLI with package alias
+        uses: bhanurp/setup-jfrog-cli@add-package-alias
+        with:
+          version: 2.93.0
+          download-repository: bhanu-ghost-frog
+          enable-package-alias: true
+          package-alias-tools: npm,mvn,go,pip
+          custom-server-id: ghost-demo
+        env:
+          JF_URL: ${{ secrets.JFROG_URL }}
+          JF_ACCESS_TOKEN: ${{ secrets.JFROG_ACCESS_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "16"
+
+      - name: Run Ghost Frog tests
+        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.ghostFrog

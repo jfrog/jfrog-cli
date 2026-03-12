@@ -77,6 +77,7 @@ var (
 	TestTransfer              *bool
 	TestLifecycle             *bool
 	TestEvidence              *bool
+	TestGhostFrog             *bool
 	HideUnitTestLog           *bool
 	ciRunId                   *string
 	InstallDataTransferPlugin *bool
@@ -117,6 +118,7 @@ func init() {
 	TestTransfer = flag.Bool("test.transfer", false, "Test files transfer")
 	TestLifecycle = flag.Bool("test.lifecycle", false, "Test lifecycle")
 	TestEvidence = flag.Bool("test.evidence", false, "Test evidence")
+	TestGhostFrog = flag.Bool("test.ghostFrog", false, "Test Ghost Frog package alias")
 	ContainerRegistry = flag.String("test.containerRegistry", "localhost:8082", "Container registry")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
 	InstallDataTransferPlugin = flag.Bool("test.installDataTransferPlugin", false, "Install data-transfer plugin on the source Artifactory server")

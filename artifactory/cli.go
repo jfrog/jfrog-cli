@@ -944,6 +944,7 @@ func usersDeleteCmd(c *cli.Context) error {
 
 func parseCSVToUsersList(csvFilePath string) ([]services.User, error) {
 	var usersList []services.User
+	// #nosec G304 -- csvFilePath is from a validated CLI flag
 	csvInput, err := os.ReadFile(csvFilePath)
 	if err != nil {
 		return usersList, errorutils.CheckError(err)
