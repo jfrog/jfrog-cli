@@ -101,6 +101,8 @@ github.com/beevik/etree v1.6.0 h1:u8Kwy8pp9D9XeITj2Z0XtA5qqZEmtJtuXZRQi+j03eE=
 github.com/beevik/etree v1.6.0/go.mod h1:bh4zJxiIr62SOf9pRzN7UUYaEDa9HEKafK25+sLc0Gc=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
+github.com/bhanurp/jfrog-cli-core/v2 v2.57.7-0.20260312092135-8294d4c6c86e h1:h+WWduDHCYhPsYxRQIth40COXKRiOYa93ippdoCpNto=
+github.com/bhanurp/jfrog-cli-core/v2 v2.57.7-0.20260312092135-8294d4c6c86e/go.mod h1:B7gpsVBdHfAQAlaxlQjHHbn8b0pNjjVKxH8a2MCboJk=
 github.com/blang/semver v3.5.1+incompatible h1:cQNTCjp13qL8KC3Nbxr/y2Bqb63oX6wdnnjpJbkM4JQ=
 github.com/blang/semver v3.5.1+incompatible/go.mod h1:kRBLl5iJ+tD4TcOOxsy/0fnwebNt5EWlYSAyrTnjyyk=
 github.com/bradleyjkemp/cupaloy/v2 v2.8.0 h1:any4BmKE+jGIaMpnU8YgH/I2LPiLBufr6oMMlVBbn9M=
@@ -421,8 +423,6 @@ github.com/jfrog/jfrog-cli-application v1.0.2-0.20260216085810-1ade6c26b3df h1:r
 github.com/jfrog/jfrog-cli-application v1.0.2-0.20260216085810-1ade6c26b3df/go.mod h1:xum2HquWO5uExa/A7MQs3TgJJVEeoqTR+6Z4mfBr1Xw=
 github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260310063831-ad6064f2f373 h1:9rgBl0MuJfPX6khjwai0jqwOOCkytTH0DOEcmih1PRQ=
 github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260310063831-ad6064f2f373/go.mod h1:zjbDerW+Pin6VExtlgwRtpnvtI/ySJTnmqnOwXbsrmc=
-github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260225195817-bc599cec3973 h1:awB01Y4m0cWzmXuR3waf5IQnoQxDlbUmqT+FMWOpjbs=
-github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260225195817-bc599cec3973/go.mod h1:yhi+XpiEx18a3t8CZ6M2VpAf3EGqKpBhTzoPBTFe0dk=
 github.com/jfrog/jfrog-cli-evidence v0.8.3-0.20260202100913-d9ee9476845a h1:lTOAhUjKcOmM/0Kbj4V+I/VHPlW7YNAhIEVpGnCM5mI=
 github.com/jfrog/jfrog-cli-evidence v0.8.3-0.20260202100913-d9ee9476845a/go.mod h1:+XrcuHeakfxzARpmIr/bagjtfiRewpCbiPm0PDuKSIQ=
 github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260306102152-984d60a80cec h1:d8CJ/LUGjNwPDPfYLJkAQJNmu+GCWxFsjZrmTcuV5wY=

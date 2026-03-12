@@ -8,6 +8,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
@@ -126,6 +127,7 @@ func runJFMode(tool string, args []string) error {
 	log.Debug(fmt.Sprintf("%s Running in JF mode: %v", ghostFrogLogPrefix, os.Args))
 	log.Info(fmt.Sprintf("%s Transforming '%s' to 'jf %s'", ghostFrogLogPrefix, tool, tool))
 
+	commands.SetPackageAliasContext(tool)
 	return nil
 }
 
@@ -153,7 +155,7 @@ func execRealTool(tool string, args []string) error {
 		return execRealToolWindows(realPath, argv)
 	}
 
-	// #nosec G702 -- realPath is resolved via exec.LookPath from a controlled tool name, not arbitrary user input.
+	// #nosec G204 G702 -- realPath is resolved via exec.LookPath from a controlled tool name, not arbitrary user input.
 	return syscall.Exec(realPath, argv, os.Environ())
 }
 
@@ -161,6 +163,7 @@ func execRealTool(tool string, args []string) error {
 // Used because syscall.Exec is not supported on Windows (returns EWINDOWS).
 // On success, exits with 0 (never returns). On failure, returns coreutils.CliError so the caller's ExitOnErr can exit with the correct code.
 func execRealToolWindows(realPath string, argv []string) error {
+	// #nosec G204 G702 -- realPath is resolved via exec.LookPath from a controlled tool name, not arbitrary user input.
 	cmd := exec.Command(realPath, argv[1:]...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout

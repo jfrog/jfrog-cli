@@ -36,6 +36,7 @@ func (ic *InstallCommand) Run() error {
 	}
 
 	log.Info("Creating package alias directories...")
+	// #nosec G301 -- 0755 needed so symlinked binaries are executable by all users
 	if err := os.MkdirAll(binDir, 0755); err != nil {
 		return errorutils.CheckError(err)
 	}
@@ -142,6 +143,7 @@ func (ic *InstallCommand) ServerDetails() (*config.ServerDetails, error) {
 }
 
 func copyFile(src, dst string) error {
+	// #nosec G304 -- src is the resolved jf binary path, not user input
 	srcFile, err := os.Open(src)
 	if err != nil {
 		return err
@@ -155,6 +157,7 @@ func copyFile(src, dst string) error {
 		return err
 	}
 
+	// #nosec G304 -- dst is a constructed path under the alias bin directory
 	dstFile, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, srcInfo.Mode())
 	if err != nil {
 		return err

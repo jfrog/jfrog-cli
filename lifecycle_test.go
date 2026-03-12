@@ -1700,6 +1700,7 @@ func sendGpgKeyPair() {
 		PublicKey:  string(publicKey),
 		PrivateKey: string(privateKey),
 	}
+	// #nosec G117 -- test struct marshaling a non-production key pair payload
 	content, err := json.Marshal(payload)
 	coreutils.ExitOnErr(err)
 	resp, body, err = client.SendPost(*tests.JfrogUrl+"artifactory/api/security/keypair", content, artHttpDetails, "")

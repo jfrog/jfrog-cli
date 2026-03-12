@@ -46,6 +46,7 @@ func getConfigPath(aliasDir string) string {
 func loadConfig(aliasDir string) (*Config, error) {
 	config := newDefaultConfig()
 	configPath := getConfigPath(aliasDir)
+	// #nosec G304 -- configPath is derived from the alias home directory
 	data, readErr := os.ReadFile(configPath)
 	if readErr == nil {
 		if unmarshalErr := yaml.Unmarshal(data, config); unmarshalErr != nil {
@@ -123,6 +124,7 @@ func withConfigLock(aliasDir string, action func() error) error {
 	lockTimeout := getConfigLockTimeout()
 	deadline := time.Now().Add(lockTimeout)
 	for {
+		// #nosec G304 -- lockPath is derived from the alias home directory
 		lockFile, err := os.OpenFile(lockPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
 		if err == nil {
 			defer func() {
@@ -320,6 +322,7 @@ func getEnabledState(aliasDir string) bool {
 }
 
 func computeFileSHA256(path string) (string, error) {
+	// #nosec G304 -- path is the resolved jf binary path
 	file, err := os.Open(path)
 	if err != nil {
 		return "", err

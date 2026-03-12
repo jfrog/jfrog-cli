@@ -15,11 +15,10 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v3"
 )
 
 var (
-	ghostFrogJfBin string
+	ghostFrogJfBin  string
 	ghostFrogTmpDir string
 )
 
@@ -957,25 +956,6 @@ func timeAfter(t *testing.T, seconds int) <-chan struct{} {
 		close(ch)
 	}()
 	return ch
-}
-
-// configForTest is a helper for tests that need to read/validate config
-type configForTest struct {
-	Enabled         bool                          `yaml:"enabled"`
-	ToolModes       map[string]packagealias.AliasMode `yaml:"tool_modes,omitempty"`
-	SubcommandModes map[string]packagealias.AliasMode `yaml:"subcommand_modes,omitempty"`
-	EnabledTools    []string                      `yaml:"enabled_tools,omitempty"`
-}
-
-func readTestConfig(t *testing.T, homeDir string) configForTest {
-	t.Helper()
-	configPath := filepath.Join(homeDir, "package-alias", "config.yaml")
-	data, err := os.ReadFile(configPath)
-	require.NoError(t, err, "should be able to read config.yaml")
-
-	var cfg configForTest
-	require.NoError(t, yaml.Unmarshal(data, &cfg), "config should be valid YAML")
-	return cfg
 }
 
 func skipIfNoArtifactory(t *testing.T, testID string) {
