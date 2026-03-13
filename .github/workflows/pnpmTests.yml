@@ -157,4 +157,4 @@ jobs:
         if: matrix.os.name != 'macos'
         env:
           YARN_IGNORE_NODE: 1
-        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.pnpm
+        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.pnpm --jfrog.url=http://127.0.0.1:8082 --jfrog.adminToken=${{ env.JFROG_TESTS_LOCAL_ACCESS_TOKEN }}

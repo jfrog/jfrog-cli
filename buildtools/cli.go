@@ -822,19 +822,22 @@ func pnpmCmd(c *cli.Context) error {
 	args := cliutils.ExtractCommand(c)
 	cmdName, filteredArgs := getCommandName(args)
 
+	// Extract JFrog-specific flags (--build-name, --build-number, --project, --module, --server-id)
+	// once, so both supported commands and native pass-through use cleaned args.
+	serverDetails, cleanArgs, buildConfiguration, err := extractPnpmOptionsFromArgs(filteredArgs)
+	if err != nil {
+		return err
+	}
+
 	switch cmdName {
 	case "install", "i", "publish", "p":
-		serverDetails, cleanArgs, buildConfiguration, err := extractPnpmOptionsFromArgs(filteredArgs)
-		if err != nil {
-			return err
-		}
 		pnpmCommand, err := pnpmcmd.NewCommand(cmdName, cleanArgs, buildConfiguration, serverDetails)
 		if err != nil {
 			return err
 		}
 		return commands.Exec(pnpmCommand)
 	default:
-		return runNativePackageManagerCmd("pnpm", append([]string{cmdName}, filteredArgs...))
+		return runNativePackageManagerCmd("pnpm", append([]string{cmdName}, cleanArgs...))
 	}
 }
 
