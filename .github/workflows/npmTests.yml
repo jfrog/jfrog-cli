@@ -87,55 +87,8 @@ jobs:
         run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.npm
 
   # TODO: Remove this job before merging — temporary pnpm test for RTECO-935
-  build-pnpm-matrix:
-    name: Build pnpm version matrix
-    runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
-    steps:
-      - name: Fetch supported pnpm versions and build matrix
-        id: set-matrix
-        run: |
-          PNPM_VERSIONS=$(curl -sf https://endoflife.date/api/pnpm.json)
-          ACTIVE_MATRIX=$(echo "$PNPM_VERSIONS" | jq -c '
-            [
-              .[]
-              | select(.eol == false)
-              | .cycle as $cycle
-              | select(($cycle | tonumber) > 9)
-              | {
-                  pnpm_version: .latest,
-                  pnpm_major: $cycle,
-                  node_version: (if ($cycle | tonumber) >= 11 then "22" else "20" end),
-                  experimental: false
-                }
-            ]
-          ')
-          DIST_TAGS=$(curl -sf https://registry.npmjs.org/pnpm | jq -r '."dist-tags" | to_entries[] | select(.key | test("^next-")) | "\(.key)=\(.value)"')
-          HIGHEST_ACTIVE=$(echo "$ACTIVE_MATRIX" | jq -r '[.[].pnpm_major | tonumber] | max')
-          NEXT_ENTRY="[]"
-          while IFS='=' read -r tag version; do
-            [ -z "$tag" ] && continue
-            NEXT_MAJOR=$(echo "$tag" | sed 's/next-//')
-            if [ "$NEXT_MAJOR" -gt "$HIGHEST_ACTIVE" ] 2>/dev/null; then
-              NEXT_ENTRY=$(jq -n -c --arg tag "$tag" --arg major "$NEXT_MAJOR" '[{
-                pnpm_version: $tag,
-                pnpm_major: $major,
-                node_version: "22",
-                experimental: true
-              }]')
-              break
-            fi
-          done <<< "$DIST_TAGS"
-          MATRIX=$(jq -n -c --argjson active "$ACTIVE_MATRIX" --argjson next "$NEXT_ENTRY" '$active + $next')
-          echo "matrix=${MATRIX}" >> "$GITHUB_OUTPUT"
-          echo "Generated matrix:"
-          echo "$MATRIX" | jq .
-
   pnpm-Tests:
-    name: "pnpm ${{ matrix.pnpm.pnpm_major }} tests (${{ matrix.os.name }})"
-    needs: build-pnpm-matrix
+    name: "pnpm 10 tests (${{ matrix.os.name }})"
     if: github.event_name == 'workflow_dispatch'
     strategy:
       fail-fast: false
@@ -145,7 +98,6 @@ jobs:
             version: 24.04
           - name: windows
             version: 2022
-        pnpm: ${{ fromJson(needs.build-pnpm-matrix.outputs.matrix) }}
     runs-on: ${{ matrix.os.name }}-${{ matrix.os.version }}
     steps:
       - name: Checkout code
@@ -162,31 +114,22 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: ${{ matrix.pnpm.node_version }}
+          node-version: "20"
 
-      - name: Install pnpm
-        run: npm install -g pnpm@${{ matrix.pnpm.pnpm_version }}
+      - name: Install pnpm 10
+        run: npm install -g pnpm@10
 
-      - name: Validate pnpm and Node.js versions
+      - name: Validate pnpm version is 10
+        shell: bash
         run: |
-          echo "=== Version Validation ==="
           PNPM_VER=$(pnpm --version)
-          NODE_VER=$(node --version | sed 's/^v//')
-          echo "pnpm version: ${PNPM_VER}"
-          echo "Node.js version: ${NODE_VER}"
           PNPM_MAJOR=$(echo "$PNPM_VER" | cut -d. -f1)
-          if [ "$PNPM_MAJOR" -lt 10 ]; then
-            echo "::error::pnpm version ${PNPM_VER} is below minimum required (10.x)"
+          echo "pnpm version: ${PNPM_VER}"
+          if [ "$PNPM_MAJOR" -ne 10 ]; then
+            echo "::error::Expected pnpm 10.x but got ${PNPM_VER}"
             exit 1
           fi
           echo "pnpm ${PNPM_VER} OK"
-          NODE_MAJOR=$(echo "$NODE_VER" | cut -d. -f1)
-          NODE_MINOR=$(echo "$NODE_VER" | cut -d. -f2)
-          if [ "$NODE_MAJOR" -lt 18 ] || { [ "$NODE_MAJOR" -eq 18 ] && [ "$NODE_MINOR" -lt 12 ]; }; then
-            echo "::error::Node.js ${NODE_VER} is below minimum (18.12) for pnpm ${PNPM_MAJOR}.x"
-            exit 1
-          fi
-          echo "Node.js ${NODE_VER} OK"
 
       - name: Setup Go with cache
         uses: jfrog/.github/actions/install-go-with-cache@main
