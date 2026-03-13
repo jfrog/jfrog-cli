@@ -85,3 +85,62 @@ jobs:
         env:
           YARN_IGNORE_NODE: 1
         run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.npm
+
+  # TODO: Remove this job before merging — temporary pnpm test for RTECO-935
+  pnpm-Tests:
+    name: "pnpm 10 tests (${{ matrix.os.name }})"
+    if: github.event_name == 'workflow_dispatch'
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - name: ubuntu
+            version: 24.04
+          - name: windows
+            version: 2022
+    runs-on: ${{ matrix.os.name }}-${{ matrix.os.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Setup FastCI
+        uses: jfrog-fastci/fastci@v0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          fastci_otel_token: ${{ secrets.FASTCI_TOKEN }}
+
+      - name: Install Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "20"
+
+      - name: Install pnpm 10
+        run: npm install -g pnpm@10
+
+      - name: Validate pnpm version is 10
+        shell: bash
+        run: |
+          PNPM_VER=$(pnpm --version)
+          PNPM_MAJOR=$(echo "$PNPM_VER" | cut -d. -f1)
+          echo "pnpm version: ${PNPM_VER}"
+          if [ "$PNPM_MAJOR" -ne 10 ]; then
+            echo "::error::Expected pnpm 10.x but got ${PNPM_VER}"
+            exit 1
+          fi
+          echo "pnpm ${PNPM_VER} OK"
+
+      - name: Setup Go with cache
+        uses: jfrog/.github/actions/install-go-with-cache@main
+
+      - name: Install local Artifactory
+        uses: jfrog/.github/actions/install-local-artifactory@main
+        with:
+          RTLIC: ${{ secrets.RTLIC }}
+          RT_CONNECTION_TIMEOUT_SECONDS: ${{ env.RT_CONNECTION_TIMEOUT_SECONDS || '1200' }}
+
+      - name: Run pnpm tests
+        env:
+          YARN_IGNORE_NODE: 1
+        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.pnpm

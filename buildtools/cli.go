@@ -31,6 +31,7 @@ import (
 	huggingfaceCommands "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/huggingface"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/mvn"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/npm"
+	pnpmcmd "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/pnpm"
 	containerutils "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/ocicontainer"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/terraform"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/yarn"
@@ -64,6 +65,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/buildtools/mvnconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npmcommand"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npmconfig"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/pnpmcommand"
 	nugetdocs "github.com/jfrog/jfrog-cli/docs/buildtools/nuget"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/nugetconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pipconfig"
@@ -432,6 +434,17 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
+			Name:            "pnpm",
+			Flags:           cliutils.GetCommandFlags(cliutils.Pnpm),
+			Usage:           pnpmcommand.GetDescription(),
+			HelpName:        corecommon.CreateUsage("pnpm", pnpmcommand.GetDescription(), pnpmcommand.Usage),
+			UsageText:       pnpmcommand.GetArguments(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc("install", "i", "publish", "p"),
+			Category:        buildToolsCategory,
+			Action:          pnpmCmd,
+		},
+		{
 			Name:            "docker",
 			Flags:           cliutils.GetCommandFlags(cliutils.Docker),
 			Usage:           docker.GetDescription(),
@@ -769,6 +782,64 @@ func YarnCmd(c *cli.Context) error {
 
 	yarnCmd := yarn.NewYarnCommand().SetConfigFilePath(configFilePath).SetArgs(c.Args())
 	return commands.Exec(yarnCmd)
+}
+
+func pnpmCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+	if c.NArg() < 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+	args := cliutils.ExtractCommand(c)
+	cmdName, filteredArgs := getCommandName(args)
+
+	// Extract JFrog-specific flags (--build-name, --build-number, --project, --module, --server-id)
+	// once, so both supported commands and native pass-through use cleaned args.
+	serverDetails, cleanArgs, buildConfiguration, err := extractPnpmOptionsFromArgs(filteredArgs)
+	if err != nil {
+		return err
+	}
+
+	switch cmdName {
+	case "install", "i", "publish", "p":
+		pnpmCommand, err := pnpmcmd.NewCommand(cmdName, cleanArgs, buildConfiguration, serverDetails)
+		if err != nil {
+			return err
+		}
+		return commands.Exec(pnpmCommand)
+	default:
+		return runNativePackageManagerCmd("pnpm", append([]string{cmdName}, cleanArgs...))
+	}
+}
+
+// runNativePackageManagerCmd runs a package manager command directly, passing through stdio.
+func runNativePackageManagerCmd(binary string, args []string) error {
+	cmd := exec.Command(binary, args...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+// extractPnpmOptionsFromArgs extracts all JFrog CLI options from pnpm command args.
+// Returns server details, cleaned args (with JFrog flags removed), and build configuration.
+func extractPnpmOptionsFromArgs(args []string) (serverDetails *coreConfig.ServerDetails, cleanArgs []string, buildConfig *build.BuildConfiguration, err error) {
+	cleanArgs = append([]string(nil), args...)
+	var serverID string
+	cleanArgs, serverID, err = coreutils.ExtractServerIdFromCommand(cleanArgs)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to extract server ID: %w", err)
+	}
+	serverDetails, err = coreConfig.GetSpecificConfig(serverID, true, true)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to get server configuration for ID '%s': %w", serverID, err)
+	}
+	cleanArgs, buildConfig, err = build.ExtractBuildDetailsFromArgs(cleanArgs)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return serverDetails, cleanArgs, buildConfig, nil
 }
 
 func NugetCmd(c *cli.Context) error {
@@ -1790,12 +1861,8 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 			log.Info(fmt.Sprintf("Publishing to repository: %s (from --repository flag)", deployerRepo))
 		}
 
-		// Execute native poetry command directly (similar to Maven FlexPack)
 		log.Info(fmt.Sprintf("Running Poetry %s.", cmdName))
-		poetryCmd := exec.Command("poetry", append([]string{cmdName}, poetryArgs...)...)
-		poetryCmd.Stdout = os.Stdout
-		poetryCmd.Stderr = os.Stderr
-		if err := poetryCmd.Run(); err != nil {
+		if err := runNativePackageManagerCmd("poetry", append([]string{cmdName}, poetryArgs...)); err != nil {
 			return fmt.Errorf("poetry %s failed: %w", cmdName, err)
 		}
 

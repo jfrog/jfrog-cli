@@ -62,6 +62,7 @@ var (
 	ContainerRegistry         *string
 	TestGo                    *bool
 	TestNpm                   *bool
+	TestPnpm                  *bool
 	TestGradle                *bool
 	TestMaven                 *bool
 	TestNuget                 *bool
@@ -102,6 +103,7 @@ func init() {
 	TestPodman = flag.Bool("test.podman", false, "Test Podman build")
 	TestGo = flag.Bool("test.go", false, "Test Go")
 	TestNpm = flag.Bool("test.npm", false, "Test Npm")
+	TestPnpm = flag.Bool("test.pnpm", false, "Test Pnpm")
 	TestGradle = flag.Bool("test.gradle", false, "Test Gradle")
 	TestMaven = flag.Bool("test.maven", false, "Test Maven")
 	TestNuget = flag.Bool("test.nuget", false, "Test Nuget")
@@ -350,6 +352,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestGradle:             {&GradleRepo, &GradleRemoteRepo},
 		TestMaven:              {&MvnRepo1, &MvnRepo2, &MvnRemoteRepo},
 		TestNpm:                {&NpmRepo, &NpmScopedRepo, &NpmRemoteRepo},
+		TestPnpm:               {&NpmRepo, &NpmScopedRepo, &NpmRemoteRepo},
 		TestNuget:              {&NugetRemoteRepo},
 		TestPip:                {&PypiLocalRepo, &PypiRemoteRepo},
 		TestPipenv:             {&PipenvRemoteRepo},
@@ -379,6 +382,7 @@ func GetVirtualRepositories() map[*string]string {
 		TestGradle:       {},
 		TestMaven:        {},
 		TestNpm:          {},
+		TestPnpm:         {},
 		TestNuget:        {},
 		TestPip:          {&PypiVirtualRepo},
 		TestPipenv:       {&PipenvVirtualRepo},
@@ -419,6 +423,7 @@ func GetBuildNames() []string {
 		TestGradle:       {&GradleBuildName},
 		TestMaven:        {&MvnBuildName},
 		TestNpm:          {&NpmBuildName, &YarnBuildName},
+		TestPnpm:         {&PnpmBuildName},
 		TestNuget:        {&NuGetBuildName},
 		TestPip:          {&PipBuildName},
 		TestPipenv:       {&PipenvBuildName},
@@ -462,6 +467,7 @@ func getSubstitutionMap() map[string]string {
 		"${NPM_REPO}":                  NpmRepo,
 		"${NPM_SCOPED_REPO}":           NpmScopedRepo,
 		"${NPM_REMOTE_REPO}":           NpmRemoteRepo,
+		"${PNPM_BUILD_NAME}":           PnpmBuildName,
 		"${NUGET_REMOTE_REPO}":         NugetRemoteRepo,
 		"${YARN_REMOTE_REPO}":          YarnRemoteRepo,
 		"${GO_REPO}":                   GoRepo,
@@ -575,7 +581,8 @@ func AddTimestampToGlobalVars() {
 	DotnetBuildName += uniqueSuffix
 	GoBuildName += uniqueSuffix
 	GradleBuildName += uniqueSuffix
-	NpmBuildName += uniqueSuffix
+		NpmBuildName += uniqueSuffix
+		PnpmBuildName += uniqueSuffix
 	YarnBuildName += uniqueSuffix
 	MvnBuildName += uniqueSuffix
 	NuGetBuildName += uniqueSuffix
