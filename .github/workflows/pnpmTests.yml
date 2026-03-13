@@ -1,0 +1,160 @@
+name: pnpm Tests
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "master"
+  pull_request_target:
+    types: [labeled]
+    branches:
+      - "master"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-pnpm-matrix:
+    name: Build pnpm version matrix
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'safe to test')
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Fetch supported pnpm versions and build matrix
+        id: set-matrix
+        run: |
+          # Fetch active (non-EOL) pnpm versions with major > 9 from endoflife.date API
+          PNPM_VERSIONS=$(curl -sf https://endoflife.date/api/pnpm.json)
+
+          ACTIVE_MATRIX=$(echo "$PNPM_VERSIONS" | jq -c '
+            [
+              .[]
+              | select(.eol == false)
+              | .cycle as $cycle
+              | select(($cycle | tonumber) > 9)
+              | {
+                  pnpm_version: .latest,
+                  pnpm_major: $cycle,
+                  node_version: (if ($cycle | tonumber) >= 11 then "22" else "20" end),
+                  experimental: false
+                }
+            ]
+          ')
+
+          # Dynamically detect the next pre-release (alpha/beta/rc) pnpm version from npm dist-tags
+          DIST_TAGS=$(curl -sf https://registry.npmjs.org/pnpm | jq -r '."dist-tags" | to_entries[] | select(.key | test("^next-")) | "\(.key)=\(.value)"')
+
+          # Find the highest next-* tag that is beyond the current active versions
+          HIGHEST_ACTIVE=$(echo "$ACTIVE_MATRIX" | jq -r '[.[].pnpm_major | tonumber] | max')
+          NEXT_ENTRY="[]"
+
+          while IFS='=' read -r tag version; do
+            [ -z "$tag" ] && continue
+            NEXT_MAJOR=$(echo "$tag" | sed 's/next-//')
+            if [ "$NEXT_MAJOR" -gt "$HIGHEST_ACTIVE" ] 2>/dev/null; then
+              NEXT_ENTRY=$(jq -n -c --arg tag "$tag" --arg major "$NEXT_MAJOR" '[{
+                pnpm_version: $tag,
+                pnpm_major: $major,
+                node_version: "22",
+                experimental: true
+              }]')
+              break
+            fi
+          done <<< "$DIST_TAGS"
+
+          # Combine active versions + next alpha/beta
+          MATRIX=$(jq -n -c --argjson active "$ACTIVE_MATRIX" --argjson next "$NEXT_ENTRY" '$active + $next')
+
+          echo "matrix=${MATRIX}" >> "$GITHUB_OUTPUT"
+          echo "Generated matrix:"
+          echo "$MATRIX" | jq .
+
+  pnpm-Tests:
+    name: "pnpm ${{ matrix.pnpm.pnpm_major }} tests (${{ matrix.os.name }})"
+    needs: build-pnpm-matrix
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'safe to test')
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - name: ubuntu
+            version: 24.04
+          - name: windows
+            version: 2022
+          - name: macos
+            version: 14
+        pnpm: ${{ fromJson(needs.build-pnpm-matrix.outputs.matrix) }}
+    runs-on: ${{ matrix.os.name }}-${{ matrix.os.version }}
+    steps:
+      - name: Skip macOS - JGC-413
+        if: matrix.os.name == 'macos'
+        run: |
+          echo "::warning::JGC-413 - Skip until artifactory bootstrap in osx is fixed"
+          exit 0
+
+      - name: Checkout code
+        if: matrix.os.name != 'macos'
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
+
+      - name: Setup FastCI
+        if: matrix.os.name != 'macos'
+        uses: jfrog-fastci/fastci@v0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          fastci_otel_token: ${{ secrets.FASTCI_TOKEN }}
+
+      - name: Install Node.js
+        if: matrix.os.name != 'macos'
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.pnpm.node_version }}
+
+      - name: Install pnpm
+        if: matrix.os.name != 'macos'
+        run: npm install -g pnpm@${{ matrix.pnpm.pnpm_version }}
+
+      - name: Validate pnpm and Node.js versions
+        if: matrix.os.name != 'macos'
+        run: |
+          echo "=== Version Validation ==="
+          PNPM_VER=$(pnpm --version)
+          NODE_VER=$(node --version | sed 's/^v//')
+          echo "pnpm version: ${PNPM_VER}"
+          echo "Node.js version: ${NODE_VER}"
+
+          # Validate pnpm major version >= 10
+          PNPM_MAJOR=$(echo "$PNPM_VER" | cut -d. -f1)
+          if [ "$PNPM_MAJOR" -lt 10 ]; then
+            echo "::error::pnpm version ${PNPM_VER} is below minimum required (10.x). Only pnpm >= 10 is supported."
+            exit 1
+          fi
+          echo "✓ pnpm version ${PNPM_VER} meets minimum requirement (>= 10)"
+
+          # Validate Node.js version >= 18.12 (required by pnpm 10+)
+          NODE_MAJOR=$(echo "$NODE_VER" | cut -d. -f1)
+          NODE_MINOR=$(echo "$NODE_VER" | cut -d. -f2)
+          if [ "$NODE_MAJOR" -lt 18 ] || { [ "$NODE_MAJOR" -eq 18 ] && [ "$NODE_MINOR" -lt 12 ]; }; then
+            echo "::error::Node.js version ${NODE_VER} is below minimum required (18.12) for pnpm ${PNPM_MAJOR}.x"
+            exit 1
+          fi
+          echo "✓ Node.js version ${NODE_VER} meets minimum requirement (>= 18.12)"
+
+      - name: Setup Go with cache
+        if: matrix.os.name != 'macos'
+        uses: jfrog/.github/actions/install-go-with-cache@main
+
+      - name: Install local Artifactory
+        if: matrix.os.name != 'macos'
+        uses: jfrog/.github/actions/install-local-artifactory@main
+        with:
+          RTLIC: ${{ secrets.RTLIC }}
+          RT_CONNECTION_TIMEOUT_SECONDS: ${{ env.RT_CONNECTION_TIMEOUT_SECONDS || '1200' }}
+
+      - name: Run pnpm tests
+        if: matrix.os.name != 'macos'
+        env:
+          YARN_IGNORE_NODE: 1
+        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.pnpm
