@@ -454,6 +454,18 @@ func createConanProject(t *testing.T, outputFolder string) string {
 	return projectPath
 }
 
+func createConanProjectNoName(t *testing.T, outputFolder string) string {
+	projectSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "conan", "conanproject-noname")
+	tmpDir, cleanupCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+
+	projectPath := filepath.Join(tmpDir, outputFolder)
+	require.NoError(t, biutils.CopyDir(projectSrc, projectPath, true, nil))
+
+	t.Cleanup(cleanupCallback)
+
+	return projectPath
+}
+
 func createConanProjectSubdir(t *testing.T, outputFolder string) string {
 	projectSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "conan", "conanproject-subdir")
 	tmpDir, cleanupCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
@@ -534,7 +546,7 @@ func TestConanInstallWithNameVersionOverrides(t *testing.T) {
 	initConanTest(t)
 	buildNumber := "1"
 
-	projectPath := createConanProject(t, "conan-name-version-override-test")
+	projectPath := createConanProjectNoName(t, "conan-name-version-override-test")
 	wd, err := os.Getwd()
 	require.NoError(t, err)
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
