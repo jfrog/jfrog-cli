@@ -527,16 +527,14 @@ func TestConanInstallRequiresNoRecipe(t *testing.T) {
 	assert.GreaterOrEqual(t, len(buildInfoModules[0].Dependencies), 1, "Expected at least 1 dependency (zlib)")
 }
 
-// TestConanInstallRequiresWithNameVersion tests --requires with --name and --version overrides.
-func TestConanInstallRequiresWithNameVersion(t *testing.T) {
+// TestConanInstallWithNameVersionOverrides tests conan install with --name and --version overrides
+// applied to a local conanfile.py. Conan 2.x does not allow --name/--version with --requires,
+// so a conanfile is required.
+func TestConanInstallWithNameVersionOverrides(t *testing.T) {
 	initConanTest(t)
 	buildNumber := "1"
 
-	tmpDir, cleanupCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
-	t.Cleanup(cleanupCallback)
-	projectPath := filepath.Join(tmpDir, "requires-name-version-test")
-	require.NoError(t, os.MkdirAll(projectPath, 0755))
-
+	projectPath := createConanProject(t, "conan-name-version-override-test")
 	wd, err := os.Getwd()
 	require.NoError(t, err)
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
@@ -547,8 +545,7 @@ func TestConanInstallRequiresWithNameVersion(t *testing.T) {
 
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	args := []string{
-		"conan", "install",
-		"--requires", "zlib/1.3.1",
+		"conan", "install", ".",
 		"--build", "missing",
 		"--name", "my-custom-project",
 		"--version", "2.5.0",
