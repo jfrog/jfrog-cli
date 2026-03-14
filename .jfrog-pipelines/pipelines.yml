@@ -19,7 +19,6 @@ resources:
 pipelines:
   - name: jfrog_artifactory_ecomatrix_cli_e2e
     configuration:
-      nodepool: default
       integrations:
         - name: jfrog_cli_tests
       environmentVariables:
