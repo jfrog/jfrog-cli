@@ -3,7 +3,7 @@ resources:
     type: GitRepo
     configuration:
       path: jfrog/jfrog-cli
-      gitProvider: jfrog_cli_github
+      gitProvider: jfrog_cli_gh
       branches:
         include: master
   - name: cli_coreapps_env_details
@@ -19,6 +19,7 @@ resources:
 pipelines:
   - name: jfrog_artifactory_ecomatrix_cli_e2e
     configuration:
+      nodepool: default
       integrations:
         - name: jfrog_cli_tests
       environmentVariables:
@@ -50,7 +51,6 @@ pipelines:
       - name: setup_cli_test
         type: Bash
         configuration:
-          nodePool: k8s_u20
           integrations:
             - name: docker_jfrog_io_reader
           outputResources:
@@ -136,7 +136,6 @@ pipelines:
             - name: jfrog_oauth_token
           inputResources:
             - name: cli_coreapps_env_details
-          nodePool: k8s_u20
           integrations:
             - name: docker_jfrog_io_reader
         execution:
@@ -226,7 +225,6 @@ pipelines:
         type: Matrix
         stepMode: Bash
         configuration:
-          nodePool: k8s_u20
           multiNode: true
           integrations:
             - name: docker_jfrog_io_reader
@@ -328,7 +326,6 @@ pipelines:
       - name: docker_cli_tests
         type: Bash
         configuration:
-          nodePool: k8s_u20
           integrations:
             - name: docker_jfrog_io_reader
             - name: jfrog_cli_tests
@@ -524,7 +521,6 @@ pipelines:
       - name: artifactory_cli_tests
         type: Bash
         configuration:
-          nodePool: k8s_u20
           integrations:
             - name: docker_jfrog_io_reader
           inputResources:
@@ -597,7 +593,6 @@ pipelines:
       - name: go_cli_tests
         type: Bash
         configuration:
-          nodePool: k8s_u20
           integrations:
             - name: docker_jfrog_io_reader
           inputResources:
@@ -662,7 +657,6 @@ pipelines:
       - name: maven_cli_tests
         type: Bash
         configuration:
-          nodePool: k8s_u20
           integrations:
             - name: docker_jfrog_io_reader
           inputResources:
@@ -750,7 +744,6 @@ pipelines:
       - name: npm_cli_tests
         type: Bash
         configuration:
-          nodePool: k8s_u20
           integrations:
             - name: docker_jfrog_io_reader
           inputResources:
@@ -829,7 +822,6 @@ pipelines:
       - name: nuget_cli_tests
         type: Bash
         configuration:
-          nodePool: k8s_u20
           integrations:
             - name: docker_jfrog_io_reader
           inputResources:
@@ -937,7 +929,6 @@ pipelines:
       - name: podman_cli_tests
         type: Bash
         configuration:
-          nodePool: k8s_u20
           integrations:
             - name: docker_jfrog_io_reader
           inputResources:
@@ -1006,7 +997,6 @@ pipelines:
       - name: pip_cli_tests
         type: Bash
         configuration:
-          nodePool: k8s_u20
           integrations:
             - name: docker_jfrog_io_reader
           inputResources:
@@ -1103,7 +1093,6 @@ pipelines:
       - name: pipenv_cli_tests
         type: Bash
         configuration:
-          nodePool: k8s_u20
           integrations:
             - name: docker_jfrog_io_reader
           inputResources:
