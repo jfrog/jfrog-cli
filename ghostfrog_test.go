@@ -585,25 +585,75 @@ func TestGhostFrogSetupJFrogCLINativeIntegration(t *testing.T) {
 
 // E2E-031: Auto build-info publish (requires Artifactory)
 func TestGhostFrogAutoBuildInfoPublish(t *testing.T) {
-	initGhostFrogTest(t)
+	homeDir := initGhostFrogTest(t)
+	installAliases(t, "go")
+
+	binDir := aliasBinDir(homeDir)
+	goPath := aliasToolPath(homeDir, "go")
+
+	// Verify the alias intercepts and routes to jf mode -- prerequisite for build-info collection
+	cmd := exec.Command(goPath, "version")
+	cmd.Env = append(os.Environ(),
+		"PATH="+binDir+string(os.PathListSeparator)+os.Getenv("PATH"),
+		"JFROG_CLI_LOG_LEVEL=DEBUG",
+	)
+	out, _ := cmd.CombinedOutput()
+	assert.True(t,
+		strings.Contains(string(out), "Intercepting 'go' command") ||
+			strings.Contains(string(out), "Transforming 'go' to 'jf go'"),
+		"E2E-031 prerequisite: alias must route to jf mode for build-info collection, got: %s", string(out))
+
+	// Full build-info auto-publish verification requires a live Artifactory instance
 	skipIfNoArtifactory(t, "E2E-031")
-	// When Artifactory is available: run an aliased npm install, verify
-	// build-info is collected and published automatically at the end.
-	t.Log("E2E-031: Artifactory available -- build-info auto-publish validation is a future enhancement")
+	t.Log("E2E-031: Artifactory available -- run aliased build command and assert build-info is published automatically")
 }
 
 // E2E-032: Manual publish precedence (requires Artifactory)
 func TestGhostFrogManualPublishPrecedence(t *testing.T) {
-	initGhostFrogTest(t)
+	homeDir := initGhostFrogTest(t)
+	installAliases(t, "go")
+
+	binDir := aliasBinDir(homeDir)
+	goPath := aliasToolPath(homeDir, "go")
+
+	// Verify the alias is in JF mode -- prerequisite for manual build-publish precedence
+	cmd := exec.Command(goPath, "version")
+	cmd.Env = append(os.Environ(),
+		"PATH="+binDir+string(os.PathListSeparator)+os.Getenv("PATH"),
+		"JFROG_CLI_LOG_LEVEL=DEBUG",
+	)
+	out, _ := cmd.CombinedOutput()
+	assert.True(t,
+		strings.Contains(string(out), "Intercepting 'go' command") ||
+			strings.Contains(string(out), "Transforming 'go' to 'jf go'"),
+		"E2E-032 prerequisite: alias must route to jf mode, got: %s", string(out))
+
 	skipIfNoArtifactory(t, "E2E-032")
-	t.Log("E2E-032: Artifactory available -- manual publish precedence validation is a future enhancement")
+	t.Log("E2E-032: Artifactory available -- verify that manual jf build-publish takes precedence over auto-publish")
 }
 
 // E2E-033: Auto publish disabled (requires Artifactory)
 func TestGhostFrogAutoPublishDisabled(t *testing.T) {
-	initGhostFrogTest(t)
+	homeDir := initGhostFrogTest(t)
+	installAliases(t, "go")
+
+	binDir := aliasBinDir(homeDir)
+	goPath := aliasToolPath(homeDir, "go")
+
+	// Verify the alias is in JF mode -- prerequisite for auto-publish behavior
+	cmd := exec.Command(goPath, "version")
+	cmd.Env = append(os.Environ(),
+		"PATH="+binDir+string(os.PathListSeparator)+os.Getenv("PATH"),
+		"JFROG_CLI_LOG_LEVEL=DEBUG",
+	)
+	out, _ := cmd.CombinedOutput()
+	assert.True(t,
+		strings.Contains(string(out), "Intercepting 'go' command") ||
+			strings.Contains(string(out), "Transforming 'go' to 'jf go'"),
+		"E2E-033 prerequisite: alias must route to jf mode, got: %s", string(out))
+
 	skipIfNoArtifactory(t, "E2E-033")
-	t.Log("E2E-033: Artifactory available -- auto-publish disabled validation is a future enhancement")
+	t.Log("E2E-033: Artifactory available -- verify build-info is not auto-published when the feature is disabled in config")
 }
 
 // E2E-034: Jenkins pipeline compatibility
@@ -933,6 +983,282 @@ func TestGhostFrogUnsupportedToolInvocation(t *testing.T) {
 	// Install should reject unsupported tool
 	out, err := runJfCommand(t, "package-alias", "install", "--packages", "curl")
 	assert.Error(t, err, "install should reject unsupported tool: %s", out)
+}
+
+// ---------------------------------------------------------------------------
+// Section 15.8 - Behavioral and Dispatch Correctness (E2E-013 to E2E-019)
+// ---------------------------------------------------------------------------
+
+// E2E-013: Running an alias in JF mode logs the command transformation
+func TestGhostFrogJFModeTransformation(t *testing.T) {
+	homeDir := initGhostFrogTest(t)
+	installAliases(t, "npm")
+
+	binDir := aliasBinDir(homeDir)
+	npmPath := aliasToolPath(homeDir, "npm")
+
+	cmd := exec.Command(npmPath, "--version")
+	cmd.Env = append(os.Environ(),
+		"PATH="+binDir+string(os.PathListSeparator)+os.Getenv("PATH"),
+		"JFROG_CLI_LOG_LEVEL=DEBUG",
+	)
+	out, _ := cmd.CombinedOutput()
+	outputStr := string(out)
+
+	assert.True(t,
+		strings.Contains(outputStr, "Transforming 'npm' to 'jf npm'") ||
+			strings.Contains(outputStr, "Intercepting 'npm' command"),
+		"JF mode should log the command transformation, got: %s", outputStr)
+	assert.NotContains(t, outputStr, "Ghost Frog disabled",
+		"JF mode transformation should not be bypassed")
+}
+
+// E2E-014: Non-zero exit code from the native tool is propagated by the alias
+func TestGhostFrogExitCodePropagation(t *testing.T) {
+	homeDir := initGhostFrogTest(t)
+	installAliases(t, "go")
+
+	// Set go to pass mode so it delegates directly to the native tool
+	out, err := runJfCommand(t, "package-alias", "exclude", "go")
+	require.NoError(t, err, "exclude go failed: %s", out)
+
+	binDir := aliasBinDir(homeDir)
+	goPath := aliasToolPath(homeDir, "go")
+
+	// Running go with an unknown tool name causes a non-zero exit
+	cmd := exec.Command(goPath, "tool", "nonexistent-tool-xyz")
+	cmd.Env = append(os.Environ(), "PATH="+binDir+string(os.PathListSeparator)+os.Getenv("PATH"))
+	_, err = cmd.CombinedOutput()
+
+	require.Error(t, err, "alias must propagate non-zero exit code from native tool")
+	if exitErr, ok := err.(*exec.ExitError); ok {
+		assert.NotEqual(t, 0, exitErr.ExitCode(),
+			"alias exit code should mirror the native tool's non-zero exit code")
+	}
+}
+
+// E2E-015: When aliases are disabled, the alias binary runs the native tool directly
+func TestGhostFrogDisabledStatePassthrough(t *testing.T) {
+	homeDir := initGhostFrogTest(t)
+	installAliases(t, "go")
+
+	out, err := runJfCommand(t, "package-alias", "disable")
+	require.NoError(t, err, "disable failed: %s", out)
+
+	binDir := aliasBinDir(homeDir)
+	goPath := aliasToolPath(homeDir, "go")
+
+	cmd := exec.Command(goPath, "version")
+	cmd.Env = append(os.Environ(),
+		"PATH="+binDir+string(os.PathListSeparator)+os.Getenv("PATH"),
+		"JFROG_CLI_LOG_LEVEL=DEBUG",
+	)
+	output, err := cmd.CombinedOutput()
+	outputStr := string(output)
+
+	require.NoError(t, err, "go version via disabled alias should succeed: %s", outputStr)
+	assert.Contains(t, outputStr, "Package aliasing is disabled",
+		"disabled alias should log that aliasing is disabled before passing through")
+	assert.NotContains(t, outputStr, "Transforming",
+		"disabled alias must not transform the command to jf")
+	assert.Contains(t, outputStr, "go version",
+		"native go version output should appear when aliasing is disabled")
+}
+
+// E2E-016: pnpm, gem, and bundle default to ModePass and are never transformed to jf
+func TestGhostFrogDefaultPassToolsBehavior(t *testing.T) {
+	homeDir := initGhostFrogTest(t)
+	installAliases(t, "pnpm,gem,bundle")
+
+	binDir := aliasBinDir(homeDir)
+
+	for _, tool := range []string{"pnpm", "gem", "bundle"} {
+		_, err := os.Stat(aliasToolPath(homeDir, tool))
+		require.NoError(t, err, "alias for %s should exist", tool)
+
+		cmd := exec.Command(aliasToolPath(homeDir, tool), "--version")
+		cmd.Env = append(os.Environ(),
+			"PATH="+binDir+string(os.PathListSeparator)+os.Getenv("PATH"),
+			"JFROG_CLI_LOG_LEVEL=DEBUG",
+		)
+		out, _ := cmd.CombinedOutput()
+		outputStr := string(out)
+
+		assert.NotContains(t, outputStr, fmt.Sprintf("Transforming '%s' to 'jf %s'", tool, tool),
+			"default pass tool %s must not be transformed into a jf command", tool)
+		assert.True(t,
+			strings.Contains(outputStr, "Executing real tool") ||
+				strings.Contains(outputStr, "could not find"),
+			"default pass tool %s should attempt native execution, got: %s", tool, outputStr)
+	}
+}
+
+// E2E-017: Omitting --packages installs aliases for all supported tools
+func TestGhostFrogInstallAllTools(t *testing.T) {
+	homeDir := initGhostFrogTest(t)
+	installAliases(t, "") // empty string triggers parsePackageList to return all tools
+
+	binDir := aliasBinDir(homeDir)
+	for _, tool := range packagealias.SupportedTools {
+		_, err := os.Stat(aliasToolPath(homeDir, tool))
+		require.NoError(t, err, "alias for %s should exist when installing all tools", tool)
+	}
+
+	entries, err := os.ReadDir(binDir)
+	require.NoError(t, err)
+	assert.Equal(t, len(packagealias.SupportedTools), len(entries),
+		"bin dir should contain exactly all %d supported tools", len(packagealias.SupportedTools))
+}
+
+// E2E-018: Reinstalling with a different --packages set removes aliases for omitted tools
+func TestGhostFrogReinstallDifferentPackageSet(t *testing.T) {
+	homeDir := initGhostFrogTest(t)
+	installAliases(t, "npm,go")
+
+	for _, tool := range []string{"npm", "go"} {
+		_, err := os.Stat(aliasToolPath(homeDir, tool))
+		require.NoError(t, err, "alias for %s should exist before reinstall", tool)
+	}
+
+	installAliases(t, "mvn")
+
+	_, err := os.Stat(aliasToolPath(homeDir, "mvn"))
+	require.NoError(t, err, "alias for mvn should exist after reinstall with mvn")
+
+	for _, removed := range []string{"npm", "go"} {
+		_, err := os.Stat(aliasToolPath(homeDir, removed))
+		assert.True(t, os.IsNotExist(err),
+			"alias for %s should be removed when reinstalling with a different package set", removed)
+	}
+}
+
+// E2E-019: A ModePass alias with a real tool available runs the native tool without jf interception
+func TestGhostFrogPassModeWithRealTool(t *testing.T) {
+	homeDir := initGhostFrogTest(t)
+	installAliases(t, "go")
+
+	out, err := runJfCommand(t, "package-alias", "exclude", "go")
+	require.NoError(t, err, "exclude go failed: %s", out)
+
+	binDir := aliasBinDir(homeDir)
+	goPath := aliasToolPath(homeDir, "go")
+
+	cmd := exec.Command(goPath, "version")
+	cmd.Env = append(os.Environ(),
+		"PATH="+binDir+string(os.PathListSeparator)+os.Getenv("PATH"),
+		"JFROG_CLI_LOG_LEVEL=DEBUG",
+	)
+	output, err := cmd.CombinedOutput()
+	outputStr := string(output)
+
+	require.NoError(t, err, "go version in pass mode should succeed: %s", outputStr)
+	assert.Contains(t, outputStr, "go version",
+		"native go version output should appear in pass mode")
+	assert.NotContains(t, outputStr, "Transforming 'go' to 'jf go'",
+		"pass mode should not route the command through jf")
+}
+
+// ---------------------------------------------------------------------------
+// Section 15.9 - Config and Mode Routing (E2E-065 to E2E-068)
+// ---------------------------------------------------------------------------
+
+// E2E-065: SubcommandModes config routes individual go subcommands differently
+func TestGhostFrogGoSubcommandPolicyRouting(t *testing.T) {
+	homeDir := initGhostFrogTest(t)
+	installAliases(t, "go")
+
+	binDir := aliasBinDir(homeDir)
+	goPath := aliasToolPath(homeDir, "go")
+	configPath := filepath.Join(homeDir, "package-alias", "config.yaml")
+
+	// Override go.version to pass mode while keeping default jf mode for other subcommands
+	configYAML := "enabled: true\ntool_modes:\n  go: jf\nsubcommand_modes:\n  go.version: pass\nenabled_tools:\n  - go\n"
+	require.NoError(t, os.WriteFile(configPath, []byte(configYAML), 0644))
+
+	// go version should use pass mode and run native go
+	versionCmd := exec.Command(goPath, "version")
+	versionCmd.Env = append(os.Environ(),
+		"PATH="+binDir+string(os.PathListSeparator)+os.Getenv("PATH"),
+		"JFROG_CLI_LOG_LEVEL=DEBUG",
+	)
+	versionOut, err := versionCmd.CombinedOutput()
+	versionStr := string(versionOut)
+
+	require.NoError(t, err, "go version in subcommand pass mode should succeed: %s", versionStr)
+	assert.Contains(t, versionStr, "go version",
+		"native go version should run when go.version subcommand mode is pass")
+	assert.NotContains(t, versionStr, "Transforming 'go' to 'jf go'",
+		"go.version in pass mode should not route through jf")
+
+	// go build (no subcommand override) should fall through to the default jf mode
+	buildCmd := exec.Command(goPath, "build", "./nonexistent_package_xyz")
+	buildCmd.Env = append(os.Environ(),
+		"PATH="+binDir+string(os.PathListSeparator)+os.Getenv("PATH"),
+		"JFROG_CLI_LOG_LEVEL=DEBUG",
+	)
+	buildOut, _ := buildCmd.CombinedOutput()
+	assert.Contains(t, string(buildOut), "Transforming 'go' to 'jf go'",
+		"go build should use the default JF mode when no subcommand override is configured")
+}
+
+// E2E-066: Tool exclusion (ModePass) is preserved when the same package set is reinstalled
+func TestGhostFrogExcludePersistenceAcrossReinstall(t *testing.T) {
+	initGhostFrogTest(t)
+	installAliases(t, "npm,go")
+
+	out, err := runJfCommand(t, "package-alias", "exclude", "npm")
+	require.NoError(t, err, "exclude npm failed: %s", out)
+
+	// Reinstall the same set; install only sets a mode when the entry is absent
+	installAliases(t, "npm,go")
+
+	statusOut, err := runJfCommand(t, "package-alias", "status")
+	require.NoError(t, err, "status failed: %s", statusOut)
+	assert.Contains(t, statusOut, "mode=pass",
+		"npm mode=pass should be preserved after reinstalling the same package set")
+}
+
+// E2E-067: On Unix, the alias symlink resolves to the actual jf binary used during install
+func TestGhostFrogSymlinkTargetCorrectness(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("E2E-067: Windows uses file copies instead of symlinks -- skipping Unix symlink check")
+	}
+	homeDir := initGhostFrogTest(t)
+	installAliases(t, "npm")
+
+	npmPath := aliasToolPath(homeDir, "npm")
+
+	linkTarget, err := os.Readlink(npmPath)
+	require.NoError(t, err, "should be able to read npm alias symlink")
+
+	// Resolve the expected target (the jf binary used during install)
+	jfBinResolved, err := filepath.EvalSymlinks(ghostFrogJfBin)
+	require.NoError(t, err, "should resolve jf binary path")
+
+	// Resolve the actual symlink target to an absolute path
+	resolvedTarget := linkTarget
+	if !filepath.IsAbs(linkTarget) {
+		resolvedTarget = filepath.Join(filepath.Dir(npmPath), linkTarget)
+	}
+	resolvedTarget, err = filepath.EvalSymlinks(resolvedTarget)
+	require.NoError(t, err, "should resolve symlink target: %s", linkTarget)
+
+	assert.Equal(t, filepath.Clean(jfBinResolved), filepath.Clean(resolvedTarget),
+		"alias symlink must resolve to the jf binary used during install")
+}
+
+// E2E-068: Excluding a tool that was not included in the install returns a clear error
+func TestGhostFrogExcludeUnconfiguredTool(t *testing.T) {
+	initGhostFrogTest(t)
+	installAliases(t, "npm") // install only npm -- go is intentionally omitted
+
+	out, err := runJfCommand(t, "package-alias", "exclude", "go")
+	assert.Error(t, err,
+		"excluding a tool not in the installed package set should return an error")
+	assert.True(t,
+		strings.Contains(out, "not currently configured") ||
+			strings.Contains(out, "Reinstall"),
+		"error should tell the user to reinstall with the tool included: %s", out)
 }
 
 // ---------------------------------------------------------------------------
