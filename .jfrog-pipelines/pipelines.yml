@@ -23,7 +23,6 @@ pipelines:
         - name: jfrog_cli_tests
       environmentVariables:
         readOnly:
-          JFROG_CLI_BUILD_PROJECT: ""
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
           RT_VERSION:
             default: "${RT_VERSION}"
