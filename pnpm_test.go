@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -25,7 +24,6 @@ import (
 	accessServices "github.com/jfrog/jfrog-client-go/access/services"
 	artServices "github.com/jfrog/jfrog-client-go/artifactory/services"
 	"github.com/jfrog/jfrog-client-go/lifecycle/services"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
 )
@@ -255,7 +253,14 @@ func TestPnpmInstallAndPublishWorkspace(t *testing.T) {
 }
 
 // TestPnpmInstallWithPreviousBuildCache verifies that a second install with the same build name
-// can use the previous published build's dependencies for checksum cache (GetDependenciesFromLatestBuild).
+// uses the previous published build's dependencies as a checksum cache (GetDependenciesFromLatestBuild).
+//
+// Strategy: after the first pnpm install writes local partial build info (but before publishing),
+// we inject a marker ("MARKER_") into one dependency's SHA256 checksum using ReadPartialBuildInfoFiles
+// and SavePartialBuildInfo. This "poisoned" checksum is then published with build 1. When the second
+// install runs, if it correctly loads checksums from the previous build's cache, the marker will
+// propagate into build 2's published build info. Asserting the marker's presence in build 2 proves
+// the cache path was taken — without relying on log output or any production code changes.
 func TestPnpmInstallWithPreviousBuildCache(t *testing.T) {
 	initPnpmTest(t)
 	defer cleanPnpmTest(t)
@@ -290,21 +295,56 @@ func TestPnpmInstallWithPreviousBuildCache(t *testing.T) {
 	prepareArtifactoryForPnpmBuild(t, projectDir)
 
 	clientTestUtils.ChangeDirAndAssert(t, projectDir)
+
+	// First install: collect build info locally (partial files).
 	runJfrogCli(t, "pnpm", "install", "--store-dir="+tempCacheDirPath,
 		"--build-name="+buildName, "--build-number="+buildNum1)
+
+	// Inject a marker into one dependency's checksum in the local partial build info.
+	marker := "MARKER_"
+	partials, err := build.ReadPartialBuildInfoFiles(buildName, buildNum1, "")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, partials)
+
+	var markedDepID string
+	for _, p := range partials {
+		if len(p.Dependencies) > 0 {
+			markedDepID = p.Dependencies[0].Id
+			p.Dependencies[0].Sha256 = marker + p.Dependencies[0].Sha256
+			break
+		}
+	}
+	assert.NotEmpty(t, markedDepID, "should have at least one dependency to mark")
+
+	// Clear existing partial files and re-save with the modified checksums.
+	buildDir, err := build.GetBuildDir(buildName, buildNum1, "")
+	assert.NoError(t, err)
+	partialsDir := filepath.Join(buildDir, "partials")
+	entries, err := os.ReadDir(partialsDir)
+	assert.NoError(t, err)
+	for _, e := range entries {
+		if !e.IsDir() && !strings.HasSuffix(e.Name(), "details") {
+			assert.NoError(t, os.Remove(filepath.Join(partialsDir, e.Name())))
+		}
+	}
+	for _, p := range partials {
+		captured := p
+		err := build.SavePartialBuildInfo(buildName, buildNum1, "", func(partial *buildinfo.Partial) {
+			*partial = *captured
+		})
+		assert.NoError(t, err)
+	}
+
+	// Publish build 1 (now contains the marked checksum).
 	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNum1))
 	time.Sleep(3 * time.Second)
 
-	// Second install: redirect log to capture "Checksum resolution: N cached, ..." from fetchChecksums
-	_, logBuffer, previousLog := coretests.RedirectLogOutputToBuffer()
-	defer log.SetLogger(previousLog)
+	// Second install + publish build 2.
 	runJfrogCli(t, "pnpm", "install", "--store-dir="+tempCacheDirPath,
 		"--build-name="+buildName, "--build-number="+buildNum2)
-	logOut := logBuffer.String()
-	assert.Regexp(t, regexp.MustCompile(`Checksum resolution: ([1-9]\d*) cached`), logOut,
-		"second install must use previous build cache for at least one dependency; log output: %s", logOut)
 	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNum2))
 
+	// Verify both builds were published with modules and dependencies.
 	for _, buildNumber := range []string{buildNum1, buildNum2} {
 		publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
 		assert.NoError(t, err)
@@ -312,6 +352,21 @@ func TestPnpmInstallWithPreviousBuildCache(t *testing.T) {
 		assert.NotEmpty(t, publishedBuildInfo.BuildInfo.Modules, "build should have modules")
 		assert.NotEmpty(t, publishedBuildInfo.BuildInfo.Modules[0].Dependencies, "module should have dependencies")
 	}
+
+	// Verify the marker propagated from build 1's cache into build 2.
+	publishedBI2, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNum2)
+	assert.NoError(t, err)
+	assert.True(t, found)
+	var markedDep *buildinfo.Dependency
+	for _, dep := range publishedBI2.BuildInfo.Modules[0].Dependencies {
+		if dep.Id == markedDepID {
+			markedDep = &dep
+			break
+		}
+	}
+	assert.NotNil(t, markedDep, "dependency %s should exist in build 2", markedDepID)
+	assert.True(t, strings.HasPrefix(markedDep.Sha256, marker),
+		"build 2 should carry the marked checksum from build 1 cache, got: %s", markedDep.Sha256)
 
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 }
@@ -323,7 +378,7 @@ func TestPnpmInstallWithPreviousBuildCache(t *testing.T) {
 func setupPnpmPublishAuth(t *testing.T, repo string) func() {
 	homeDir, err := os.UserHomeDir()
 	assert.NoError(t, err)
-	npmrcPath := filepath.Join(homeDir, ".npmrc")
+	npmrcPath := filepath.Clean(filepath.Join(homeDir, ".npmrc"))
 
 	origContent, origErr := os.ReadFile(npmrcPath)
 
@@ -338,7 +393,7 @@ func setupPnpmPublishAuth(t *testing.T, repo string) func() {
 
 	return func() {
 		if origErr == nil {
-			_ = os.WriteFile(npmrcPath, origContent, 0644)
+			_ = os.WriteFile(npmrcPath, origContent, 0644) // #nosec G703 -- restoring original file
 		} else {
 			_ = os.Remove(npmrcPath)
 		}
@@ -736,7 +791,7 @@ func TestPnpmInstallEmptyLockfile(t *testing.T) {
 
 	// Also copy the empty lockfile to the target directory
 	srcLockfile := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "pnpm", "pnpmemptylockfile", "pnpm-lock.yaml")
-	targetLockfile := filepath.Join(projectDir, "pnpm-lock.yaml")
+	targetLockfile := filepath.Clean(filepath.Join(projectDir, "pnpm-lock.yaml"))
 	lockfileContent, err := os.ReadFile(srcLockfile)
 	assert.NoError(t, err)
 	err = os.WriteFile(targetLockfile, lockfileContent, 0644)
