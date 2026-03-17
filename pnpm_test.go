@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	buildutils "github.com/jfrog/build-info-go/build/utils"
 	buildinfo "github.com/jfrog/build-info-go/entities"
@@ -23,6 +25,7 @@ import (
 	accessServices "github.com/jfrog/jfrog-client-go/access/services"
 	artServices "github.com/jfrog/jfrog-client-go/artifactory/services"
 	"github.com/jfrog/jfrog-client-go/lifecycle/services"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
 )
@@ -251,6 +254,68 @@ func TestPnpmInstallAndPublishWorkspace(t *testing.T) {
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.PnpmBuildName, artHttpDetails)
 }
 
+// TestPnpmInstallWithPreviousBuildCache verifies that a second install with the same build name
+// can use the previous published build's dependencies for checksum cache (GetDependenciesFromLatestBuild).
+func TestPnpmInstallWithPreviousBuildCache(t *testing.T) {
+	initPnpmTest(t)
+	defer cleanPnpmTest(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	tempCacheDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+
+	buildName := tests.PnpmBuildName
+	buildNum1, buildNum2 := "602", "603"
+	pnpmProjectPath := createPnpmProject(t, "pnpmproject")
+	projectDir := filepath.Dir(pnpmProjectPath)
+
+	// Write .npmrc so pnpm resolves through Artifactory (required for AQL checksum resolution).
+	registry := npmCmdUtils.GetNpmRepositoryUrl(tests.NpmRemoteRepo, serverDetails.GetArtifactoryUrl())
+	registryWithSlash := strings.TrimSuffix(registry, "/") + "/"
+	authKey, authValue := npmCmdUtils.GetNpmAuthKeyValue(serverDetails, registryWithSlash)
+	npmrcContent := fmt.Sprintf("registry=%s\n%s=%s\n", registryWithSlash, authKey, authValue)
+	err = os.WriteFile(filepath.Join(projectDir, ".npmrc"), []byte(npmrcContent), 0644)
+	assert.NoError(t, err)
+
+	// Clear pnpm metadata cache for the Artifactory host to avoid stale tarball URLs
+	// from repos created by previous test runs (repo names include a unique timestamp suffix).
+	artHost := strings.TrimPrefix(strings.TrimPrefix(serverDetails.GetArtifactoryUrl(), "https://"), "http://")
+	artHost = strings.SplitN(artHost, "/", 2)[0]
+	if homeDir, hErr := os.UserHomeDir(); hErr == nil {
+		_ = os.RemoveAll(filepath.Join(homeDir, "Library", "Caches", "pnpm", "metadata-v1.3", artHost))
+	}
+
+	prepareArtifactoryForPnpmBuild(t, projectDir)
+
+	clientTestUtils.ChangeDirAndAssert(t, projectDir)
+	runJfrogCli(t, "pnpm", "install", "--store-dir="+tempCacheDirPath,
+		"--build-name="+buildName, "--build-number="+buildNum1)
+	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNum1))
+	time.Sleep(3 * time.Second)
+
+	// Second install: redirect log to capture "Checksum resolution: N cached, ..." from fetchChecksums
+	_, logBuffer, previousLog := coretests.RedirectLogOutputToBuffer()
+	defer log.SetLogger(previousLog)
+	runJfrogCli(t, "pnpm", "install", "--store-dir="+tempCacheDirPath,
+		"--build-name="+buildName, "--build-number="+buildNum2)
+	logOut := logBuffer.String()
+	assert.Regexp(t, regexp.MustCompile(`Checksum resolution: ([1-9]\d*) cached`), logOut,
+		"second install must use previous build cache for at least one dependency; log output: %s", logOut)
+	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNum2))
+
+	for _, buildNumber := range []string{buildNum1, buildNum2} {
+		publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+		assert.NoError(t, err)
+		assert.True(t, found, "build %s/%s should be found", buildName, buildNumber)
+		assert.NotEmpty(t, publishedBuildInfo.BuildInfo.Modules, "build should have modules")
+		assert.NotEmpty(t, publishedBuildInfo.BuildInfo.Modules[0].Dependencies, "module should have dependencies")
+	}
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+}
+
 // setupPnpmPublishAuth writes Artifactory registry and auth to ~/.npmrc
 // so that pnpm publish (which delegates to npm from a temp dir) can authenticate.
 // The registry URL must end with "/" for npm's nerfDart URL matching to work.
@@ -340,6 +405,15 @@ func validatePnpmScopedPublish(t *testing.T, pt pnpmTestParams) {
 		fmt.Sprintf("build.name=%v;build.number=%v;build.timestamp=*", tests.PnpmBuildName, pt.buildNumber), t)
 	// pnpm pack includes the scope in the tarball filename (e.g., jscope-jfrog-cli-tests-=1.0.0.tgz)
 	validatePnpmCommonPublish(t, pt, "jscope-jfrog-cli-tests-=1.0.0.tgz")
+	// E2E: assert artifact Path in build info matches Artifactory layout for scoped packages (@scope/name/-/@scope/name-version.tgz)
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.PnpmBuildName, pt.buildNumber)
+	assert.NoError(t, err)
+	assert.True(t, found)
+	if found && len(publishedBuildInfo.BuildInfo.Modules) > 0 && len(publishedBuildInfo.BuildInfo.Modules[0].Artifacts) > 0 {
+		path := publishedBuildInfo.BuildInfo.Modules[0].Artifacts[0].Path
+		assert.Equal(t, "@jscope/jfrog-cli-tests/-/@jscope/jfrog-cli-tests-1.0.0.tgz", path,
+			"scoped artifact path in build info should match Artifactory layout")
+	}
 }
 
 func validatePnpmCommonPublish(t *testing.T, pt pnpmTestParams, expectedArtifactName string) {
