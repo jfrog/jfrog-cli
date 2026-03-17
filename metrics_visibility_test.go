@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"testing"
 	"time"
 
-	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 )
 
@@ -64,6 +64,10 @@ func startVisMockServer(t *testing.T) (*httptest.Server, chan visReq) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{"version":"7.200.0"}`))
+	})
+	mux.HandleFunc("/artifactory/api/system/ping", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("OK"))
 	})
 	mux.HandleFunc("/artifactory/api/system/usage", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -285,33 +289,55 @@ func TestVisibility_GoBuild_Flags(t *testing.T) {
 }
 
 func TestVisibility_PackageAlias_Metrics(t *testing.T) {
+	// This test requires the ghost frog binary and alias setup.
+	homeDir := initGhostFrogTest(t)
+
 	srv, ch := startVisMockServer(t)
 	defer srv.Close()
 
-	home := t.TempDir()
-	_ = os.Setenv("JFROG_CLI_HOME_DIR", home)
-	_ = os.Setenv("JFROG_CLI_REPORT_USAGE", "true")
+	// Install npm alias (creates symlink npm -> jf in alias bin dir)
+	installAliases(t, "npm")
 
-	jf := coreTests.NewJfrogCli(execMain, "jf", "").WithoutCredentials()
-
+	// Configure the CLI to point at the mock server
 	platformURL := srv.URL + "/"
 	artURL := srv.URL + "/artifactory/"
-	if err := jf.Exec("c", "add", "mock", "--url", platformURL, "--artifactory-url", artURL,
-		"--access-token", "dummy", "--interactive=false", "--enc-password=false"); err != nil {
-		t.Fatalf("config add failed: %v", err)
-	}
-	if err := jf.Exec("c", "use", "mock"); err != nil {
-		t.Fatalf("config use failed: %v", err)
-	}
-
-	// Simulate what DispatchIfAlias -> runJFMode does when 'npm' alias is detected.
-	commands.SetPackageAliasContext("npm")
-
-	// Run a command that triggers usage reporting.
-	err := jf.Exec("rt", "ping", "--server-id", "mock")
+	out, err := runJfCommand(t, "c", "add", "mock", "--url", platformURL, "--artifactory-url", artURL,
+		"--access-token", "dummy", "--interactive=false", "--enc-password=false")
 	if err != nil {
-		t.Logf("jf exec failed (expected on mock): %v", err)
+		t.Fatalf("config add failed: %s %v", out, err)
 	}
+	out, err = runJfCommand(t, "c", "use", "mock")
+	if err != nil {
+		t.Fatalf("config use failed: %s %v", out, err)
+	}
+
+	// Create a minimal npm project with JFrog config so "jf npm install" passes validation.
+	projDir := t.TempDir()
+	if err := os.WriteFile(projDir+"/package.json", []byte(`{"name":"test","version":"1.0.0"}`), 0o644); err != nil {
+		t.Fatalf("write package.json: %v", err)
+	}
+	if err := os.MkdirAll(projDir+"/.jfrog/projects", 0o755); err != nil {
+		t.Fatalf("mkdir .jfrog/projects: %v", err)
+	}
+	npmYaml := []byte("version: 1\ntype: npm\nresolver:\n    repo: npm-virtual\n    serverId: mock\ndeployer:\n    repo: npm-virtual\n    serverId: mock\n")
+	if err := os.WriteFile(projDir+"/.jfrog/projects/npm.yaml", npmYaml, 0o644); err != nil {
+		t.Fatalf("write npm.yaml: %v", err)
+	}
+
+	// Run the npm alias which triggers DispatchIfAlias -> runJFMode -> SetPackageAliasContext("npm")
+	// Then falls through to "jf npm install" which triggers metrics reporting.
+	npmPath := aliasToolPath(homeDir, "npm")
+	binDir := aliasBinDir(homeDir)
+	cmd := exec.Command(npmPath, "install")
+	cmd.Dir = projDir
+	cmd.Env = append(os.Environ(),
+		"JFROG_CLI_HOME_DIR="+homeDir,
+		"JFROG_CLI_REPORT_USAGE=true",
+		"JFROG_CLI_LOG_LEVEL=DEBUG",
+		"PATH="+binDir+string(os.PathListSeparator)+os.Getenv("PATH"),
+	)
+	cmdOut, _ := cmd.CombinedOutput()
+	t.Logf("npm alias output: %s", string(cmdOut))
 
 	select {
 	case req := <-ch:
@@ -324,6 +350,7 @@ func TestVisibility_PackageAlias_Metrics(t *testing.T) {
 				PackageManager string `json:"package_manager"`
 			} `json:"labels"`
 		}
+		t.Logf("RAW PAYLOAD: %s", string(req.Body))
 		if err := json.Unmarshal(req.Body, &payload); err != nil {
 			t.Fatalf("bad JSON: %v", err)
 		}
@@ -333,7 +360,7 @@ func TestVisibility_PackageAlias_Metrics(t *testing.T) {
 		if payload.Labels.PackageManager != "npm" {
 			t.Errorf("expected package_manager=npm, got %q", payload.Labels.PackageManager)
 		}
-	case <-time.After(5 * time.Second):
+	case <-time.After(15 * time.Second):
 		t.Fatal("timeout waiting for metrics POST")
 	}
 }
