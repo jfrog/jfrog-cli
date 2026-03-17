@@ -146,6 +146,9 @@ const (
 	PluginInstall = "plugin-install"
 	PluginPublish = "plugin-publish"
 
+	// Login command key
+	Login = "login"
+
 	// *** Artifactory Commands' flags ***
 	// Base flags
 	url                 = "url"
@@ -2379,6 +2382,9 @@ var commandFlags = map[string][]string{
 	},
 	Setup: {
 		serverId, url, user, password, accessToken, sshPassphrase, sshKeyPath, ClientCertPath, ClientCertKeyPath, Project, setupRepo,
+	},
+	Login: {
+		serverId,
 	},
 }
 
