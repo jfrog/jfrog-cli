@@ -4,23 +4,17 @@ on:
   push:
     branches:
       - "master"
-    paths:
-      - "packagealias/**"
-      - "ghostfrog_test.go"
-      - ".github/workflows/ghostFrogTests.yml"
+      - "ghost-frog"
+  # Triggers the workflow on PRs to master branch only.
   pull_request_target:
     types: [labeled]
     branches:
       - "master"
-    paths:
-      - "packagealias/**"
-      - "ghostfrog_test.go"
-      - ".github/workflows/ghostFrogTests.yml"
 
+# Ensures that only the latest commit is running for each PR at a time.
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}-${{ github.ref }}
   cancel-in-progress: true
-
 jobs:
   Ghost-Frog-Tests:
     name: Ghost Frog tests (${{ matrix.os.name }})
@@ -34,13 +28,17 @@ jobs:
           - name: windows
             version: 2022
     runs-on: ${{ matrix.os.name }}-${{ matrix.os.version }}
-    env:
-      JFROG_CLI_LOG_LEVEL: DEBUG
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
+
+      - name: Setup FastCI
+        uses: jfrog-fastci/fastci@v0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          fastci_otel_token: ${{ secrets.FASTCI_TOKEN }}
 
       - name: Setup Go with cache
         uses: jfrog/.github/actions/install-go-with-cache@main
@@ -64,3 +62,5 @@ jobs:
 
       - name: Run Ghost Frog tests
         run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.ghostFrog
+        env:
+          JFROG_CLI_LOG_LEVEL: DEBUG
