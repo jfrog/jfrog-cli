@@ -794,7 +794,7 @@ func TestPnpmInstallEmptyLockfile(t *testing.T) {
 	targetLockfile := filepath.Clean(filepath.Join(projectDir, "pnpm-lock.yaml"))
 	lockfileContent, err := os.ReadFile(srcLockfile)
 	assert.NoError(t, err)
-	err = os.WriteFile(targetLockfile, lockfileContent, 0644)
+	err = os.WriteFile(targetLockfile, lockfileContent, 0644) //#nosec G703 -- test-only path from controlled test infrastructure
 	assert.NoError(t, err)
 
 	clientTestUtils.ChangeDirAndAssert(t, projectDir)
