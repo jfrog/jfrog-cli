@@ -79,6 +79,8 @@ const (
 	Poetry                 = "poetry"
 	Helm                   = "helm"
 	HuggingFace            = "hugging-face"
+	HuggingFaceUpload      = "hugging-face-upload"
+	HuggingFaceDownload    = "hugging-face-download"
 	RubyConfig             = "ruby-config"
 	Conan                  = "conan"
 	Ping                   = "ping"
@@ -1770,7 +1772,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	RepoKey: cli.StringFlag{
 		Name:  RepoKey,
-		Usage: "Repository Key for uploading/downloading dataset/models.",
+		Usage: "[Optional] Repository Key for uploading/downloading dataset/models.` `",
 	},
 }
 
@@ -2005,6 +2007,12 @@ var commandFlags = map[string][]string{
 		BuildName, BuildNumber, module, Project, serverId, username, password,
 	},
 	HuggingFace: {
+		BuildName, BuildNumber, module, Project, serverId, Revision, RepoType, EtagTimeout, RepoKey,
+	},
+	HuggingFaceUpload: {
+		BuildName, BuildNumber, module, Project, serverId, Revision, RepoType, RepoKey,
+	},
+	HuggingFaceDownload: {
 		BuildName, BuildNumber, module, Project, serverId, Revision, RepoType, EtagTimeout, RepoKey,
 	},
 	RubyConfig: {
