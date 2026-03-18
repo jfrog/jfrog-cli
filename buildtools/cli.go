@@ -1324,25 +1324,6 @@ func updateHuggingFaceEnv(c *cli.Context, serverDetails *coreConfig.ServerDetail
 	return nil
 }
 
-// getRepoKeyFromHFEndpoint extracts the repository key from HF_ENDPOINT environment variable
-func getRepoKeyFromHFEndpoint() (string, error) {
-	endpoint := os.Getenv("HF_ENDPOINT")
-	if endpoint == "" {
-		return "", errorutils.CheckErrorf("HF_ENDPOINT environment variable is not set")
-	}
-	endpoint = strings.TrimSuffix(endpoint, "/")
-	parts := strings.Split(endpoint, "/")
-	if len(parts) == 0 {
-		return "", errorutils.CheckErrorf("invalid HF_ENDPOINT format: %s", endpoint)
-	}
-	repoKey := parts[len(parts)-1]
-	if repoKey == "" {
-		return "", errorutils.CheckErrorf("could not extract repo key from HF_ENDPOINT: %s", endpoint)
-	}
-	log.Debug("Extracted repo key from HF_ENDPOINT: ", repoKey)
-	return repoKey, nil
-}
-
 func dockerScanCmd(c *cli.Context, imageTag string) error {
 	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), securityCLI.DockerScanCmdHiddenName); show || err != nil {
 		return err
