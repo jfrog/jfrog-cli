@@ -490,6 +490,12 @@ func GetCommands() []cli.Command {
 			Description: huggingface.GetDescription(),
 			Hidden:      true,
 			Category:    buildToolsCategory,
+			Action: func(c *cli.Context) error {
+				if c.Args().Present() {
+					return fmt.Errorf("'%s %s' is not a valid subcommand. Run 'jf hf --help' for usage", c.App.Name, c.Args().First())
+				}
+				return cli.ShowSubcommandHelp(c)
+			},
 			Subcommands: []cli.Command{
 				{
 					Name:      "upload",
