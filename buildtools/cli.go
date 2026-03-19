@@ -87,10 +87,12 @@ import (
 )
 
 const (
-	buildToolsCategory = "Package Managers:"
-	huggingfaceAPI     = "api/huggingfaceml"
-	HF_ENDPOINT        = "HF_ENDPOINT"
-	HF_TOKEN           = "HF_TOKEN"
+	buildToolsCategory      = "Package Managers:"
+	huggingfaceAPI          = "api/huggingfaceml"
+	HF_ENDPOINT             = "HF_ENDPOINT"
+	HF_TOKEN                = "HF_TOKEN"
+	HF_HUB_ETAG_TIMEOUT     = "HF_HUB_ETAG_TIMEOUT"
+	HF_HUB_DOWNLOAD_TIMEOUT = "HF_HUB_DOWNLOAD_TIMEOUT"
 )
 
 func GetCommands() []cli.Command {
@@ -1324,6 +1326,22 @@ func updateHuggingFaceEnv(c *cli.Context, serverDetails *coreConfig.ServerDetail
 		return cliutils.PrintHelpAndReturnError("Access token is expired or missing, please either use rt ping command or update access token.", c)
 	}
 	err := os.Setenv(HF_TOKEN, accessToken)
+	if err != nil {
+		return err
+	}
+	etagTimeout := c.Int("hf-hub-etag-timeout")
+	if etagTimeout == 0 {
+		etagTimeout = 86400
+	}
+	err = os.Setenv(HF_HUB_ETAG_TIMEOUT, strconv.Itoa(etagTimeout))
+	if err != nil {
+		return err
+	}
+	downloadTimeout := c.Int("hf-hub-download-timeout")
+	if downloadTimeout == 0 {
+		downloadTimeout = 86400
+	}
+	err = os.Setenv(HF_HUB_DOWNLOAD_TIMEOUT, strconv.Itoa(downloadTimeout))
 	if err != nil {
 		return err
 	}

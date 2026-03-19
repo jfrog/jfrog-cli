@@ -21,5 +21,11 @@ func GetArguments() string {
 			[Optional] The revision (branch name, tag, or commit hash) to upload to. Default: 'main'.
 
 		--repo-type
-			[Optional] The repository type. Can be 'model' or 'dataset'. Default: 'model'.`
+			[Optional] The repository type. Can be 'model' or 'dataset'. Default: 'model'.
+
+		--hf-hub-etag-timeout
+			[Optional] Timeout in seconds for ETag validation. Default: 86400 (24 hours).
+
+		--hf-hub-download-timeout
+			[Optional] Timeout in seconds for Download. Default: 86400 (24 hours).`
 }

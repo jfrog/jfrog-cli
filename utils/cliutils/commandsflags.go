@@ -598,10 +598,11 @@ const (
 	Draft          = "draft"
 
 	// HuggingFace flags
-	Revision    = "revision"
-	RepoType    = "repo-type"
-	EtagTimeout = "etag-timeout"
-	RepoKey     = "repo-key"
+	Revision             = "revision"
+	RepoType             = "repo-type"
+	HfHubEtagTimeout     = "hf-hub-etag-timeout"
+	HfHubDownloadTimeout = "hf-hub-download-timeout"
+	RepoKey              = "repo-key"
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -1762,9 +1763,13 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Revision,
 		Usage: "[Default: main] The specific revision, branch, or tag to download. Defaults to main branch if not specified.` `",
 	},
-	EtagTimeout: cli.StringFlag{
-		Name:  EtagTimeout,
+	HfHubEtagTimeout: cli.StringFlag{
+		Name:  HfHubEtagTimeout,
 		Usage: "Timeout in seconds for ETag validation. Defaults to 86400 (24 hours).` `",
+	},
+	HfHubDownloadTimeout: cli.IntFlag{
+		Name:  HfHubDownloadTimeout,
+		Usage: "Timeout in seconds for Download. Defaults to 86400 (24 hours).` `",
 	},
 	RepoType: cli.StringFlag{
 		Name:  RepoType,
@@ -2007,13 +2012,13 @@ var commandFlags = map[string][]string{
 		BuildName, BuildNumber, module, Project, serverId, username, password,
 	},
 	HuggingFace: {
-		BuildName, BuildNumber, module, Project, serverId, Revision, RepoType, EtagTimeout, RepoKey,
+		BuildName, BuildNumber, module, Project, serverId, Revision, RepoType, HfHubEtagTimeout, RepoKey, HfHubDownloadTimeout,
 	},
 	HuggingFaceUpload: {
-		BuildName, BuildNumber, module, Project, serverId, Revision, RepoType, RepoKey,
+		BuildName, BuildNumber, module, Project, serverId, Revision, RepoType, RepoKey, HfHubEtagTimeout, HfHubDownloadTimeout,
 	},
 	HuggingFaceDownload: {
-		BuildName, BuildNumber, module, Project, serverId, Revision, RepoType, EtagTimeout, RepoKey,
+		BuildName, BuildNumber, module, Project, serverId, Revision, RepoType, HfHubEtagTimeout, RepoKey, HfHubDownloadTimeout,
 	},
 	RubyConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
