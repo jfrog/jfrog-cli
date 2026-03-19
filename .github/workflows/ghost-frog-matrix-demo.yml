@@ -136,22 +136,22 @@ jobs:
       - name: Show package-alias status
         run: jf package-alias status
 
-      - name: Configure ${{ matrix.tool }} for JFrog
-        run: ${{ matrix.config_cmd }}
-
-      # Run language-specific build
-      - name: Build with Ghost Frog
+      # Configure and build in the same directory so jf tool configs are found
+      - name: Configure and Build with Ghost Frog
         run: |
           echo "🚀 Building ${{ matrix.language }} ${{ matrix.version }} project..."
           echo "All package manager commands will be transparently intercepted!"
           echo ""
-          
+
           # Create test directory
           mkdir -p test-project && cd test-project
-          
+
+          # Configure tool for JFrog (must run from same directory as build)
+          ${{ matrix.config_cmd }}
+
           # Run the build commands
           ${{ matrix.build_cmd }}
-          
+
           echo ""
           echo "✅ Build completed with Ghost Frog interception!"
       
