@@ -16,6 +16,7 @@ import (
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/python"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/setup"
 	artutils "github.com/jfrog/jfrog-cli-artifactory/artifactory/utils"
+	buildinfoflexpack "github.com/jfrog/build-info-go/flexpack"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-security/utils/techutils"
@@ -582,8 +583,12 @@ func MvnCmd(c *cli.Context) (err error) {
 		return err
 	}
 
-	// FlexPack bypasses all config file requirements (only when no config exists)
-	if artutils.ShouldRunNative(configFilePath) && !configExists {
+	// Check if FlexPack (native mode) is enabled via JFROG_RUN_NATIVE environment variable
+	// If enabled, use native Maven implementation regardless of config file presence
+	if buildinfoflexpack.IsFlexPackEnabled() {
+		if configExists {
+			log.Warn("Found maven.yaml config at " + configFilePath + " but JFROG_RUN_NATIVE=true is set - using native Maven mode")
+		}
 		log.Debug("Routing to Maven native implementation")
 		// Extract build configuration for FlexPack
 		args := cliutils.ExtractCommand(c)
