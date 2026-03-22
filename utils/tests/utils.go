@@ -289,6 +289,7 @@ var reposConfigMap = map[*string]string{
 	&ConanRemoteRepo:                ConanRemoteRepositoryConfig,
 	&ConanVirtualRepo:               ConanVirtualRepositoryConfig,
 	&HelmLocalRepo:                  HelmLocalRepositoryConfig,
+	&HuggingFaceLocalRepo:           HuggingFaceLocalRepositoryConfig,
 	&RtDebianRepo:                   DebianTestRepositoryConfig,
 	&RtLfsRepo:                      GitLfsTestRepositoryConfig,
 	&RtRepo1:                        Repo1RepositoryConfig,
@@ -355,7 +356,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestPoetry:             {&PoetryLocalRepo, &PoetryRemoteRepo},
 		TestConan:              {&ConanLocalRepo, &ConanRemoteRepo},
 		TestHelm:               {&HelmLocalRepo},
-		TestHuggingFace:        {},
+		TestHuggingFace:        {&HuggingFaceLocalRepo},
 		TestPlugins:            {&RtRepo1},
 		TestXray:               {&NpmRemoteRepo, &NugetRemoteRepo, &YarnRemoteRepo, &GradleRemoteRepo, &MvnRemoteRepo, &GoRepo, &GoRemoteRepo, &PypiRemoteRepo},
 		TestAccess:             {&RtRepo1},
@@ -485,6 +486,7 @@ func getSubstitutionMap() map[string]string {
 		"${CONAN_REMOTE_REPO}":         ConanRemoteRepo,
 		"${CONAN_VIRTUAL_REPO}":        ConanVirtualRepo,
 		"${HELM_REPO}":                 HelmLocalRepo,
+		"${HUGGINGFACE_LOCAL_REPO}":    HuggingFaceLocalRepo,
 		"${BUILD_NAME1}":               RtBuildName1,
 		"${BUILD_NAME2}":               RtBuildName2,
 		"${BUNDLE_NAME}":               BundleName,
@@ -554,6 +556,7 @@ func AddTimestampToGlobalVars() {
 	ConanRemoteRepo += uniqueSuffix
 	ConanVirtualRepo += uniqueSuffix
 	HelmLocalRepo += uniqueSuffix
+	HuggingFaceLocalRepo += uniqueSuffix
 	RtDebianRepo += uniqueSuffix
 	RtLfsRepo += uniqueSuffix
 	RtRepo1 += uniqueSuffix
@@ -581,6 +584,7 @@ func AddTimestampToGlobalVars() {
 	PoetryBuildName += uniqueSuffix
 	ConanBuildName += uniqueSuffix
 	HelmBuildName += uniqueSuffix
+	HuggingFaceBuildName += uniqueSuffix
 	RtBuildName1 += uniqueSuffix
 	RtBuildName2 += uniqueSuffix
 	RtBuildNameWithSpecialChars += uniqueSuffix

@@ -3,11 +3,11 @@ package docker
 var Usage = []string{"docker <docker arguments> [command options]"}
 
 func GetDescription() string {
-	return `Run any docker command, including ‘jf docker scan’ for scanning a local image with Xray.`
+	return `Run any docker command, including ‘jf docker scan’ for scanning a local image with JFrog Xray.`
 }
 
 func GetArguments() string {
-	return `	login                       Login to a artifactory Docker registry.
+	return `	login                       Log in to an Artifactory Docker registry.
 	build                       Run docker build.
 	push                        Run docker push.
 	pull                        Run docker pull.

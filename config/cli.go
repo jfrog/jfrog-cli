@@ -245,7 +245,7 @@ func ValidateServerId(serverId string) error {
 	reservedIds := []string{"delete", "use", "show", "clear"}
 	for _, reservedId := range reservedIds {
 		if serverId == reservedId {
-			return fmt.Errorf("server can't have one of the following ID's: %s\n%s", strings.Join(reservedIds, ", "), cliutils.GetDocumentationMessage())
+			return fmt.Errorf("server can't have one of the following IDs: %s\n%s", strings.Join(reservedIds, ", "), cliutils.GetDocumentationMessage())
 		}
 	}
 	return nil
@@ -300,7 +300,7 @@ func validatePathsExist(paths ...string) error {
 				return err
 			}
 			if !exists {
-				return errorutils.CheckErrorf("file does not exit at %s", path)
+				return errorutils.CheckErrorf("File doesn't exist at %s", path)
 			}
 		}
 	}

@@ -3,7 +3,7 @@ package twinedocs
 var Usage = []string{"twine <twine arguments> [command options]"}
 
 func GetDescription() string {
-	return "Runs twine "
+	return "Run twine"
 }
 
 func GetArguments() string {
