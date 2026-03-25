@@ -1763,7 +1763,7 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Revision,
 		Usage: "[Default: main] The specific revision, branch, or tag to download. Defaults to main branch if not specified.` `",
 	},
-	HfHubEtagTimeout: cli.StringFlag{
+	HfHubEtagTimeout: cli.IntFlag{
 		Name:  HfHubEtagTimeout,
 		Usage: "Timeout in seconds for ETag validation. Defaults to 86400 (24 hours).` `",
 	},

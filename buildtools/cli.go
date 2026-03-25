@@ -1245,6 +1245,9 @@ func huggingFaceDownloadCmd(c *cli.Context) error {
 	if repoType == "" {
 		repoType = "model"
 	}
+	if repoType != "model" && repoType != "dataset" {
+		return fmt.Errorf("wrong repo type provided, allowed repo-type are : model and dataset")
+	}
 	revision := c.String("revision")
 	if revision == "" {
 		revision = "main"
