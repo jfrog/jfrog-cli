@@ -1070,7 +1070,7 @@ func buildCmd(c *cli.Context) error {
 	}
 
 	// Extract build configuration and arguments
-	_, rtDetails, _, _, _, cleanArgs, buildConfiguration, err := extractDockerOptionsFromArgs(c.Args())
+	_, rtDetails, _, skipLogin, _, cleanArgs, buildConfiguration, err := extractDockerOptionsFromArgs(c.Args())
 	if err != nil {
 		return err
 	}
@@ -1079,12 +1079,14 @@ func buildCmd(c *cli.Context) error {
 		return err
 	}
 
-	// Login to the docker registry
-	err = loginCmd(c)
-	if err != nil {
-		return err
+	if !skipLogin {
+		// Login to the docker registry
+		err = loginCmd(c)
+		if err != nil {
+			return err
+		}
 	}
-
+	
 	dockerOptions := strategies.DockerBuildOptions{
 		DockerFilePath: dockerFilePath,
 		PushExpected:   pushOption,
