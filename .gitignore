@@ -38,4 +38,5 @@ node_modules
 **/testdata/**/bin
 testdata/**/.gradle
 
+# AI agents
 .cursor

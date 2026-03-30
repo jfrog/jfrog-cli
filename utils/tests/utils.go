@@ -581,8 +581,8 @@ func AddTimestampToGlobalVars() {
 	DotnetBuildName += uniqueSuffix
 	GoBuildName += uniqueSuffix
 	GradleBuildName += uniqueSuffix
-		NpmBuildName += uniqueSuffix
-		PnpmBuildName += uniqueSuffix
+	NpmBuildName += uniqueSuffix
+	PnpmBuildName += uniqueSuffix
 	YarnBuildName += uniqueSuffix
 	MvnBuildName += uniqueSuffix
 	NuGetBuildName += uniqueSuffix

@@ -32,7 +32,7 @@ import (
 	huggingfaceCommands "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/huggingface"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/mvn"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/npm"
-	pnpmcmd "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/pnpm"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/pnpm"
 	containerutils "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/ocicontainer"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/terraform"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/yarn"
@@ -830,8 +830,8 @@ func pnpmCmd(c *cli.Context) error {
 	}
 
 	switch cmdName {
-	case "install", "i", "publish", "p":
-		pnpmCommand, err := pnpmcmd.NewCommand(cmdName, cleanArgs, buildConfiguration, serverDetails)
+	case "install", "i", "publish":
+		pnpmCommand, err := pnpm.NewCommand(cmdName, cleanArgs, buildConfiguration, serverDetails)
 		if err != nil {
 			return err
 		}
