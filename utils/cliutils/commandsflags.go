@@ -1914,7 +1914,7 @@ var commandFlags = map[string][]string{
 		serverId, skipLogin,
 	},
 	DockerBuild: {
-		BuildName, BuildNumber, serverId,
+		BuildName, BuildNumber, serverId, skipLogin,
 	},
 	DockerPromote: {
 		targetDockerImage, sourceTag, targetTag, dockerPromoteCopy, url, user, password, accessToken, sshPassphrase, sshKeyPath,
