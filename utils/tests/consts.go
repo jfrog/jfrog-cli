@@ -243,6 +243,7 @@ var (
 	GradleBuildName             = "cli-gradle-build"
 	MvnBuildName                = "cli-maven-build"
 	NpmBuildName                = "cli-npm-build"
+	PnpmBuildName               = "cli-pnpm-build"
 	YarnBuildName               = "cli-yarn-build"
 	NuGetBuildName              = "cli-nuget-build"
 	PipBuildName                = "cli-pip-build"
