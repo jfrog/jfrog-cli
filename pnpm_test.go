@@ -101,7 +101,7 @@ func TestPnpmPublish(t *testing.T) {
 	pnpmProjectPath, pnpmScopedProjectPath := initPnpmFilesTest(t)
 	var pnpmTests = []pnpmTestParams{
 		{testName: "pnpm publish", command: "publish", repo: tests.NpmRepo, wd: pnpmProjectPath, validationFunc: validatePnpmPublish},
-		{testName: "pnpm p with module", command: "p", repo: tests.NpmScopedRepo, wd: pnpmScopedProjectPath, moduleName: ModuleNameJFrogTest, validationFunc: validatePnpmScopedPublish},
+		{testName: "pnpm publish with module", command: "publish", repo: tests.NpmScopedRepo, wd: pnpmScopedProjectPath, moduleName: ModuleNameJFrogTest, validationFunc: validatePnpmScopedPublish},
 	}
 
 	for i, pt := range pnpmTests {
