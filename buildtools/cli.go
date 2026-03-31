@@ -490,7 +490,7 @@ func GetCommands() []cli.Command {
 			Aliases:     []string{"hf"},
 			HelpName:    corecommon.CreateUsage("hugging-face", huggingface.GetDescription(), huggingface.Usage),
 			Description: huggingface.GetDescription(),
-			Hidden:      true,
+			Hidden:      false,
 			Category:    buildToolsCategory,
 			Action: func(c *cli.Context) error {
 				if c.Args().Present() {
