@@ -258,7 +258,7 @@ require (
 
 //replace github.com/jfrog/jfrog-cli-core/v2 => github.com/fluxxBot/jfrog-cli-core/v2 v2.58.1-0.20260105065921-c6488910f44c
 
-//replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.54.2-0.20251007084958-5eeaa42c31a6
+replace github.com/jfrog/jfrog-client-go => github.com/reshmifrog/jfrog-client-go v1.52.1-0.20260330041950-e22db0130263
 
 // replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security dev
 
