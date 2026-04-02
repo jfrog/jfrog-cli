@@ -56,6 +56,7 @@ const (
 	Npm                    = "npm"
 	NpmInstallCi           = "npm-install-ci"
 	NpmPublish             = "npm-publish"
+	Pnpm                   = "pnpm"
 	PnpmConfig             = "pnpm-config"
 	YarnConfig             = "yarn-config"
 	Yarn                   = "yarn"
@@ -79,6 +80,8 @@ const (
 	Poetry                 = "poetry"
 	Helm                   = "helm"
 	HuggingFace            = "hugging-face"
+	HuggingFaceUpload      = "hugging-face-upload"
+	HuggingFaceDownload    = "hugging-face-download"
 	RubyConfig             = "ruby-config"
 	Conan                  = "conan"
 	Ping                   = "ping"
@@ -596,10 +599,11 @@ const (
 	Draft          = "draft"
 
 	// HuggingFace flags
-	Revision    = "revision"
-	RepoType    = "repo-type"
-	EtagTimeout = "etag-timeout"
-	RepoKey     = "repo-key"
+	Revision             = "revision"
+	RepoType             = "repo-type"
+	HfHubEtagTimeout     = "hf-hub-etag-timeout"
+	HfHubDownloadTimeout = "hf-hub-download-timeout"
+	RepoKey              = "repo-key"
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -1760,9 +1764,13 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Revision,
 		Usage: "[Default: main] The specific revision, branch, or tag to download. Defaults to main branch if not specified.` `",
 	},
-	EtagTimeout: cli.StringFlag{
-		Name:  EtagTimeout,
+	HfHubEtagTimeout: cli.IntFlag{
+		Name:  HfHubEtagTimeout,
 		Usage: "Timeout in seconds for ETag validation. Defaults to 86400 (24 hours).` `",
+	},
+	HfHubDownloadTimeout: cli.IntFlag{
+		Name:  HfHubDownloadTimeout,
+		Usage: "Timeout in seconds for Download. Defaults to 86400 (24 hours).` `",
 	},
 	RepoType: cli.StringFlag{
 		Name:  RepoType,
@@ -1770,7 +1778,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	RepoKey: cli.StringFlag{
 		Name:  RepoKey,
-		Usage: "Repository Key for uploading/downloading dataset/models.",
+		Usage: "[Optional] Repository Key for uploading/downloading dataset/models.` `",
 	},
 }
 
@@ -1907,7 +1915,7 @@ var commandFlags = map[string][]string{
 		serverId, skipLogin,
 	},
 	DockerBuild: {
-		BuildName, BuildNumber, serverId,
+		BuildName, BuildNumber, serverId, skipLogin,
 	},
 	DockerPromote: {
 		targetDockerImage, sourceTag, targetTag, dockerPromoteCopy, url, user, password, accessToken, sshPassphrase, sshKeyPath,
@@ -1932,6 +1940,9 @@ var commandFlags = map[string][]string{
 	},
 	PnpmConfig: {
 		global, serverIdResolve, repoResolve,
+	},
+	Pnpm: {
+		BuildName, BuildNumber, module, Project,
 	},
 	YarnConfig: {
 		global, serverIdResolve, repoResolve,
@@ -2005,7 +2016,13 @@ var commandFlags = map[string][]string{
 		BuildName, BuildNumber, module, Project, serverId, username, password,
 	},
 	HuggingFace: {
-		BuildName, BuildNumber, module, Project, serverId, Revision, RepoType, EtagTimeout, RepoKey,
+		BuildName, BuildNumber, module, Project, serverId, Revision, RepoType, HfHubEtagTimeout, RepoKey, HfHubDownloadTimeout,
+	},
+	HuggingFaceUpload: {
+		BuildName, BuildNumber, module, Project, serverId, Revision, RepoType, RepoKey, HfHubEtagTimeout, HfHubDownloadTimeout,
+	},
+	HuggingFaceDownload: {
+		BuildName, BuildNumber, module, Project, serverId, Revision, RepoType, HfHubEtagTimeout, RepoKey, HfHubDownloadTimeout,
 	},
 	RubyConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,

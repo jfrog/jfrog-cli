@@ -130,6 +130,9 @@ func TestShouldCheckLatestCliVersion(t *testing.T) {
 	assert.NoError(t, err)
 	assert.False(t, shouldCheck)
 	setEnvCallback()
+	// Explicitly unset the env var in case it was pre-set in the environment (e.g. in CI),
+	// so it does not interfere with the remaining assertions in this test.
+	assert.NoError(t, os.Unsetenv(JfrogCliAvoidNewVersionWarning))
 
 	// First run, should be true
 	shouldCheck, err = shouldCheckLatestCliVersion()

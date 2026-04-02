@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	conancommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/conan"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -31,6 +32,7 @@ import (
 	huggingfaceCommands "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/huggingface"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/mvn"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/npm"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/pnpm"
 	containerutils "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/ocicontainer"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/terraform"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/yarn"
@@ -60,10 +62,13 @@ import (
 	gradledoc "github.com/jfrog/jfrog-cli/docs/buildtools/gradle"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/gradleconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/huggingface"
+	huggingfacedownloaddocs "github.com/jfrog/jfrog-cli/docs/buildtools/huggingfacedownload"
+	huggingfaceuploaddocs "github.com/jfrog/jfrog-cli/docs/buildtools/huggingfaceupload"
 	mvndoc "github.com/jfrog/jfrog-cli/docs/buildtools/mvn"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/mvnconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npmcommand"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npmconfig"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/pnpmcommand"
 	nugetdocs "github.com/jfrog/jfrog-cli/docs/buildtools/nuget"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/nugetconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pipconfig"
@@ -84,10 +89,12 @@ import (
 )
 
 const (
-	buildToolsCategory = "Package Managers:"
-	huggingfaceAPI     = "api/huggingfaceml"
-	HF_ENDPOINT        = "HF_ENDPOINT"
-	HF_TOKEN           = "HF_TOKEN"
+	buildToolsCategory      = "Package Managers:"
+	huggingfaceAPI          = "api/huggingfaceml"
+	HF_ENDPOINT             = "HF_ENDPOINT"
+	HF_TOKEN                = "HF_TOKEN"
+	HF_HUB_ETAG_TIMEOUT     = "HF_HUB_ETAG_TIMEOUT"
+	HF_HUB_DOWNLOAD_TIMEOUT = "HF_HUB_DOWNLOAD_TIMEOUT"
 )
 
 func GetCommands() []cli.Command {
@@ -432,6 +439,17 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
+			Name:            "pnpm",
+			Flags:           cliutils.GetCommandFlags(cliutils.Pnpm),
+			Usage:           pnpmcommand.GetDescription(),
+			HelpName:        corecommon.CreateUsage("pnpm", pnpmcommand.GetDescription(), pnpmcommand.Usage),
+			UsageText:       pnpmcommand.GetArguments(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc("install", "i", "publish", "p"),
+			Category:        buildToolsCategory,
+			Action:          pnpmCmd,
+		},
+		{
 			Name:            "docker",
 			Flags:           cliutils.GetCommandFlags(cliutils.Docker),
 			Usage:           docker.GetDescription(),
@@ -483,13 +501,36 @@ func GetCommands() []cli.Command {
 		{
 			Name:        "hugging-face",
 			Aliases:     []string{"hf"},
-			Flags:       cliutils.GetCommandFlags(cliutils.HuggingFace),
 			HelpName:    corecommon.CreateUsage("hugging-face", huggingface.GetDescription(), huggingface.Usage),
 			Description: huggingface.GetDescription(),
-			UsageText:   huggingface.GetArguments(),
-			Hidden:      true,
-			Action:      huggingFaceCmd,
+			Hidden:      false,
 			Category:    buildToolsCategory,
+			Action: func(c *cli.Context) error {
+				if c.Args().Present() {
+					return fmt.Errorf("'%s %s' is not a valid subcommand. Run 'jf hf --help' for usage", c.App.Name, c.Args().First())
+				}
+				return cli.ShowSubcommandHelp(c)
+			},
+			Subcommands: []cli.Command{
+				{
+					Name:      "upload",
+					Aliases:   []string{"u"},
+					Flags:     cliutils.GetCommandFlags(cliutils.HuggingFaceUpload),
+					HelpName:  corecommon.CreateUsage("hf upload", huggingfaceuploaddocs.GetDescription(), huggingfaceuploaddocs.Usage),
+					Usage:     huggingfaceuploaddocs.GetDescription(),
+					UsageText: huggingfaceuploaddocs.GetArguments(),
+					Action:    huggingFaceUploadCmd,
+				},
+				{
+					Name:      "download",
+					Aliases:   []string{"d"},
+					Flags:     cliutils.GetCommandFlags(cliutils.HuggingFaceDownload),
+					HelpName:  corecommon.CreateUsage("hf download", huggingfacedownloaddocs.GetDescription(), huggingfacedownloaddocs.Usage),
+					Usage:     huggingfacedownloaddocs.GetDescription(),
+					UsageText: huggingfacedownloaddocs.GetArguments(),
+					Action:    huggingFaceDownloadCmd,
+				},
+			},
 		},
 	})
 	return decorateWithFlagCapture(cmds)
@@ -771,6 +812,64 @@ func YarnCmd(c *cli.Context) error {
 	return commands.Exec(yarnCmd)
 }
 
+func pnpmCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+	if c.NArg() < 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+	args := cliutils.ExtractCommand(c)
+	cmdName, filteredArgs := getCommandName(args)
+
+	// Extract JFrog-specific flags (--build-name, --build-number, --project, --module, --server-id)
+	// once, so both supported commands and native pass-through use cleaned args.
+	serverDetails, cleanArgs, buildConfiguration, err := extractPnpmOptionsFromArgs(filteredArgs)
+	if err != nil {
+		return err
+	}
+
+	switch cmdName {
+	case "install", "i", "publish":
+		pnpmCommand, err := pnpm.NewCommand(cmdName, cleanArgs, buildConfiguration, serverDetails)
+		if err != nil {
+			return err
+		}
+		return commands.Exec(pnpmCommand)
+	default:
+		return runNativePackageManagerCmd("pnpm", append([]string{cmdName}, cleanArgs...))
+	}
+}
+
+// runNativePackageManagerCmd runs a package manager command directly, passing through stdio.
+func runNativePackageManagerCmd(binary string, args []string) error {
+	cmd := exec.Command(binary, args...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+// extractPnpmOptionsFromArgs extracts all JFrog CLI options from pnpm command args.
+// Returns server details, cleaned args (with JFrog flags removed), and build configuration.
+func extractPnpmOptionsFromArgs(args []string) (serverDetails *coreConfig.ServerDetails, cleanArgs []string, buildConfig *build.BuildConfiguration, err error) {
+	cleanArgs = append([]string(nil), args...)
+	var serverID string
+	cleanArgs, serverID, err = coreutils.ExtractServerIdFromCommand(cleanArgs)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to extract server ID: %w", err)
+	}
+	serverDetails, err = coreConfig.GetSpecificConfig(serverID, true, true)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to get server configuration for ID '%s': %w", serverID, err)
+	}
+	cleanArgs, buildConfig, err = build.ExtractBuildDetailsFromArgs(cleanArgs)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return serverDetails, cleanArgs, buildConfig, nil
+}
+
 func NugetCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
@@ -1042,7 +1141,7 @@ func buildCmd(c *cli.Context) error {
 	}
 
 	// Extract build configuration and arguments
-	_, rtDetails, _, _, _, cleanArgs, buildConfiguration, err := extractDockerOptionsFromArgs(c.Args())
+	_, rtDetails, _, skipLogin, _, cleanArgs, buildConfiguration, err := extractDockerOptionsFromArgs(c.Args())
 	if err != nil {
 		return err
 	}
@@ -1051,10 +1150,11 @@ func buildCmd(c *cli.Context) error {
 		return err
 	}
 
-	// Login to the docker registry
-	err = loginCmd(c)
-	if err != nil {
-		return err
+	if !skipLogin {
+		err = loginCmd(c)
+		if err != nil {
+			return err
+		}
 	}
 
 	dockerOptions := strategies.DockerBuildOptions{
@@ -1131,39 +1231,27 @@ func loginCmd(c *cli.Context) error {
 	return nil
 }
 
-func huggingFaceCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
-		return err
-	}
-	if c.NArg() < 1 {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
-	}
-	args := cliutils.ExtractCommand(c)
-	cmdName, hfArgs := getCommandName(args)
-	switch cmdName {
-	case "u", "upload":
-		return huggingFaceUploadCmd(c, "upload", hfArgs)
-	case "d", "download":
-		return huggingFaceDownloadCmd(c, "download", hfArgs)
-	default:
-		return errorutils.CheckErrorf("unknown HuggingFace command: '%s'. Valid commands are: upload (u), download (d)", cmdName)
-	}
-}
-
-func huggingFaceUploadCmd(c *cli.Context, cmdName string, hfArgs []string) error {
-	// Upload requires folderPath and repoID
-	if len(hfArgs) < 2 {
+func huggingFaceUploadCmd(c *cli.Context) error {
+	if c.NArg() < 2 {
 		return cliutils.PrintHelpAndReturnError("Folder path and repository ID are required.", c)
 	}
-	folderPath := hfArgs[0]
+	folderPath := c.Args().Get(0)
 	if folderPath == "" {
 		return cliutils.PrintHelpAndReturnError("Folder path cannot be empty.", c)
 	}
-	repoID := hfArgs[1]
+	absPath, err := filepath.Abs(folderPath)
+	if err != nil {
+		return fmt.Errorf("failed to resolve absolute path: %w", err)
+	}
+	folderPath = absPath
+	if err = validateFolderHasUploadableFiles(folderPath); err != nil {
+		return err
+	}
+	repoID := c.Args().Get(1)
 	if repoID == "" {
 		return cliutils.PrintHelpAndReturnError("Repository ID cannot be empty.", c)
 	}
-	serverDetails, err := getHuggingFaceServerDetails(hfArgs)
+	serverDetails, err := getHuggingFaceServerDetails(c)
 	if err != nil {
 		return err
 	}
@@ -1183,28 +1271,30 @@ func huggingFaceUploadCmd(c *cli.Context, cmdName string, hfArgs []string) error
 	if repoType == "" {
 		repoType = "model"
 	}
-	huggingFaceUploadCmd := huggingfaceCommands.NewHuggingFaceUpload().
-		SetCommandName(cmdName).
+	if repoType != "model" && repoType != "dataset" {
+		return fmt.Errorf("wrong repo type provided, allowed repo-type are : model and dataset")
+	}
+	cmd := huggingfaceCommands.NewHuggingFaceUpload().
+		SetCommandName("upload").
 		SetFolderPath(folderPath).
 		SetRepoId(repoID).
 		SetRepoType(repoType).
 		SetRevision(revision).
 		SetServerDetails(serverDetails).
 		SetBuildConfiguration(buildConfiguration)
-	return commands.Exec(huggingFaceUploadCmd)
+	return commands.Exec(cmd)
 }
 
-func huggingFaceDownloadCmd(c *cli.Context, cmdName string, hfArgs []string) error {
-	// Download requires repoID
-	if len(hfArgs) < 1 {
+func huggingFaceDownloadCmd(c *cli.Context) error {
+	if c.NArg() < 1 {
 		return cliutils.PrintHelpAndReturnError("Model/Dataset name is required.", c)
 	}
 	const defaultETagTimeout = 86400
-	repoID := hfArgs[0]
+	repoID := c.Args().Get(0)
 	if repoID == "" {
 		return cliutils.PrintHelpAndReturnError("Model/Dataset name cannot be empty.", c)
 	}
-	serverDetails, err := getHuggingFaceServerDetails(hfArgs)
+	serverDetails, err := getHuggingFaceServerDetails(c)
 	if err != nil {
 		return err
 	}
@@ -1227,26 +1317,59 @@ func huggingFaceDownloadCmd(c *cli.Context, cmdName string, hfArgs []string) err
 	if repoType == "" {
 		repoType = "model"
 	}
+	if repoType != "model" && repoType != "dataset" {
+		return fmt.Errorf("wrong repo type provided, allowed repo-type are : model and dataset")
+	}
 	revision := c.String("revision")
 	if revision == "" {
 		revision = "main"
 	}
-	huggingFaceDownloadCmd := huggingfaceCommands.NewHuggingFaceDownload().
-		SetCommandName(cmdName).
+	cmd := huggingfaceCommands.NewHuggingFaceDownload().
+		SetCommandName("download").
 		SetRepoId(repoID).
 		SetRepoType(repoType).
 		SetRevision(revision).
 		SetEtagTimeout(etagTimeout).
 		SetServerDetails(serverDetails).
 		SetBuildConfiguration(buildConfiguration)
-	return commands.Exec(huggingFaceDownloadCmd)
+	return commands.Exec(cmd)
 }
 
-func getHuggingFaceServerDetails(args []string) (*coreConfig.ServerDetails, error) {
-	_, serverID, err := coreutils.ExtractServerIdFromCommand(args)
+// validateFolderHasUploadableFiles walks the folder recursively and returns an error
+// if no visible (non-hidden) regular files are found. Hidden entries — anything whose
+// name starts with '.' (e.g. .git, .DS_Store) — are skipped entirely.
+func validateFolderHasUploadableFiles(folderPath string) error {
+	found := false
+	err := filepath.WalkDir(folderPath, func(path string, d fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		name := d.Name()
+		// Skip hidden files and directories (e.g. .git, .DS_Store).
+		if len(name) > 0 && name[0] == '.' {
+			if d.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		// A visible regular file counts as uploadable content.
+		if !d.IsDir() {
+			found = true
+			return filepath.SkipAll
+		}
+		return nil
+	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to extract server ID: %w", err)
+		return fmt.Errorf("failed to read folder '%s': %w", folderPath, err)
 	}
+	if !found {
+		return fmt.Errorf("folder '%s' contains no uploadable files (only hidden files or empty directories were found)", folderPath)
+	}
+	return nil
+}
+
+func getHuggingFaceServerDetails(c *cli.Context) (*coreConfig.ServerDetails, error) {
+	serverID := c.String("server-id")
 	if serverID == "" {
 		serverDetails, err := coreConfig.GetDefaultServerConf()
 		if err != nil {
@@ -1257,7 +1380,7 @@ func getHuggingFaceServerDetails(args []string) (*coreConfig.ServerDetails, erro
 		}
 		return serverDetails, nil
 	}
-	serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, true)
+	serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, false)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get server configuration for ID '%s': %w", serverID, err)
 	}
@@ -1265,26 +1388,37 @@ func getHuggingFaceServerDetails(args []string) (*coreConfig.ServerDetails, erro
 }
 
 func updateHuggingFaceEnv(c *cli.Context, serverDetails *coreConfig.ServerDetails) error {
-	if os.Getenv(HF_ENDPOINT) == "" {
-		repoKey := c.String("repo-key")
-		if repoKey == "" {
-			return cliutils.PrintHelpAndReturnError("Please specify a repository key.", c)
-		}
+	repoKey := c.String("repo-key")
+	if repoKey != "" {
 		hfEndpoint := serverDetails.GetArtifactoryUrl() + huggingfaceAPI + "/" + repoKey
 		err := os.Setenv(HF_ENDPOINT, hfEndpoint)
 		if err != nil {
 			return err
 		}
 	}
-	if os.Getenv(HF_TOKEN) == "" {
-		accessToken := serverDetails.GetAccessToken()
-		if accessToken == "" {
-			return cliutils.PrintHelpAndReturnError("You need to specify an access token.", c)
-		}
-		err := os.Setenv(HF_TOKEN, accessToken)
-		if err != nil {
-			return err
-		}
+	accessToken := serverDetails.GetAccessToken()
+	if accessToken == "" {
+		return cliutils.PrintHelpAndReturnError("Access token is expired or missing, please either use rt ping command or update access token.", c)
+	}
+	err := os.Setenv(HF_TOKEN, accessToken)
+	if err != nil {
+		return err
+	}
+	etagTimeout := c.Int("hf-hub-etag-timeout")
+	if etagTimeout == 0 {
+		etagTimeout = 86400
+	}
+	err = os.Setenv(HF_HUB_ETAG_TIMEOUT, strconv.Itoa(etagTimeout))
+	if err != nil {
+		return err
+	}
+	downloadTimeout := c.Int("hf-hub-download-timeout")
+	if downloadTimeout == 0 {
+		downloadTimeout = 86400
+	}
+	err = os.Setenv(HF_HUB_DOWNLOAD_TIMEOUT, strconv.Itoa(downloadTimeout))
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -1790,12 +1924,8 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 			log.Info(fmt.Sprintf("Publishing to repository: %s (from --repository flag)", deployerRepo))
 		}
 
-		// Execute native poetry command directly (similar to Maven FlexPack)
 		log.Info(fmt.Sprintf("Running Poetry %s.", cmdName))
-		poetryCmd := exec.Command("poetry", append([]string{cmdName}, poetryArgs...)...)
-		poetryCmd.Stdout = os.Stdout
-		poetryCmd.Stderr = os.Stderr
-		if err := poetryCmd.Run(); err != nil {
+		if err := runNativePackageManagerCmd("poetry", append([]string{cmdName}, poetryArgs...)); err != nil {
 			return fmt.Errorf("poetry %s failed: %w", cmdName, err)
 		}
 

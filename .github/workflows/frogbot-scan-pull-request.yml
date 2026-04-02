@@ -11,6 +11,7 @@ jobs:
   scan-pull-request:
     if: ${{ github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
+    environment: frogbot
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v5
