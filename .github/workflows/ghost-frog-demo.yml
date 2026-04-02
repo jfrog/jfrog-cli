@@ -28,7 +28,7 @@ jobs:
           node-version: '16'
 
       - name: Setup JFrog CLI
-        uses: jfrog/setup-jfrog-cli@v4
+        uses: jfrog/setup-jfrog-cli@package-alias
         with:
           enable-package-alias: true
           package-alias-tools: npm,mvn,go,pip,docker
