@@ -3,12 +3,14 @@
 package packagealias
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
 const (
@@ -39,8 +41,6 @@ type AliasMode string
 const (
 	// ModeJF runs through JFrog CLI integration flow (default)
 	ModeJF AliasMode = "jf"
-	// ModeEnv injects environment variables then runs native tool
-	ModeEnv AliasMode = "env"
 	// ModePass runs native tool directly without modification
 	ModePass AliasMode = "pass"
 )
@@ -104,8 +104,14 @@ func IsRunningAsAlias() (bool, string) {
 
 	for _, tool := range SupportedTools {
 		if invokeName == tool {
-			aliasDir, _ := GetAliasBinDir()
-			currentExec, _ := os.Executable()
+			aliasDir, aliasDirErr := GetAliasBinDir()
+			if aliasDirErr != nil {
+				log.Debug(fmt.Sprintf("%s Failed to get alias bin dir: %v", ghostFrogLogPrefix, aliasDirErr))
+			}
+			currentExec, execErr := os.Executable()
+			if execErr != nil {
+				log.Debug(fmt.Sprintf("%s Failed to get executable path: %v", ghostFrogLogPrefix, execErr))
+			}
 
 			if aliasDir != "" && isPathWithinDir(currentExec, aliasDir) {
 				return true, tool

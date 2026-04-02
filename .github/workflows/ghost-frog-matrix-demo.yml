@@ -122,33 +122,31 @@ jobs:
     
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
       
       # Language-specific setup
       - name: Setup Node.js
         if: matrix.language == 'node'
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.version }}
           
       - name: Setup Python
         if: matrix.language == 'python'
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.version }}
           
       - name: Setup Java
         if: matrix.language == 'java'
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: ${{ matrix.version }}
           distribution: 'temurin'
       
       - name: Setup JFrog CLI
-        uses: bhanurp/setup-jfrog-cli@add-package-alias
+        uses: jfrog/setup-jfrog-cli@v4
         with:
-          version: 2.93.0
-          download-repository: bhanu-ghost-frog
           enable-package-alias: true
           package-alias-tools: ${{ matrix.tool }}
           custom-server-id: ghost-demo

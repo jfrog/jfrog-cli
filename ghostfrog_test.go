@@ -10,6 +10,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/jfrog/jfrog-cli/packagealias"
 	"github.com/jfrog/jfrog-cli/utils/tests"
@@ -61,6 +62,7 @@ func initGhostFrogTest(t *testing.T) string {
 	}
 	homeDir := t.TempDir()
 	t.Setenv("JFROG_CLI_HOME_DIR", homeDir)
+	t.Setenv("JFROG_CLI_GHOST_FROG", "true")
 	return homeDir
 }
 
@@ -149,26 +151,6 @@ func TestGhostFrogUninstallRollback(t *testing.T) {
 	}
 }
 
-// E2E-004: Enable and disable switch
-func TestGhostFrogEnableDisableSwitch(t *testing.T) {
-	initGhostFrogTest(t)
-	installAliases(t, "npm")
-
-	out, err := runJfCommand(t, "package-alias", "disable")
-	require.NoError(t, err, "disable failed: %s", out)
-
-	statusOut, err := runJfCommand(t, "package-alias", "status")
-	require.NoError(t, err, "status failed: %s", statusOut)
-	assert.Contains(t, statusOut, "DISABLED")
-
-	out, err = runJfCommand(t, "package-alias", "enable")
-	require.NoError(t, err, "enable failed: %s", out)
-
-	statusOut, err = runJfCommand(t, "package-alias", "status")
-	require.NoError(t, err, "status failed: %s", statusOut)
-	assert.Contains(t, statusOut, "ENABLED")
-}
-
 // E2E-004b: JFROG_CLI_GHOST_FROG=false kill switch bypasses interception
 func TestGhostFrogKillSwitchEnvVar(t *testing.T) {
 	homeDir := initGhostFrogTest(t)
@@ -189,8 +171,6 @@ func TestGhostFrogKillSwitchEnvVar(t *testing.T) {
 
 	assert.NotContains(t, outputStr, "Detected running as alias",
 		"kill switch should prevent interception")
-	assert.Contains(t, outputStr, "Ghost Frog disabled via",
-		"kill switch bypass should be logged")
 }
 
 // E2E-004c: JFROG_CLI_GHOST_FROG=audit logs interception but runs native tool
@@ -210,8 +190,8 @@ func TestGhostFrogAuditMode(t *testing.T) {
 	out, _ := cmd.CombinedOutput()
 	outputStr := string(out)
 
-	assert.Contains(t, outputStr, "[GHOST_FROG_AUDIT]",
-		"audit mode should log the GHOST_FROG_AUDIT marker")
+	assert.Contains(t, outputStr, "[GHOST_FROG] [AUDIT]",
+		"audit mode should log the GHOST_FROG AUDIT marker")
 	assert.Contains(t, outputStr, "Would intercept",
 		"audit mode should describe what it would do")
 	assert.NotContains(t, outputStr, "Transforming",
@@ -282,36 +262,6 @@ func TestGhostFrogRecursionPreventionFallback(t *testing.T) {
 	}
 }
 
-// E2E-008: Real binary missing
-func TestGhostFrogRealBinaryMissing(t *testing.T) {
-	homeDir := initGhostFrogTest(t)
-	installAliases(t, "npm")
-
-	// Set exclude mode so it tries to exec the real binary
-	out, err := runJfCommand(t, "package-alias", "exclude", "npm")
-	require.NoError(t, err, "exclude failed: %s", out)
-
-	binDir := aliasBinDir(homeDir)
-	cmd := exec.Command(aliasToolPath(homeDir, "npm"), "--version")
-	// PATH only contains alias dir -- no real npm available
-	cmd.Env = append(os.Environ(), "PATH="+binDir)
-	output, err := cmd.CombinedOutput()
-	outputStr := string(output)
-
-	// Should fail (no real npm) but with a clear error, not a hang
-	if err == nil {
-		t.Logf("Unexpected success -- npm may be embedded or found elsewhere: %s", outputStr)
-		return
-	}
-	assert.True(t,
-		strings.Contains(outputStr, "could not find") ||
-			strings.Contains(outputStr, "not found") ||
-			strings.Contains(outputStr, "failed") ||
-			strings.Contains(outputStr, "error") ||
-			strings.Contains(strings.ToLower(outputStr), "npm"),
-		"should produce a clear error about missing tool, got: %s", outputStr)
-}
-
 // E2E-009: PATH contains alias dir multiple times
 func TestGhostFrogPATHMultipleAliasDirs(t *testing.T) {
 	homeDir := initGhostFrogTest(t)
@@ -352,25 +302,6 @@ func TestGhostFrogShellHashCacheStalePath(t *testing.T) {
 	// Verify the binary exists -- the rest is shell-level behavior
 	_, err := os.Stat(aliasToolPath(homeDir, "npm"))
 	require.NoError(t, err, "alias should exist for hash cache test scenario")
-}
-
-// E2E-012: Mixed mode policies using include and exclude
-func TestGhostFrogMixedModePolicies(t *testing.T) {
-	initGhostFrogTest(t)
-	installAliases(t, "npm,go,mvn")
-
-	out, err := runJfCommand(t, "package-alias", "exclude", "npm")
-	require.NoError(t, err, "exclude npm failed: %s", out)
-
-	out, err = runJfCommand(t, "package-alias", "include", "go")
-	require.NoError(t, err, "include go failed: %s", out)
-
-	statusOut, err := runJfCommand(t, "package-alias", "status")
-	require.NoError(t, err, "status failed: %s", statusOut)
-
-	assert.Contains(t, statusOut, "npm")
-	assert.Contains(t, statusOut, "go")
-	assert.Contains(t, statusOut, "mvn")
 }
 
 // ---------------------------------------------------------------------------
@@ -465,33 +396,6 @@ func TestGhostFrogParallelMixedWithNative(t *testing.T) {
 	}()
 
 	wg.Wait()
-}
-
-// E2E-023: Concurrent enable and disable race
-func TestGhostFrogConcurrentEnableDisableRace(t *testing.T) {
-	initGhostFrogTest(t)
-	installAliases(t, "npm")
-
-	var wg sync.WaitGroup
-	for i := 0; i < 8; i++ {
-		wg.Add(1)
-		go func(idx int) {
-			defer wg.Done()
-			if idx%2 == 0 {
-				_, _ = runJfCommand(t, "package-alias", "disable")
-			} else {
-				_, _ = runJfCommand(t, "package-alias", "enable")
-			}
-		}(i)
-	}
-	wg.Wait()
-
-	// Should be in a valid state after the race
-	statusOut, err := runJfCommand(t, "package-alias", "status")
-	require.NoError(t, err, "status should succeed after race: %s", statusOut)
-	assert.True(t,
-		strings.Contains(statusOut, "ENABLED") || strings.Contains(statusOut, "DISABLED"),
-		"status should show a valid state")
 }
 
 // E2E-024: One process fails, others continue
@@ -1019,8 +923,9 @@ func TestGhostFrogExitCodePropagation(t *testing.T) {
 	installAliases(t, "go")
 
 	// Set go to pass mode so it delegates directly to the native tool
-	out, err := runJfCommand(t, "package-alias", "exclude", "go")
-	require.NoError(t, err, "exclude go failed: %s", out)
+	configPath := filepath.Join(homeDir, "package-alias", "config.yaml")
+	configYAML := "enabled: true\ntool_modes:\n  go: pass\nenabled_tools:\n  - go\n"
+	require.NoError(t, os.WriteFile(configPath, []byte(configYAML), 0644))
 
 	binDir := aliasBinDir(homeDir)
 	goPath := aliasToolPath(homeDir, "go")
@@ -1028,7 +933,7 @@ func TestGhostFrogExitCodePropagation(t *testing.T) {
 	// Running go with an unknown tool name causes a non-zero exit
 	cmd := exec.Command(goPath, "tool", "nonexistent-tool-xyz")
 	cmd.Env = append(os.Environ(), "PATH="+binDir+string(os.PathListSeparator)+os.Getenv("PATH"))
-	_, err = cmd.CombinedOutput()
+	_, err := cmd.CombinedOutput()
 
 	require.Error(t, err, "alias must propagate non-zero exit code from native tool")
 	if exitErr, ok := err.(*exec.ExitError); ok {
@@ -1042,8 +947,9 @@ func TestGhostFrogDisabledStatePassthrough(t *testing.T) {
 	homeDir := initGhostFrogTest(t)
 	installAliases(t, "go")
 
-	out, err := runJfCommand(t, "package-alias", "disable")
-	require.NoError(t, err, "disable failed: %s", out)
+	configPath := filepath.Join(homeDir, "package-alias", "config.yaml")
+	configYAML := "enabled: false\ntool_modes:\n  go: jf\nenabled_tools:\n  - go\n"
+	require.NoError(t, os.WriteFile(configPath, []byte(configYAML), 0644))
 
 	binDir := aliasBinDir(homeDir)
 	goPath := aliasToolPath(homeDir, "go")
@@ -1137,8 +1043,9 @@ func TestGhostFrogPassModeWithRealTool(t *testing.T) {
 	homeDir := initGhostFrogTest(t)
 	installAliases(t, "go")
 
-	out, err := runJfCommand(t, "package-alias", "exclude", "go")
-	require.NoError(t, err, "exclude go failed: %s", out)
+	configPath := filepath.Join(homeDir, "package-alias", "config.yaml")
+	configYAML := "enabled: true\ntool_modes:\n  go: pass\nenabled_tools:\n  - go\n"
+	require.NoError(t, os.WriteFile(configPath, []byte(configYAML), 0644))
 
 	binDir := aliasBinDir(homeDir)
 	goPath := aliasToolPath(homeDir, "go")
@@ -1203,11 +1110,12 @@ func TestGhostFrogGoSubcommandPolicyRouting(t *testing.T) {
 
 // E2E-066: Tool exclusion (ModePass) is preserved when the same package set is reinstalled
 func TestGhostFrogExcludePersistenceAcrossReinstall(t *testing.T) {
-	initGhostFrogTest(t)
+	homeDir := initGhostFrogTest(t)
 	installAliases(t, "npm,go")
 
-	out, err := runJfCommand(t, "package-alias", "exclude", "npm")
-	require.NoError(t, err, "exclude npm failed: %s", out)
+	configPath := filepath.Join(homeDir, "package-alias", "config.yaml")
+	configYAML := "enabled: true\ntool_modes:\n  npm: pass\n  go: jf\nenabled_tools:\n  - npm\n  - go\n"
+	require.NoError(t, os.WriteFile(configPath, []byte(configYAML), 0644))
 
 	// Reinstall the same set; install only sets a mode when the entry is absent
 	installAliases(t, "npm,go")
@@ -1247,20 +1155,6 @@ func TestGhostFrogSymlinkTargetCorrectness(t *testing.T) {
 		"alias symlink must resolve to the jf binary used during install")
 }
 
-// E2E-068: Excluding a tool that was not included in the install returns a clear error
-func TestGhostFrogExcludeUnconfiguredTool(t *testing.T) {
-	initGhostFrogTest(t)
-	installAliases(t, "npm") // install only npm -- go is intentionally omitted
-
-	out, err := runJfCommand(t, "package-alias", "exclude", "go")
-	assert.Error(t, err,
-		"excluding a tool not in the installed package set should return an error")
-	assert.True(t,
-		strings.Contains(out, "not currently configured") ||
-			strings.Contains(out, "Reinstall"),
-		"error should tell the user to reinstall with the tool included: %s", out)
-}
-
 // ---------------------------------------------------------------------------
 // Test helpers
 // ---------------------------------------------------------------------------
@@ -1269,16 +1163,7 @@ func timeAfter(t *testing.T, seconds int) <-chan struct{} {
 	t.Helper()
 	ch := make(chan struct{})
 	go func() {
-		timer := make(chan struct{})
-		go func() {
-			cmd := exec.Command("sleep", fmt.Sprintf("%d", seconds))
-			if runtime.GOOS == "windows" {
-				cmd = exec.Command("timeout", "/T", fmt.Sprintf("%d", seconds), "/NOBREAK")
-			}
-			_ = cmd.Run()
-			close(timer)
-		}()
-		<-timer
+		<-time.After(time.Duration(seconds) * time.Second)
 		close(ch)
 	}()
 	return ch

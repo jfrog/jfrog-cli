@@ -44,10 +44,8 @@ jobs:
         uses: jfrog/.github/actions/install-go-with-cache@main
 
       - name: Setup JFrog CLI with package alias
-        uses: bhanurp/setup-jfrog-cli@add-package-alias
+        uses: jfrog/setup-jfrog-cli@v4
         with:
-          version: 2.93.0
-          download-repository: bhanu-ghost-frog
           enable-package-alias: true
           package-alias-tools: npm,mvn,go,pip
           custom-server-id: ghost-demo

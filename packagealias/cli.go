@@ -41,24 +41,6 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 		},
 		{
-			Name:         "enable",
-			Usage:        "Enable package manager aliases",
-			HelpName:     corecommon.CreateUsage("package-alias enable", "Enable package manager aliases", []string{}),
-			ArgsUsage:    "",
-			Category:     packageAliasCategory,
-			Action:       enableCmd,
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-		},
-		{
-			Name:         "disable",
-			Usage:        "Disable package manager aliases",
-			HelpName:     corecommon.CreateUsage("package-alias disable", "Disable package manager aliases", []string{}),
-			ArgsUsage:    "",
-			Category:     packageAliasCategory,
-			Action:       disableCmd,
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-		},
-		{
 			Name:         "status",
 			Usage:        "Show package alias status",
 			HelpName:     corecommon.CreateUsage("package-alias status", "Show package alias status", []string{}),
@@ -66,24 +48,6 @@ func GetCommands() []cli.Command {
 			Category:     packageAliasCategory,
 			Action:       statusCmd,
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-		},
-		{
-			Name:         "exclude",
-			Usage:        "Exclude a tool from Ghost Frog interception (run natively)",
-			HelpName:     corecommon.CreateUsage("package-alias exclude <tool>", "Exclude a tool from Ghost Frog interception", []string{"tool"}),
-			ArgsUsage:    "<tool>",
-			Category:     packageAliasCategory,
-			Action:       excludeCmd,
-			BashComplete: corecommon.CreateBashCompletionFunc(SupportedTools...),
-		},
-		{
-			Name:         "include",
-			Usage:        "Include a tool in Ghost Frog interception (run via JFrog CLI)",
-			HelpName:     corecommon.CreateUsage("package-alias include <tool>", "Include a tool in Ghost Frog interception", []string{"tool"}),
-			ArgsUsage:    "<tool>",
-			Category:     packageAliasCategory,
-			Action:       includeCmd,
-			BashComplete: corecommon.CreateBashCompletionFunc(SupportedTools...),
 		},
 	})
 }
@@ -98,35 +62,7 @@ func uninstallCmd(c *cli.Context) error {
 	return commands.Exec(uninstallCmd)
 }
 
-func enableCmd(c *cli.Context) error {
-	enableCmd := NewEnableCommand()
-	return commands.Exec(enableCmd)
-}
-
-func disableCmd(c *cli.Context) error {
-	disableCmd := NewDisableCommand()
-	return commands.Exec(disableCmd)
-}
-
 func statusCmd(c *cli.Context) error {
 	statusCmd := NewStatusCommand()
 	return commands.Exec(statusCmd)
-}
-
-func excludeCmd(c *cli.Context) error {
-	if c.NArg() < 1 {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
-	}
-	tool := c.Args().Get(0)
-	excludeCmd := NewExcludeCommand(tool)
-	return commands.Exec(excludeCmd)
-}
-
-func includeCmd(c *cli.Context) error {
-	if c.NArg() < 1 {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
-	}
-	tool := c.Args().Get(0)
-	includeCmd := NewIncludeCommand(tool)
-	return commands.Exec(includeCmd)
 }

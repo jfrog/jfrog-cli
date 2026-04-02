@@ -1106,7 +1106,6 @@ func loginCmd(c *cli.Context) error {
 		if registry == "" {
 			return errors.New("you need to specify a registry for login using username and password")
 		}
-		// #nosec G204 -- docker login args are from validated CLI flags, not arbitrary user input
 		cmd := exec.Command("docker", "login", registry, "-u", user, "-p", password)
 		output, err := cmd.CombinedOutput()
 		if err != nil {
@@ -1440,7 +1439,6 @@ func getPrimarySourceFromToml() (string, bool) {
 	}
 
 	tomlPath := filepath.Join(".", "pyproject.toml")
-	// #nosec G304 -- path is a fixed local file, not user-controlled
 	tomlData, err := os.ReadFile(tomlPath)
 	if err != nil {
 		return "", false
@@ -1794,7 +1792,6 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 
 		// Execute native poetry command directly (similar to Maven FlexPack)
 		log.Info(fmt.Sprintf("Running Poetry %s.", cmdName))
-		// #nosec G204 -- poetry command with validated CLI args
 		poetryCmd := exec.Command("poetry", append([]string{cmdName}, poetryArgs...)...)
 		poetryCmd.Stdout = os.Stdout
 		poetryCmd.Stderr = os.Stderr

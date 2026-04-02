@@ -12,13 +12,11 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
       
       - name: Setup JFrog CLI
-        uses: bhanurp/setup-jfrog-cli@add-package-alias
+        uses: jfrog/setup-jfrog-cli@v4
         with:
-          version: 2.93.0
-          download-repository: bhanu-ghost-frog
           enable-package-alias: true
           package-alias-tools: npm,mvn,pip
           custom-server-id: ghost-demo

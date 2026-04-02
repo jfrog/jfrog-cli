@@ -54,7 +54,7 @@ func (sc *StatusCommand) Run() error {
 	// Check if in PATH
 	inPath := checkIfInPath(binDir)
 	if inPath {
-		log.Info("PATH: Configured ✓")
+		log.Info("PATH: Configured [OK]")
 	} else {
 		log.Warn("PATH: Not configured")
 		if runtime.GOOS == "windows" {
@@ -77,15 +77,15 @@ func (sc *StatusCommand) Run() error {
 
 		// Check if alias exists
 		aliasPath := filepath.Join(binDir, addExecutableSuffix(tool))
-		aliasExists := "✓"
+		aliasExists := "[OK]"
 		if _, err := os.Stat(aliasPath); os.IsNotExist(err) {
-			aliasExists = "✗"
+			aliasExists = "[MISSING]"
 		}
 
 		// Check if real tool exists
-		realExists := "✓"
+		realExists := "[OK]"
 		if _, err := findRealToolPath(tool, binDir); err != nil {
-			realExists = "✗"
+			realExists = "[MISSING]"
 		}
 
 		log.Info(fmt.Sprintf("  %-10s mode=%-5s alias=%s real=%s", tool, mode, aliasExists, realExists))
@@ -154,7 +154,7 @@ func checkIfInPath(dir string) bool {
 
 	dir = filepath.Clean(dir)
 	for _, p := range paths {
-		if filepath.Clean(p) == dir {
+		if pathsEqual(filepath.Clean(p), dir) {
 			return true
 		}
 	}

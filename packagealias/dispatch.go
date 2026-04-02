@@ -10,6 +10,7 @@ import (
 
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
@@ -22,13 +23,16 @@ const ghostFrogLogPrefix = "[GHOST_FROG]"
 //
 // JFROG_CLI_GHOST_FROG values:
 //
-//	"false" - bypass alias interception entirely
-//	"audit" - log what would happen but run the native tool unchanged
-//	any other / unset - normal interception
+//	unset / "" / "false" - bypass alias interception entirely (opt-in: Ghost Frog is off by default)
+//	"true"               - normal interception
+//	"audit"              - log what would happen but run the native tool unchanged
 func DispatchIfAlias() error {
-	envVal := strings.ToLower(strings.TrimSpace(os.Getenv(GhostFrogEnvVar)))
+	raw := os.Getenv(GhostFrogEnvVar)
+	if raw == "" {
+		return nil
+	}
+	envVal := strings.ToLower(strings.TrimSpace(raw))
 	if envVal == "false" {
-		log.Debug(ghostFrogLogPrefix + " Ghost Frog disabled via " + GhostFrogEnvVar + "=false")
 		return nil
 	}
 	auditMode := envVal == "audit"
@@ -49,7 +53,7 @@ func DispatchIfAlias() error {
 
 	if auditMode {
 		mode := getToolMode(tool, os.Args[1:])
-		log.Info(fmt.Sprintf("[GHOST_FROG_AUDIT] Would intercept '%s' (mode=%s) -- passing to native tool instead", tool, mode))
+		log.Info(fmt.Sprintf("%s [AUDIT] Would intercept '%s' (mode=%s) -- passing to native tool instead", ghostFrogLogPrefix, tool, mode))
 		if pathFilterErr != nil {
 			return fmt.Errorf("%s cannot run native %s in audit mode: failed to remove alias from PATH (would cause recursion): %w", ghostFrogLogPrefix, tool, pathFilterErr)
 		}
@@ -71,11 +75,6 @@ func DispatchIfAlias() error {
 	switch mode {
 	case ModeJF:
 		return runJFMode(tool, os.Args[1:])
-	case ModeEnv:
-		if pathFilterErr != nil {
-			return fmt.Errorf("%s cannot run native %s: failed to remove alias from PATH (would cause recursion): %w", ghostFrogLogPrefix, tool, pathFilterErr)
-		}
-		return runEnvMode(tool, os.Args[1:])
 	case ModePass:
 		if pathFilterErr != nil {
 			return fmt.Errorf("%s cannot run native %s: failed to remove alias from PATH (would cause recursion): %w", ghostFrogLogPrefix, tool, pathFilterErr)
@@ -131,13 +130,6 @@ func runJFMode(tool string, args []string) error {
 	return nil
 }
 
-// runEnvMode runs the tool with injected environment variables
-func runEnvMode(tool string, args []string) error {
-	// Environment injection mode is reserved for future use
-	// Currently, this mode acts as a pass-through
-	return execRealTool(tool, args)
-}
-
 // execRealTool replaces current process with real tool binary.
 // On Unix, uses syscall.Exec to replace the process. On Windows, syscall.Exec
 // returns EWINDOWS (not supported), so we run the tool as a child and exit with its code.
@@ -148,6 +140,12 @@ func execRealTool(tool string, args []string) error {
 	}
 
 	log.Debug(fmt.Sprintf("%s Executing real tool: %s", ghostFrogLogPrefix, realPath))
+
+	// Clean old temp dirs before replacing the process, since syscall.Exec (Unix)
+	// and os.Exit (Windows) prevent the normal cleanup in main() from running.
+	if cleanupErr := fileutils.CleanOldDirs(); cleanupErr != nil {
+		log.Debug(fmt.Sprintf("%s temp dir cleanup before exec: %v", ghostFrogLogPrefix, cleanupErr))
+	}
 
 	argv := append([]string{tool}, args...)
 

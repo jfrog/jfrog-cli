@@ -236,18 +236,9 @@ func getConfiguredTools(config *Config) []string {
 	return configured
 }
 
-func isConfiguredTool(config *Config, tool string) bool {
-	for _, configuredTool := range getConfiguredTools(config) {
-		if configuredTool == tool {
-			return true
-		}
-	}
-	return false
-}
-
 func validateAliasMode(mode AliasMode) bool {
 	switch mode {
-	case ModeJF, ModeEnv, ModePass:
+	case ModeJF, ModePass:
 		return true
 	default:
 		return false
@@ -316,7 +307,7 @@ func getModeForTool(config *Config, tool string, args []string) AliasMode {
 func getEnabledState(aliasDir string) bool {
 	config, err := loadConfig(aliasDir)
 	if err != nil {
-		return true
+		return false
 	}
 	return config.Enabled
 }

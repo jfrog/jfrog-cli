@@ -20,18 +20,16 @@ jobs:
         run: echo "JFROG_CLI_HOME_DIR=${{ runner.temp }}/jfrog-cli-home" >> "$GITHUB_ENV"
 
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
       
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v5
         with:
           node-version: '16'
 
       - name: Setup JFrog CLI
-        uses: bhanurp/setup-jfrog-cli@add-package-alias
+        uses: jfrog/setup-jfrog-cli@v4
         with:
-          version: 2.93.0
-          download-repository: bhanu-ghost-frog
           enable-package-alias: true
           package-alias-tools: npm,mvn,go,pip,docker
           custom-server-id: ghost-demo
