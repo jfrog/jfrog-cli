@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	urfavecli "github.com/urfave/cli"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 
 	tests2 "github.com/jfrog/jfrog-cli-artifactory/utils/tests"
@@ -1276,6 +1277,48 @@ CMD ["echo", "Hello from buildx"]`, baseImage)
 	// Extract just the image name (last part) for cleanup
 	imageNameOnly := "test-docker-build"
 	inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, imageNameOnly, buildName, tests.OciLocalRepo)
+}
+
+// TestDockerBuildxSkipLoginFails verifies that --skip-login actually skips login.
+// After logging out, buildx --push with --skip-login should fail because no auth is available.
+func TestDockerBuildxSkipLoginFails(t *testing.T) {
+	cleanup := initDockerBuildTest(t)
+	defer cleanup()
+
+	// Prevent urfave/cli from calling os.Exit on command errors
+	origOsExiter := urfavecli.OsExiter
+	urfavecli.OsExiter = func(code int) {}
+	defer func() { urfavecli.OsExiter = origOsExiter }()
+
+	registryHost := *tests.ContainerRegistry
+	if parsedURL, err := url.Parse(registryHost); err == nil && parsedURL.Host != "" {
+		registryHost = parsedURL.Host
+	}
+	imageName := path.Join(registryHost, tests.OciLocalRepo, "test-skip-login")
+	imageTag := imageName + ":v1"
+
+	workspace, err := filepath.Abs(tests.Out)
+	assert.NoError(t, err)
+	assert.NoError(t, fileutils.CreateDirIfNotExist(workspace))
+
+	baseImage := path.Join(registryHost, tests.OciRemoteRepo, "busybox:latest")
+	dockerfileContent := fmt.Sprintf(`FROM %s
+CMD ["echo", "skip-login test"]`, baseImage)
+	dockerfilePath := filepath.Join(workspace, "Dockerfile")
+	assert.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0644)) //#nosec G703 -- test code
+
+	// Logout from registry so push requires fresh login
+	logoutCmd := exec.Command("docker", "logout", registryHost)
+	assert.NoError(t, logoutCmd.Run())
+
+	// With --skip-login, jf should NOT re-login, so push should fail
+	err = runJfrogCliWithoutAssertion("docker", "buildx", "build",
+		"--platform", "linux/amd64",
+		"-t", imageTag, "-f", dockerfilePath, "--push", "--skip-login", workspace)
+	assert.Error(t, err, "Expected failure: --skip-login should prevent auto-login, causing push to fail without auth")
+
+	// Re-login for subsequent tests
+	runJfrogCli(t, "docker", "login", registryHost)
 }
 
 // TestDockerBuildWithVirtualRepo tests docker build with virtual repository

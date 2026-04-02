@@ -56,6 +56,7 @@ const (
 	Npm                    = "npm"
 	NpmInstallCi           = "npm-install-ci"
 	NpmPublish             = "npm-publish"
+	Pnpm                   = "pnpm"
 	PnpmConfig             = "pnpm-config"
 	YarnConfig             = "yarn-config"
 	Yarn                   = "yarn"
@@ -1914,7 +1915,7 @@ var commandFlags = map[string][]string{
 		serverId, skipLogin,
 	},
 	DockerBuild: {
-		BuildName, BuildNumber, serverId,
+		BuildName, BuildNumber, serverId, skipLogin,
 	},
 	DockerPromote: {
 		targetDockerImage, sourceTag, targetTag, dockerPromoteCopy, url, user, password, accessToken, sshPassphrase, sshKeyPath,
@@ -1939,6 +1940,9 @@ var commandFlags = map[string][]string{
 	},
 	PnpmConfig: {
 		global, serverIdResolve, repoResolve,
+	},
+	Pnpm: {
+		BuildName, BuildNumber, module, Project,
 	},
 	YarnConfig: {
 		global, serverIdResolve, repoResolve,
