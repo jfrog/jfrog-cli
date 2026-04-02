@@ -127,6 +127,7 @@ const (
 	// Access Token Create commands keys
 	AccessTokenCreate = "access-token-create"
 	ExchangeOidcToken = "exchange-oidc-token"
+	Api               = "api"
 
 	// *** Artifactory Commands' flags ***
 	// Base flags
@@ -604,6 +605,14 @@ const (
 	HfHubEtagTimeout     = "hf-hub-etag-timeout"
 	HfHubDownloadTimeout = "hf-hub-download-timeout"
 	RepoKey              = "repo-key"
+
+	// API command flags
+	apiHeader   = "api-header"
+	apiInput    = "api-input"
+	apiData     = "api-data"
+	apiMethod   = "api-method"
+	apiVerbose  = "api-verbose"
+	apiTimeout  = "api-timeout"
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -639,6 +648,31 @@ var flagsMap = map[string]cli.Flag{
 	accessTokenStdin: cli.BoolFlag{
 		Name:  accessTokenStdin,
 		Usage: "[Default: false] Set to true to provide the access token via stdin.` `",
+	},
+	apiHeader: cli.StringSliceFlag{
+		Name:  "header, H",
+		Usage: "[Optional] Add an HTTP request header in key:value format. May be repeated.` `",
+		Value: &cli.StringSlice{},
+	},
+	apiInput: cli.StringFlag{
+		Name:  "input",
+		Usage: "[Optional] File to use as the HTTP request body (use \"-\" to read from standard input). Mutually exclusive with --data; use one or the other to supply the HTTP body.` `",
+	},
+	apiData: cli.StringFlag{
+		Name:  "data, d",
+		Usage: "[Optional] Request body as a literal string. Mutually exclusive with --input; use one or the other to supply the HTTP body.` `",
+	},
+	apiMethod: cli.StringFlag{
+		Name:  "method, X",
+		Usage: "[Default: GET] HTTP method for the request.` `",
+	},
+	apiVerbose: cli.BoolFlag{
+		Name:  "verbose",
+		Usage: "[Default: false] Print the full HTTP request (credentials redacted) and response to standard error.` `",
+	},
+	apiTimeout: cli.IntFlag{
+		Name:  "timeout",
+		Usage: "[Default: 0] Overall HTTP request timeout in seconds. 0 means no timeout.` `",
 	},
 	// Artifactory's commands flags
 	url: cli.StringFlag{
@@ -2032,6 +2066,11 @@ var commandFlags = map[string][]string{
 	},
 	Stats: {
 		xrOutput, accessToken, serverId,
+	},
+	Api: {
+		platformUrl, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
+		ClientCertKeyPath, InsecureTls, configDisableRefreshAccessToken,
+		apiHeader, apiInput, apiData, apiMethod, apiVerbose, apiTimeout,
 	},
 	TemplateConsumer: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
