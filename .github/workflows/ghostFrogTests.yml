@@ -113,7 +113,8 @@ jobs:
         with:
           node-version: "16"
 
-      - name: Run Ghost Frog tests
-        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.ghostFrog
-        env:
-          JFROG_CLI_LOG_LEVEL: DEBUG
+      # Ghost Frog tests will be enabled once the ghost-frog branch is merged.
+      # - name: Run Ghost Frog tests
+      #   run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.ghostFrog
+      #   env:
+      #     JFROG_CLI_LOG_LEVEL: DEBUG
