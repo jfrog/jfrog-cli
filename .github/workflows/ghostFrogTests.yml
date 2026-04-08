@@ -42,15 +42,60 @@ jobs:
 
       - name: Setup Go with cache
         uses: jfrog/.github/actions/install-go-with-cache@main
+      
+      # Build jf/jfrog from source and upload to remote Artifactory.
+      # setup-jfrog-cli with default version (latest) requests:
+      #   {repo}/v2/[RELEASE]/jfrog-cli-{arch}/{filename}
+      # We upload to that exact path so the download URL matches.
+      - name: Build and publish JFrog CLI to Artifactory (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          OS=$(go env GOOS)
+          ARCH=$(go env GOARCH)
+          if [ "$OS" = "darwin" ]; then
+            [ "$ARCH" = "arm64" ] && CLI_ARCH="mac-arm64" || CLI_ARCH="mac-386"
+          elif [ "$ARCH" = "arm64" ]; then
+            CLI_ARCH="linux-arm64"
+          elif [ "$ARCH" = "amd64" ]; then
+            CLI_ARCH="linux-amd64"
+          else
+            CLI_ARCH="linux-386"
+          fi
+
+          REPO="ghost-frog-cli"
+          UPLOAD_PATH="${REPO}/v2/[RELEASE]/jfrog-cli-${CLI_ARCH}"
+
+          go build -o jf .
+          cp jf jfrog
+
+          ./jf c add ghost-rt --url=${{ secrets.PLATFORM_URL }} --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }} --interactive=false
+          ./jf rt repo-create "${REPO}" --repo-type=local --package-type=generic --server-id=ghost-rt 2>/dev/null || true
+          ./jf rt upload jf "${UPLOAD_PATH}/jf" --server-id=ghost-rt --flat
+          ./jf rt upload jfrog "${UPLOAD_PATH}/jfrog" --server-id=ghost-rt --flat
+          rm -f jf jfrog
+
+      - name: Build and publish JFrog CLI to Artifactory (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $REPO = "ghost-frog-cli"
+          $UPLOAD_PATH = "$REPO/v2/[RELEASE]/jfrog-cli-windows-amd64"
+
+          go build -o jf.exe .
+          Copy-Item jf.exe jfrog.exe
+
+          .\jf.exe c add ghost-rt --url=${{ secrets.PLATFORM_URL }} --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }} --interactive=false
+          .\jf.exe rt repo-create "$REPO" --repo-type=local --package-type=generic --server-id=ghost-rt 2>$null
+          .\jf.exe rt upload jf.exe "$UPLOAD_PATH/jf.exe" --server-id=ghost-rt --flat
+          .\jf.exe rt upload jfrog.exe "$UPLOAD_PATH/jfrog.exe" --server-id=ghost-rt --flat
+          Remove-Item jf.exe, jfrog.exe -ErrorAction SilentlyContinue
 
       - name: Setup JFrog CLI with package alias
         uses: jfrog/setup-jfrog-cli@package-alias
         with:
-          version: 2.93.0
-          download-repository: bhanu-ghost-frog
+          download-repository: ghost-frog-cli
           enable-package-alias: true
           package-alias-tools: npm,mvn,go,pip
-          custom-server-id: ghost-demo
         env:
           JF_URL: ${{ secrets.JFROG_URL }}
           JF_ACCESS_TOKEN: ${{ secrets.JFROG_ACCESS_TOKEN }}
