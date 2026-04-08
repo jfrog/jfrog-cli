@@ -70,7 +70,8 @@ jobs:
           UPLOAD_PATH="${REPO}/v2/${VERSION}/jfrog-cli-${CLI_ARCH}"
 
           ./jf c add ghost-rt --url=${{ secrets.PLATFORM_URL }} --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }} --interactive=false
-          ./jf rt repo-create "${REPO}" --repo-type=local --package-type=generic --server-id=ghost-rt 2>/dev/null || true
+          echo "{\"key\": \"${REPO}\", \"rclass\": \"local\", \"packageType\": \"generic\"}" > /tmp/repo-template.json
+          ./jf rt repo-create /tmp/repo-template.json --server-id=ghost-rt 2>/dev/null || true
           ./jf rt upload jf "${UPLOAD_PATH}/jf" --server-id=ghost-rt --flat
           ./jf rt upload jfrog "${UPLOAD_PATH}/jfrog" --server-id=ghost-rt --flat
           rm -f jf jfrog
@@ -89,7 +90,9 @@ jobs:
           $UPLOAD_PATH = "$REPO/v2/$VERSION/jfrog-cli-windows-amd64"
 
           .\jf.exe c add ghost-rt --url=${{ secrets.PLATFORM_URL }} --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }} --interactive=false
-          .\jf.exe rt repo-create "$REPO" --repo-type=local --package-type=generic --server-id=ghost-rt 2>$null
+          '{"key": "' + $REPO + '", "rclass": "local", "packageType": "generic"}' | Set-Content -Path "$env:TEMP\repo-template.json"
+          .\jf.exe rt repo-create "$env:TEMP\repo-template.json" --server-id=ghost-rt 2>$null
+          if ($LASTEXITCODE -ne 0) { Write-Host "repo-create failed or repo already exists, continuing..." }
           .\jf.exe rt upload jf.exe "$UPLOAD_PATH/jf.exe" --server-id=ghost-rt --flat
           .\jf.exe rt upload jfrog.exe "$UPLOAD_PATH/jfrog.exe" --server-id=ghost-rt --flat
           Remove-Item jf.exe, jfrog.exe -ErrorAction SilentlyContinue
