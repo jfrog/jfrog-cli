@@ -258,12 +258,12 @@ func TestArtifactorySimpleUploadSpecUsingConfig(t *testing.T) {
 }
 
 func TestReleaseBundleImportOnPrem(t *testing.T) {
+	initArtifactoryTest(t, "")
 	// Cleanup
 	defer func() {
 		deleteReceivedReleaseBundle(t, deleteReleaseBundleV1ApiUrl, "cli-tests", "2")
 		cleanArtifactoryTest()
 	}()
-	initArtifactoryTest(t, "")
 	initLifecycleCli()
 	// Sets the public key in Artifactory to accept the signed release bundle.
 	sendArtifactoryTrustedPublicKey(t, artHttpDetails)

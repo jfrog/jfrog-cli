@@ -14,8 +14,8 @@ import (
 	"testing"
 	"time"
 
-	urfavecli "github.com/urfave/cli"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	urfavecli "github.com/urfave/cli"
 
 	tests2 "github.com/jfrog/jfrog-cli-artifactory/utils/tests"
 
