@@ -145,7 +145,7 @@ jobs:
           distribution: 'temurin'
       
       - name: Setup JFrog CLI
-        uses: uses: jfrog/setup-jfrog-cli@package-alias
+        uses: jfrog/setup-jfrog-cli@package-alias
         with:
           enable-package-alias: true
           package-alias-tools: ${{ matrix.tool }}

@@ -40,7 +40,7 @@ jobs:
         uses: jfrog/.github/actions/install-go-with-cache@main
 
       - name: Setup JFrog CLI
-        uses: uses: jfrog/setup-jfrog-cli@package-alias
+        uses: jfrog/setup-jfrog-cli@v4
         with:
           version: latest
         env:
