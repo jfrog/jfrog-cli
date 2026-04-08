@@ -36,3 +36,7 @@ node_modules
 # Class files
 *.class
 **/testdata/**/bin
+testdata/**/.gradle
+
+# AI agents
+.cursor

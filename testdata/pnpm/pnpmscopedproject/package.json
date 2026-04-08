@@ -1,0 +1,17 @@
+{
+  "name": "@jscope/jfrog-cli-tests",
+  "version": "=1.0.0",
+  "description": "test package with scope",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "xml": "1.0.1"
+  },
+  "devDependencies": {
+    "json": "9.0.6"
+  }
+}
