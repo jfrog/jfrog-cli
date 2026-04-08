@@ -4,9 +4,8 @@ on:
   push:
     branches:
       - "master"
-      - "ghost-frog"
   # Triggers the workflow on PRs to master branch only.
-  pull_request_target:
+  pull_request:
     types: [labeled]
     branches:
       - "master"
@@ -42,25 +41,80 @@ jobs:
 
       - name: Setup Go with cache
         uses: jfrog/.github/actions/install-go-with-cache@main
+      
+      # Build jf/jfrog from source and upload to Artifactory local repo.
+      # [RELEASE] layout token only resolves on remote/virtual repos, so we
+      # extract the version from the built binary and upload to v2/{version}/...
+      - name: Build and publish JFrog CLI to Artifactory (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          go build -o jf .
+          cp jf jfrog
+
+          VERSION=$(./jf --version | awk '{print $3}')
+          echo "CLI_VERSION=${VERSION}" >> $GITHUB_ENV
+
+          OS=$(go env GOOS)
+          ARCH=$(go env GOARCH)
+          if [ "$OS" = "darwin" ]; then
+            [ "$ARCH" = "arm64" ] && CLI_ARCH="mac-arm64" || CLI_ARCH="mac-386"
+          elif [ "$ARCH" = "arm64" ]; then
+            CLI_ARCH="linux-arm64"
+          elif [ "$ARCH" = "amd64" ]; then
+            CLI_ARCH="linux-amd64"
+          else
+            CLI_ARCH="linux-386"
+          fi
+
+          REPO="ghost-frog-cli"
+          UPLOAD_PATH="${REPO}/v2/${VERSION}/jfrog-cli-${CLI_ARCH}"
+
+          ./jf c add ghost-rt --url=${{ secrets.PLATFORM_URL }} --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }} --interactive=false
+          echo "{\"key\": \"${REPO}\", \"rclass\": \"local\", \"packageType\": \"generic\"}" > /tmp/repo-template.json
+          ./jf rt repo-create /tmp/repo-template.json --server-id=ghost-rt 2>/dev/null || true
+          ./jf rt upload jf "${UPLOAD_PATH}/jf" --server-id=ghost-rt --flat
+          ./jf rt upload jfrog "${UPLOAD_PATH}/jfrog" --server-id=ghost-rt --flat
+          rm -f jf jfrog
+
+      - name: Build and publish JFrog CLI to Artifactory (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          go build -o jf.exe .
+          Copy-Item jf.exe jfrog.exe
+
+          $VERSION = (.\jf.exe --version | Select-String -Pattern '\d+\.\d+\.\d+').Matches.Value
+          echo "CLI_VERSION=$VERSION" >> $env:GITHUB_ENV
+
+          $REPO = "ghost-frog-cli"
+          $UPLOAD_PATH = "$REPO/v2/$VERSION/jfrog-cli-windows-amd64"
+
+          .\jf.exe c add ghost-rt --url=${{ secrets.PLATFORM_URL }} --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }} --interactive=false
+          '{"key": "' + $REPO + '", "rclass": "local", "packageType": "generic"}' | Set-Content -Path "$env:TEMP\repo-template.json"
+          .\jf.exe rt repo-create "$env:TEMP\repo-template.json" --server-id=ghost-rt 2>$null
+          if ($LASTEXITCODE -ne 0) { Write-Host "repo-create failed or repo already exists, continuing..." }
+          .\jf.exe rt upload jf.exe "$UPLOAD_PATH/jf.exe" --server-id=ghost-rt --flat
+          .\jf.exe rt upload jfrog.exe "$UPLOAD_PATH/jfrog.exe" --server-id=ghost-rt --flat
+          Remove-Item jf.exe, jfrog.exe -ErrorAction SilentlyContinue
 
       - name: Setup JFrog CLI with package alias
         uses: jfrog/setup-jfrog-cli@package-alias
         with:
-          version: 2.93.0
-          download-repository: bhanu-ghost-frog
+          version: ${{ env.CLI_VERSION }}
+          download-repository: ghost-frog-cli
           enable-package-alias: true
           package-alias-tools: npm,mvn,go,pip
-          custom-server-id: ghost-demo
         env:
-          JF_URL: ${{ secrets.JFROG_URL }}
-          JF_ACCESS_TOKEN: ${{ secrets.JFROG_ACCESS_TOKEN }}
+          JF_URL: ${{ secrets.PLATFORM_URL }}
+          JF_ACCESS_TOKEN: ${{ secrets.PLATFORM_ADMIN_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
           node-version: "16"
 
-      - name: Run Ghost Frog tests
-        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.ghostFrog
-        env:
-          JFROG_CLI_LOG_LEVEL: DEBUG
+      # Ghost Frog tests will be enabled once the ghost-frog branch is merged.
+      # - name: Run Ghost Frog tests
+      #   run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.ghostFrog
+      #   env:
+      #     JFROG_CLI_LOG_LEVEL: DEBUG
