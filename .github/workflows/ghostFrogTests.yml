@@ -42,13 +42,18 @@ jobs:
       - name: Setup Go with cache
         uses: jfrog/.github/actions/install-go-with-cache@main
       
-      # Build jf/jfrog from source and upload to remote Artifactory.
-      # setup-jfrog-cli with default version (latest) requests:
-      #   {repo}/v2/[RELEASE]/jfrog-cli-{arch}/{filename}
-      # We upload to that exact path so the download URL matches.
+      # Build jf/jfrog from source and upload to Artifactory local repo.
+      # [RELEASE] layout token only resolves on remote/virtual repos, so we
+      # extract the version from the built binary and upload to v2/{version}/...
       - name: Build and publish JFrog CLI to Artifactory (Unix)
         if: runner.os != 'Windows'
         run: |
+          go build -o jf .
+          cp jf jfrog
+
+          VERSION=$(./jf --version | awk '{print $3}')
+          echo "CLI_VERSION=${VERSION}" >> $GITHUB_ENV
+
           OS=$(go env GOOS)
           ARCH=$(go env GOARCH)
           if [ "$OS" = "darwin" ]; then
@@ -62,10 +67,7 @@ jobs:
           fi
 
           REPO="ghost-frog-cli"
-          UPLOAD_PATH="${REPO}/v2/[RELEASE]/jfrog-cli-${CLI_ARCH}"
-
-          go build -o jf .
-          cp jf jfrog
+          UPLOAD_PATH="${REPO}/v2/${VERSION}/jfrog-cli-${CLI_ARCH}"
 
           ./jf c add ghost-rt --url=${{ secrets.PLATFORM_URL }} --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }} --interactive=false
           ./jf rt repo-create "${REPO}" --repo-type=local --package-type=generic --server-id=ghost-rt 2>/dev/null || true
@@ -77,11 +79,14 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $REPO = "ghost-frog-cli"
-          $UPLOAD_PATH = "$REPO/v2/[RELEASE]/jfrog-cli-windows-amd64"
-
           go build -o jf.exe .
           Copy-Item jf.exe jfrog.exe
+
+          $VERSION = (.\jf.exe --version | Select-String -Pattern '\d+\.\d+\.\d+').Matches.Value
+          echo "CLI_VERSION=$VERSION" >> $env:GITHUB_ENV
+
+          $REPO = "ghost-frog-cli"
+          $UPLOAD_PATH = "$REPO/v2/$VERSION/jfrog-cli-windows-amd64"
 
           .\jf.exe c add ghost-rt --url=${{ secrets.PLATFORM_URL }} --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }} --interactive=false
           .\jf.exe rt repo-create "$REPO" --repo-type=local --package-type=generic --server-id=ghost-rt 2>$null
@@ -92,6 +97,7 @@ jobs:
       - name: Setup JFrog CLI with package alias
         uses: jfrog/setup-jfrog-cli@package-alias
         with:
+          version: ${{ env.CLI_VERSION }}
           download-repository: ghost-frog-cli
           enable-package-alias: true
           package-alias-tools: npm,mvn,go,pip
