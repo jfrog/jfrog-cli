@@ -97,6 +97,9 @@ func setupIntegrationTests() {
 	if *tests.TestHuggingFace {
 		InitHuggingFaceTests()
 	}
+	if *tests.TestGhostFrog {
+		InitGhostFrogTests()
+	}
 }
 
 func tearDownIntegrationTests() {
@@ -126,6 +129,9 @@ func tearDownIntegrationTests() {
 	}
 	if *tests.TestHuggingFace {
 		CleanHuggingFaceTests()
+	}
+	if *tests.TestGhostFrog {
+		CleanGhostFrogTests()
 	}
 }
 
