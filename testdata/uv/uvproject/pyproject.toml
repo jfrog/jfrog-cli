@@ -1,0 +1,23 @@
+[project]
+name = "uv-jfrog-test"
+version = "0.1.0"
+description = "Test package for JFrog CLI UV integration tests"
+requires-python = ">=3.11"
+dependencies = [
+    "certifi>=2024.0.0",
+]
+
+[build-system]
+requires = ["flit_core>=3.2"]
+build-backend = "flit_core.buildapi"
+
+# ARTIFACTORY_INDEX_URL and ARTIFACTORY_PUBLISH_URL are replaced at test runtime
+# by patchUvPyprojectToml() in uv_test.go
+
+[[tool.uv.index]]
+name = "jfrog-pypi-virtual"
+url  = "ARTIFACTORY_INDEX_URL"
+default = true
+
+[tool.uv]
+publish-url = "ARTIFACTORY_PUBLISH_URL"

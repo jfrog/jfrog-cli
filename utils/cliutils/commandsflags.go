@@ -78,6 +78,7 @@ const (
 	PipenvInstall          = "pipenv-install"
 	PoetryConfig           = "poetry-config"
 	Poetry                 = "poetry"
+	UvInstall              = "uv-install"
 	Helm                   = "helm"
 	HuggingFace            = "hugging-face"
 	HuggingFaceUpload      = "hugging-face-upload"
@@ -2045,6 +2046,9 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, repoResolve,
 	},
 	Poetry: {
+		BuildName, BuildNumber, module, Project,
+	},
+	UvInstall: {
 		BuildName, BuildNumber, module, Project,
 	},
 	Helm: {
