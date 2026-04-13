@@ -138,6 +138,11 @@ func exchangeAndPrint(client *httpclient.HttpClient, c commandContext, method, f
 	if _, err = stdOut.Write(respBody); err != nil {
 		return errorutils.CheckError(err)
 	}
+	if len(respBody) == 0 || respBody[len(respBody)-1] != '\n' {
+		if _, err = stdOut.Write([]byte("\n")); err != nil {
+			return errorutils.CheckError(err)
+		}
+	}
 
 	if resp.StatusCode < 200 || resp.StatusCode > 399 {
 		log.Warn("jf api:", method, fullURL, "returned", resp.Status)
