@@ -19,9 +19,10 @@ EXAMPLES
   # Get a user by name
   $ jf api /access/api/v2/users/admin
 
-  # Create a user (POST JSON body from a file, or use -d/--data for an inline body — not both)
-  $ jf api /access/api/v2/users -X POST --input ./user.json -H "Content-Type: application/json" 
-  $ jf api /access/api/v2/users -X POST -d '{"name":"admin"}' -H "Content-Type: application/json" 
+  # Create a user (POST JSON from a file or -d/--data — not both). username, email, and password are required
+  # unless internal_password_disabled is true (see Access API / Platform Administration — Create user).
+  $ jf api /access/api/v2/users -X POST --input ./user.json -H "Content-Type: application/json"
+  $ jf api /access/api/v2/users -X POST -d '{"username":"newuser","email":"newuser@example.com","password":"UseASecurePassword123"}' -H "Content-Type: application/json"
 
   # Replace a user
   $ jf api /access/api/v2/users/newuser -X PUT --input ./user.json -H "Content-Type: application/json"
