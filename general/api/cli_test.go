@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -13,6 +12,7 @@ import (
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	testhelpers "github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli"
@@ -362,6 +362,19 @@ func TestApi(t *testing.T) {
 			wantResponse: []byte{},
 		},
 		{
+			name: "response 302 redirect is success",
+			args: commandArgs{
+				path: "/redirect",
+			},
+			server: mockConfig{
+				path:     "/redirect",
+				status:   http.StatusFound,
+				response: []byte(""),
+			},
+			wantStatus:   http.StatusFound,
+			wantResponse: []byte{},
+		},
+		{
 			name: "JSON response content type",
 			args: commandArgs{
 				path: "/json-response",
@@ -469,7 +482,11 @@ func TestApi(t *testing.T) {
 			var stdErr bytes.Buffer
 			var stdOut bytes.Buffer
 
-			err := runApiCmd(ctx, serverDetails, &stdOut, &stdErr)
+			prevLogger := clientlog.GetLogger()
+			t.Cleanup(func() { clientlog.SetLogger(prevLogger) })
+			clientlog.SetLogger(clientlog.NewLoggerWithFlags(clientlog.INFO, &stdErr, 0))
+
+			err := runApiCmd(ctx, serverDetails, &stdOut)
 
 			if tt.wantErr != nil {
 				assert.Error(t, err)
@@ -479,12 +496,8 @@ func TestApi(t *testing.T) {
 			require.NoError(t, err)
 
 			if tt.wantStatus > 0 {
-				// Extract status code from stderr, which may contain verbose output
-				stderrContent := strings.TrimSpace(stdErr.String())
-				// The last line contains the status code
-				lines := strings.Split(stderrContent, "\n")
-				statusCode := lines[len(lines)-1]
-				assert.Equal(t, strconv.Itoa(tt.wantStatus), statusCode)
+				// Status is logged via client log (may include level prefix); body may be verbose on stderr too
+				assert.Contains(t, stdErr.String(), fmt.Sprintf("Http Status: %d", tt.wantStatus))
 			}
 
 			if tt.wantResponse != nil {
@@ -515,8 +528,8 @@ func TestApiTimeoutExpired(t *testing.T) {
 		timeout: 1, // 1-second timeout; server sleeps for 5 s
 	})
 
-	var stdErr, stdOut bytes.Buffer
-	err := runApiCmd(ctx, serverDetails, &stdOut, &stdErr)
+	var stdOut bytes.Buffer
+	err := runApiCmd(ctx, serverDetails, &stdOut)
 	assert.Error(t, err, "expected a timeout error")
 }
 

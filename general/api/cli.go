@@ -1,8 +1,6 @@
 package api
 
 import (
-	"bytes"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -14,6 +12,7 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/urfave/cli"
 )
@@ -47,10 +46,10 @@ func Command(c *cli.Context) error {
 		return err
 	}
 
-	return runApiCmd(c, serverDetails, os.Stdout, os.Stderr)
+	return runApiCmd(c, serverDetails, os.Stdout)
 }
 
-func runApiCmd(c commandContext, serverDetails *coreconfig.ServerDetails, stdOut, stdErr io.Writer) error {
+func runApiCmd(c commandContext, serverDetails *coreconfig.ServerDetails, stdOut io.Writer) error {
 	if serverDetails.GetUrl() == "" {
 		return errorutils.CheckErrorf("no JFrog Platform URL specified, either via the --url flag or as part of the server configuration")
 	}
@@ -78,7 +77,7 @@ func runApiCmd(c commandContext, serverDetails *coreconfig.ServerDetails, stdOut
 		return err
 	}
 
-	return exchangeAndPrint(client, c, method, fullURL, body, details, stdOut, stdErr)
+	return exchangeAndPrint(client, c, method, fullURL, body, details, stdOut)
 }
 
 func httpMethodOrDefault(c commandContext) string {
@@ -113,13 +112,14 @@ func newPlatformHttpClient(serverDetails *coreconfig.ServerDetails, timeout time
 	return builder.Build()
 }
 
-func exchangeAndPrint(client *httpclient.HttpClient, c commandContext, method, fullURL string, body []byte, details *httputils.HttpClientDetails, stdOut, stdErr io.Writer) error {
+func exchangeAndPrint(client *httpclient.HttpClient, c commandContext, method, fullURL string, body []byte, details *httputils.HttpClientDetails, stdOut io.Writer) error {
 	if c.Bool(flagVerbose) {
-		writeVerboseRequest(stdErr, method, fullURL, details)
+		writeVerboseRequest(method, fullURL, details)
 	}
 
 	resp, respBody, _, err := client.Send(method, fullURL, body, true, true, *details, "")
 	if err != nil {
+		log.Error("jf api: request failed:", err)
 		return err
 	}
 	if resp == nil {
@@ -130,19 +130,20 @@ func exchangeAndPrint(client *httpclient.HttpClient, c commandContext, method, f
 	}()
 
 	if c.Bool(flagVerbose) {
-		writeVerboseResponse(stdErr, resp, respBody)
+		writeVerboseResponse(resp, respBody)
 	}
 
-	if _, err = fmt.Fprintf(stdErr, "%d\n", resp.StatusCode); err != nil {
-		return errorutils.CheckError(err)
-	}
+	log.Info("Http Status:", resp.StatusCode)
 
 	if _, err = stdOut.Write(respBody); err != nil {
 		return errorutils.CheckError(err)
 	}
 
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return cli.NewExitError(fmt.Sprintf("HTTP %d", resp.StatusCode), 1)
+	if resp.StatusCode < 200 || resp.StatusCode > 399 {
+		log.Warn("jf api:", method, fullURL, "returned", resp.Status)
+		// Exit code only: a non-empty ExitError message would be printed again by urfave/cli's
+		// HandleExitCoder after the response body when stdout and stderr are combined.
+		return cli.NewExitError("", 1)
 	}
 	return nil
 }
@@ -209,35 +210,32 @@ func parseHeaderKV(s string) (key, val string, err error) {
 	return key, val, nil
 }
 
-func writeVerboseRequest(w io.Writer, method, url string, details *httputils.HttpClientDetails) {
-	_, _ = fmt.Fprintf(w, "* Request to %s\n", url)
-	_, _ = fmt.Fprintf(w, "> %s\n", method)
+func writeVerboseRequest(method, url string, details *httputils.HttpClientDetails) {
+	log.Info("jf api --verbose: * Request to", url)
+	log.Info("jf api --verbose: >", method)
 	redacted := redactHeaders(details.Headers)
 	for k, v := range redacted {
-		_, _ = fmt.Fprintf(w, "> %s: %s\n", k, v)
+		log.Info("jf api --verbose: >", k+":", v)
 	}
 	if !hasHeaderFold(details.Headers, "Authorization") {
 		switch {
 		case details.AccessToken != "":
-			_, _ = fmt.Fprintf(w, "> Authorization: Bearer ***\n")
+			log.Info("jf api --verbose: > Authorization: Bearer ***")
 		case details.User != "" && details.Password != "":
-			_, _ = fmt.Fprintf(w, "> Authorization: Basic ***\n")
+			log.Info("jf api --verbose: > Authorization: Basic ***")
 		}
 	}
 }
 
-func writeVerboseResponse(w io.Writer, resp *http.Response, body []byte) {
-	_, _ = fmt.Fprintf(w, "* Response %s\n", resp.Status)
+func writeVerboseResponse(resp *http.Response, body []byte) {
+	log.Info("jf api --verbose: * Response", resp.Status)
 	for k, vals := range resp.Header {
 		for _, v := range vals {
-			_, _ = fmt.Fprintf(w, "< %s: %s\n", k, v)
+			log.Info("jf api --verbose: <", k+":", v)
 		}
 	}
 	if len(body) > 0 {
-		_, _ = w.Write(body)
-		if !bytes.HasSuffix(body, []byte("\n")) {
-			_, _ = fmt.Fprintln(w)
-		}
+		log.Info("jf api --verbose:", string(body))
 	}
 }
 
