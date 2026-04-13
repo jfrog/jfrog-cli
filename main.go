@@ -30,10 +30,12 @@ import (
 	"github.com/jfrog/jfrog-cli/config"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	aiDocs "github.com/jfrog/jfrog-cli/docs/general/ai"
+	apiDocs "github.com/jfrog/jfrog-cli/docs/general/api"
 	loginDocs "github.com/jfrog/jfrog-cli/docs/general/login"
 	oidcDocs "github.com/jfrog/jfrog-cli/docs/general/oidc"
 	summaryDocs "github.com/jfrog/jfrog-cli/docs/general/summary"
 	tokenDocs "github.com/jfrog/jfrog-cli/docs/general/token"
+	"github.com/jfrog/jfrog-cli/general/api"
 	"github.com/jfrog/jfrog-cli/general/login"
 	"github.com/jfrog/jfrog-cli/general/summary"
 	"github.com/jfrog/jfrog-cli/general/token"
@@ -319,6 +321,17 @@ func getCommands() ([]cli.Command, error) {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     otherCategory,
 			Action:       token.AccessTokenCreateCmd,
+		},
+		{
+			Name:         "api",
+			Flags:        cliutils.GetCommandFlags(cliutils.Api),
+			Usage:        apiDocs.GetDescription(),
+			HelpName:     corecommon.CreateUsage("api", apiDocs.GetDescription(), apiDocs.Usage),
+			UsageText:    apiDocs.GetArguments(),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Category:     otherCategory,
+			Action:       api.Command,
 		},
 		{
 			Name:         "exchange-oidc-token",

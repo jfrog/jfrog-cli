@@ -91,6 +91,9 @@ func setupIntegrationTests() {
 	if *tests.TestEvidence {
 		InitEvidenceTests()
 	}
+	if *tests.TestApi {
+		InitApiTests()
+	}
 	if *tests.TestHelm {
 		InitHelmTests()
 	}
