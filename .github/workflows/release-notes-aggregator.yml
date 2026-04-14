@@ -35,7 +35,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -58,7 +58,7 @@ jobs:
           echo "from=$FROM  to=$TO"
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
@@ -367,7 +367,7 @@ jobs:
           PYEOF
 
       - name: Upload release notes artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-notes-${{ steps.tags.outputs.to }}
           path: /tmp/RELEASE_NOTES.md

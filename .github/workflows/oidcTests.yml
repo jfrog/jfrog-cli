@@ -41,7 +41,7 @@ jobs:
     runs-on: ${{ matrix.os.name }}-${{ matrix.os.version }}
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
           
@@ -51,7 +51,7 @@ jobs:
           go-version-file: go.mod
 
       - name: Setup FastCI
-        uses: jfrog-fastci/fastci@v0
+        uses: jfrog-fastci/fastci@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           fastci_otel_token: ${{ secrets.FASTCI_TOKEN }}

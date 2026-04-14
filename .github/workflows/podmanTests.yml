@@ -26,7 +26,7 @@ jobs:
     runs-on: ${{ matrix.os.name }}-${{ matrix.os.version }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
 
@@ -43,7 +43,7 @@ jobs:
           sudo systemctl restart docker
 
       - name: Setup FastCI
-        uses: jfrog-fastci/fastci@v0
+        uses: jfrog-fastci/fastci@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           fastci_otel_token: ${{ secrets.FASTCI_TOKEN }}
