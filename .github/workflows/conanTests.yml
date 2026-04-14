@@ -36,13 +36,13 @@ jobs:
 
       - name: Checkout code
         if: matrix.os.name != 'macos'
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
 
       - name: Setup FastCI
         if: matrix.os.name != 'macos'
-        uses: jfrog-fastci/fastci@v0
+        uses: jfrog-fastci/fastci@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           fastci_otel_token: ${{ secrets.FASTCI_TOKEN }}
