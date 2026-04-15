@@ -1,0 +1,55 @@
+name: "Setup Local Artifactory"
+description: "Setup Local Artifactory or connect to an external JFrog Platform instance"
+inputs:
+  RTLIC:
+    description: "Local Artifactory License. Not required when JFROG_URL is provided."
+    required: false
+  JFROG_HOME:
+    description: "JFrog Home."
+    required: false
+  VERSION:
+    description: "Artifactory Version. Default is latest."
+    required: false
+  RT_SETUP_VERSION:
+    description: "Version of the local-rt-setup tool. Default is latest."
+    required: false
+    default: "1.3.9"
+  RT_CONNECTION_TIMEOUT_SECONDS:
+    description: "Connection timeout for the local Artifactory to be up."
+    required: false
+    default: "1200"
+  JFROG_URL:
+    description: "External JFrog Platform URL. If provided, skip local Artifactory install and use this instance instead."
+    required: false
+  JFROG_ADMIN_TOKEN:
+    description: "Admin token for external JFrog Platform. Required when JFROG_URL is set."
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Artifactory
+      run: |
+        if [ -n "${JFROG_URL}" ]; then
+          echo "Using external Artifactory at: ${JFROG_URL}"
+          echo "JFROG_TESTS_LOCAL_ACCESS_TOKEN=${JFROG_ADMIN_TOKEN}" >> $GITHUB_ENV
+          echo "JFROG_TESTS_URL=${JFROG_URL}" >> $GITHUB_ENV
+          echo "JFROG_TESTS_IS_EXTERNAL=true" >> $GITHUB_ENV
+        else
+          go install github.com/jfrog/jfrog-testing-infra/local-rt-setup@${RT_SETUP_VERSION}
+          if [ -n "${VERSION}" ]; then
+            ~/go/bin/local-rt-setup --rt-version "${VERSION}" --connection-timeout-seconds "${RT_CONNECTION_TIMEOUT_SECONDS}"
+          else
+            ~/go/bin/local-rt-setup --connection-timeout-seconds "${RT_CONNECTION_TIMEOUT_SECONDS}"
+          fi
+          echo "JFROG_TESTS_URL=http://127.0.0.1:8082" >> $GITHUB_ENV
+        fi
+      shell: bash
+      env:
+        RTLIC: ${{ inputs.RTLIC }}
+        JFROG_HOME: ${{ inputs.JFROG_HOME }}
+        VERSION: ${{ inputs.VERSION }}
+        RT_SETUP_VERSION: ${{ inputs.RT_SETUP_VERSION }}
+        RT_CONNECTION_TIMEOUT_SECONDS: ${{ inputs.RT_CONNECTION_TIMEOUT_SECONDS }}
+        JFROG_URL: ${{ inputs.JFROG_URL }}
+        JFROG_ADMIN_TOKEN: ${{ inputs.JFROG_ADMIN_TOKEN }}

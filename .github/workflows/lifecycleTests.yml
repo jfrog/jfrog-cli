@@ -3,6 +3,17 @@ env:
   JFROG_CLI_LOG_LEVEL: DEBUG
 on:
   workflow_dispatch:
+    inputs:
+      jfrog_url:
+        description: "External JFrog Platform URL. Leave empty for local Artifactory."
+        type: string
+        required: false
+        default: ""
+      jfrog_admin_token:
+        description: "Admin token for external JFrog Platform."
+        type: string
+        required: false
+        default: ""
   push:
     branches:
       - "master"
@@ -74,8 +85,14 @@ jobs:
         uses: jfrog/.github/actions/install-local-artifactory@main
         with:
           RTLIC: ${{ secrets.RTLIC }}
+          JFROG_URL: ${{ inputs.jfrog_url }}
+          JFROG_ADMIN_TOKEN: ${{ inputs.jfrog_admin_token }}
           RT_CONNECTION_TIMEOUT_SECONDS: ${{ env.RT_CONNECTION_TIMEOUT_SECONDS || '1200' }}
 
       - name: Run Lifecycle tests
         if: matrix.os.name != 'macos'
-        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.lifecycle --jfrog.url=http://127.0.0.1:8082 --jfrog.adminToken=${{ env.JFROG_TESTS_LOCAL_ACCESS_TOKEN }} --ci.runId=${{ runner.os }}-lifecycle
+        run: >-
+          go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.lifecycle
+          --jfrog.url=${{ env.JFROG_TESTS_URL || 'http://127.0.0.1:8082' }}
+          --jfrog.adminToken=${{ env.JFROG_TESTS_LOCAL_ACCESS_TOKEN }}
+          --ci.runId=${{ runner.os }}-lifecycle
