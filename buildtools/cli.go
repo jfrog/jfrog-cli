@@ -1629,56 +1629,47 @@ func getCommandName(orgArgs []string) (string, []string) {
 	return "", cmdArgs
 }
 
-// uvPublishURLFromToml reads [tool.uv] publish-url from pyproject.toml in the working directory.
-// UV supports setting a default publish target so users don't need --publish-url every time.
-func uvPublishURLFromToml() string {
-	type PyProject struct {
-		Tool struct {
-			Uv struct {
-				PublishURL string `toml:"publish-url"`
-			} `toml:"uv"`
-		} `toml:"tool"`
-	}
-	data, err := os.ReadFile(filepath.Join(".", "pyproject.toml"))
-	if err != nil {
-		return ""
-	}
-	var p PyProject
-	if err := toml.Unmarshal(data, &p); err != nil {
-		return ""
-	}
-	return p.Tool.Uv.PublishURL
-}
-
-// uvReadIndexNamesFromToml returns all index names from [[tool.uv.index]] in pyproject.toml.
-// UV uses these names for per-index credential env vars: UV_INDEX_<NAME>_USERNAME/PASSWORD.
 // uvIndexEntry holds the name and URL of a [[tool.uv.index]] entry.
 type uvIndexEntry struct {
 	Name string
 	URL  string
 }
 
-// uvReadIndexesFromToml returns all [[tool.uv.index]] entries from pyproject.toml.
-func uvReadIndexesFromToml() []uvIndexEntry {
-	type UvIndex struct {
-		Name string `toml:"name"`
-		URL  string `toml:"url"`
-	}
-	type PyProject struct {
-		Tool struct {
-			Uv struct {
-				Index []UvIndex `toml:"index"`
-			} `toml:"uv"`
-		} `toml:"tool"`
-	}
-	data, err := os.ReadFile(filepath.Join(".", "pyproject.toml"))
+// uvPyprojectToml holds the [tool.uv] fields we need from pyproject.toml.
+type uvPyprojectToml struct {
+	Tool struct {
+		Uv struct {
+			PublishURL string `toml:"publish-url"`
+			Index      []struct {
+				Name string `toml:"name"`
+				URL  string `toml:"url"`
+			} `toml:"index"`
+		} `toml:"uv"`
+	} `toml:"tool"`
+}
+
+// parseUvPyproject reads and parses pyproject.toml from workingDir.
+// Returns zero-value struct on any error (missing file is a normal non-error case).
+func parseUvPyproject(workingDir string) uvPyprojectToml {
+	data, err := os.ReadFile(filepath.Join(workingDir, "pyproject.toml"))
 	if err != nil {
-		return nil
+		return uvPyprojectToml{}
 	}
-	var p PyProject
+	var p uvPyprojectToml
 	if err := toml.Unmarshal(data, &p); err != nil {
-		return nil
+		return uvPyprojectToml{}
 	}
+	return p
+}
+
+// uvPublishURLFromToml reads [tool.uv] publish-url from pyproject.toml in workingDir.
+func uvPublishURLFromToml(workingDir string) string {
+	return parseUvPyproject(workingDir).Tool.Uv.PublishURL
+}
+
+// uvReadIndexesFromToml returns all [[tool.uv.index]] entries from pyproject.toml in workingDir.
+func uvReadIndexesFromToml(workingDir string) []uvIndexEntry {
+	p := parseUvPyproject(workingDir)
 	var entries []uvIndexEntry
 	for _, idx := range p.Tool.Uv.Index {
 		if idx.Name != "" {
@@ -1686,15 +1677,6 @@ func uvReadIndexesFromToml() []uvIndexEntry {
 		}
 	}
 	return entries
-}
-
-// uvReadIndexNamesFromToml returns just the index names (kept for test helper use).
-func uvReadIndexNamesFromToml() []string {
-	var names []string
-	for _, idx := range uvReadIndexesFromToml() {
-		names = append(names, idx.Name)
-	}
-	return names
 }
 
 // uvIndexHasNativeCredentials returns true if the given index already has
@@ -1745,12 +1727,12 @@ func uvHostMatchesServer(publishURL, serverURL string) bool {
 //
 // This handles the case where the user authenticated the index natively
 // (env var or embedded URL) and the publish target is on the same host.
-func uvMatchingIndexCredentials(publishURL string) (username, password string) {
+func uvMatchingIndexCredentials(publishURL, workingDir string) (username, password string) {
 	publishHost := uvHostOf(publishURL)
 	if publishHost == "" {
 		return "", ""
 	}
-	for _, idx := range uvReadIndexesFromToml() {
+	for _, idx := range uvReadIndexesFromToml(workingDir) {
 		if uvHostOf(idx.URL) != publishHost {
 			continue
 		}
@@ -1792,7 +1774,11 @@ func uvNetrcPath() string {
 	if custom := os.Getenv("NETRC"); custom != "" {
 		return custom
 	}
-	return filepath.Join(os.Getenv("HOME"), ".netrc")
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+	return filepath.Join(homeDir, ".netrc")
 }
 
 // uvNetrcHasCredentials returns true when the netrc file (respecting the NETRC
@@ -1830,6 +1816,15 @@ func uvNetrcHasCredentials(rawURL string) bool {
 func uvIndexEnvName(name string) string {
 	upper := strings.ToUpper(name)
 	return strings.NewReplacer("-", "_", ".", "_", " ", "_").Replace(upper)
+}
+
+// uvResolveServerDetails returns server details for the given server ID.
+// If serverID is empty, the default configured server is used.
+func uvResolveServerDetails(serverID string) (*coreConfig.ServerDetails, error) {
+	if serverID == "" {
+		return coreConfig.GetDefaultServerConf()
+	}
+	return coreConfig.GetSpecificConfig(serverID, true, true)
 }
 
 // getPrimarySourceFromToml reads pyproject.toml and returns the name of the primary source
@@ -2168,7 +2163,6 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 	}
 
 	// UV always runs in native mode (no config file required).
-	// Credentials are sourced automatically from the default jf server config.
 	if projectType == project.UV {
 		log.Debug("Routing UV to native implementation")
 		args := cliutils.ExtractCommand(c)
@@ -2176,7 +2170,34 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 		if err != nil {
 			return err
 		}
+		var serverID string
+		filteredArgs, serverID, err = coreutils.ExtractServerIdFromCommand(filteredArgs)
+		if err != nil {
+			return fmt.Errorf("failed to extract server ID: %w", err)
+		}
+		workingDir, err := os.Getwd()
+		if err != nil {
+			return fmt.Errorf("failed to get working directory: %w", err)
+		}
 		cmdName, uvArgs := getCommandName(filteredArgs)
+
+		// Resolve publish URL early so auth injection can use the CLI --publish-url value.
+		// Priority: explicit --publish-url flag → pyproject.toml [tool.uv].publish-url.
+		deployerRepo := ""
+		for i, arg := range uvArgs {
+			if strings.HasPrefix(arg, "--publish-url=") {
+				deployerRepo = strings.TrimPrefix(arg, "--publish-url=")
+			} else if arg == "--publish-url" && i+1 < len(uvArgs) {
+				deployerRepo = uvArgs[i+1]
+			}
+		}
+		if cmdName == "publish" && deployerRepo == "" {
+			if tomlURL := uvPublishURLFromToml(workingDir); tomlURL != "" {
+				deployerRepo = tomlURL
+				uvArgs = append(uvArgs, "--publish-url", tomlURL)
+				log.Info("Using publish URL from pyproject.toml [tool.uv]: " + tomlURL)
+			}
+		}
 
 		// jf uv is a transparent wrapper over the uv CLI.
 		// The ONLY addition is build info collection after each command.
@@ -2191,7 +2212,7 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 		// jf config credentials are injected ONLY when steps 2-5 don't already
 		// cover the target host, and only when the index/publish URL is on the
 		// same Artifactory instance as the configured jf server.
-		serverDetails, credErr := coreConfig.GetDefaultServerConf()
+		serverDetails, credErr := uvResolveServerDetails(serverID)
 		if credErr != nil {
 			log.Warn("UV auth: could not load jf server config — " + credErr.Error())
 		} else if serverDetails != nil {
@@ -2215,7 +2236,7 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 				}
 
 				// Per-index credentials: check each [[tool.uv.index]] in pyproject.toml.
-				for _, idx := range uvReadIndexesFromToml() {
+				for _, idx := range uvReadIndexesFromToml(workingDir) {
 					envName := uvIndexEnvName(idx.Name)
 					userKey := "UV_INDEX_" + envName + "_USERNAME"
 
@@ -2270,22 +2291,22 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 					case os.Getenv("UV_PUBLISH_USERNAME") != "" || os.Getenv("UV_PUBLISH_PASSWORD") != "":
 						log.Info("UV auth [publish]: using UV_PUBLISH_USERNAME/PASSWORD (native, step 2b)")
 					default:
-						publishURL := uvPublishURLFromToml()
+						// deployerRepo is already resolved (CLI flag > pyproject.toml) before auth block.
 						switch {
-						case uvURLHasEmbeddedCredentials(publishURL):
+						case uvURLHasEmbeddedCredentials(deployerRepo):
 							log.Info("UV auth [publish]: using credentials embedded in publish URL (native, step 3)")
-						case uvNetrcHasCredentials(publishURL):
+						case uvNetrcHasCredentials(deployerRepo):
 							log.Info(fmt.Sprintf("UV auth [publish]: using %s (native, step 4)", uvNetrcPath()))
 						default:
 							// Same-host index credentials: if any [[tool.uv.index]] on the same
 							// host has native credentials (env var or embedded URL), reuse them
 							// for publish — same Artifactory instance, same auth works.
-							if idxUser, idxPass := uvMatchingIndexCredentials(publishURL); idxUser != "" {
+							if idxUser, idxPass := uvMatchingIndexCredentials(deployerRepo, workingDir); idxUser != "" {
 								os.Setenv("UV_PUBLISH_USERNAME", idxUser)
 								os.Setenv("UV_PUBLISH_PASSWORD", idxPass)
 								os.Setenv("UV_KEYRING_PROVIDER", "disabled")
 								log.Info("UV auth [publish]: using same-host index credentials (native, step 4b)")
-							} else if uvHostMatchesServer(publishURL, serverDetails.ArtifactoryUrl) {
+							} else if uvHostMatchesServer(deployerRepo, serverDetails.ArtifactoryUrl) {
 								os.Setenv("UV_PUBLISH_USERNAME", user)
 								os.Setenv("UV_PUBLISH_PASSWORD", pass)
 								os.Setenv("UV_KEYRING_PROVIDER", "disabled")
@@ -2294,28 +2315,11 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 								log.Warn(fmt.Sprintf(
 									"UV auth [publish]: publish URL host (%s) does not match jf server config host (%s) — "+
 										"set UV_PUBLISH_USERNAME/UV_PUBLISH_PASSWORD or UV_PUBLISH_TOKEN to authenticate",
-									uvHostOf(publishURL), uvHostOf(serverDetails.ArtifactoryUrl)))
+									uvHostOf(deployerRepo), uvHostOf(serverDetails.ArtifactoryUrl)))
 							}
 						}
 					}
 				}
-			}
-		}
-
-		// Resolve --publish-url: check explicit flag first, then fall back to pyproject.toml.
-		deployerRepo := ""
-		for i, arg := range uvArgs {
-			if strings.HasPrefix(arg, "--publish-url=") {
-				deployerRepo = strings.TrimPrefix(arg, "--publish-url=")
-			} else if arg == "--publish-url" && i+1 < len(uvArgs) {
-				deployerRepo = uvArgs[i+1]
-			}
-		}
-		if cmdName == "publish" && deployerRepo == "" {
-			if tomlURL := uvPublishURLFromToml(); tomlURL != "" {
-				deployerRepo = tomlURL
-				uvArgs = append(uvArgs, "--publish-url", tomlURL)
-				log.Info("Using publish URL from pyproject.toml [tool.uv]: " + tomlURL)
 			}
 		}
 
@@ -2330,7 +2334,7 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 				workingDir, err := os.Getwd()
 				if err != nil {
 					log.Warn("Failed to get working directory, skipping build info collection: " + err.Error())
-				} else if err := buildinfo.GetUvBuildInfo(workingDir, buildConfiguration, deployerRepo, cmdName); err != nil {
+				} else if err := buildinfo.GetUvBuildInfo(workingDir, buildConfiguration, deployerRepo, cmdName, serverDetails); err != nil {
 					log.Warn("Failed to collect UV build info: " + err.Error())
 				}
 			}

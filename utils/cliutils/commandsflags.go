@@ -2049,7 +2049,7 @@ var commandFlags = map[string][]string{
 		BuildName, BuildNumber, module, Project,
 	},
 	UvInstall: {
-		BuildName, BuildNumber, module, Project,
+		BuildName, BuildNumber, module, Project, serverId,
 	},
 	Helm: {
 		BuildName, BuildNumber, module, Project, serverId, username, password,
