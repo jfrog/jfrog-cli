@@ -805,7 +805,11 @@ func YarnCmd(c *cli.Context) error {
 
 	configFilePath, err := getProjectConfigPathOrThrow(project.Yarn, "yarn", "yarn-config")
 	if err != nil {
-		return err
+		// In native/FlexPack mode, a missing config file is expected —
+		// the yarn command resolves server details internally.
+		if !artutils.ShouldRunNative("") {
+			return err
+		}
 	}
 
 	yarnCmd := yarn.NewYarnCommand().SetConfigFilePath(configFilePath).SetArgs(c.Args())

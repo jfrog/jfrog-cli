@@ -588,6 +588,14 @@ func initNpmTest(t *testing.T) {
 	createJfrogHomeConfig(t, true)
 }
 
+// enableNativeMode sets JFROG_RUN_NATIVE=true and returns a cleanup function that unsets it.
+func enableNativeMode(t *testing.T) func() {
+	clientTestUtils.SetEnvAndAssert(t, "JFROG_RUN_NATIVE", "true")
+	return func() {
+		clientTestUtils.UnSetEnvAndAssert(t, "JFROG_RUN_NATIVE")
+	}
+}
+
 func TestNpmPublishDetailedSummary(t *testing.T) {
 	initNpmTest(t)
 	defer cleanNpmTest(t)
@@ -1058,11 +1066,10 @@ func TestYarnSetVersion(t *testing.T) {
 	modifyExistingYarnRc(t, "3.2.1")
 }
 
-func TestYarnUpgradeToV4(t *testing.T) {
+// TestYarnUpgradeToV5 verifies that upgrading to an unsupported yarn major version (v5+) is blocked.
+func TestYarnUpgradeToV5(t *testing.T) {
 	initNpmTest(t)
 	defer cleanNpmTest(t)
-
-	// Temporarily change the cache folder to a temporary folder - to make sure the cache is clean and dependencies will be downloaded from Artifactory
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 
@@ -1080,7 +1087,6 @@ func TestYarnUpgradeToV4(t *testing.T) {
 	cleanUpYarnGlobalFolder := clientTestUtils.SetEnvWithCallbackAndAssert(t, "YARN_GLOBAL_FOLDER", tempDirPath)
 	defer cleanUpYarnGlobalFolder()
 
-	// Add "localhost" to http whitelist
 	yarnExecPath, err := exec.LookPath("yarn")
 	assert.NoError(t, err)
 	// Get original http white list config
@@ -1093,7 +1099,8 @@ func TestYarnUpgradeToV4(t *testing.T) {
 	}()
 
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
-	err = jfrogCli.Exec("yarn", "set", "version", "4.0.1")
+	// Yarn v5 is not yet supported — should fail
+	err = jfrogCli.Exec("yarn", "set", "version", "5.0.0")
 	assert.Error(t, err)
 }
 
@@ -1120,11 +1127,29 @@ func TestYarnInV4(t *testing.T) {
 	defer cleanUpYarnGlobalFolder()
 
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
-	err = jfrogCli.Exec("yarn", "install")
-	assert.Error(t, err)
+	// Yarn v4 is now supported — install should succeed and collect build-info
+	assert.NoError(t, jfrogCli.Exec("yarn", "--build-name="+tests.YarnBuildName, "--build-number=2", "--module=yarnV4Module"))
+
+	validateNpmLocalBuildInfo(t, tests.YarnBuildName, "2", "yarnV4Module")
+
+	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("bp", tests.YarnBuildName, "2"))
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.YarnBuildName, "2")
+	assert.NoError(t, err)
+	assert.True(t, found)
+	if assert.NotNil(t, publishedBuildInfo) && assert.NotNil(t, publishedBuildInfo.BuildInfo) {
+		assert.Equal(t, 1, len(publishedBuildInfo.BuildInfo.Modules))
+		if len(publishedBuildInfo.BuildInfo.Modules) > 0 {
+			assert.Equal(t, buildinfo.Npm, publishedBuildInfo.BuildInfo.Modules[0].Type)
+			expectedDependencies := []expectedDependency{{id: "xml:1.0.1"}, {id: "json:9.0.6"}}
+			equalDependenciesSlices(t, expectedDependencies, publishedBuildInfo.BuildInfo.Modules[0].Dependencies)
+		}
+	}
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.YarnBuildName, artHttpDetails)
 }
 
-func TestYarnChangeVersionInV4(t *testing.T) {
+// TestYarnChangeVersionInV4ToV5 verifies that upgrading from v4 to unsupported v5 is blocked,
+// while downgrading to v3 is allowed.
+func TestYarnChangeVersionInV4ToV5(t *testing.T) {
 	initNpmTest(t)
 	defer cleanNpmTest(t)
 
@@ -1146,39 +1171,135 @@ func TestYarnChangeVersionInV4(t *testing.T) {
 	cleanUpYarnGlobalFolder := clientTestUtils.SetEnvWithCallbackAndAssert(t, "YARN_GLOBAL_FOLDER", tempDirPath)
 	defer cleanUpYarnGlobalFolder()
 
-	// Add "localhost" to http whitelist
 	yarnExecPath, err := exec.LookPath("yarn")
 	assert.NoError(t, err)
 
 	yarnrcPath := ".yarnrc.yml"
 	data, err := os.ReadFile(yarnrcPath)
 	assert.NoError(t, err)
-	// Parse YAML
 	var config = make(map[string]any)
 	err = yaml.Unmarshal(data, &config)
-	if err != nil {
-		assert.NoError(t, err)
-	}
+	assert.NoError(t, err)
 	config["unsafeHttpWhitelist"] = []string{"localhost"}
 	updatedYamlData, err := yaml.Marshal(&config)
 	assert.NoError(t, err)
 	err = os.WriteFile(yarnrcPath, updatedYamlData, 0644)
 	assert.NoError(t, err)
-
-	assert.NoError(t, err)
 	defer func() {
-		// Restore original whitelist config
 		assert.NoError(t, yarn.ConfigSet("unsafeHttpWhitelist", "[]", yarnExecPath, true))
 	}()
 
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 
+	// Upgrading to v5 should fail
+	err = jfrogCli.Exec("yarn", "set", "version", "5.0.0")
+	assert.Error(t, err)
+
+	// Downgrading to v3 should succeed
 	err = jfrogCli.Exec("yarn", "set", "version", "3.2.1")
 	assert.NoError(t, err)
 	modifyExistingYarnRc(t, "3.2.1")
 
 	err = jfrogCli.Exec("yarn", "--version")
 	assert.NoError(t, err)
+}
+
+// TestYarnV4NativeMode verifies that yarn v4 works in native mode (JFROG_RUN_NATIVE=true)
+// without a jfrog config file, using the default server for build-info collection.
+func TestYarnV4NativeMode(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+	defer enableNativeMode(t)()
+
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+
+	testDataSource := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "yarn")
+	testDataTarget := filepath.Join(tempDirPath, tests.Out, "yarn")
+	assert.NoError(t, biutils.CopyDir(testDataSource, testDataTarget, true, nil))
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+
+	yarnProjectPath := filepath.Join(testDataTarget, "yarnprojectV4")
+	// No config file created — native mode should work without it
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, yarnProjectPath)
+	defer chdirCallback()
+	cleanUpYarnGlobalFolder := clientTestUtils.SetEnvWithCallbackAndAssert(t, "YARN_GLOBAL_FOLDER", tempDirPath)
+	defer cleanUpYarnGlobalFolder()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	assert.NoError(t, jfrogCli.Exec("yarn", "--build-name="+tests.YarnBuildName, "--build-number=3", "--module=yarnV4NativeModule"))
+
+	validateNpmLocalBuildInfo(t, tests.YarnBuildName, "3", "yarnV4NativeModule")
+
+	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("bp", tests.YarnBuildName, "3"))
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.YarnBuildName, "3")
+	assert.NoError(t, err)
+	assert.True(t, found)
+	if assert.NotNil(t, publishedBuildInfo) && assert.NotNil(t, publishedBuildInfo.BuildInfo) {
+		assert.Equal(t, 1, len(publishedBuildInfo.BuildInfo.Modules))
+		if len(publishedBuildInfo.BuildInfo.Modules) > 0 {
+			assert.Equal(t, buildinfo.Npm, publishedBuildInfo.BuildInfo.Modules[0].Type)
+			expectedDependencies := []expectedDependency{{id: "xml:1.0.1"}, {id: "json:9.0.6"}}
+			equalDependenciesSlices(t, expectedDependencies, publishedBuildInfo.BuildInfo.Modules[0].Dependencies)
+		}
+	}
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.YarnBuildName, artHttpDetails)
+}
+
+// TestYarnV2NativeModeWithServerId verifies that yarn v2+ works in native mode
+// with an explicit --server-id flag for build-info collection.
+func TestYarnV2NativeModeWithServerId(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+	defer enableNativeMode(t)()
+
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+
+	testDataSource := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "yarn")
+	testDataTarget := filepath.Join(tempDirPath, tests.Out, "yarn")
+	assert.NoError(t, biutils.CopyDir(testDataSource, testDataTarget, true, nil))
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+
+	yarnProjectPath := filepath.Join(testDataTarget, "yarnprojectV2")
+	// No config file created — native mode should work without it
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, yarnProjectPath)
+	defer chdirCallback()
+	cleanUpYarnGlobalFolder := clientTestUtils.SetEnvWithCallbackAndAssert(t, "YARN_GLOBAL_FOLDER", tempDirPath)
+	defer cleanUpYarnGlobalFolder()
+
+	// Add "localhost" to http whitelist
+	yarnExecPath, err := exec.LookPath("yarn")
+	assert.NoError(t, err)
+	origWhitelist, err := yarn.ConfigGet("unsafeHttpWhitelist", yarnExecPath, true)
+	assert.NoError(t, err)
+	assert.NoError(t, yarn.ConfigSet("unsafeHttpWhitelist", "[\"localhost\"]", yarnExecPath, true))
+	defer func() {
+		assert.NoError(t, yarn.ConfigSet("unsafeHttpWhitelist", origWhitelist, yarnExecPath, true))
+	}()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	assert.NoError(t, jfrogCli.Exec("yarn", "--build-name="+tests.YarnBuildName, "--build-number=4", "--module=yarnV2NativeModule", "--server-id=default"))
+
+	validateNpmLocalBuildInfo(t, tests.YarnBuildName, "4", "yarnV2NativeModule")
+
+	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("bp", tests.YarnBuildName, "4"))
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.YarnBuildName, "4")
+	assert.NoError(t, err)
+	assert.True(t, found)
+	if assert.NotNil(t, publishedBuildInfo) && assert.NotNil(t, publishedBuildInfo.BuildInfo) {
+		assert.Equal(t, 1, len(publishedBuildInfo.BuildInfo.Modules))
+		if len(publishedBuildInfo.BuildInfo.Modules) > 0 {
+			assert.Equal(t, buildinfo.Npm, publishedBuildInfo.BuildInfo.Modules[0].Type)
+			expectedDependencies := []expectedDependency{{id: "xml:1.0.1"}, {id: "json:9.0.6"}}
+			equalDependenciesSlices(t, expectedDependencies, publishedBuildInfo.BuildInfo.Modules[0].Dependencies)
+		}
+	}
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.YarnBuildName, artHttpDetails)
 }
 
 // Checks if the expected dependencies match the actual dependencies. Only the dependencies' IDs and scopes (not more than one scope) are compared.
