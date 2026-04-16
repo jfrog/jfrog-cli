@@ -1126,6 +1126,16 @@ func TestYarnInV4(t *testing.T) {
 	cleanUpYarnGlobalFolder := clientTestUtils.SetEnvWithCallbackAndAssert(t, "YARN_GLOBAL_FOLDER", tempDirPath)
 	defer cleanUpYarnGlobalFolder()
 
+	// Add "localhost" to http whitelist (CI Artifactory uses HTTP)
+	yarnExecPath, err := exec.LookPath("yarn")
+	assert.NoError(t, err)
+	origWhitelist, err := yarn.ConfigGet("unsafeHttpWhitelist", yarnExecPath, true)
+	assert.NoError(t, err)
+	assert.NoError(t, yarn.ConfigSet("unsafeHttpWhitelist", "[\"localhost\"]", yarnExecPath, true))
+	defer func() {
+		assert.NoError(t, yarn.ConfigSet("unsafeHttpWhitelist", origWhitelist, yarnExecPath, true))
+	}()
+
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	// Yarn v4 is now supported — install should succeed and collect build-info
 	assert.NoError(t, jfrogCli.Exec("yarn", "--build-name="+tests.YarnBuildName, "--build-number=2", "--module=yarnV4Module"))
@@ -1227,6 +1237,16 @@ func TestYarnV4NativeMode(t *testing.T) {
 	defer chdirCallback()
 	cleanUpYarnGlobalFolder := clientTestUtils.SetEnvWithCallbackAndAssert(t, "YARN_GLOBAL_FOLDER", tempDirPath)
 	defer cleanUpYarnGlobalFolder()
+
+	// Add "localhost" to http whitelist (CI Artifactory uses HTTP)
+	yarnExecPath, err := exec.LookPath("yarn")
+	assert.NoError(t, err)
+	origWhitelist, err := yarn.ConfigGet("unsafeHttpWhitelist", yarnExecPath, true)
+	assert.NoError(t, err)
+	assert.NoError(t, yarn.ConfigSet("unsafeHttpWhitelist", "[\"localhost\"]", yarnExecPath, true))
+	defer func() {
+		assert.NoError(t, yarn.ConfigSet("unsafeHttpWhitelist", origWhitelist, yarnExecPath, true))
+	}()
 
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	assert.NoError(t, jfrogCli.Exec("yarn", "--build-name="+tests.YarnBuildName, "--build-number=3", "--module=yarnV4NativeModule"))
