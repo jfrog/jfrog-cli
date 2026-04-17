@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	containerutils "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/ocicontainer"
 	"github.com/jfrog/jfrog-cli-core/v2/plugins/components"
 	securityDocs "github.com/jfrog/jfrog-cli-security/cli/docs"
 	"github.com/stretchr/testify/assert"
@@ -301,4 +302,27 @@ func overrideCommandAction(commands []cli.Command, name string, action cli.Actio
 		newCommands = append(newCommands, cmd)
 	}
 	return newCommands
+}
+
+// TestResolveContainerManagerType verifies the dispatcher routes to Podman
+// only when the detector reports a Podman-backed 'docker' CLI.
+func TestResolveContainerManagerType(t *testing.T) {
+	tests := []struct {
+		name        string
+		podmanFound bool
+		want        containerutils.ContainerManagerType
+	}{
+		{name: "podman detected -> route to podman", podmanFound: true, want: containerutils.Podman},
+		{name: "no podman detected -> default docker", podmanFound: false, want: containerutils.DockerClient},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			original := podmanDetector
+			podmanDetector = func() bool { return tc.podmanFound }
+			defer func() { podmanDetector = original }()
+
+			assert.Equal(t, tc.want, resolveContainerManagerType())
+		})
+	}
 }

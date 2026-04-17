@@ -1044,6 +1044,10 @@ func goCmdVerification(c *cli.Context) (string, error) {
 	return configFilePath, nil
 }
 
+// podmanDetector is indirected through a package-level variable so tests can
+// replace the real 'docker version' probe with a deterministic stub.
+var podmanDetector = isPodmanBackedDockerCli
+
 // resolveContainerManagerType returns the container manager to use when running 'jf docker' subcommands.
 //
 // If the local 'docker' binary reports Podman in its version output (i.e. the podman-docker shim
@@ -1053,7 +1057,7 @@ func goCmdVerification(c *cli.Context) (string, error) {
 // Detection is intentionally conservative: only a positive "Podman" signal from 'docker version'
 // switches behavior. Real Docker installations are unaffected.
 func resolveContainerManagerType() containerutils.ContainerManagerType {
-	if isPodmanBackedDockerCli() {
+	if podmanDetector() {
 		log.Debug("Detected Podman-backed 'docker' CLI. Routing 'jf docker' subcommands through Podman.")
 		return containerutils.Podman
 	}
