@@ -1045,14 +1045,30 @@ func goCmdVerification(c *cli.Context) (string, error) {
 }
 
 // resolveContainerManagerType returns the container manager to use when running 'jf docker' subcommands.
-// It defaults to Docker but can be overridden to Podman via the JFROG_CLI_CONTAINER_MANAGER env var.
-// This allows users running Podman (or the podman-docker shim) to keep using 'jf docker ...' in their
-// existing pipelines without switching to 'jf rt podman-*'.
+//
+// If the local 'docker' binary reports Podman in its version output (i.e. the podman-docker shim
+// or native podman aliased as docker), treat it as Podman so 'jf docker ...' works transparently
+// for Podman users without daemon-socket access. Otherwise default to Docker.
+//
+// Detection is intentionally conservative: only a positive "Podman" signal from 'docker version'
+// switches behavior. Real Docker installations are unaffected.
 func resolveContainerManagerType() containerutils.ContainerManagerType {
-	if strings.EqualFold(os.Getenv("JFROG_CLI_CONTAINER_MANAGER"), "podman") {
+	if isPodmanBackedDockerCli() {
+		log.Debug("Detected Podman-backed 'docker' CLI. Routing 'jf docker' subcommands through Podman.")
 		return containerutils.Podman
 	}
 	return containerutils.DockerClient
+}
+
+// isPodmanBackedDockerCli returns true if the local 'docker' binary is actually Podman
+// (either via the podman-docker shim or an alias). Any error or missing binary returns false.
+func isPodmanBackedDockerCli() bool {
+	cmd := exec.Command("docker", "version")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return false
+	}
+	return strings.Contains(strings.ToLower(string(out)), "podman")
 }
 
 func dockerCmd(c *cli.Context) error {
