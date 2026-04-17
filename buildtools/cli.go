@@ -1044,6 +1044,17 @@ func goCmdVerification(c *cli.Context) (string, error) {
 	return configFilePath, nil
 }
 
+// resolveContainerManagerType returns the container manager to use when running 'jf docker' subcommands.
+// It defaults to Docker but can be overridden to Podman via the JFROG_CLI_CONTAINER_MANAGER env var.
+// This allows users running Podman (or the podman-docker shim) to keep using 'jf docker ...' in their
+// existing pipelines without switching to 'jf rt podman-*'.
+func resolveContainerManagerType() containerutils.ContainerManagerType {
+	if strings.EqualFold(os.Getenv("JFROG_CLI_CONTAINER_MANAGER"), "podman") {
+		return containerutils.Podman
+	}
+	return containerutils.DockerClient
+}
+
 func dockerCmd(c *cli.Context) error {
 	args := cliutils.ExtractCommand(c)
 	var cmd, cmdArg string
@@ -1095,7 +1106,7 @@ func pullCmd(c *cli.Context, image string) error {
 	if err != nil {
 		return err
 	}
-	PullCommand := container.NewPullCommand(containerutils.DockerClient)
+	PullCommand := container.NewPullCommand(resolveContainerManagerType())
 	PullCommand.SetCmdParams(filteredDockerArgs).SetSkipLogin(skipLogin).SetImageTag(image).SetServerDetails(rtDetails).SetBuildConfiguration(buildConfiguration)
 	supported, err := PullCommand.IsGetRepoSupported()
 	if err != nil {
@@ -1119,7 +1130,7 @@ func pushCmd(c *cli.Context, image string) (err error) {
 		return
 	}
 	printDeploymentView := log.IsStdErrTerminal()
-	pushCommand := container.NewPushCommand(containerutils.DockerClient)
+	pushCommand := container.NewPushCommand(resolveContainerManagerType())
 	pushCommand.SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetCmdParams(filteredDockerArgs).SetSkipLogin(skipLogin).SetBuildConfiguration(buildConfiguration).SetServerDetails(rtDetails).SetValidateSha(validateSha).SetImageTag(image)
 	supported, err := pushCommand.IsGetRepoSupported()
 	if err != nil {
@@ -1442,7 +1453,7 @@ func dockerNativeCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	cm := containerutils.NewManager(containerutils.DockerClient)
+	cm := containerutils.NewManager(resolveContainerManagerType())
 	return cm.RunNativeCmd(cleanArgs)
 }
 
