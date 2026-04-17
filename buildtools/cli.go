@@ -1044,19 +1044,34 @@ func goCmdVerification(c *cli.Context) (string, error) {
 	return configFilePath, nil
 }
 
+// containerManagerEnvVar lets users force the container manager used by 'jf docker'
+// subcommands, bypassing auto-detection. Accepted values (case-insensitive): "docker", "podman".
+const containerManagerEnvVar = "JFROG_CLI_CONTAINER_MANAGER"
+
 // podmanDetector is indirected through a package-level variable so tests can
 // replace the real 'docker version' probe with a deterministic stub.
-var podmanDetector = isPodmanBackedDockerCli
+var podmanDetector = dockerIsPodman
 
 // resolveContainerManagerType returns the container manager to use when running 'jf docker' subcommands.
 //
-// If the local 'docker' binary reports Podman in its version output (i.e. the podman-docker shim
-// or native podman aliased as docker), treat it as Podman so 'jf docker ...' works transparently
-// for Podman users without daemon-socket access. Otherwise default to Docker.
+// Resolution order:
+//  1. Explicit override via the JFROG_CLI_CONTAINER_MANAGER env var ("docker" or "podman").
+//  2. Auto-detection: if the local 'docker' binary reports Podman in its version output
+//     (i.e. the podman-docker shim or native podman aliased as docker), treat it as Podman
+//     so 'jf docker ...' works transparently for Podman users without daemon-socket access.
+//  3. Default: Docker.
 //
 // Detection is intentionally conservative: only a positive "Podman" signal from 'docker version'
 // switches behavior. Real Docker installations are unaffected.
 func resolveContainerManagerType() containerutils.ContainerManagerType {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv(containerManagerEnvVar))) {
+	case "podman":
+		log.Debug(containerManagerEnvVar + "=podman. Routing 'jf docker' subcommands through Podman.")
+		return containerutils.Podman
+	case "docker":
+		log.Debug(containerManagerEnvVar + "=docker. Routing 'jf docker' subcommands through Docker.")
+		return containerutils.DockerClient
+	}
 	if podmanDetector() {
 		log.Debug("Detected Podman-backed 'docker' CLI. Routing 'jf docker' subcommands through Podman.")
 		return containerutils.Podman
@@ -1064,9 +1079,9 @@ func resolveContainerManagerType() containerutils.ContainerManagerType {
 	return containerutils.DockerClient
 }
 
-// isPodmanBackedDockerCli returns true if the local 'docker' binary is actually Podman
+// dockerIsPodman returns true if the local 'docker' binary is actually Podman
 // (either via the podman-docker shim or an alias). Any error or missing binary returns false.
-func isPodmanBackedDockerCli() bool {
+func dockerIsPodman() bool {
 	cmd := exec.Command("docker", "version")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
