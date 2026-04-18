@@ -83,6 +83,7 @@ const (
 	HuggingFaceUpload      = "hugging-face-upload"
 	HuggingFaceDownload    = "hugging-face-download"
 	RubyConfig             = "ruby-config"
+	ConanConfig            = "conan-config"
 	Conan                  = "conan"
 	Ping                   = "ping"
 	RtCurl                 = "rt-curl"
@@ -2059,6 +2060,9 @@ var commandFlags = map[string][]string{
 		BuildName, BuildNumber, module, Project, serverId, Revision, RepoType, HfHubEtagTimeout, RepoKey, HfHubDownloadTimeout,
 	},
 	RubyConfig: {
+		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
+	},
+	ConanConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	Conan: {
