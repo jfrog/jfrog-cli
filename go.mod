@@ -19,12 +19,12 @@ require (
 	github.com/jfrog/build-info-go v1.13.1-0.20260331040230-c3b53d1a24ac
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-application v1.0.2-0.20260405065840-c930d515ef34
-	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260414085427-0d891fde6d05
-	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260416095827-3d77f8e6d0ee
+	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260416104146-471c3f71ce61
+	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260417224747-1bea4a117b59
 	github.com/jfrog/jfrog-cli-evidence v0.9.2
-	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260306102152-984d60a80cec
+	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260415140604-583ae2ada347
 	github.com/jfrog/jfrog-cli-security v1.27.0
-	github.com/jfrog/jfrog-client-go v1.55.1-0.20260401130923-f5a15b584a0d
+	github.com/jfrog/jfrog-client-go v1.55.1-0.20260416101832-c47c1246283b
 	github.com/jszwec/csvutil v1.10.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/spf13/viper v1.21.0
@@ -86,7 +86,7 @@ require (
 	github.com/gfleury/go-bitbucket-v1 v0.0.0-20240917142304-df385efaac68 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.8.0 // indirect
-	github.com/go-git/go-git/v5 v5.17.1 // indirect
+	github.com/go-git/go-git/v5 v5.18.0 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
