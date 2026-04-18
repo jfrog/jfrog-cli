@@ -1058,6 +1058,52 @@ func goCmdVerification(c *cli.Context) (string, error) {
 	return configFilePath, nil
 }
 
+// containerManagerEnvVar lets users force the container manager used by 'jf docker'
+// subcommands, bypassing auto-detection. Accepted values (case-insensitive): "docker", "podman".
+const containerManagerEnvVar = "JFROG_CLI_CONTAINER_MANAGER"
+
+// podmanDetector is indirected through a package-level variable so tests can
+// replace the real 'docker version' probe with a deterministic stub.
+var podmanDetector = dockerIsPodman
+
+// resolveContainerManagerType returns the container manager to use when running 'jf docker' subcommands.
+//
+// Resolution order:
+//  1. Explicit override via the JFROG_CLI_CONTAINER_MANAGER env var ("docker" or "podman").
+//  2. Auto-detection: if the local 'docker' binary reports Podman in its version output
+//     (i.e. the podman-docker shim or native podman aliased as docker), treat it as Podman
+//     so 'jf docker ...' works transparently for Podman users without daemon-socket access.
+//  3. Default: Docker.
+//
+// Detection is intentionally conservative: only a positive "Podman" signal from 'docker version'
+// switches behavior. Real Docker installations are unaffected.
+func resolveContainerManagerType() containerutils.ContainerManagerType {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv(containerManagerEnvVar))) {
+	case "podman":
+		log.Debug(containerManagerEnvVar + "=podman. Routing 'jf docker' subcommands through Podman.")
+		return containerutils.Podman
+	case "docker":
+		log.Debug(containerManagerEnvVar + "=docker. Routing 'jf docker' subcommands through Docker.")
+		return containerutils.DockerClient
+	}
+	if podmanDetector() {
+		log.Debug("Detected Podman-backed 'docker' CLI. Routing 'jf docker' subcommands through Podman.")
+		return containerutils.Podman
+	}
+	return containerutils.DockerClient
+}
+
+// dockerIsPodman returns true if the local 'docker' binary is actually Podman
+// (either via the podman-docker shim or an alias). Any error or missing binary returns false.
+func dockerIsPodman() bool {
+	cmd := exec.Command("docker", "version")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return false
+	}
+	return strings.Contains(strings.ToLower(string(out)), "podman")
+}
+
 func dockerCmd(c *cli.Context) error {
 	args := cliutils.ExtractCommand(c)
 	var cmd, cmdArg string
@@ -1109,7 +1155,7 @@ func pullCmd(c *cli.Context, image string) error {
 	if err != nil {
 		return err
 	}
-	PullCommand := container.NewPullCommand(containerutils.DockerClient)
+	PullCommand := container.NewPullCommand(resolveContainerManagerType())
 	PullCommand.SetCmdParams(filteredDockerArgs).SetSkipLogin(skipLogin).SetImageTag(image).SetServerDetails(rtDetails).SetBuildConfiguration(buildConfiguration)
 	supported, err := PullCommand.IsGetRepoSupported()
 	if err != nil {
@@ -1133,7 +1179,7 @@ func pushCmd(c *cli.Context, image string) (err error) {
 		return
 	}
 	printDeploymentView := log.IsStdErrTerminal()
-	pushCommand := container.NewPushCommand(containerutils.DockerClient)
+	pushCommand := container.NewPushCommand(resolveContainerManagerType())
 	pushCommand.SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetCmdParams(filteredDockerArgs).SetSkipLogin(skipLogin).SetBuildConfiguration(buildConfiguration).SetServerDetails(rtDetails).SetValidateSha(validateSha).SetImageTag(image)
 	supported, err := pushCommand.IsGetRepoSupported()
 	if err != nil {
@@ -1456,7 +1502,7 @@ func dockerNativeCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	cm := containerutils.NewManager(containerutils.DockerClient)
+	cm := containerutils.NewManager(resolveContainerManagerType())
 	return cm.RunNativeCmd(cleanArgs)
 }
 

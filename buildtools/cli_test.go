@@ -2,8 +2,10 @@ package buildtools
 
 import (
 	"errors"
+	"os"
 	"testing"
 
+	containerutils "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/ocicontainer"
 	"github.com/jfrog/jfrog-cli-core/v2/plugins/components"
 	securityDocs "github.com/jfrog/jfrog-cli-security/cli/docs"
 	"github.com/stretchr/testify/assert"
@@ -301,4 +303,51 @@ func overrideCommandAction(commands []cli.Command, name string, action cli.Actio
 		newCommands = append(newCommands, cmd)
 	}
 	return newCommands
+}
+
+// TestResolveContainerManagerType verifies the resolution order:
+//  1. JFROG_CLI_CONTAINER_MANAGER env override (docker/podman, case-insensitive).
+//  2. Auto-detection via the Podman probe.
+//  3. Default to Docker.
+func TestResolveContainerManagerType(t *testing.T) {
+	tests := []struct {
+		name        string
+		envValue    string // "" means unset
+		envUnset    bool
+		podmanFound bool
+		want        containerutils.ContainerManagerType
+	}{
+		{name: "env=podman forces podman even when detector says docker", envValue: "podman", want: containerutils.Podman},
+		{name: "env=docker forces docker even when detector says podman", envValue: "docker", podmanFound: true, want: containerutils.DockerClient},
+		{name: "env=PODMAN is case-insensitive", envValue: "PODMAN", want: containerutils.Podman},
+		{name: "env= with whitespace is trimmed", envValue: "  podman  ", want: containerutils.Podman},
+		{name: "unknown env value falls through to detector (podman)", envValue: "rkt", podmanFound: true, want: containerutils.Podman},
+		{name: "unknown env value falls through to detector (docker)", envValue: "rkt", podmanFound: false, want: containerutils.DockerClient},
+		{name: "unset env + detector finds podman -> podman", envUnset: true, podmanFound: true, want: containerutils.Podman},
+		{name: "unset env + detector finds docker -> docker", envUnset: true, podmanFound: false, want: containerutils.DockerClient},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			originalEnv, envWasSet := os.LookupEnv(containerManagerEnvVar)
+			if tc.envUnset {
+				require.NoError(t, os.Unsetenv(containerManagerEnvVar))
+			} else {
+				require.NoError(t, os.Setenv(containerManagerEnvVar, tc.envValue))
+			}
+			defer func() {
+				if envWasSet {
+					_ = os.Setenv(containerManagerEnvVar, originalEnv)
+				} else {
+					_ = os.Unsetenv(containerManagerEnvVar)
+				}
+			}()
+
+			originalDetector := podmanDetector
+			podmanDetector = func() bool { return tc.podmanFound }
+			defer func() { podmanDetector = originalDetector }()
+
+			assert.Equal(t, tc.want, resolveContainerManagerType())
+		})
+	}
 }
