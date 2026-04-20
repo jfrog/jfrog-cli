@@ -266,6 +266,21 @@ func TestContainerPushWithMultipleSlash(t *testing.T) {
 	}
 }
 
+// TestContainerEnforceImageIdVerification re-runs the existing container
+// push, pull, and build+push flows with JFROG_CLI_ENFORCE_DOCKER_IMAGE_ID_VERIFICATION=true
+// to exercise the legacy strict path (local `daemon.Image` image id lookup).
+// The default / fast path is already covered by the same underlying tests,
+// which run without the env var set.
+func TestContainerEnforceImageIdVerification(t *testing.T) {
+	initContainerTest(t)
+	clientTestUtils.SetEnvAndAssert(t, container.EnforceDockerImageIdVerificationEnv, "true")
+	defer clientTestUtils.UnSetEnvAndAssert(t, container.EnforceDockerImageIdVerificationEnv)
+
+	t.Run("push", TestContainerPush)
+	t.Run("pull", TestContainerPull)
+	t.Run("buildx", TestDockerBuildxWithBuildInfo)
+}
+
 func runPushTest(containerManager container.ContainerManagerType, imageName, module string, withModule bool, t *testing.T, repo string) {
 	imageTag, err := inttestutils.BuildTestImage(imageName+":1", "", repo, containerManager)
 	assert.NoError(t, err)
