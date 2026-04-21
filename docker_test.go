@@ -266,6 +266,23 @@ func TestContainerPushWithMultipleSlash(t *testing.T) {
 	}
 }
 
+// TestContainerSkipImageIdVerification re-runs the existing container
+// push, pull, and buildx (which is also a push) flows with
+// JFROG_CLI_SKIP_DOCKER_IMAGE_ID_VERIFICATION=true to prove build-info is
+// still collected correctly when users opt into the skip escape hatch. The
+// default path (verify, with WithFileBufferedOpener) is already covered by
+// the same underlying tests running without the env var. Pull must ignore
+// the skip env and always verify — this test also guards that contract.
+func TestContainerSkipImageIdVerification(t *testing.T) {
+	initContainerTest(t)
+	clientTestUtils.SetEnvAndAssert(t, container.SkipDockerImageIdVerificationEnv, "true")
+	defer clientTestUtils.UnSetEnvAndAssert(t, container.SkipDockerImageIdVerificationEnv)
+
+	t.Run("push", TestContainerPush)
+	t.Run("pull", TestContainerPull)
+	t.Run("buildx", TestDockerBuildxWithBuildInfo)
+}
+
 func runPushTest(containerManager container.ContainerManagerType, imageName, module string, withModule bool, t *testing.T, repo string) {
 	imageTag, err := inttestutils.BuildTestImage(imageName+":1", "", repo, containerManager)
 	assert.NoError(t, err)
