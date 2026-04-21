@@ -3547,6 +3547,81 @@ func TestArtifactoryDownloadByPatternAndBuildFromVirtualRepo(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+// TestArtifactoryDownloadByPatternAndBuildFromVirtualRepoUsingSpec is the spec-file twin of
+// TestArtifactoryDownloadByPatternAndBuildFromVirtualRepo. Spec files go through a distinct
+// parser (spec.CreateSpecFromFile → CommonParams) before reaching SearchBySpecWithBuild, so
+// this asserts the virtual-repo fix survives that path too.
+func TestArtifactoryDownloadByPatternAndBuildFromVirtualRepoUsingSpec(t *testing.T) {
+	initArtifactoryTest(t, "")
+	buildNumberA, buildNumberB := "10", "11"
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+
+	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
+	assert.NoError(t, err)
+	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
+	assert.NoError(t, err)
+	runRt(t, "upload", "--spec="+specFileA, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumberA)
+	runRt(t, "upload", "--spec="+specFileB, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumberB)
+	runRt(t, "build-publish", tests.RtBuildName1, buildNumberA)
+	runRt(t, "build-publish", tests.RtBuildName1, buildNumberB)
+
+	downloadSpec, err := tests.CreateSpec(tests.BuildPatternVirtualSpec)
+	assert.NoError(t, err)
+	runRt(t, "download", "--spec="+downloadSpec)
+
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	expected := []string{
+		tests.Out,
+		filepath.Join(tests.Out, "download"),
+		filepath.Join(tests.Out, "download", "by_build_virtual_spec"),
+		filepath.Join(tests.Out, "download", "by_build_virtual_spec", "a1.in"),
+		filepath.Join(tests.Out, "download", "by_build_virtual_spec", "a2.in"),
+		filepath.Join(tests.Out, "download", "by_build_virtual_spec", "a3.in"),
+	}
+	assert.NoError(t, tests.ValidateListsIdentical(expected, paths))
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
+// TestArtifactorySearchByPatternAndBuildFromVirtualRepo exercises the same fix through the
+// `search` command. Download and search both funnel into SearchBySpecWithBuild, so both
+// returned empty against pre-fix client-go when combining --build with a virtual-repo pattern.
+// Guards against regressing the sibling consumer.
+func TestArtifactorySearchByPatternAndBuildFromVirtualRepo(t *testing.T) {
+	initArtifactoryTest(t, "")
+	buildNumberA, buildNumberB := "10", "11"
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+
+	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
+	assert.NoError(t, err)
+	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
+	assert.NoError(t, err)
+	runRt(t, "upload", "--spec="+specFileA, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumberA)
+	runRt(t, "upload", "--spec="+specFileB, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumberB)
+	runRt(t, "build-publish", tests.RtBuildName1, buildNumberA)
+	runRt(t, "build-publish", tests.RtBuildName1, buildNumberB)
+
+	// Reuses the download spec: search ignores the target field and otherwise consumes
+	// the same pattern + build shape.
+	searchSpec, err := tests.CreateSpec(tests.BuildPatternVirtualSpec)
+	assert.NoError(t, err)
+	results, err := inttestutils.SearchInArtifactory(searchSpec, serverDetails, t)
+	assert.NoError(t, err)
+
+	// Each result's Path is "<backing-local-repo>/data/<file>"; assert on the trailing
+	// file names so the test is insensitive to the backing repo AQL chooses to report.
+	var names []string
+	for _, r := range results {
+		names = append(names, filepath.Base(r.Path))
+	}
+	sort.Strings(names)
+	assert.Equal(t, []string{"a1.in", "a2.in", "a3.in"}, names)
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryDownloadByBuildUsingSimpleDownloadWithProject(t *testing.T) {
 	initArtifactoryTest(t, "")
 	accessManager, err := utils.CreateAccessServiceManager(serverDetails, false)

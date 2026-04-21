@@ -1,0 +1,10 @@
+{
+  "files": [
+    {
+      "pattern": "${VIRTUAL_REPO}/data/*",
+      "target": "out/download/by_build_virtual_spec/",
+      "build": "${BUILD_NAME1}/10",
+      "flat": "true"
+    }
+  ]
+}
