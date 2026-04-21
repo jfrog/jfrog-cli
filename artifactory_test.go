@@ -3502,6 +3502,51 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownload(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+// TestArtifactoryDownloadByPatternAndBuildFromVirtualRepo guards the fix in jfrog-client-go
+// PR #1338: "build+pattern downloads against virtual repos". The client used to post-filter
+// build search results by comparing the pattern's repo against each result's Repo field.
+// AQL returns the backing local repo name, not the virtual repo the user typed, so any
+// download that combined --build with a pattern pointing at a virtual repo returned zero
+// files. The fix moves the pattern into the AQL query itself so Artifactory resolves the
+// virtual repo server-side. This test fails with "nothing downloaded" against the pre-fix
+// client-go.
+func TestArtifactoryDownloadByPatternAndBuildFromVirtualRepo(t *testing.T) {
+	initArtifactoryTest(t, "")
+	buildNumberA, buildNumberB := "10", "11"
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+
+	// Upload two disjoint sets of files under distinct build numbers, both into the local
+	// repo that backs RtVirtualRepo, so a virtual-repo pattern must fan out server-side.
+	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
+	assert.NoError(t, err)
+	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
+	assert.NoError(t, err)
+	runRt(t, "upload", "--spec="+specFileA, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumberA)
+	runRt(t, "upload", "--spec="+specFileB, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumberB)
+
+	runRt(t, "build-publish", tests.RtBuildName1, buildNumberA)
+	runRt(t, "build-publish", tests.RtBuildName1, buildNumberB)
+
+	// Pattern references the *virtual* repo; --build pins to buildNumberA. Only a*.in
+	// should land under the target. Before the fix this produced an empty directory.
+	targetDir := filepath.Join(tests.Out, "download", "by_build_virtual") + fileutils.GetFileSeparator()
+	runRt(t, "download", tests.RtVirtualRepo+"/data/*", targetDir, "--build="+tests.RtBuildName1+"/"+buildNumberA, "--flat=true")
+
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	expected := []string{
+		tests.Out,
+		filepath.Join(tests.Out, "download"),
+		filepath.Join(tests.Out, "download", "by_build_virtual"),
+		filepath.Join(tests.Out, "download", "by_build_virtual", "a1.in"),
+		filepath.Join(tests.Out, "download", "by_build_virtual", "a2.in"),
+		filepath.Join(tests.Out, "download", "by_build_virtual", "a3.in"),
+	}
+	assert.NoError(t, tests.ValidateListsIdentical(expected, paths))
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryDownloadByBuildUsingSimpleDownloadWithProject(t *testing.T) {
 	initArtifactoryTest(t, "")
 	accessManager, err := utils.CreateAccessServiceManager(serverDetails, false)
