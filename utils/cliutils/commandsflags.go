@@ -2180,10 +2180,10 @@ var commandFlags = map[string][]string{
 		serverId,
 	},
 	Sync: {
-		serverId,
+		serverId, Format,
 	},
 	SyncStatus: {
-		branch, repository, serverId,
+		branch, repository, serverId, Format,
 	},
 	Setup: {
 		serverId, url, user, password, accessToken, sshPassphrase, sshKeyPath, ClientCertPath, ClientCertKeyPath, Project, setupRepo,

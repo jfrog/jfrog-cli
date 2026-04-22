@@ -198,7 +198,26 @@ func syncPipelineResources(c *cli.Context) error {
 	syncCommand.SetBranch(branch)
 	syncCommand.SetRepositoryFullName(repository)
 	syncCommand.SetServerDetails(serviceDetails)
-	return commands.Exec(syncCommand)
+
+	if err = commands.Exec(syncCommand); err != nil {
+		return err
+	}
+
+	// error == nil guarantees the server responded with 200.
+	// The client layer discards the body, so we pass nil and let the helper
+	// synthesize {"status_code": 200, "message": "OK"}.
+	if c.IsSet(cliutils.Format) {
+		outputFormat, fmtErr := coreformat.GetOutputFormat(c.String(cliutils.Format))
+		if fmtErr != nil {
+			return fmtErr
+		}
+		if outputFormat == coreformat.Json {
+			cliutils.FormatHTTPResponseJSON(nil, 200)
+		} else {
+			return errorutils.CheckErrorf("unsupported format '%s' for pl sync. Only json is supported", outputFormat)
+		}
+	}
+	return nil
 }
 
 // getSyncPipelineResourcesStatus fetch sync status for a given repository path and branch name
@@ -213,6 +232,11 @@ func getSyncPipelineResourcesStatus(c *cli.Context) error {
 	}
 	clientlog.Info("Fetching pipeline sync status on repository:", repository, "branch:", branch)
 
+	outputFormat, err := getSyncStatusOutputFormat(c)
+	if err != nil {
+		return err
+	}
+
 	// Fetch service details for authentication
 	serviceDetails, err := createPipelinesDetailsByFlags(c)
 	if err != nil {
@@ -224,7 +248,63 @@ func getSyncPipelineResourcesStatus(c *cli.Context) error {
 	syncStatusCommand.SetBranch(branch)
 	syncStatusCommand.SetRepoPath(repository)
 	syncStatusCommand.SetServerDetails(serviceDetails)
-	return commands.Exec(syncStatusCommand)
+
+	if c.IsSet(cliutils.Format) {
+		syncStatusCommand.SetSuppressOutput(true)
+	}
+
+	if err = commands.Exec(syncStatusCommand); err != nil {
+		return err
+	}
+
+	if !c.IsSet(cliutils.Format) {
+		return nil
+	}
+	return printSyncStatusResponse(syncStatusCommand.Response(), outputFormat, os.Stdout)
+}
+
+// getSyncStatusOutputFormat defaults to table.
+func getSyncStatusOutputFormat(c *cli.Context) (coreformat.OutputFormat, error) {
+	if !c.IsSet(cliutils.Format) {
+		return coreformat.Table, nil
+	}
+	return coreformat.GetOutputFormat(c.String(cliutils.Format))
+}
+
+func printSyncStatusResponse(statuses []plservices.PipelineSyncStatus, outputFormat coreformat.OutputFormat, w io.Writer) error {
+	switch outputFormat {
+	case coreformat.Json:
+		data, err := json.Marshal(statuses)
+		if err != nil {
+			return errorutils.CheckErrorf("failed to marshal sync status response: %s", err.Error())
+		}
+		clientlog.Output(clientUtils.IndentJson(data))
+		return nil
+	case coreformat.Table:
+		return printSyncStatusTable(statuses, w)
+	default:
+		return errorutils.CheckErrorf("unsupported format '%s' for pl sync-status. Accepted values: table, json", outputFormat)
+	}
+}
+
+func printSyncStatusTable(statuses []plservices.PipelineSyncStatus, w io.Writer) error {
+	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
+	_, _ = fmt.Fprintln(tw, "BRANCH\tSTATUS\tIS_SYNCING\tSTARTED\tENDED\tCOMMIT_SHA")
+	for _, s := range statuses {
+		isSyncing := false
+		if s.IsSyncing != nil {
+			isSyncing = *s.IsSyncing
+		}
+		_, _ = fmt.Fprintf(tw, "%s\t%d\t%t\t%s\t%s\t%s\n",
+			s.PipelineSourceBranch,
+			s.LastSyncStatusCode,
+			isSyncing,
+			s.LastSyncStartedAt.Format("2006-01-02T15:04:05Z"),
+			s.LastSyncEndedAt.Format("2006-01-02T15:04:05Z"),
+			s.CommitData.CommitSha,
+		)
+	}
+	return tw.Flush()
 }
 
 // getVersion version command handler
