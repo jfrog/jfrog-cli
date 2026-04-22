@@ -17,6 +17,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/utils/accesstoken"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-client-go/auth"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -147,10 +148,65 @@ func ExchangeOidcTokenCmd(c *cli.Context) error {
 	if err = commands.ExecAndThenReportUsage(oidcAccessTokenCreateCmd); err != nil {
 		return err
 	}
-	// Print to the console only if the specific EOT command has been executed.
-	// Otherwise, it will be printed by the config command, which is unnecessary.
-	oidcAccessTokenCreateCmd.PrintResponseToConsole()
-	return nil
+
+	outputFormat, err := getOidcTokenOutputFormat(c)
+	if err != nil {
+		return err
+	}
+	return printOidcTokenResponse(oidcAccessTokenCreateCmd.Response(), outputFormat, os.Stdout)
+}
+
+// getOidcTokenOutputFormat returns the requested output format, defaulting to json
+// to preserve backward-compatible behaviour (the command always emitted JSON).
+func getOidcTokenOutputFormat(c *cli.Context) (coreformat.OutputFormat, error) {
+	if !c.IsSet(cliutils.Format) {
+		return coreformat.Json, nil
+	}
+	return coreformat.GetOutputFormat(c.String(cliutils.Format))
+}
+
+// printOidcTokenResponse writes the OIDC exchange result in the requested format to w.
+func printOidcTokenResponse(response *auth.OidcTokenResponseData, outputFormat coreformat.OutputFormat, w io.Writer) error {
+	data, err := json.Marshal(response)
+	if err != nil {
+		return errorutils.CheckErrorf("failed to marshal OIDC token response: %s", err.Error())
+	}
+	switch outputFormat {
+	case coreformat.Json:
+		log.Output(clientUtils.IndentJson(data))
+		return nil
+	case coreformat.Table:
+		return printOidcTokenTable(response, w)
+	default:
+		return errorutils.CheckErrorf("unsupported format '%s' for exchange-oidc-token. Accepted values: table, json", outputFormat)
+	}
+}
+
+// printOidcTokenTable renders the OIDC token fields as a plain two-column table.
+// The access token value is truncated to avoid flooding the terminal.
+func printOidcTokenTable(response *auth.OidcTokenResponseData, w io.Writer) error {
+	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
+	_, _ = fmt.Fprintln(tw, "FIELD\tVALUE")
+	if response.AccessToken != "" {
+		val := response.AccessToken
+		if len(val) > 40 {
+			val = val[:40] + "..."
+		}
+		_, _ = fmt.Fprintf(tw, "access_token\t%s\n", val)
+	}
+	if response.Username != "" {
+		_, _ = fmt.Fprintf(tw, "username\t%s\n", response.Username)
+	}
+	if response.IssuedTokenType != "" {
+		_, _ = fmt.Fprintf(tw, "issued_token_type\t%s\n", response.IssuedTokenType)
+	}
+	if response.Scope != "" {
+		_, _ = fmt.Fprintf(tw, "scope\t%s\n", response.Scope)
+	}
+	if response.TokenType != "" {
+		_, _ = fmt.Fprintf(tw, "token_type\t%s\n", response.TokenType)
+	}
+	return tw.Flush()
 }
 
 func CreateOidcTokenExchangeCommand(c *cli.Context, serverDetails *coreConfig.ServerDetails) (*generic.OidcTokenExchangeCommand, error) {

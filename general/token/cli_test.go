@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	coreformat "github.com/jfrog/jfrog-cli-core/v2/common/format"
+	"github.com/jfrog/jfrog-client-go/auth"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli"
@@ -151,6 +152,135 @@ func TestGetTokenOutputFormat_Invalid(t *testing.T) {
 	var gotErr error
 	app.Action = func(c *cli.Context) error {
 		_, gotErr = getTokenOutputFormat(c)
+		return nil
+	}
+	require.NoError(t, app.Run([]string{"app", "--format", "xml"}))
+	require.Error(t, gotErr)
+	assert.Contains(t, gotErr.Error(), "only the following output formats are supported")
+}
+
+// --- exchange-oidc-token tests ---
+
+func sampleOidcResponse() *auth.OidcTokenResponseData {
+	scope := "applied-permissions/user"
+	return &auth.OidcTokenResponseData{
+		CommonTokenParams: auth.CommonTokenParams{
+			AccessToken: "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.payload.sig",
+			Scope:       scope,
+			TokenType:   "Bearer",
+		},
+		IssuedTokenType: "urn:ietf:params:oauth:token-type:access_token",
+		Username:        "ci-user",
+	}
+}
+
+func TestPrintOidcTokenResponse_JSON(t *testing.T) {
+	var buf bytes.Buffer
+	err := printOidcTokenResponse(sampleOidcResponse(), coreformat.Json, &buf)
+	require.NoError(t, err)
+
+	// JSON goes through log.Output; validate the source struct is well-formed.
+	resp := sampleOidcResponse()
+	assert.Equal(t, "Bearer", resp.TokenType)
+	assert.Equal(t, "ci-user", resp.Username)
+}
+
+func TestPrintOidcTokenResponse_Table(t *testing.T) {
+	var buf bytes.Buffer
+	err := printOidcTokenResponse(sampleOidcResponse(), coreformat.Table, &buf)
+	require.NoError(t, err)
+
+	output := buf.String()
+	assert.Contains(t, output, "FIELD")
+	assert.Contains(t, output, "VALUE")
+	assert.Contains(t, output, "access_token")
+	assert.Contains(t, output, "username")
+	assert.Contains(t, output, "ci-user")
+	assert.Contains(t, output, "token_type")
+	assert.Contains(t, output, "Bearer")
+	assert.Contains(t, output, "scope")
+	assert.Contains(t, output, "applied-permissions/user")
+}
+
+func TestPrintOidcTokenResponse_Table_AccessTokenTruncated(t *testing.T) {
+	longToken := strings.Repeat("z", 100)
+	resp := &auth.OidcTokenResponseData{
+		CommonTokenParams: auth.CommonTokenParams{AccessToken: longToken},
+	}
+
+	var buf bytes.Buffer
+	require.NoError(t, printOidcTokenResponse(resp, coreformat.Table, &buf))
+
+	output := buf.String()
+	assert.NotContains(t, output, longToken)
+	assert.Contains(t, output, strings.Repeat("z", 40)+"...")
+}
+
+func TestPrintOidcTokenResponse_Table_AbsentFieldsOmitted(t *testing.T) {
+	resp := &auth.OidcTokenResponseData{
+		CommonTokenParams: auth.CommonTokenParams{AccessToken: "tok"},
+	}
+
+	var buf bytes.Buffer
+	require.NoError(t, printOidcTokenResponse(resp, coreformat.Table, &buf))
+
+	output := buf.String()
+	assert.NotContains(t, output, "username")
+	assert.NotContains(t, output, "scope")
+	assert.NotContains(t, output, "issued_token_type")
+}
+
+func TestPrintOidcTokenResponse_UnsupportedFormat(t *testing.T) {
+	err := printOidcTokenResponse(sampleOidcResponse(), coreformat.Sarif, &bytes.Buffer{})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unsupported format")
+}
+
+func TestGetOidcTokenOutputFormat_Default(t *testing.T) {
+	app := cli.NewApp()
+	app.Flags = []cli.Flag{cli.StringFlag{Name: "format"}}
+	var gotFormat coreformat.OutputFormat
+	app.Action = func(c *cli.Context) error {
+		var err error
+		gotFormat, err = getOidcTokenOutputFormat(c)
+		return err
+	}
+	require.NoError(t, app.Run([]string{"app"}))
+	assert.Equal(t, coreformat.Json, gotFormat)
+}
+
+func TestGetOidcTokenOutputFormat_ExplicitTable(t *testing.T) {
+	app := cli.NewApp()
+	app.Flags = []cli.Flag{cli.StringFlag{Name: "format"}}
+	var gotFormat coreformat.OutputFormat
+	app.Action = func(c *cli.Context) error {
+		var err error
+		gotFormat, err = getOidcTokenOutputFormat(c)
+		return err
+	}
+	require.NoError(t, app.Run([]string{"app", "--format", "table"}))
+	assert.Equal(t, coreformat.Table, gotFormat)
+}
+
+func TestGetOidcTokenOutputFormat_ExplicitJSON(t *testing.T) {
+	app := cli.NewApp()
+	app.Flags = []cli.Flag{cli.StringFlag{Name: "format"}}
+	var gotFormat coreformat.OutputFormat
+	app.Action = func(c *cli.Context) error {
+		var err error
+		gotFormat, err = getOidcTokenOutputFormat(c)
+		return err
+	}
+	require.NoError(t, app.Run([]string{"app", "--format", "json"}))
+	assert.Equal(t, coreformat.Json, gotFormat)
+}
+
+func TestGetOidcTokenOutputFormat_Invalid(t *testing.T) {
+	app := cli.NewApp()
+	app.Flags = []cli.Flag{cli.StringFlag{Name: "format"}}
+	var gotErr error
+	app.Action = func(c *cli.Context) error {
+		_, gotErr = getOidcTokenOutputFormat(c)
 		return nil
 	}
 	require.NoError(t, app.Run([]string{"app", "--format", "xml"}))
