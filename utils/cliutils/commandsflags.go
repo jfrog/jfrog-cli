@@ -115,6 +115,7 @@ const (
 	AddConfig    = "config-add"
 	EditConfig   = "config-edit"
 	DeleteConfig = "delete-config"
+	ConfigShow   = "config-show"
 
 	// Project commands keys
 	InitProject = "project-init"
@@ -1840,6 +1841,9 @@ var commandFlags = map[string][]string{
 	},
 	DeleteConfig: {
 		deleteQuiet,
+	},
+	ConfigShow: {
+		Format,
 	},
 	Upload: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath, uploadTargetProps,

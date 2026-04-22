@@ -1,23 +1,31 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"os"
+	"slices"
 	"strings"
+	"text/tabwriter"
 
 	"github.com/jfrog/jfrog-cli-core/v2/general/token"
 
 	"github.com/jfrog/jfrog-client-go/auth/cert"
 
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	coreformat "github.com/jfrog/jfrog-cli-core/v2/common/format"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
+	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/docs/config/add"
 	"github.com/jfrog/jfrog-cli/docs/config/edit"
 	"github.com/jfrog/jfrog-cli/docs/config/remove"
 	"github.com/jfrog/jfrog-cli/docs/config/use"
+	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
 
 	"github.com/jfrog/jfrog-cli/docs/config/exportcmd"
@@ -48,6 +56,7 @@ func GetCommands() []cli.Command {
 			Name:         "show",
 			Aliases:      []string{"s"},
 			Usage:        show.GetDescription(),
+			Flags:        cliutils.GetCommandFlags(cliutils.ConfigShow),
 			HelpName:     corecommon.CreateUsage("c show", show.GetDescription(), show.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(commands.GetAllServerIds()...),
 			Action:       showCmd,
@@ -178,7 +187,126 @@ func showCmd(c *cli.Context) error {
 	if c.NArg() == 1 {
 		serverId = c.Args()[0]
 	}
-	return commands.ShowConfig(serverId)
+
+	if !c.IsSet(cliutils.Format) {
+		// No format flag — use existing behavior unchanged.
+		return commands.ShowConfig(serverId)
+	}
+
+	outputFormat, err := getConfigShowOutputFormat(c)
+	if err != nil {
+		return err
+	}
+
+	// Read config directly so we can render it.
+	var configs []*coreconfig.ServerDetails
+	if serverId != "" {
+		single, err := coreconfig.GetSpecificConfig(serverId, false, false)
+		if err != nil {
+			return err
+		}
+		configs = []*coreconfig.ServerDetails{single}
+	} else {
+		configs, err = coreconfig.GetAllServersConfigs()
+		if err != nil {
+			return err
+		}
+	}
+	return printConfigShowResponse(configs, outputFormat, os.Stdout)
+}
+
+func getConfigShowOutputFormat(c *cli.Context) (coreformat.OutputFormat, error) {
+	if !c.IsSet(cliutils.Format) {
+		return coreformat.Table, nil
+	}
+	return coreformat.GetOutputFormat(c.String(cliutils.Format))
+}
+
+func printConfigShowResponse(configs []*coreconfig.ServerDetails, outputFormat coreformat.OutputFormat, w io.Writer) error {
+	switch outputFormat {
+	case coreformat.Json:
+		return printConfigShowJSON(configs)
+	case coreformat.Table:
+		return printConfigShowTable(configs, w)
+	default:
+		return errorutils.CheckErrorf("unsupported format '%s' for config show. Accepted values: table, json", outputFormat)
+	}
+}
+
+// sanitizeServerDetails returns a copy with sensitive fields masked.
+func sanitizeServerDetails(d *coreconfig.ServerDetails) coreconfig.ServerDetails {
+	s := *d
+	if s.Password != "" {
+		s.Password = "***"
+	}
+	if s.SshPassphrase != "" {
+		s.SshPassphrase = "***"
+	}
+	if s.AccessToken != "" {
+		s.AccessToken = "***"
+	}
+	if s.RefreshToken != "" {
+		s.RefreshToken = "***"
+	}
+	if s.ArtifactoryRefreshToken != "" {
+		s.ArtifactoryRefreshToken = "***"
+	}
+	return s
+}
+
+func printConfigShowJSON(configs []*coreconfig.ServerDetails) error {
+	sanitized := make([]coreconfig.ServerDetails, len(configs))
+	for i, c := range configs {
+		sanitized[i] = sanitizeServerDetails(c)
+	}
+	data, err := json.Marshal(sanitized)
+	if err != nil {
+		return errorutils.CheckErrorf("failed to marshal config: %s", err.Error())
+	}
+	log.Output(clientUtils.IndentJson(data))
+	return nil
+}
+
+func printConfigShowTable(configs []*coreconfig.ServerDetails, w io.Writer) error {
+	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
+	for i, d := range configs {
+		if i > 0 {
+			_, _ = fmt.Fprintln(tw, "---")
+		}
+		_, _ = fmt.Fprintln(tw, "FIELD\tVALUE")
+		printConfigRow := func(field, value string) {
+			if value != "" {
+				_, _ = fmt.Fprintf(tw, "%s\t%s\n", field, value)
+			}
+		}
+		printConfigRow("server_id", d.ServerId)
+		printConfigRow("url", d.Url)
+		printConfigRow("artifactory_url", d.ArtifactoryUrl)
+		printConfigRow("distribution_url", d.DistributionUrl)
+		printConfigRow("xray_url", d.XrayUrl)
+		printConfigRow("mission_control_url", d.MissionControlUrl)
+		printConfigRow("pipelines_url", d.PipelinesUrl)
+		printConfigRow("user", d.User)
+		if d.Password != "" {
+			printConfigRow("password", "***")
+		}
+		if d.AccessToken != "" {
+			printConfigRow("access_token", "***")
+		}
+		if d.RefreshToken != "" {
+			printConfigRow("refresh_token", "***")
+		}
+		printConfigRow("ssh_key_path", d.SshKeyPath)
+		if d.SshPassphrase != "" {
+			printConfigRow("ssh_passphrase", "***")
+		}
+		printConfigRow("client_cert_path", d.ClientCertPath)
+		printConfigRow("client_cert_key_path", d.ClientCertKeyPath)
+		if d.IsDefault {
+			printConfigRow("is_default", "true")
+		}
+	}
+	return tw.Flush()
 }
 
 func deleteCmd(c *cli.Context) error {
@@ -243,10 +371,8 @@ func CreateConfigCommandConfiguration(c *cli.Context) (configCommandConfiguratio
 
 func ValidateServerId(serverId string) error {
 	reservedIds := []string{"delete", "use", "show", "clear"}
-	for _, reservedId := range reservedIds {
-		if serverId == reservedId {
-			return fmt.Errorf("server can't have one of the following IDs: %s\n%s", strings.Join(reservedIds, ", "), cliutils.GetDocumentationMessage())
-		}
+	if slices.Contains(reservedIds, serverId) {
+		return fmt.Errorf("server can't have one of the following IDs: %s\n%s", strings.Join(reservedIds, ", "), cliutils.GetDocumentationMessage())
 	}
 	return nil
 }
