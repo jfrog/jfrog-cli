@@ -2104,7 +2104,7 @@ var commandFlags = map[string][]string{
 	AccessTokenCreate: {
 		platformUrl, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath, ClientCertKeyPath,
 		atcProject, atcGrantAdmin, atcGroups, atcScope, atcExpiry,
-		atcRefreshable, atcDescription, atcAudience, atcReference,
+		atcRefreshable, atcDescription, atcAudience, atcReference, Format,
 	},
 	ExchangeOidcToken: {
 		url, OidcTokenID, OidcAudience, OidcProviderName, OidcProviderType, ApplicationKey, Project, repository,

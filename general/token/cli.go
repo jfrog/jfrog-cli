@@ -1,13 +1,17 @@
 package token
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
+	"text/tabwriter"
 
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	coreformat "github.com/jfrog/jfrog-cli-core/v2/common/format"
 	generic "github.com/jfrog/jfrog-cli-core/v2/general/token"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -61,13 +65,68 @@ func AccessTokenCreateCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	resString, err := accessTokenCreateCmd.Response()
+	resBytes, err := accessTokenCreateCmd.Response()
 	if err != nil {
 		return err
 	}
-	log.Output(clientUtils.IndentJson(resString))
+	outputFormat, err := getTokenOutputFormat(c)
+	if err != nil {
+		return err
+	}
+	return printTokenResponse(resBytes, outputFormat, os.Stdout)
+}
 
-	return nil
+// getTokenOutputFormat returns the requested output format, defaulting to json
+// to preserve backward-compatible behaviour (the command always emitted JSON).
+func getTokenOutputFormat(c *cli.Context) (coreformat.OutputFormat, error) {
+	if !c.IsSet(cliutils.Format) {
+		return coreformat.Json, nil
+	}
+	return coreformat.GetOutputFormat(c.String(cliutils.Format))
+}
+
+// printTokenResponse writes the token response in the requested format to w.
+func printTokenResponse(data []byte, outputFormat coreformat.OutputFormat, w io.Writer) error {
+	switch outputFormat {
+	case coreformat.Json:
+		log.Output(clientUtils.IndentJson(data))
+		return nil
+	case coreformat.Table:
+		return printTokenTable(data, w)
+	default:
+		return errorutils.CheckErrorf("unsupported format '%s' for access-token-create. Accepted values: table, json", outputFormat)
+	}
+}
+
+// printTokenTable renders the token fields as a plain two-column table.
+// The access_token value is truncated to avoid flooding the terminal.
+func printTokenTable(data []byte, w io.Writer) error {
+	var fields map[string]interface{}
+	if err := json.Unmarshal(data, &fields); err != nil {
+		return errorutils.CheckErrorf("failed to parse token response: %s", err.Error())
+	}
+
+	// Print fields in a stable, human-friendly order; skip absent/nil ones.
+	orderedKeys := []string{
+		"access_token", "token_id", "expires_in", "scope",
+		"token_type", "refreshable", "refresh_token", "reference_token",
+		"grant_type", "audience",
+	}
+
+	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
+	_, _ = fmt.Fprintln(tw, "FIELD\tVALUE")
+	for _, key := range orderedKeys {
+		val, ok := fields[key]
+		if !ok || val == nil {
+			continue
+		}
+		strVal := fmt.Sprintf("%v", val)
+		if key == "access_token" && len(strVal) > 40 {
+			strVal = strVal[:40] + "..."
+		}
+		_, _ = fmt.Fprintf(tw, "%s\t%s\n", key, strVal)
+	}
+	return tw.Flush()
 }
 
 func ExchangeOidcTokenCmd(c *cli.Context) error {
