@@ -130,6 +130,10 @@ const (
 	ExchangeOidcToken = "exchange-oidc-token"
 	Api               = "api"
 
+	// Plugin commands keys
+	PluginInstall = "plugin-install"
+	PluginPublish = "plugin-publish"
+
 	// *** Artifactory Commands' flags ***
 	// Base flags
 	url                 = "url"
@@ -2136,6 +2140,13 @@ var commandFlags = map[string][]string{
 	},
 	TransferInstall: {
 		installPluginVersion, InstallPluginSrcDir, InstallPluginHomeDir,
+	},
+	// Plugin commands
+	PluginInstall: {
+		Format,
+	},
+	PluginPublish: {
+		Format,
 	},
 	// Mission Control's commands
 	McConfig: {
