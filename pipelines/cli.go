@@ -240,24 +240,38 @@ func getVersion(c *cli.Context) error {
 
 // triggerNewRun triggers a new run for supplied flag values
 func triggerNewRun(c *cli.Context) error {
-	// Read arguments pipeline name and branch to trigger pipeline run
 	pipelineName := c.Args().Get(0)
 	branch := c.Args().Get(1)
 	multiBranch := getMultiBranch(c)
 	coreutils.PrintTitle("Triggering pipeline run ")
 	clientlog.Info("Triggering on pipeline:", pipelineName, "for branch:", branch)
 
-	// Get service config details
 	serviceDetails, err := createPipelinesDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
 
-	// Trigger a pipeline run using branch name and pipeline name
 	triggerCommand := pipelines.NewTriggerCommand()
 	triggerCommand.SetBranch(branch).
 		SetPipelineName(pipelineName).
 		SetServerDetails(serviceDetails).
 		SetMultiBranch(multiBranch)
-	return commands.Exec(triggerCommand)
+
+	if err = commands.Exec(triggerCommand); err != nil {
+		return err
+	}
+
+	// error == nil guarantees the server responded with 200.
+	// The client layer discards the body, so we pass nil and let the helper
+	// synthesize {"status_code": 200, "message": "OK"}.
+	if c.IsSet(cliutils.Format) {
+		outputFormat, fmtErr := coreformat.GetOutputFormat(c.String(cliutils.Format))
+		if fmtErr != nil {
+			return fmtErr
+		}
+		if outputFormat == coreformat.Json {
+			cliutils.FormatHTTPResponseJSON(nil, 200)
+		}
+	}
+	return nil
 }

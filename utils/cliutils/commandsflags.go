@@ -2171,7 +2171,7 @@ var commandFlags = map[string][]string{
 		branch, serverId, pipelineName, monitor, singleBranch, Format,
 	},
 	Trigger: {
-		serverId, singleBranch,
+		serverId, singleBranch, Format,
 	},
 	Validate: {
 		Resources, serverId,
