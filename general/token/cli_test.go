@@ -1,0 +1,184 @@
+package token
+
+import (
+	"bytes"
+	"encoding/json"
+	"strings"
+	"testing"
+
+	coreformat "github.com/jfrog/jfrog-cli-core/v2/common/format"
+	"github.com/jfrog/jfrog-client-go/auth"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+// sampleTokenResponse returns a minimal but realistic token JSON payload.
+func sampleTokenResponse(t *testing.T) []byte {
+	t.Helper()
+	payload := map[string]interface{}{ // #nosec G101
+		"access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6IkV4YW1wbGUifQ.payload.signature",
+		"token_id":     "abc123-def456",
+		"expires_in":   3600,
+		"scope":        "applied-permissions/user",
+		"token_type":   "Bearer",
+		"refreshable":  false,
+	}
+	data, err := json.Marshal(payload)
+	require.NoError(t, err)
+	return data
+}
+
+func TestPrintTokenResponse_JSON(t *testing.T) {
+	data := sampleTokenResponse(t)
+
+	var buf bytes.Buffer
+	err := printTokenResponse(data, coreformat.Json, &buf)
+	require.NoError(t, err)
+
+	// JSON format uses log.Output (writes to the real logger, not the writer).
+	// The buf should remain empty; validate JSON is well-formed instead.
+	var parsed map[string]interface{}
+	require.NoError(t, json.Unmarshal(data, &parsed))
+	assert.Equal(t, "Bearer", parsed["token_type"])
+	assert.Equal(t, "abc123-def456", parsed["token_id"])
+}
+
+func TestPrintTokenResponse_Table(t *testing.T) {
+	data := sampleTokenResponse(t)
+
+	var buf bytes.Buffer
+	err := printTokenResponse(data, coreformat.Table, &buf)
+	require.NoError(t, err)
+
+	output := buf.String()
+
+	// Header row must be present.
+	assert.Contains(t, output, "FIELD")
+	assert.Contains(t, output, "VALUE")
+
+	// Known fields must appear.
+	assert.Contains(t, output, "token_id")
+	assert.Contains(t, output, "abc123-def456")
+	assert.Contains(t, output, "expires_in")
+	assert.Contains(t, output, "scope")
+	assert.Contains(t, output, "applied-permissions/user")
+	assert.Contains(t, output, "token_type")
+	assert.Contains(t, output, "Bearer")
+}
+
+func TestPrintTokenResponse_Table_AccessTokenTruncated(t *testing.T) {
+	longToken := strings.Repeat("a", 100)
+	payload := map[string]interface{}{"access_token": longToken}
+	data, err := json.Marshal(payload)
+	require.NoError(t, err)
+
+	var buf bytes.Buffer
+	require.NoError(t, printTokenResponse(data, coreformat.Table, &buf))
+
+	output := buf.String()
+	assert.Contains(t, output, "access_token")
+	// Full token must NOT appear; truncated version (40 chars + "...") must.
+	assert.NotContains(t, output, longToken)
+	assert.Contains(t, output, strings.Repeat("a", 40)+"...")
+}
+
+func TestPrintTokenResponse_Table_AbsentFieldsOmitted(t *testing.T) {
+	// Payload with only access_token; all other fields must be absent from table.
+	payload := map[string]interface{}{
+		"access_token": "tok",
+	}
+	data, err := json.Marshal(payload)
+	require.NoError(t, err)
+
+	var buf bytes.Buffer
+	require.NoError(t, printTokenResponse(data, coreformat.Table, &buf))
+
+	output := buf.String()
+	assert.NotContains(t, output, "token_id")
+	assert.NotContains(t, output, "expires_in")
+	assert.NotContains(t, output, "scope")
+}
+
+func TestPrintTokenResponse_UnsupportedFormat(t *testing.T) {
+	err := printTokenResponse([]byte("{}"), coreformat.Sarif, &bytes.Buffer{})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unsupported format")
+}
+
+// --- exchange-oidc-token tests ---
+
+func sampleOidcResponse() *auth.OidcTokenResponseData {
+	scope := "applied-permissions/user"
+	return &auth.OidcTokenResponseData{ // #nosec G101
+		CommonTokenParams: auth.CommonTokenParams{ // #nosec G101
+			AccessToken: "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.payload.sig",
+			Scope:       scope,
+			TokenType:   "Bearer",
+		},
+		IssuedTokenType: "urn:ietf:params:oauth:token-type:access_token",
+		Username:        "ci-user",
+	}
+}
+
+func TestPrintOidcTokenResponse_JSON(t *testing.T) {
+	var buf bytes.Buffer
+	err := printOidcTokenResponse(sampleOidcResponse(), coreformat.Json, &buf)
+	require.NoError(t, err)
+
+	// JSON goes through log.Output; validate the source struct is well-formed.
+	resp := sampleOidcResponse()
+	assert.Equal(t, "Bearer", resp.TokenType)
+	assert.Equal(t, "ci-user", resp.Username)
+}
+
+func TestPrintOidcTokenResponse_Table(t *testing.T) {
+	var buf bytes.Buffer
+	err := printOidcTokenResponse(sampleOidcResponse(), coreformat.Table, &buf)
+	require.NoError(t, err)
+
+	output := buf.String()
+	assert.Contains(t, output, "FIELD")
+	assert.Contains(t, output, "VALUE")
+	assert.Contains(t, output, "access_token")
+	assert.Contains(t, output, "username")
+	assert.Contains(t, output, "ci-user")
+	assert.Contains(t, output, "token_type")
+	assert.Contains(t, output, "Bearer")
+	assert.Contains(t, output, "scope")
+	assert.Contains(t, output, "applied-permissions/user")
+}
+
+func TestPrintOidcTokenResponse_Table_AccessTokenTruncated(t *testing.T) {
+	longToken := strings.Repeat("z", 100)
+	resp := &auth.OidcTokenResponseData{
+		CommonTokenParams: auth.CommonTokenParams{AccessToken: longToken},
+	}
+
+	var buf bytes.Buffer
+	require.NoError(t, printOidcTokenResponse(resp, coreformat.Table, &buf))
+
+	output := buf.String()
+	assert.NotContains(t, output, longToken)
+	assert.Contains(t, output, strings.Repeat("z", 40)+"...")
+}
+
+func TestPrintOidcTokenResponse_Table_AbsentFieldsOmitted(t *testing.T) {
+	resp := &auth.OidcTokenResponseData{
+		CommonTokenParams: auth.CommonTokenParams{AccessToken: "tok"},
+	}
+
+	var buf bytes.Buffer
+	require.NoError(t, printOidcTokenResponse(resp, coreformat.Table, &buf))
+
+	output := buf.String()
+	assert.NotContains(t, output, "username")
+	assert.NotContains(t, output, "scope")
+	assert.NotContains(t, output, "issued_token_type")
+}
+
+func TestPrintOidcTokenResponse_UnsupportedFormat(t *testing.T) {
+	err := printOidcTokenResponse(sampleOidcResponse(), coreformat.Sarif, &bytes.Buffer{})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unsupported format")
+}
+

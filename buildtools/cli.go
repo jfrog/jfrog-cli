@@ -707,9 +707,12 @@ func MvnCmd(c *cli.Context) (err error) {
 	if !xrayScan && format != "" {
 		return cliutils.PrintHelpAndReturnError("The --format option can be sent only with the --scan option", c)
 	}
-	scanOutputFormat, err := outputFormat.GetOutputFormat(format)
-	if err != nil {
-		return err
+	scanOutputFormat := outputFormat.Table
+	if format != "" {
+		scanOutputFormat, err = outputFormat.ParseOutputFormat(format, outputFormat.All)
+		if err != nil {
+			return err
+		}
 	}
 	mvnCmd := mvn.NewMvnCommand().SetConfiguration(buildConfiguration).SetConfigPath(configFilePath).SetGoals(filteredMavenArgs).SetThreads(threads).SetInsecureTls(insecureTls).SetDetailedSummary(detailedSummary || printDeploymentView).SetXrayScan(xrayScan).SetScanOutputFormat(scanOutputFormat)
 	err = commands.Exec(mvnCmd)
@@ -813,9 +816,14 @@ func GradleCmd(c *cli.Context) (err error) {
 	if !xrayScan && format != "" {
 		return cliutils.PrintHelpAndReturnError("The --format option can be sent only with the --scan option", c)
 	}
-	scanOutputFormat, err := outputFormat.GetOutputFormat(format)
-	if err != nil {
-		return err
+	var scanOutputFormat outputFormat.OutputFormat
+	if format == "" {
+		scanOutputFormat = outputFormat.Table
+	} else {
+		scanOutputFormat, err = outputFormat.ParseOutputFormat(format, outputFormat.All)
+		if err != nil {
+			return err
+		}
 	}
 	printDeploymentView := log.IsStdErrTerminal()
 	gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(filteredGradleArgs).SetConfigPath(configFilePath).SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetXrayScan(xrayScan).SetScanOutputFormat(scanOutputFormat)

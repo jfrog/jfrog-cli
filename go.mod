@@ -20,9 +20,9 @@ require (
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-application v1.0.2-0.20260405065840-c930d515ef34
 	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260429074430-a5871f2898b5
-	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260429073430-5723b4f21705
+	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260430125911-ad12ac6f1316
 	github.com/jfrog/jfrog-cli-evidence v0.9.2
-	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260423120557-be568d9dd4c2
+	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260430094150-ce7d9b371c6f
 	github.com/jfrog/jfrog-cli-security v1.28.0
 	github.com/jfrog/jfrog-client-go v1.55.1-0.20260428070955-750b933dc5c7
 	github.com/jszwec/csvutil v1.10.0

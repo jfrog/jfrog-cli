@@ -8,6 +8,8 @@ import (
 	"github.com/jfrog/jfrog-cli-artifactory/cliutils/flagkit"
 
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
+	"github.com/jfrog/jfrog-cli-core/v2/plugins/components"
+	"github.com/jfrog/jfrog-cli-core/v2/common/format"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -116,6 +118,7 @@ const (
 	AddConfig    = "config-add"
 	EditConfig   = "config-edit"
 	DeleteConfig = "delete-config"
+	ConfigShow   = "config-show"
 
 	// Project commands keys
 	InitProject = "project-init"
@@ -130,6 +133,10 @@ const (
 	AccessTokenCreate = "access-token-create"
 	ExchangeOidcToken = "exchange-oidc-token"
 	Api               = "api"
+
+	// Plugin commands keys
+	PluginInstall = "plugin-install"
+	PluginPublish = "plugin-publish"
 
 	// *** Artifactory Commands' flags ***
 	// Base flags
@@ -494,12 +501,30 @@ const (
 	Stream    = "stream"
 	Periodic  = "periodic"
 
+	// General output format flag
+	Format = "format"
+
+	// Per-command format flag map keys. All share Name: "format" but restrict
+	// the description to the formats that command actually supports.
+	configShowFormat          = "config-show-format"
+	accessTokenCreateFormat   = "access-token-create-format"
+	exchangeOidcTokenFormat   = "exchange-oidc-token-format"
+	licenseAcquireFormat      = "license-acquire-format"
+	licenseDeployFormat       = "license-deploy-format"
+	jpdAddFormat              = "jpd-add-format"
+	pluginInstallFormat       = "plugin-install-format"
+	pluginPublishFormat       = "plugin-publish-format"
+	plStatusFormat            = "pl-status-format"
+	plTriggerFormat           = "pl-trigger-format"
+	plSyncFormat              = "pl-sync-format"
+	plSyncStatusFormat        = "pl-sync-status-format"
+
 	// Unique scan flags
 	scanPrefix          = "scan-"
 	scanRecursive       = scanPrefix + recursive
 	scanRegexp          = scanPrefix + regexpFlag
 	scanAnt             = scanPrefix + antFlag
-	xrOutput            = "format"
+	XrFormat            = "xr-format"
 	BypassArchiveLimits = "bypass-archive-limits"
 
 	// Audit commands
@@ -578,7 +603,6 @@ const (
 	branch       = "branch"
 	Trigger      = "trigger"
 	pipelineName = "pipeline-name"
-	name         = "name"
 	Validate     = "validate"
 	Resources    = "resources"
 	monitor      = "monitor"
@@ -618,6 +642,54 @@ const (
 )
 
 var flagsMap = map[string]cli.Flag{
+	configShowFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + components.GetFormatFlagDescription([]format.OutputFormat{format.Table, format.Json}) + "` `",
+	},
+	accessTokenCreateFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + components.GetFormatFlagDescription([]format.OutputFormat{format.Json, format.Table}) + "` `",
+	},
+	exchangeOidcTokenFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + components.GetFormatFlagDescription([]format.OutputFormat{format.Json, format.Table}) + "` `",
+	},
+	licenseAcquireFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + components.GetFormatFlagDescription([]format.OutputFormat{format.Table, format.Json}) + "` `",
+	},
+	licenseDeployFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + components.GetFormatFlagDescription([]format.OutputFormat{format.Json, format.Table}) + "` `",
+	},
+	jpdAddFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + components.GetFormatFlagDescription([]format.OutputFormat{format.Json, format.Table}) + "` `",
+	},
+	pluginInstallFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + components.GetFormatFlagDescription([]format.OutputFormat{format.Json}) + "` `",
+	},
+	pluginPublishFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + components.GetFormatFlagDescription([]format.OutputFormat{format.Json}) + "` `",
+	},
+	plStatusFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + components.GetFormatFlagDescription([]format.OutputFormat{format.Table, format.Json}) + "` `",
+	},
+	plTriggerFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + components.GetFormatFlagDescription([]format.OutputFormat{format.Json}) + "` `",
+	},
+	plSyncFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + components.GetFormatFlagDescription([]format.OutputFormat{format.Json}) + "` `",
+	},
+	plSyncStatusFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + components.GetFormatFlagDescription([]format.OutputFormat{format.Table, format.Json}) + "` `",
+	},
 	// Common commands flags
 	platformUrl: cli.StringFlag{
 		Name:  url,
@@ -1494,8 +1566,8 @@ var flagsMap = map[string]cli.Flag{
 		Name:  antFlag,
 		Usage: "[Default: false] Set to true to use an ant pattern instead of wildcards expression to collect files to scan.` `",
 	},
-	xrOutput: cli.StringFlag{
-		Name:  xrOutput,
+	XrFormat: cli.StringFlag{
+		Name:  Format,
 		Usage: "[Default: table] Defines the output format of the command. Acceptable values are: table, json, simple-json and sarif. Note: the json format doesn't include information about scans that are included as part of the Advanced Security package.` `",
 	},
 	BypassArchiveLimits: cli.BoolFlag{
@@ -1552,7 +1624,7 @@ var flagsMap = map[string]cli.Flag{
 		Usage: "[Default: 10] Number of working threads.` `",
 	},
 	curationOutput: cli.StringFlag{
-		Name:  xrOutput,
+		Name:  Format,
 		Usage: "[Default: table] Defines the output format of the command. Acceptable values are: table, json.` `",
 	},
 
@@ -1831,6 +1903,9 @@ var commandFlags = map[string][]string{
 	DeleteConfig: {
 		deleteQuiet,
 	},
+	ConfigShow: {
+		configShowFormat,
+	},
 	Upload: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath, uploadTargetProps,
 		ClientCertKeyPath, specFlag, specVars, BuildName, BuildNumber, module, uploadExclusions, deb,
@@ -1930,14 +2005,14 @@ var commandFlags = map[string][]string{
 		deployIvyDesc, ivyDescPattern, ivyArtifactsPattern,
 	},
 	Mvn: {
-		BuildName, BuildNumber, deploymentThreads, InsecureTls, Project, detailedSummary, xrayScan, xrOutput,
+		BuildName, BuildNumber, deploymentThreads, InsecureTls, Project, detailedSummary, xrayScan, XrFormat,
 	},
 	Gradle: {
-		BuildName, BuildNumber, deploymentThreads, Project, serverId, detailedSummary, xrayScan, xrOutput,
+		BuildName, BuildNumber, deploymentThreads, Project, serverId, detailedSummary, xrayScan, XrFormat,
 	},
 	Docker: {
 		BuildName, BuildNumber, module, Project,
-		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, FixableOnly, vuln, validateSha,
+		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, XrFormat, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, FixableOnly, vuln, validateSha,
 	},
 	DockerLogin: {
 		serverId, dockerLoginUsername, password,
@@ -1972,7 +2047,7 @@ var commandFlags = map[string][]string{
 		BuildName, BuildNumber, module, Project, runNative,
 	},
 	NpmPublish: {
-		BuildName, BuildNumber, module, Project, npmDetailedSummary, xrayScan, xrOutput, runNative, npmWorkspaces,
+		BuildName, BuildNumber, module, Project, npmDetailedSummary, xrayScan, XrFormat, runNative, npmWorkspaces,
 	},
 	PnpmConfig: {
 		global, serverIdResolve, repoResolve,
@@ -2073,7 +2148,7 @@ var commandFlags = map[string][]string{
 		BuildName, BuildNumber, module, Project,
 	},
 	Stats: {
-		xrOutput, accessToken, serverId,
+		XrFormat, accessToken, serverId,
 	},
 	Api: {
 		platformUrl, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
@@ -2103,10 +2178,10 @@ var commandFlags = map[string][]string{
 	AccessTokenCreate: {
 		platformUrl, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath, ClientCertKeyPath,
 		atcProject, atcGrantAdmin, atcGroups, atcScope, atcExpiry,
-		atcRefreshable, atcDescription, atcAudience, atcReference,
+		atcRefreshable, atcDescription, atcAudience, atcReference, accessTokenCreateFormat,
 	},
 	ExchangeOidcToken: {
-		url, OidcTokenID, OidcAudience, OidcProviderName, OidcProviderType, ApplicationKey, Project, repository,
+		url, OidcTokenID, OidcAudience, OidcProviderName, OidcProviderType, ApplicationKey, Project, repository, exchangeOidcTokenFormat,
 	},
 	UserCreate: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId,
@@ -2136,21 +2211,28 @@ var commandFlags = map[string][]string{
 	TransferInstall: {
 		installPluginVersion, InstallPluginSrcDir, InstallPluginHomeDir,
 	},
+	// Plugin commands
+	PluginInstall: {
+		pluginInstallFormat,
+	},
+	PluginPublish: {
+		pluginPublishFormat,
+	},
 	// Mission Control's commands
 	McConfig: {
 		mcUrl, mcAccessToken, mcInteractive,
 	},
 	LicenseAcquire: {
-		mcUrl, mcAccessToken,
+		mcUrl, mcAccessToken, licenseAcquireFormat,
 	},
 	LicenseDeploy: {
-		mcUrl, mcAccessToken, licenseCount,
+		mcUrl, mcAccessToken, licenseCount, licenseDeployFormat,
 	},
 	LicenseRelease: {
 		mcUrl, mcAccessToken,
 	},
 	JpdAdd: {
-		mcUrl, mcAccessToken,
+		mcUrl, mcAccessToken, jpdAddFormat,
 	},
 	JpdDelete: {
 		mcUrl, mcAccessToken,
@@ -2167,10 +2249,10 @@ var commandFlags = map[string][]string{
 	Intro: {},
 	// Pipelines commands
 	Status: {
-		branch, serverId, pipelineName, monitor, singleBranch,
+		branch, serverId, pipelineName, monitor, singleBranch, plStatusFormat,
 	},
 	Trigger: {
-		serverId, singleBranch,
+		serverId, singleBranch, plTriggerFormat,
 	},
 	Validate: {
 		Resources, serverId,
@@ -2179,10 +2261,10 @@ var commandFlags = map[string][]string{
 		serverId,
 	},
 	Sync: {
-		serverId,
+		serverId, plSyncFormat,
 	},
 	SyncStatus: {
-		branch, repository, serverId,
+		branch, repository, serverId, plSyncStatusFormat,
 	},
 	Setup: {
 		serverId, url, user, password, accessToken, sshPassphrase, sshKeyPath, ClientCertPath, ClientCertKeyPath, Project, setupRepo,

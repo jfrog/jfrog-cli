@@ -1,10 +1,18 @@
 package pipelines
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
+	"os"
+	"text/tabwriter"
+
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	coreformat "github.com/jfrog/jfrog-cli-core/v2/common/format"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	pipelines "github.com/jfrog/jfrog-cli-core/v2/pipelines/commands"
+	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/docs/common"
@@ -13,9 +21,11 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/pipelines/syncstatus"
 	"github.com/jfrog/jfrog-cli/docs/pipelines/trigger"
 	"github.com/jfrog/jfrog-cli/docs/pipelines/version"
-
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
+	plservices "github.com/jfrog/jfrog-client-go/pipelines/services"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/urfave/cli"
 )
 
@@ -96,7 +106,6 @@ func createPipelinesDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, e
 func fetchLatestPipelineRunStatus(c *cli.Context) error {
 	clientlog.Info(coreutils.PrintTitle("Fetching pipeline run status"))
 
-	// Read flags for status command
 	pipName := c.String("pipeline-name")
 	notify := c.Bool("monitor")
 	branch := c.String("branch")
@@ -105,19 +114,77 @@ func fetchLatestPipelineRunStatus(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+
+	outputFormat, err := commonCliUtils.GetOutputFormat(c, coreformat.Table)
+	if err != nil {
+		return err
+	}
+
 	statusCommand := pipelines.NewStatusCommand()
 	statusCommand.SetBranch(branch).
 		SetPipeline(pipName).
 		SetNotify(notify).
-		SetMultiBranch(multiBranch)
+		SetMultiBranch(multiBranch).
+		SetServerDetails(serviceDetails)
 
-	// Set server details
-	statusCommand.SetServerDetails(serviceDetails)
-	return commands.Exec(statusCommand)
+	if c.IsSet(cliutils.Format) {
+		statusCommand.SetSuppressOutput(true)
+	}
+
+	if err = commands.Exec(statusCommand); err != nil {
+		return err
+	}
+
+	if !c.IsSet(cliutils.Format) {
+		return nil
+	}
+	return printPipelineStatusResponse(statusCommand.Response(), outputFormat, os.Stdout)
+}
+
+func printPipelineStatusResponse(resp *plservices.PipelineRunStatusResponse, outputFormat coreformat.OutputFormat, w io.Writer) error {
+	switch outputFormat {
+	case coreformat.Json:
+		data, err := json.Marshal(resp)
+		if err != nil {
+			return errorutils.CheckErrorf("failed to marshal pipeline status response: %s", err.Error())
+		}
+		clientlog.Output(clientUtils.IndentJson(data))
+		return nil
+	case coreformat.Table:
+		return printPipelineStatusTable(resp, w)
+	default:
+		return errorutils.CheckErrorf("unsupported format '%s' for pl status. Accepted values: table, json", outputFormat)
+	}
+}
+
+func printPipelineStatusTable(resp *plservices.PipelineRunStatusResponse, w io.Writer) error {
+	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
+	_, _ = fmt.Fprintln(tw, "PIPELINE\tBRANCH\tRUN\tSTATUS\tDURATION")
+	for _, pipe := range resp.Pipelines {
+		if pipe.LatestRunID == 0 {
+			continue
+		}
+		_, _ = fmt.Fprintf(tw, "%s\t%s\t%d\t%d\t%ds\n",
+			pipe.Name,
+			pipe.PipelineSourceBranch,
+			pipe.Run.RunNumber,
+			pipe.Run.StatusCode,
+			pipe.Run.DurationSeconds,
+		)
+	}
+	return tw.Flush()
 }
 
 // syncPipelineResources sync pipelines resource
 func syncPipelineResources(c *cli.Context) error {
+	requireStructuredOutput := c.IsSet(cliutils.Format)
+
+	if requireStructuredOutput {
+		if _, fmtErr := coreformat.ParseOutputFormat(c.String(cliutils.Format), []coreformat.OutputFormat{coreformat.Json}); fmtErr != nil {
+			return fmtErr
+		}
+	}
+
 	// Get arguments repository name and branch name
 	repository := c.Args().Get(0)
 	branch := c.Args().Get(1)
@@ -132,7 +199,18 @@ func syncPipelineResources(c *cli.Context) error {
 	syncCommand.SetBranch(branch)
 	syncCommand.SetRepositoryFullName(repository)
 	syncCommand.SetServerDetails(serviceDetails)
-	return commands.Exec(syncCommand)
+
+	if err = commands.Exec(syncCommand); err != nil {
+		return err
+	}
+
+	// error == nil guarantees the server responded with 200.
+	// The client layer discards the body, so we pass nil and let the helper
+	// synthesize {"status_code": 200, "message": "OK"}.
+	if requireStructuredOutput {
+		cliutils.FormatHTTPResponseJSON(nil, 200)
+	}
+	return nil
 }
 
 // getSyncPipelineResourcesStatus fetch sync status for a given repository path and branch name
@@ -147,6 +225,11 @@ func getSyncPipelineResourcesStatus(c *cli.Context) error {
 	}
 	clientlog.Info("Fetching pipeline sync status on repository:", repository, "branch:", branch)
 
+	outputFormat, err := commonCliUtils.GetOutputFormat(c, coreformat.Table)
+	if err != nil {
+		return err
+	}
+
 	// Fetch service details for authentication
 	serviceDetails, err := createPipelinesDetailsByFlags(c)
 	if err != nil {
@@ -158,7 +241,55 @@ func getSyncPipelineResourcesStatus(c *cli.Context) error {
 	syncStatusCommand.SetBranch(branch)
 	syncStatusCommand.SetRepoPath(repository)
 	syncStatusCommand.SetServerDetails(serviceDetails)
-	return commands.Exec(syncStatusCommand)
+
+	if c.IsSet(cliutils.Format) {
+		syncStatusCommand.SetSuppressOutput(true)
+	}
+
+	if err = commands.Exec(syncStatusCommand); err != nil {
+		return err
+	}
+
+	if !c.IsSet(cliutils.Format) {
+		return nil
+	}
+	return printSyncStatusResponse(syncStatusCommand.Response(), outputFormat, os.Stdout)
+}
+
+func printSyncStatusResponse(statuses []plservices.PipelineSyncStatus, outputFormat coreformat.OutputFormat, w io.Writer) error {
+	switch outputFormat {
+	case coreformat.Json:
+		data, err := json.Marshal(statuses)
+		if err != nil {
+			return errorutils.CheckErrorf("failed to marshal sync status response: %s", err.Error())
+		}
+		clientlog.Output(clientUtils.IndentJson(data))
+		return nil
+	case coreformat.Table:
+		return printSyncStatusTable(statuses, w)
+	default:
+		return errorutils.CheckErrorf("unsupported format '%s' for pl sync-status. Accepted values: table, json", outputFormat)
+	}
+}
+
+func printSyncStatusTable(statuses []plservices.PipelineSyncStatus, w io.Writer) error {
+	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
+	_, _ = fmt.Fprintln(tw, "BRANCH\tSTATUS\tIS_SYNCING\tSTARTED\tENDED\tCOMMIT_SHA")
+	for _, s := range statuses {
+		isSyncing := false
+		if s.IsSyncing != nil {
+			isSyncing = *s.IsSyncing
+		}
+		_, _ = fmt.Fprintf(tw, "%s\t%d\t%t\t%s\t%s\t%s\n",
+			s.PipelineSourceBranch,
+			s.LastSyncStatusCode,
+			isSyncing,
+			s.LastSyncStartedAt.Format("2006-01-02T15:04:05Z"),
+			s.LastSyncEndedAt.Format("2006-01-02T15:04:05Z"),
+			s.CommitData.CommitSha,
+		)
+	}
+	return tw.Flush()
 }
 
 // getVersion version command handler
@@ -174,24 +305,38 @@ func getVersion(c *cli.Context) error {
 
 // triggerNewRun triggers a new run for supplied flag values
 func triggerNewRun(c *cli.Context) error {
-	// Read arguments pipeline name and branch to trigger pipeline run
+	if c.IsSet(cliutils.Format) {
+		if _, fmtErr := coreformat.ParseOutputFormat(c.String(cliutils.Format), []coreformat.OutputFormat{coreformat.Json}); fmtErr != nil {
+			return fmtErr
+		}
+	}
+
 	pipelineName := c.Args().Get(0)
 	branch := c.Args().Get(1)
 	multiBranch := getMultiBranch(c)
 	coreutils.PrintTitle("Triggering pipeline run ")
 	clientlog.Info("Triggering on pipeline:", pipelineName, "for branch:", branch)
 
-	// Get service config details
 	serviceDetails, err := createPipelinesDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
 
-	// Trigger a pipeline run using branch name and pipeline name
 	triggerCommand := pipelines.NewTriggerCommand()
 	triggerCommand.SetBranch(branch).
 		SetPipelineName(pipelineName).
 		SetServerDetails(serviceDetails).
 		SetMultiBranch(multiBranch)
-	return commands.Exec(triggerCommand)
+
+	if err = commands.Exec(triggerCommand); err != nil {
+		return err
+	}
+
+	// error == nil guarantees the server responded with 200.
+	// The client layer discards the body, so we pass nil and let the helper
+	// synthesize {"status_code": 200, "message": "OK"}.
+	if c.IsSet(cliutils.Format) {
+		cliutils.FormatHTTPResponseJSON(nil, 200)
+	}
+	return nil
 }

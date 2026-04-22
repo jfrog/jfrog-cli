@@ -1,10 +1,17 @@
 package missioncontrol
 
 import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"os"
+	"sort"
 	"strconv"
+	"text/tabwriter"
 
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	coreCommonCommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	coreformat "github.com/jfrog/jfrog-cli-core/v2/common/format"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli-core/v2/missioncontrol/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
@@ -18,6 +25,7 @@ import (
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
 )
 
@@ -85,11 +93,61 @@ func jpdAdd(c *cli.Context) error {
 	if len(c.Args()) != 1 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
+	outputFormat, err := commonCliUtils.GetOutputFormat(c, coreformat.Json)
+	if err != nil {
+		return err
+	}
 	jpdAddFlags, err := createJpdAddFlags(c)
 	if err != nil {
 		return err
 	}
-	return commands.JpdAdd(jpdAddFlags)
+	body, err := commands.JpdAdd(jpdAddFlags)
+	if err != nil {
+		return err
+	}
+	return printJpdAddResponse(body, outputFormat, os.Stdout)
+}
+
+func printJpdAddResponse(body []byte, outputFormat coreformat.OutputFormat, w io.Writer) error {
+	switch outputFormat {
+	case coreformat.Json:
+		log.Output(clientutils.IndentJson(body))
+		return nil
+	case coreformat.Table:
+		return printJpdAddTable(body, w)
+	default:
+		return errorutils.CheckErrorf("unsupported format '%s' for jpd-add. Accepted values: table, json", outputFormat)
+	}
+}
+
+func printJpdAddTable(body []byte, w io.Writer) error {
+	var data map[string]any
+	if err := json.Unmarshal(body, &data); err != nil {
+		return errorutils.CheckErrorf("failed to parse jpd-add response: %s", err.Error())
+	}
+	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
+	_, _ = fmt.Fprintln(tw, "FIELD\tVALUE")
+	orderedKeys := []string{"id", "name", "url", "location", "licenses", "type"}
+	printed := map[string]bool{}
+	for _, k := range orderedKeys {
+		if v, ok := data[k]; ok && v != nil {
+			_, _ = fmt.Fprintf(tw, "%s\t%v\n", k, v)
+			printed[k] = true
+		}
+	}
+	remaining := []string{}
+	for k := range data {
+		if !printed[k] {
+			remaining = append(remaining, k)
+		}
+	}
+	sort.Strings(remaining)
+	for _, k := range remaining {
+		if data[k] != nil {
+			_, _ = fmt.Fprintf(tw, "%s\t%v\n", k, data[k])
+		}
+	}
+	return tw.Flush()
 }
 
 func jpdDelete(c *cli.Context) error {
@@ -108,12 +166,34 @@ func licenseAcquire(c *cli.Context) error {
 	if size != 2 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
+	outputFormat, err := commonCliUtils.GetOutputFormat(c, coreformat.Table)
+	if err != nil {
+		return err
+	}
 	mcDetails, err := createMissionControlDetails(c)
 	if err != nil {
 		return err
 	}
+	licenseKey, err := commands.LicenseAcquire(c.Args()[0], c.Args()[1], mcDetails)
+	if err != nil {
+		return err
+	}
+	return printLicenseAcquireResponse(licenseKey, outputFormat, os.Stdout)
+}
 
-	return commands.LicenseAcquire(c.Args()[0], c.Args()[1], mcDetails)
+func printLicenseAcquireResponse(licenseKey string, outputFormat coreformat.OutputFormat, w io.Writer) error {
+	switch outputFormat {
+	case coreformat.Json:
+		log.Output(clientutils.IndentJson([]byte(`{"license_key":"` + licenseKey + `"}`)))
+		return nil
+	case coreformat.Table:
+		tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
+		_, _ = fmt.Fprintln(tw, "FIELD\tVALUE")
+		_, _ = fmt.Fprintf(tw, "license_key\t%s\n", licenseKey)
+		return tw.Flush()
+	default:
+		return errorutils.CheckErrorf("unsupported format '%s' for license-acquire. Accepted values: table, json", outputFormat)
+	}
 }
 
 func licenseDeploy(c *cli.Context) error {
@@ -121,11 +201,61 @@ func licenseDeploy(c *cli.Context) error {
 	if size != 2 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
+	outputFormat, err := commonCliUtils.GetOutputFormat(c, coreformat.Json)
+	if err != nil {
+		return err
+	}
 	flags, err := createLicenseDeployFlags(c)
 	if err != nil {
 		return err
 	}
-	return commands.LicenseDeploy(c.Args()[0], c.Args()[1], flags)
+	body, err := commands.LicenseDeploy(c.Args()[0], c.Args()[1], flags)
+	if err != nil {
+		return err
+	}
+	return printLicenseDeployResponse(body, outputFormat, os.Stdout)
+}
+
+func printLicenseDeployResponse(body []byte, outputFormat coreformat.OutputFormat, w io.Writer) error {
+	switch outputFormat {
+	case coreformat.Json:
+		log.Output(clientutils.IndentJson(body))
+		return nil
+	case coreformat.Table:
+		return printLicenseDeployTable(body, w)
+	default:
+		return errorutils.CheckErrorf("unsupported format '%s' for license-deploy. Accepted values: table, json", outputFormat)
+	}
+}
+
+func printLicenseDeployTable(body []byte, w io.Writer) error {
+	var data map[string]any
+	if err := json.Unmarshal(body, &data); err != nil {
+		return errorutils.CheckErrorf("failed to parse license-deploy response: %s", err.Error())
+	}
+	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
+	_, _ = fmt.Fprintln(tw, "FIELD\tVALUE")
+	orderedKeys := []string{"bucket_id", "jpd_id", "license_count", "status"}
+	printed := map[string]bool{}
+	for _, k := range orderedKeys {
+		if v, ok := data[k]; ok && v != nil {
+			_, _ = fmt.Fprintf(tw, "%s\t%v\n", k, v)
+			printed[k] = true
+		}
+	}
+	remaining := []string{}
+	for k := range data {
+		if !printed[k] {
+			remaining = append(remaining, k)
+		}
+	}
+	sort.Strings(remaining)
+	for _, k := range remaining {
+		if data[k] != nil {
+			_, _ = fmt.Fprintf(tw, "%s\t%v\n", k, data[k])
+		}
+	}
+	return tw.Flush()
 }
 
 func licenseRelease(c *cli.Context) error {
