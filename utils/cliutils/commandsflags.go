@@ -584,7 +584,6 @@ const (
 	branch       = "branch"
 	Trigger      = "trigger"
 	pipelineName = "pipeline-name"
-	name         = "name"
 	Validate     = "validate"
 	Resources    = "resources"
 	monitor      = "monitor"
