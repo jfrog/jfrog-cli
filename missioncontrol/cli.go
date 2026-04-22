@@ -1,11 +1,16 @@
 package missioncontrol
 
 import (
+	"fmt"
+	"io"
+	"os"
 	"strconv"
+	"text/tabwriter"
 
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	coreCommonCommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
+	coreformat "github.com/jfrog/jfrog-cli-core/v2/common/format"
 	"github.com/jfrog/jfrog-cli-core/v2/missioncontrol/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli/docs/common"
@@ -18,6 +23,7 @@ import (
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
 )
 
@@ -112,8 +118,38 @@ func licenseAcquire(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	licenseKey, err := commands.LicenseAcquire(c.Args()[0], c.Args()[1], mcDetails)
+	if err != nil {
+		return err
+	}
+	outputFormat, err := getLicenseAcquireOutputFormat(c)
+	if err != nil {
+		return err
+	}
+	return printLicenseAcquireResponse(licenseKey, outputFormat, os.Stdout)
+}
 
-	return commands.LicenseAcquire(c.Args()[0], c.Args()[1], mcDetails)
+// getLicenseAcquireOutputFormat defaults to table for a labeled output.
+func getLicenseAcquireOutputFormat(c *cli.Context) (coreformat.OutputFormat, error) {
+	if !c.IsSet(cliutils.Format) {
+		return coreformat.Table, nil
+	}
+	return coreformat.GetOutputFormat(c.String(cliutils.Format))
+}
+
+func printLicenseAcquireResponse(licenseKey string, outputFormat coreformat.OutputFormat, w io.Writer) error {
+	switch outputFormat {
+	case coreformat.Json:
+		log.Output(clientutils.IndentJson([]byte(`{"license_key":"` + licenseKey + `"}`)))
+		return nil
+	case coreformat.Table:
+		tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
+		_, _ = fmt.Fprintln(tw, "FIELD\tVALUE")
+		_, _ = fmt.Fprintf(tw, "license_key\t%s\n", licenseKey)
+		return tw.Flush()
+	default:
+		return errorutils.CheckErrorf("unsupported format '%s' for license-acquire. Accepted values: table, json", outputFormat)
+	}
 }
 
 func licenseDeploy(c *cli.Context) error {

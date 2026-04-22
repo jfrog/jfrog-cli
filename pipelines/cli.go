@@ -1,8 +1,15 @@
 package pipelines
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
+	"os"
+	"text/tabwriter"
+
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	coreformat "github.com/jfrog/jfrog-cli-core/v2/common/format"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	pipelines "github.com/jfrog/jfrog-cli-core/v2/pipelines/commands"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
@@ -13,9 +20,11 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/pipelines/syncstatus"
 	"github.com/jfrog/jfrog-cli/docs/pipelines/trigger"
 	"github.com/jfrog/jfrog-cli/docs/pipelines/version"
-
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
+	plservices "github.com/jfrog/jfrog-client-go/pipelines/services"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/urfave/cli"
 )
 
@@ -96,7 +105,6 @@ func createPipelinesDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, e
 func fetchLatestPipelineRunStatus(c *cli.Context) error {
 	clientlog.Info(coreutils.PrintTitle("Fetching pipeline run status"))
 
-	// Read flags for status command
 	pipName := c.String("pipeline-name")
 	notify := c.Bool("monitor")
 	branch := c.String("branch")
@@ -105,15 +113,73 @@ func fetchLatestPipelineRunStatus(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+
+	outputFormat, err := getPipelineStatusOutputFormat(c)
+	if err != nil {
+		return err
+	}
+
 	statusCommand := pipelines.NewStatusCommand()
 	statusCommand.SetBranch(branch).
 		SetPipeline(pipName).
 		SetNotify(notify).
-		SetMultiBranch(multiBranch)
+		SetMultiBranch(multiBranch).
+		SetServerDetails(serviceDetails)
 
-	// Set server details
-	statusCommand.SetServerDetails(serviceDetails)
-	return commands.Exec(statusCommand)
+	if c.IsSet(cliutils.Format) {
+		statusCommand.SetSuppressOutput(true)
+	}
+
+	if err = commands.Exec(statusCommand); err != nil {
+		return err
+	}
+
+	if !c.IsSet(cliutils.Format) {
+		return nil
+	}
+	return printPipelineStatusResponse(statusCommand.Response(), outputFormat, os.Stdout)
+}
+
+// getPipelineStatusOutputFormat defaults to table.
+func getPipelineStatusOutputFormat(c *cli.Context) (coreformat.OutputFormat, error) {
+	if !c.IsSet(cliutils.Format) {
+		return coreformat.Table, nil
+	}
+	return coreformat.GetOutputFormat(c.String(cliutils.Format))
+}
+
+func printPipelineStatusResponse(resp *plservices.PipelineRunStatusResponse, outputFormat coreformat.OutputFormat, w io.Writer) error {
+	switch outputFormat {
+	case coreformat.Json:
+		data, err := json.Marshal(resp)
+		if err != nil {
+			return errorutils.CheckErrorf("failed to marshal pipeline status response: %s", err.Error())
+		}
+		clientlog.Output(clientUtils.IndentJson(data))
+		return nil
+	case coreformat.Table:
+		return printPipelineStatusTable(resp, w)
+	default:
+		return errorutils.CheckErrorf("unsupported format '%s' for pl status. Accepted values: table, json", outputFormat)
+	}
+}
+
+func printPipelineStatusTable(resp *plservices.PipelineRunStatusResponse, w io.Writer) error {
+	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
+	_, _ = fmt.Fprintln(tw, "PIPELINE\tBRANCH\tRUN\tSTATUS\tDURATION")
+	for _, pipe := range resp.Pipelines {
+		if pipe.LatestRunID == 0 {
+			continue
+		}
+		_, _ = fmt.Fprintf(tw, "%s\t%s\t%d\t%d\t%ds\n",
+			pipe.Name,
+			pipe.PipelineSourceBranch,
+			pipe.Run.RunNumber,
+			pipe.Run.StatusCode,
+			pipe.Run.DurationSeconds,
+		)
+	}
+	return tw.Flush()
 }
 
 // syncPipelineResources sync pipelines resource

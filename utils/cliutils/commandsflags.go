@@ -2142,7 +2142,7 @@ var commandFlags = map[string][]string{
 		mcUrl, mcAccessToken, mcInteractive,
 	},
 	LicenseAcquire: {
-		mcUrl, mcAccessToken,
+		mcUrl, mcAccessToken, Format,
 	},
 	LicenseDeploy: {
 		mcUrl, mcAccessToken, licenseCount,
@@ -2168,7 +2168,7 @@ var commandFlags = map[string][]string{
 	Intro: {},
 	// Pipelines commands
 	Status: {
-		branch, serverId, pipelineName, monitor, singleBranch,
+		branch, serverId, pipelineName, monitor, singleBranch, Format,
 	},
 	Trigger: {
 		serverId, singleBranch,
