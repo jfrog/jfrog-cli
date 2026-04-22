@@ -2145,13 +2145,13 @@ var commandFlags = map[string][]string{
 		mcUrl, mcAccessToken, Format,
 	},
 	LicenseDeploy: {
-		mcUrl, mcAccessToken, licenseCount,
+		mcUrl, mcAccessToken, licenseCount, Format,
 	},
 	LicenseRelease: {
 		mcUrl, mcAccessToken,
 	},
 	JpdAdd: {
-		mcUrl, mcAccessToken,
+		mcUrl, mcAccessToken, Format,
 	},
 	JpdDelete: {
 		mcUrl, mcAccessToken,
