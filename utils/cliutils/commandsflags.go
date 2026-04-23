@@ -627,7 +627,7 @@ var flagsMap = map[string]cli.Flag{
 	// General output format flag
 	Format: cli.StringFlag{
 		Name:  Format,
-		Usage: format.GetFormatFlagDescription() + "` `",
+		Usage: format.GetFormatFlagDescription(format.Json) + "` `",
 	},
 	// Common commands flags
 	platformUrl: cli.StringFlag{
