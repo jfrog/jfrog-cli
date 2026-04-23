@@ -8,9 +8,6 @@
   },
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "xml": "1.0.1"
-  },
   "devDependencies": {
     "json": "9.0.6"
   }
