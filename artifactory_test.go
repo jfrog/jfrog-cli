@@ -3512,7 +3512,7 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownload(t *testing.T) {
 // client-go.
 func TestArtifactoryDownloadByPatternAndBuildFromVirtualRepo(t *testing.T) {
 	initArtifactoryTest(t, "")
-	buildNumberA, buildNumberB := "10", "11"
+	buildNumberA, buildNumberB := uniqueBuildNumberPair()
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 
 	// Upload two disjoint sets of files under distinct build numbers, both into the local
@@ -3547,13 +3547,41 @@ func TestArtifactoryDownloadByPatternAndBuildFromVirtualRepo(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+// uniqueBuildNumberPair returns two distinct build numbers unique across test runs, so
+// partially-cleaned state from a previous run never collides with the current one.
+func uniqueBuildNumberPair() (string, string) {
+	base := strconv.FormatInt(time.Now().UnixNano(), 10)
+	return base + "1", base + "2"
+}
+
+// writeBuildPatternVirtualSpec writes a download spec targeting the virtual repo's data
+// directory, pinned to the given build number. Generated inline so the spec always
+// reflects the runtime-unique build number used during upload.
+func writeBuildPatternVirtualSpec(t *testing.T, buildNumber string) string {
+	assert.NoError(t, fileutils.CreateDirIfNotExist(tests.Out))
+	specContent := fmt.Sprintf(`{
+  "files": [
+    {
+      "pattern": "%s/data/*",
+      "target": "out/download/by_build_virtual_spec/",
+      "build": "%s/%s",
+      "flat": "true"
+    }
+  ]
+}`, tests.RtVirtualRepo, tests.RtBuildName1, buildNumber)
+
+	specFile := filepath.Join(tests.Out, "build_pattern_virtual_spec.json")
+	assert.NoError(t, os.WriteFile(specFile, []byte(specContent), 0644))
+	return specFile
+}
+
 // TestArtifactoryDownloadByPatternAndBuildFromVirtualRepoUsingSpec is the spec-file twin of
 // TestArtifactoryDownloadByPatternAndBuildFromVirtualRepo. Spec files go through a distinct
 // parser (spec.CreateSpecFromFile → CommonParams) before reaching SearchBySpecWithBuild, so
 // this asserts the virtual-repo fix survives that path too.
 func TestArtifactoryDownloadByPatternAndBuildFromVirtualRepoUsingSpec(t *testing.T) {
 	initArtifactoryTest(t, "")
-	buildNumberA, buildNumberB := "10", "11"
+	buildNumberA, buildNumberB := uniqueBuildNumberPair()
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 
 	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
@@ -3565,8 +3593,9 @@ func TestArtifactoryDownloadByPatternAndBuildFromVirtualRepoUsingSpec(t *testing
 	runRt(t, "build-publish", tests.RtBuildName1, buildNumberA)
 	runRt(t, "build-publish", tests.RtBuildName1, buildNumberB)
 
-	downloadSpec, err := tests.CreateSpec(tests.BuildPatternVirtualSpec)
-	assert.NoError(t, err)
+	// Spec is built inline so the build number stays unique per run and can't drift
+	// out of sync with the uploaded builds.
+	downloadSpec := writeBuildPatternVirtualSpec(t, buildNumberA)
 	runRt(t, "download", "--spec="+downloadSpec)
 
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -3590,7 +3619,7 @@ func TestArtifactoryDownloadByPatternAndBuildFromVirtualRepoUsingSpec(t *testing
 // Guards against regressing the sibling consumer.
 func TestArtifactorySearchByPatternAndBuildFromVirtualRepo(t *testing.T) {
 	initArtifactoryTest(t, "")
-	buildNumberA, buildNumberB := "10", "11"
+	buildNumberA, buildNumberB := uniqueBuildNumberPair()
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 
 	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
@@ -3602,10 +3631,9 @@ func TestArtifactorySearchByPatternAndBuildFromVirtualRepo(t *testing.T) {
 	runRt(t, "build-publish", tests.RtBuildName1, buildNumberA)
 	runRt(t, "build-publish", tests.RtBuildName1, buildNumberB)
 
-	// Reuses the download spec: search ignores the target field and otherwise consumes
-	// the same pattern + build shape.
-	searchSpec, err := tests.CreateSpec(tests.BuildPatternVirtualSpec)
-	assert.NoError(t, err)
+	// Reuses the same spec shape as the download variant: search ignores the target
+	// field and otherwise consumes the same pattern + build filter.
+	searchSpec := writeBuildPatternVirtualSpec(t, buildNumberA)
 	results, err := inttestutils.SearchInArtifactory(searchSpec, serverDetails, t)
 	assert.NoError(t, err)
 

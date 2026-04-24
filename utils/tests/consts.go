@@ -26,7 +26,6 @@ const (
 	BuildDownloadSpecNoBuildNumber                        = "build_download_spec_no_build_number.json"
 	BuildDownloadSpecNoBuildNumberWithSort                = "build_download_spec_no_build_number_with_sort.json"
 	BuildDownloadSpecNoPattern                            = "build_download_spec_no_pattern.json"
-	BuildPatternVirtualSpec                               = "build_pattern_virtual_spec.json"
 	BundleDownloadGpgSpec                                 = "bundle_download_gpg_spec.json"
 	BundleDownloadSpec                                    = "bundle_download_spec.json"
 	BundleDownloadSpecNoPattern                           = "bundle_download_spec_no_pattern.json"
