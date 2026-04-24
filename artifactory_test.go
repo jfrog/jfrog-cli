@@ -3556,9 +3556,9 @@ func uniqueBuildNumberPair() (string, string) {
 
 // writeBuildPatternVirtualSpec writes a download spec targeting the virtual repo's data
 // directory, pinned to the given build number. Generated inline so the spec always
-// reflects the runtime-unique build number used during upload.
+// reflects the runtime-unique build number used during upload. The spec file lives
+// under t.TempDir() so it never pollutes tests.Out, which the test compares against.
 func writeBuildPatternVirtualSpec(t *testing.T, buildNumber string) string {
-	assert.NoError(t, fileutils.CreateDirIfNotExist(tests.Out))
 	specContent := fmt.Sprintf(`{
   "files": [
     {
@@ -3570,7 +3570,7 @@ func writeBuildPatternVirtualSpec(t *testing.T, buildNumber string) string {
   ]
 }`, tests.RtVirtualRepo, tests.RtBuildName1, buildNumber)
 
-	specFile := filepath.Join(tests.Out, "build_pattern_virtual_spec.json")
+	specFile := filepath.Join(t.TempDir(), "build_pattern_virtual_spec.json")
 	assert.NoError(t, os.WriteFile(specFile, []byte(specContent), 0644))
 	return specFile
 }
