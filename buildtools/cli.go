@@ -5,6 +5,7 @@ import (
 	"fmt"
 	conancommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/conan"
 	"io/fs"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -79,6 +80,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pnpmconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/poetry"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/poetryconfig"
+	uvcommand "github.com/jfrog/jfrog-cli/docs/buildtools/uvcommand"
 	yarndocs "github.com/jfrog/jfrog-cli/docs/buildtools/yarn"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/yarnconfig"
 	"github.com/jfrog/jfrog-cli/docs/common"
@@ -356,6 +358,18 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
 			Action:          PoetryCmd,
+		},
+		{
+			Name:            "uv",
+			Flags:           cliutils.GetCommandFlags(cliutils.UvInstall),
+			Usage:           uvcommand.GetDescription(),
+			HelpName:        corecommon.CreateUsage("uv", uvcommand.GetDescription(), uvcommand.Usage),
+			UsageText:       uvcommand.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Category:        buildToolsCategory,
+			Action:          UvCmd,
 		},
 		{
 			Name:            "helm",
@@ -1615,6 +1629,204 @@ func getCommandName(orgArgs []string) (string, []string) {
 	return "", cmdArgs
 }
 
+// uvIndexEntry holds the name and URL of a [[tool.uv.index]] entry.
+type uvIndexEntry struct {
+	Name string
+	URL  string
+}
+
+// uvPyprojectToml holds the [tool.uv] fields we need from pyproject.toml.
+type uvPyprojectToml struct {
+	Tool struct {
+		Uv struct {
+			PublishURL string `toml:"publish-url"`
+			Index      []struct {
+				Name string `toml:"name"`
+				URL  string `toml:"url"`
+			} `toml:"index"`
+		} `toml:"uv"`
+	} `toml:"tool"`
+}
+
+// parseUvPyproject reads and parses pyproject.toml from workingDir.
+// Returns zero-value struct on any error (missing file is a normal non-error case).
+func parseUvPyproject(workingDir string) uvPyprojectToml {
+	data, err := os.ReadFile(filepath.Join(workingDir, "pyproject.toml"))
+	if err != nil {
+		return uvPyprojectToml{}
+	}
+	var p uvPyprojectToml
+	if err := toml.Unmarshal(data, &p); err != nil {
+		return uvPyprojectToml{}
+	}
+	return p
+}
+
+// uvPublishURLFromToml reads [tool.uv] publish-url from pyproject.toml in workingDir.
+func uvPublishURLFromToml(workingDir string) string {
+	return parseUvPyproject(workingDir).Tool.Uv.PublishURL
+}
+
+// uvReadIndexesFromToml returns all [[tool.uv.index]] entries from pyproject.toml in workingDir.
+func uvReadIndexesFromToml(workingDir string) []uvIndexEntry {
+	p := parseUvPyproject(workingDir)
+	var entries []uvIndexEntry
+	for _, idx := range p.Tool.Uv.Index {
+		if idx.Name != "" {
+			entries = append(entries, uvIndexEntry{Name: idx.Name, URL: idx.URL})
+		}
+	}
+	return entries
+}
+
+// uvIndexHasNativeCredentials returns true if the given index already has
+// credentials configured through a native UV mechanism, meaning jf config
+// injection should be skipped to avoid overriding the user's own auth.
+//
+// Checked sources (in order):
+//  1. UV_INDEX_<NAME>_USERNAME env var already set
+//  2. Credentials embedded in the index URL (https://user:pass@host/...)
+//  3. ~/.netrc entry for the index URL's host
+func uvIndexHasNativeCredentials(indexURL, envVarUsername string) bool {
+	if os.Getenv(envVarUsername) != "" {
+		return true
+	}
+	if uvURLHasEmbeddedCredentials(indexURL) {
+		return true
+	}
+	if uvNetrcHasCredentials(indexURL) {
+		return true
+	}
+	return false
+}
+
+// uvHostOf returns the hostname from a URL, or empty string on parse error.
+func uvHostOf(rawURL string) string {
+	if rawURL == "" {
+		return ""
+	}
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return ""
+	}
+	return parsed.Hostname()
+}
+
+// uvHostMatchesServer returns true when the publish URL's hostname is the same
+// as the Artifactory server configured in jf config. This prevents injecting
+// credentials from one Artifactory instance onto a different instance's URL.
+func uvHostMatchesServer(publishURL, serverURL string) bool {
+	return uvHostOf(publishURL) != "" && uvHostOf(publishURL) == uvHostOf(serverURL)
+}
+
+// uvMatchingIndexCredentials looks for a [[tool.uv.index]] whose URL shares the
+// same hostname as publishURL. If found, it returns credentials from the first
+// matching source (in priority order):
+//  1. UV_INDEX_<NAME>_USERNAME / _PASSWORD env vars
+//  2. Credentials embedded directly in the index URL (https://user:pass@host/...)
+//
+// This handles the case where the user authenticated the index natively
+// (env var or embedded URL) and the publish target is on the same host.
+func uvMatchingIndexCredentials(publishURL, workingDir string) (username, password string) {
+	publishHost := uvHostOf(publishURL)
+	if publishHost == "" {
+		return "", ""
+	}
+	for _, idx := range uvReadIndexesFromToml(workingDir) {
+		if uvHostOf(idx.URL) != publishHost {
+			continue
+		}
+		// Priority 1: env var credentials for this named index
+		envName := uvIndexEnvName(idx.Name)
+		u := os.Getenv("UV_INDEX_" + envName + "_USERNAME")
+		p := os.Getenv("UV_INDEX_" + envName + "_PASSWORD")
+		if u != "" {
+			return u, p
+		}
+		// Priority 2: credentials embedded in the index URL itself
+		if parsed, err := url.Parse(idx.URL); err == nil && parsed.User != nil {
+			u = parsed.User.Username()
+			p, _ = parsed.User.Password()
+			if u != "" {
+				return u, p
+			}
+		}
+	}
+	return "", ""
+}
+
+// uvURLHasEmbeddedCredentials returns true when the URL contains a userinfo
+// component (e.g. "https://user:pass@host/...").
+func uvURLHasEmbeddedCredentials(rawURL string) bool {
+	if rawURL == "" {
+		return false
+	}
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return false
+	}
+	return parsed.User != nil && parsed.User.Username() != ""
+}
+
+// uvNetrcPath returns the effective netrc file path.
+// UV (and curl/git) respect the NETRC env var for a custom path; otherwise ~/.netrc.
+func uvNetrcPath() string {
+	if custom := os.Getenv("NETRC"); custom != "" {
+		return custom
+	}
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+	return filepath.Join(homeDir, ".netrc")
+}
+
+// uvNetrcHasCredentials returns true when the netrc file (respecting the NETRC
+// env var for a custom path) contains a `machine <host>` entry for the hostname
+// of rawURL. UV reads the netrc file automatically (step 4 of its credential
+// priority chain); if it has credentials we skip injecting env vars so that
+// UV's own netrc handling is not bypassed.
+func uvNetrcHasCredentials(rawURL string) bool {
+	if rawURL == "" {
+		return false
+	}
+	parsed, err := url.Parse(rawURL)
+	if err != nil || parsed.Host == "" {
+		return false
+	}
+	host := parsed.Hostname()
+
+	data, err := os.ReadFile(uvNetrcPath())
+	if err != nil {
+		return false // netrc not present → no native credentials at step 4
+	}
+	// Scan for "machine <host>" — handles both single-line and multi-line netrc formats.
+	for _, line := range strings.Split(string(data), "\n") {
+		fields := strings.Fields(line)
+		if len(fields) >= 2 && fields[0] == "machine" && fields[1] == host {
+			return true
+		}
+	}
+	return false
+}
+
+// uvIndexEnvName converts a UV index name to the env var suffix UV expects.
+// UV uppercases the name and replaces hyphens, dots, and spaces with underscores.
+// e.g. "agrasth-uv-local" → "AGRASTH_UV_LOCAL"
+func uvIndexEnvName(name string) string {
+	upper := strings.ToUpper(name)
+	return strings.NewReplacer("-", "_", ".", "_", " ", "_").Replace(upper)
+}
+
+// uvResolveServerDetails returns server details for the given server ID.
+// If serverID is empty, the default configured server is used.
+func uvResolveServerDetails(serverID string) (*coreConfig.ServerDetails, error) {
+	if serverID == "" {
+		return coreConfig.GetDefaultServerConf()
+	}
+	return coreConfig.GetSpecificConfig(serverID, true, true)
+}
+
 // getPrimarySourceFromToml reads pyproject.toml and returns the name of the primary source
 // Returns (sourceName, isPrimary) where isPrimary indicates if source has priority='primary'
 func getPrimarySourceFromToml() (string, bool) {
@@ -1809,6 +2021,10 @@ func PoetryCmd(c *cli.Context) error {
 	return pythonCmd(c, project.Poetry)
 }
 
+func UvCmd(c *cli.Context) error {
+	return pythonCmd(c, project.UV)
+}
+
 // HelmCmd executes Helm commands with build info collection support
 func HelmCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
@@ -1944,6 +2160,186 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 	}
 	if c.NArg() < 1 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	// UV always runs in native mode (no config file required).
+	if projectType == project.UV {
+		log.Debug("Routing UV to native implementation")
+		args := cliutils.ExtractCommand(c)
+		filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
+		if err != nil {
+			return err
+		}
+		var serverID string
+		filteredArgs, serverID, err = coreutils.ExtractServerIdFromCommand(filteredArgs)
+		if err != nil {
+			return fmt.Errorf("failed to extract server ID: %w", err)
+		}
+		workingDir, err := os.Getwd()
+		if err != nil {
+			return fmt.Errorf("failed to get working directory: %w", err)
+		}
+		cmdName, uvArgs := getCommandName(filteredArgs)
+
+		// Resolve publish URL early so auth injection can use the CLI --publish-url value.
+		// Priority: explicit --publish-url flag → pyproject.toml [tool.uv].publish-url.
+		deployerRepo := ""
+		for i, arg := range uvArgs {
+			if strings.HasPrefix(arg, "--publish-url=") {
+				deployerRepo = strings.TrimPrefix(arg, "--publish-url=")
+			} else if arg == "--publish-url" && i+1 < len(uvArgs) {
+				deployerRepo = uvArgs[i+1]
+			}
+		}
+		if cmdName == "publish" && deployerRepo == "" {
+			if tomlURL := uvPublishURLFromToml(workingDir); tomlURL != "" {
+				deployerRepo = tomlURL
+				uvArgs = append(uvArgs, "--publish-url", tomlURL)
+				log.Info("Using publish URL from pyproject.toml [tool.uv]: " + tomlURL)
+			}
+		}
+
+		// jf uv is a transparent wrapper over the uv CLI.
+		// The ONLY addition is build info collection after each command.
+		//
+		// Credential injection follows UV's own priority order exactly:
+		//   1. CLI flags (--username, --password, --token)  — passed through as-is
+		//   2. Env vars (UV_INDEX_*_USERNAME, UV_PUBLISH_*, UV_INDEX_URL)  ← we inject here as fallback
+		//   3. URL-embedded credentials (https://user:pass@host/...)  — UV handles natively
+		//   4. ~/.netrc  (or path from $NETRC env var)  — UV handles natively
+		//   5. keyring  — UV handles natively; we only disable it if we inject
+		//
+		// jf config credentials are injected ONLY when steps 2-5 don't already
+		// cover the target host, and only when the index/publish URL is on the
+		// same Artifactory instance as the configured jf server.
+		serverDetails, credErr := uvResolveServerDetails(serverID)
+		if credErr != nil {
+			log.Warn("UV auth: could not load jf server config — " + credErr.Error())
+		} else if serverDetails != nil {
+			user := serverDetails.User
+			// Prefer API key (Password field) over JWT access token — JWTs expire.
+			pass := serverDetails.Password
+			if pass == "" {
+				pass = serverDetails.AccessToken
+			}
+
+			if user != "" && pass != "" {
+				// injectedAny tracks whether we set any UV credential env vars.
+				// UV_KEYRING_PROVIDER=disabled is set only when we inject something,
+				// so keyring stays available when all auth is handled natively.
+				injectedAny := false
+
+				// UV_INDEX_URL is UV's global index fallback (env var priority, step 2).
+				// If already set, the user has configured it natively — don't touch it.
+				if os.Getenv("UV_INDEX_URL") != "" {
+					log.Info("UV auth: UV_INDEX_URL is set globally (native)")
+				}
+
+				// Per-index credentials: check each [[tool.uv.index]] in pyproject.toml.
+				for _, idx := range uvReadIndexesFromToml(workingDir) {
+					envName := uvIndexEnvName(idx.Name)
+					userKey := "UV_INDEX_" + envName + "_USERNAME"
+
+					switch {
+					// Step 2: env var already set by user
+					case os.Getenv(userKey) != "":
+						log.Info(fmt.Sprintf("UV auth [index %q]: using env var %s (native, step 2)", idx.Name, userKey))
+					// Step 3: credentials embedded in index URL
+					case uvURLHasEmbeddedCredentials(idx.URL):
+						log.Info(fmt.Sprintf("UV auth [index %q]: using credentials embedded in URL (native, step 3)", idx.Name))
+					// Step 4: ~/.netrc (or $NETRC custom path)
+					case uvNetrcHasCredentials(idx.URL):
+						log.Info(fmt.Sprintf("UV auth [index %q]: using %s (native, step 4)", idx.Name, uvNetrcPath()))
+					// Fallback: inject jf config — only safe when URL is on the same
+					// Artifactory instance as the jf server config.
+					default:
+						if uvHostMatchesServer(idx.URL, serverDetails.ArtifactoryUrl) {
+							os.Setenv(userKey, user)
+							os.Setenv("UV_INDEX_"+envName+"_PASSWORD", pass)
+							injectedAny = true
+							log.Info(fmt.Sprintf("UV auth [index %q]: using jf server config (user: %s, fallback)", idx.Name, user))
+						} else {
+							log.Warn(fmt.Sprintf(
+								"UV auth [index %q]: index host (%s) differs from jf server config host (%s) — "+
+									"set UV_INDEX_%s_USERNAME/PASSWORD, embed credentials in the URL, or add ~/.netrc entry for %s",
+								idx.Name, uvHostOf(idx.URL), uvHostOf(serverDetails.ArtifactoryUrl),
+								envName, uvHostOf(idx.URL)))
+						}
+					}
+				}
+
+				// Only disable keyring when we injected jf config credentials.
+				// When UV handles auth natively (steps 2-4 above), keyring stays
+				// enabled so UV's full priority chain works without interference.
+				if injectedAny {
+					os.Setenv("UV_KEYRING_PROVIDER", "disabled")
+				}
+
+				if cmdName == "publish" {
+					// Publish auth follows UV's priority chain exactly:
+					//   Step 2a: UV_PUBLISH_TOKEN (token-only, username becomes __token__)
+					//   Step 2b: UV_PUBLISH_USERNAME + UV_PUBLISH_PASSWORD
+					//   Step 3:  Credentials embedded in publish URL
+					//   Step 4:  ~/.netrc (or $NETRC custom path)
+					//   Step 4b: Same-host index credentials reused for publish
+					//            (when index and publish URL share the same Artifactory host,
+					//             the index native credentials are valid for publish too)
+					//   Fallback: jf server config (only if publish host == jf config host)
+					switch {
+					case os.Getenv("UV_PUBLISH_TOKEN") != "":
+						log.Info("UV auth [publish]: using UV_PUBLISH_TOKEN (native, step 2a)")
+					case os.Getenv("UV_PUBLISH_USERNAME") != "" || os.Getenv("UV_PUBLISH_PASSWORD") != "":
+						log.Info("UV auth [publish]: using UV_PUBLISH_USERNAME/PASSWORD (native, step 2b)")
+					default:
+						// deployerRepo is already resolved (CLI flag > pyproject.toml) before auth block.
+						switch {
+						case uvURLHasEmbeddedCredentials(deployerRepo):
+							log.Info("UV auth [publish]: using credentials embedded in publish URL (native, step 3)")
+						case uvNetrcHasCredentials(deployerRepo):
+							log.Info(fmt.Sprintf("UV auth [publish]: using %s (native, step 4)", uvNetrcPath()))
+						default:
+							// Same-host index credentials: if any [[tool.uv.index]] on the same
+							// host has native credentials (env var or embedded URL), reuse them
+							// for publish — same Artifactory instance, same auth works.
+							if idxUser, idxPass := uvMatchingIndexCredentials(deployerRepo, workingDir); idxUser != "" {
+								os.Setenv("UV_PUBLISH_USERNAME", idxUser)
+								os.Setenv("UV_PUBLISH_PASSWORD", idxPass)
+								os.Setenv("UV_KEYRING_PROVIDER", "disabled")
+								log.Info("UV auth [publish]: using same-host index credentials (native, step 4b)")
+							} else if uvHostMatchesServer(deployerRepo, serverDetails.ArtifactoryUrl) {
+								os.Setenv("UV_PUBLISH_USERNAME", user)
+								os.Setenv("UV_PUBLISH_PASSWORD", pass)
+								os.Setenv("UV_KEYRING_PROVIDER", "disabled")
+								log.Info(fmt.Sprintf("UV auth [publish]: using jf server config (user: %s, fallback)", user))
+							} else {
+								log.Warn(fmt.Sprintf(
+									"UV auth [publish]: publish URL host (%s) does not match jf server config host (%s) — "+
+										"set UV_PUBLISH_USERNAME/UV_PUBLISH_PASSWORD or UV_PUBLISH_TOKEN to authenticate",
+									uvHostOf(deployerRepo), uvHostOf(serverDetails.ArtifactoryUrl)))
+							}
+						}
+					}
+				}
+			}
+		}
+
+		log.Info(fmt.Sprintf("Running UV %s.", cmdName))
+		if err := runNativePackageManagerCmd("uv", append([]string{cmdName}, uvArgs...)); err != nil {
+			return fmt.Errorf("uv %s failed: %w", cmdName, err)
+		}
+
+		if buildConfiguration != nil {
+			buildName, err := buildConfiguration.GetBuildName()
+			if err == nil && buildName != "" {
+				workingDir, err := os.Getwd()
+				if err != nil {
+					log.Warn("Failed to get working directory, skipping build info collection: " + err.Error())
+				} else if err := buildinfo.GetUvBuildInfo(workingDir, buildConfiguration, deployerRepo, cmdName, serverDetails); err != nil {
+					log.Warn("Failed to collect UV build info: " + err.Error())
+				}
+			}
+		}
+		return nil
 	}
 
 	// FlexPack native mode for Poetry (bypasses config file requirements)

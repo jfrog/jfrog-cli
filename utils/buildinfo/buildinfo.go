@@ -12,6 +12,9 @@ import (
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/build-info-go/flexpack"
 	"github.com/jfrog/gofrog/crypto"
+	"encoding/json"
+	"io"
+
 	artutils "github.com/jfrog/jfrog-cli-artifactory/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	buildUtils "github.com/jfrog/jfrog-cli-core/v2/common/build"
@@ -42,6 +45,9 @@ func GetBuildInfoForPackageManager(pkgManager, workingDir string, buildConfigura
 	log.Debug("Collecting build info for package manager: " + pkgManager)
 
 	switch pkgManager {
+	case "uv":
+		// Pass "sync" as cmdName so dependency enrichment runs (same path as jf uv sync).
+		return GetUvBuildInfo(workingDir, buildConfiguration, "", "sync", nil)
 	case "poetry":
 		return GetPoetryBuildInfo(workingDir, buildConfiguration, "") // Empty deployer repo - will use from pyproject.toml
 	case "mvn", "maven":
@@ -125,6 +131,308 @@ func GetPoetryBuildInfo(workingDir string, buildConfiguration *buildUtils.BuildC
 	}
 
 	return nil
+}
+
+// GetUvBuildInfo collects build info for UV projects using the FlexPack native implementation.
+// cmdName is the uv subcommand that was run (sync, build, publish, etc.).
+// serverDetails is the Artifactory server to use; if nil, the default configured server is used.
+func GetUvBuildInfo(workingDir string, buildConfiguration *buildUtils.BuildConfiguration, deployerRepo, cmdName string, serverDetails *config.ServerDetails) error {
+	log.Debug(fmt.Sprintf("Collecting UV build info for command '%s' in: %s", cmdName, workingDir))
+
+	buildName, err := buildConfiguration.GetBuildName()
+	if err != nil {
+		return fmt.Errorf("GetBuildName failed: %w", err)
+	}
+	buildNumber, err := buildConfiguration.GetBuildNumber()
+	if err != nil {
+		return fmt.Errorf("GetBuildNumber failed: %w", err)
+	}
+
+	// Collect dependencies from pyproject.toml + uv.lock via FlexPack
+	uvConfig := flexpack.UvConfig{
+		WorkingDirectory:       workingDir,
+		IncludeDevDependencies: false,
+	}
+	collector, err := flexpack.NewUvFlexPack(uvConfig)
+	if err != nil {
+		return fmt.Errorf("failed to create UV FlexPack collector: %w", err)
+	}
+
+	bi, err := collector.CollectBuildInfo(buildName, buildNumber)
+	if err != nil {
+		return fmt.Errorf("failed to collect UV build info: %w", err)
+	}
+
+	// Apply --module override: if the user passed --module, replace the auto-detected
+	// module ID (name:version from pyproject.toml) with the user-supplied value.
+	if customModule := buildConfiguration.GetModule(); customModule != "" && len(bi.Modules) > 0 {
+		bi.Modules[0].Id = customModule
+	}
+
+	// For sync/install/lock: enrich dependency checksums from Artifactory.
+	// uv.lock only has sha256. Artifactory needs sha1 + md5 to link a dependency to its
+	// repo path in the build browser. We search each dependency by filename in the
+	// configured index repo (from pyproject.toml [[tool.uv.index]]) to fetch sha1+md5.
+	// This is the same mechanism pip/poetry use via UpdateDepsChecksumInfo.
+	switch cmdName {
+	case "sync", "install", "lock", "add", "remove", "run":
+		if len(bi.Modules) > 0 && len(bi.Modules[0].Dependencies) > 0 {
+			if repoKey := uvResolverRepoFromToml(workingDir); repoKey != "" {
+				sd := serverDetails
+				if sd == nil {
+					sd, _ = config.GetDefaultServerConf()
+				}
+				if sd != nil {
+					// Warn when the jf server config host doesn't match the index URL host.
+					// In this case checksum enrichment (sha1/md5) will fail because the repo
+					// lives on a different Artifactory instance than the configured server.
+					// Fix: pass --server-id pointing to the instance that hosts the uv-virtual repo.
+					if indexURL := uvIndexURLFromToml(workingDir); indexURL != "" && !uvServerHostMatches(indexURL, sd.ArtifactoryUrl) {
+						log.Warn(fmt.Sprintf(
+							"UV build-info: jf server config host (%s) differs from index URL host (%s) — "+
+								"dependency checksum enrichment (sha1/md5) will be skipped. "+
+								"Use --server-id to specify the Artifactory instance that hosts your uv packages.",
+							uvHostOf(sd.ArtifactoryUrl), uvHostOf(indexURL)))
+					}
+					enrichUvDepsFromArtifactory(bi.Modules[0].Dependencies, repoKey, sd)
+				}
+			}
+		}
+	}
+
+	// For build and publish commands, also collect artifacts from dist/
+	switch cmdName {
+	case "build":
+		// Scan dist/ and attach artifacts with local checksums only
+		if artifacts, scanErr := collectPythonDistArtifacts(workingDir); scanErr == nil && len(artifacts) > 0 {
+			if len(bi.Modules) > 0 {
+				bi.Modules[0].Artifacts = artifacts
+				log.Info(fmt.Sprintf("Collected %d artifact(s) from dist/", len(artifacts)))
+			}
+		} else if scanErr != nil {
+			log.Warn("Could not scan dist/ for artifacts: " + scanErr.Error())
+		}
+	case "publish":
+		// Scan dist/, look up Artifactory repo paths, and set build properties on uploaded files.
+		// deployerRepo may be a full URL (--publish-url https://.../api/pypi/repo) or a bare repo key.
+		repoKey := extractRepoKeyFromURL(deployerRepo)
+		sd := serverDetails
+		if sd == nil {
+			var sdErr error
+			sd, sdErr = config.GetDefaultServerConf()
+			if sdErr != nil {
+				log.Warn("Could not load server config for artifact lookup: " + sdErr.Error())
+				sd = nil
+			}
+		}
+		if sd == nil {
+			// Fall back to local artifacts only
+			if artifacts, scanErr := collectPythonDistArtifacts(workingDir); scanErr == nil && len(bi.Modules) > 0 {
+				bi.Modules[0].Artifacts = artifacts
+			}
+			break
+		}
+		if repoKey != "" {
+			// Warn when the jf server config host doesn't match the publish URL host.
+			// In this case artifact lookup and property setting will fail because the
+			// artifacts live on a different Artifactory instance than the configured server.
+			// Fix: pass --server-id pointing to the instance that hosts the uv-local repo.
+			if deployerRepo != "" && !uvServerHostMatches(deployerRepo, sd.ArtifactoryUrl) {
+				log.Warn(fmt.Sprintf(
+					"UV build-info: jf server config host (%s) differs from publish URL host (%s) — "+
+						"artifact lookup and build property setting will be skipped. "+
+						"Use --server-id to specify the Artifactory instance that hosts your uv packages.",
+					uvHostOf(sd.ArtifactoryUrl), uvHostOf(deployerRepo)))
+			} else {
+				if artErr := addArtifactsToBuildInfo(bi, sd, repoKey, workingDir); artErr != nil {
+					log.Warn("Could not look up artifact repo paths, using local checksums: " + artErr.Error())
+					if artifacts, scanErr := collectPythonDistArtifacts(workingDir); scanErr == nil && len(bi.Modules) > 0 {
+						bi.Modules[0].Artifacts = artifacts
+					}
+				}
+				// Set build.name / build.number / build.timestamp on the files in Artifactory
+				// so the build browser can link artifacts to this build.
+				if propErr := setPythonBuildProperties(sd, repoKey, buildName, buildNumber, buildConfiguration.GetProject(), bi); propErr != nil {
+					log.Warn("Failed to set build properties on artifacts: " + propErr.Error())
+				}
+			}
+		} else {
+			if artifacts, scanErr := collectPythonDistArtifacts(workingDir); scanErr == nil && len(artifacts) > 0 {
+				if len(bi.Modules) > 0 {
+					bi.Modules[0].Artifacts = artifacts
+					log.Info(fmt.Sprintf("Collected %d artifact(s) from dist/ (no deployer repo set)", len(artifacts)))
+				}
+			}
+		}
+	}
+
+	if err = saveBuildInfoNative(bi, buildConfiguration); err != nil {
+		return fmt.Errorf("failed to save UV build info: %w", err)
+	}
+
+	log.Info(fmt.Sprintf("UV build info collected. Use 'jf rt bp %s %s' to publish.", buildName, buildNumber))
+	return nil
+}
+
+// uvResolverRepoFromToml reads the first [[tool.uv.index]] URL from pyproject.toml in workingDir
+// and extracts the Artifactory repo key from it.
+// e.g. "https://host/artifactory/api/pypi/agrasth-uv-local/simple" → "agrasth-uv-local"
+// uvIndexURLFromToml returns the raw URL of the first [[tool.uv.index]] entry.
+func uvIndexURLFromToml(workingDir string) string {
+	pyprojectPath := filepath.Join(workingDir, "pyproject.toml")
+	v := viper.New()
+	v.SetConfigType("toml")
+	v.SetConfigFile(pyprojectPath)
+	if err := v.ReadInConfig(); err != nil {
+		return ""
+	}
+	raw := v.Get("tool.uv.index")
+	if raw == nil {
+		return ""
+	}
+	if idxSlice, ok := raw.([]interface{}); ok && len(idxSlice) > 0 {
+		if idxMap, ok := idxSlice[0].(map[string]interface{}); ok {
+			if urlVal, ok := idxMap["url"].(string); ok {
+				return urlVal
+			}
+		}
+	}
+	return ""
+}
+
+// uvHostOf returns the hostname from rawURL, or empty string on error.
+func uvHostOf(rawURL string) string {
+	if rawURL == "" {
+		return ""
+	}
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return ""
+	}
+	return parsed.Hostname()
+}
+
+// uvServerHostMatches returns true when rawURL's hostname matches the Artifactory server URL hostname.
+func uvServerHostMatches(rawURL, serverURL string) bool {
+	h := uvHostOf(rawURL)
+	return h != "" && h == uvHostOf(serverURL)
+}
+
+func uvResolverRepoFromToml(workingDir string) string {
+	type UvIndex struct {
+		URL string `mapstructure:"url"`
+	}
+	pyprojectPath := filepath.Join(workingDir, "pyproject.toml")
+	v := viper.New()
+	v.SetConfigType("toml")
+	v.SetConfigFile(pyprojectPath)
+	if err := v.ReadInConfig(); err != nil {
+		return ""
+	}
+	raw := v.Get("tool.uv.index")
+	if raw == nil {
+		return ""
+	}
+	if idxSlice, ok := raw.([]interface{}); ok && len(idxSlice) > 0 {
+		if idxMap, ok := idxSlice[0].(map[string]interface{}); ok {
+			if urlVal, ok := idxMap["url"].(string); ok {
+				return extractRepoKeyFromURL(urlVal)
+			}
+		}
+	}
+	return ""
+}
+
+// enrichUvDepsFromArtifactory searches each dependency by filename in the given Artifactory repo
+// and updates the dependency's sha1 and md5 checksums. Artifactory uses sha1+md5 (not sha256)
+// to link a dependency to its repo path in the build browser.
+// This is the same mechanism used by pip/poetry via UpdateDepsChecksumInfo.
+func enrichUvDepsFromArtifactory(deps []buildinfo.Dependency, repoKey string, serverDetails *config.ServerDetails) {
+	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, 0, false)
+	if err != nil {
+		log.Warn("Could not create services manager for dependency enrichment: " + err.Error())
+		return
+	}
+	// If the repo is a remote repo, Artifactory stores cached files under "<repo>-cache"
+	searchRepo, err := utils.GetRepoNameForDependenciesSearch(repoKey, servicesManager)
+	if err != nil {
+		log.Warn("Could not resolve repo for dependency search, using as-is: " + err.Error())
+		searchRepo = repoKey
+	}
+
+	enriched := 0
+	for i, dep := range deps {
+		if dep.Id == "" {
+			continue
+		}
+		// dep.Id is the wheel/sdist filename (e.g. "certifi-2026.2.25-py3-none-any.whl")
+		aqlQuery := specutils.CreateAqlQueryForPypi(searchRepo, dep.Id)
+		stream, err := servicesManager.Aql(aqlQuery)
+		if err != nil {
+			log.Debug(fmt.Sprintf("AQL search failed for %s: %v", dep.Id, err))
+			continue
+		}
+		result, err := io.ReadAll(stream)
+		stream.Close()
+		if err != nil {
+			continue
+		}
+		var aql struct {
+			Results []struct {
+				Actual_Sha1 string `json:"actual_sha1"`
+				Actual_Md5  string `json:"actual_md5"`
+				Sha256      string `json:"sha256"`
+			} `json:"results"`
+		}
+		if err := json.Unmarshal(result, &aql); err != nil || len(aql.Results) == 0 {
+			log.Debug(fmt.Sprintf("Dependency %s not found in repo %s", dep.Id, searchRepo))
+			continue
+		}
+		r := aql.Results[0]
+		deps[i].Checksum.Sha1 = r.Actual_Sha1
+		deps[i].Checksum.Md5 = r.Actual_Md5
+		if r.Sha256 != "" {
+			deps[i].Checksum.Sha256 = r.Sha256
+		}
+		enriched++
+		log.Debug(fmt.Sprintf("Enriched %s with sha1=%s md5=%s", dep.Id, r.Actual_Sha1, r.Actual_Md5))
+	}
+	if enriched > 0 {
+		log.Info(fmt.Sprintf("Enriched %d/%d UV dependencies with Artifactory checksums (repo: %s)", enriched, len(deps), searchRepo))
+	}
+}
+
+// extractRepoKeyFromURL returns just the repo key from a full Artifactory URL or a bare key.
+// e.g. "https://host/artifactory/api/pypi/my-repo" → "my-repo"
+//      "https://host/artifactory/api/pypi/my-repo/simple" → "my-repo"
+//      "my-repo" → "my-repo"
+func extractRepoKeyFromURL(repoOrURL string) string {
+	if repoOrURL == "" {
+		return ""
+	}
+	// If it doesn't look like a URL, treat it as a bare repo key
+	if !strings.HasPrefix(repoOrURL, "http://") && !strings.HasPrefix(repoOrURL, "https://") {
+		return repoOrURL
+	}
+	parsed, err := url.Parse(repoOrURL)
+	if err != nil {
+		return repoOrURL
+	}
+	// Strip trailing path segments like /simple
+	segments := strings.Split(strings.Trim(parsed.Path, "/"), "/")
+	// Find the segment after "api/pypi" or "api/npm" etc., or just take the last meaningful segment
+	for i, seg := range segments {
+		if seg == "api" && i+2 < len(segments) {
+			return segments[i+2]
+		}
+	}
+	// Fallback: last non-empty segment
+	for i := len(segments) - 1; i >= 0; i-- {
+		if segments[i] != "" && segments[i] != "simple" {
+			return segments[i]
+		}
+	}
+	return repoOrURL
 }
 
 // GetBuildInfoForUploadedArtifacts handles build info for uploaded artifacts (generic fallback)
@@ -395,7 +703,7 @@ func collectPoetryBuildInfo(workingDir, buildName, buildNumber string, serverDet
 	}
 
 	// Then set build properties on uploaded artifacts (this tags them with build info)
-	err = setPoetryBuildProperties(serverDetails, artifactRepo, buildName, buildNumber, buildConfiguration.GetProject(), buildInfo)
+	err = setPythonBuildProperties(serverDetails, artifactRepo, buildName, buildNumber, buildConfiguration.GetProject(), buildInfo)
 	if err != nil {
 		log.Warn("Failed to set build properties on artifacts: " + err.Error())
 	}
@@ -472,7 +780,7 @@ func collectArtifactsWithRepositoryPaths(serverDetails *config.ServerDetails, ta
 	log.Debug("Collecting artifacts with repository paths...")
 
 	// First get the list of local artifacts to know what to search for
-	localArtifacts, err := collectPoetryArtifacts(workingDir)
+	localArtifacts, err := collectPythonDistArtifacts(workingDir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get local artifacts: %w", err)
 	}
@@ -508,16 +816,9 @@ func collectArtifactsWithRepositoryPaths(serverDetails *config.ServerDetails, ta
 
 		// Get the most recent result (should be the one we just uploaded)
 		for searchResult := new(specutils.ResultItem); searchReader.NextRecord(searchResult) == nil; searchResult = new(specutils.ResultItem) {
-			// Create artifact with complete repository path including filename
-			fullPath := searchResult.Path
-			if !strings.HasSuffix(fullPath, "/") && !strings.HasSuffix(fullPath, searchResult.Name) {
-				// Ensure path includes the filename: "test-project/1.0.1" + "/" + "filename.whl"
-				fullPath = filepath.Join(searchResult.Path, searchResult.Name)
-			}
-
 			artifact := buildinfo.Artifact{
 				Name:     searchResult.Name,
-				Path:     fullPath, // Complete path: "test-project/1.0.1/test_project-1.0.1-py3-none-any.whl"
+				Path:     searchResult.Path, // Directory only: "package-name/version"
 				Type:     getArtifactTypeFromName(searchResult.Name),
 				Checksum: localArtifact.Checksum, // Use checksums from local file
 			}
@@ -535,8 +836,8 @@ func collectArtifactsWithRepositoryPaths(serverDetails *config.ServerDetails, ta
 	return artifacts, nil
 }
 
-// collectPoetryArtifacts collects artifacts from the dist/ directory (legacy method)
-func collectPoetryArtifacts(workingDir string) ([]buildinfo.Artifact, error) {
+// collectPythonDistArtifacts collects artifacts from the dist/ directory (legacy method)
+func collectPythonDistArtifacts(workingDir string) ([]buildinfo.Artifact, error) {
 	distDir := filepath.Join(workingDir, "dist")
 
 	// Check if dist directory exists
@@ -610,11 +911,11 @@ func getArtifactTypeFromName(filename string) string {
 	return "unknown"
 }
 
-// setPoetryBuildProperties sets build properties on uploaded Poetry artifacts
+// setPythonBuildProperties sets build properties on uploaded Python dist artifacts
 // This ensures artifacts are tagged with build.name, build.number, and build.timestamp
 // just like npm, maven, and gradle package managers do
-func setPoetryBuildProperties(serverDetails *config.ServerDetails, targetRepo, buildName, buildNumber, project string, buildInfo *buildinfo.BuildInfo) error {
-	log.Debug("Setting build properties on Poetry artifacts...")
+func setPythonBuildProperties(serverDetails *config.ServerDetails, targetRepo, buildName, buildNumber, project string, buildInfo *buildinfo.BuildInfo) error {
+	log.Debug("Setting build properties on Python dist artifacts...")
 
 	// Create services manager
 	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, 0, false)
@@ -642,8 +943,7 @@ func setPoetryBuildProperties(serverDetails *config.ServerDetails, targetRepo, b
 
 	// Set properties on each specific artifact by name and path
 	for _, artifact := range module.Artifacts {
-		fullPath := fmt.Sprintf("%s/%s/%s", targetRepo, artifact.Path, artifact.Name)
-		log.Info(fmt.Sprintf("[Thread %d] Setting properties on: %s", 1, fullPath))
+		log.Debug(fmt.Sprintf("Setting properties on: %s/%s/%s", targetRepo, artifact.Path, artifact.Name))
 
 		// Create AQL query for this specific artifact
 		searchQuery := CreateAqlQueryForSearch(targetRepo, artifact.Name)
@@ -676,7 +976,7 @@ func setPoetryBuildProperties(serverDetails *config.ServerDetails, targetRepo, b
 		log.Debug(fmt.Sprintf("Successfully set properties on artifact: %s", artifact.Name))
 	}
 
-	log.Info(fmt.Sprintf("Successfully set build properties on %d Poetry artifacts", len(module.Artifacts)))
+	log.Info(fmt.Sprintf("Successfully set build properties on %d artifacts", len(module.Artifacts)))
 	return nil
 }
 
