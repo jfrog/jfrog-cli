@@ -576,7 +576,6 @@ func CleanupResult(result *commandUtils.Result, err *error) {
 	}
 }
 
-// Checks if the requested plugin exists in registry and does not exist locally.
 func CheckNewCliVersionAvailable(currentVersion string) (warningMessage string, err error) {
 	shouldCheck, err := shouldCheckLatestCliVersion()
 	if err != nil || !shouldCheck {
