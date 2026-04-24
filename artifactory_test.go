@@ -3502,6 +3502,154 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownload(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+// TestArtifactoryDownloadByPatternAndBuildFromVirtualRepo guards the fix in jfrog-client-go
+// PR #1338: "build+pattern downloads against virtual repos". The client used to post-filter
+// build search results by comparing the pattern's repo against each result's Repo field.
+// AQL returns the backing local repo name, not the virtual repo the user typed, so any
+// download that combined --build with a pattern pointing at a virtual repo returned zero
+// files. The fix moves the pattern into the AQL query itself so Artifactory resolves the
+// virtual repo server-side. This test fails with "nothing downloaded" against the pre-fix
+// client-go.
+func TestArtifactoryDownloadByPatternAndBuildFromVirtualRepo(t *testing.T) {
+	initArtifactoryTest(t, "")
+	buildNumberA, buildNumberB := uniqueBuildNumberPair()
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+
+	// Upload two disjoint sets of files under distinct build numbers, both into the local
+	// repo that backs RtVirtualRepo, so a virtual-repo pattern must fan out server-side.
+	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
+	assert.NoError(t, err)
+	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
+	assert.NoError(t, err)
+	runRt(t, "upload", "--spec="+specFileA, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumberA)
+	runRt(t, "upload", "--spec="+specFileB, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumberB)
+
+	runRt(t, "build-publish", tests.RtBuildName1, buildNumberA)
+	runRt(t, "build-publish", tests.RtBuildName1, buildNumberB)
+
+	// Pattern references the *virtual* repo; --build pins to buildNumberA. Only a*.in
+	// should land under the target. Before the fix this produced an empty directory.
+	targetDir := filepath.Join(tests.Out, "download", "by_build_virtual") + fileutils.GetFileSeparator()
+	runRt(t, "download", tests.RtVirtualRepo+"/data/*", targetDir, "--build="+tests.RtBuildName1+"/"+buildNumberA, "--flat=true")
+
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	expected := []string{
+		tests.Out,
+		filepath.Join(tests.Out, "download"),
+		filepath.Join(tests.Out, "download", "by_build_virtual"),
+		filepath.Join(tests.Out, "download", "by_build_virtual", "a1.in"),
+		filepath.Join(tests.Out, "download", "by_build_virtual", "a2.in"),
+		filepath.Join(tests.Out, "download", "by_build_virtual", "a3.in"),
+	}
+	assert.NoError(t, tests.ValidateListsIdentical(expected, paths))
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
+// uniqueBuildNumberPair returns two distinct build numbers unique across test runs, so
+// partially-cleaned state from a previous run never collides with the current one.
+func uniqueBuildNumberPair() (string, string) {
+	base := strconv.FormatInt(time.Now().UnixNano(), 10)
+	return base + "1", base + "2"
+}
+
+// writeBuildPatternVirtualSpec writes a download spec targeting the virtual repo's data
+// directory, pinned to the given build number. Generated inline so the spec always
+// reflects the runtime-unique build number used during upload. The spec file lives
+// under t.TempDir() so it never pollutes tests.Out, which the test compares against.
+func writeBuildPatternVirtualSpec(t *testing.T, buildNumber string) string {
+	specContent := fmt.Sprintf(`{
+  "files": [
+    {
+      "pattern": "%s/data/*",
+      "target": "out/download/by_build_virtual_spec/",
+      "build": "%s/%s",
+      "flat": "true"
+    }
+  ]
+}`, tests.RtVirtualRepo, tests.RtBuildName1, buildNumber)
+
+	specFile := filepath.Join(t.TempDir(), "build_pattern_virtual_spec.json")
+	assert.NoError(t, os.WriteFile(specFile, []byte(specContent), 0644))
+	return specFile
+}
+
+// TestArtifactoryDownloadByPatternAndBuildFromVirtualRepoUsingSpec is the spec-file twin of
+// TestArtifactoryDownloadByPatternAndBuildFromVirtualRepo. Spec files go through a distinct
+// parser (spec.CreateSpecFromFile → CommonParams) before reaching SearchBySpecWithBuild, so
+// this asserts the virtual-repo fix survives that path too.
+func TestArtifactoryDownloadByPatternAndBuildFromVirtualRepoUsingSpec(t *testing.T) {
+	initArtifactoryTest(t, "")
+	buildNumberA, buildNumberB := uniqueBuildNumberPair()
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+
+	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
+	assert.NoError(t, err)
+	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
+	assert.NoError(t, err)
+	runRt(t, "upload", "--spec="+specFileA, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumberA)
+	runRt(t, "upload", "--spec="+specFileB, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumberB)
+	runRt(t, "build-publish", tests.RtBuildName1, buildNumberA)
+	runRt(t, "build-publish", tests.RtBuildName1, buildNumberB)
+
+	// Spec is built inline so the build number stays unique per run and can't drift
+	// out of sync with the uploaded builds.
+	downloadSpec := writeBuildPatternVirtualSpec(t, buildNumberA)
+	runRt(t, "download", "--spec="+downloadSpec)
+
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	expected := []string{
+		tests.Out,
+		filepath.Join(tests.Out, "download"),
+		filepath.Join(tests.Out, "download", "by_build_virtual_spec"),
+		filepath.Join(tests.Out, "download", "by_build_virtual_spec", "a1.in"),
+		filepath.Join(tests.Out, "download", "by_build_virtual_spec", "a2.in"),
+		filepath.Join(tests.Out, "download", "by_build_virtual_spec", "a3.in"),
+	}
+	assert.NoError(t, tests.ValidateListsIdentical(expected, paths))
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
+// TestArtifactorySearchByPatternAndBuildFromVirtualRepo exercises the same fix through the
+// `search` command. Download and search both funnel into SearchBySpecWithBuild, so both
+// returned empty against pre-fix client-go when combining --build with a virtual-repo pattern.
+// Guards against regressing the sibling consumer.
+func TestArtifactorySearchByPatternAndBuildFromVirtualRepo(t *testing.T) {
+	initArtifactoryTest(t, "")
+	buildNumberA, buildNumberB := uniqueBuildNumberPair()
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+
+	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
+	assert.NoError(t, err)
+	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
+	assert.NoError(t, err)
+	runRt(t, "upload", "--spec="+specFileA, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumberA)
+	runRt(t, "upload", "--spec="+specFileB, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumberB)
+	runRt(t, "build-publish", tests.RtBuildName1, buildNumberA)
+	runRt(t, "build-publish", tests.RtBuildName1, buildNumberB)
+
+	// Reuses the same spec shape as the download variant: search ignores the target
+	// field and otherwise consumes the same pattern + build filter.
+	searchSpec := writeBuildPatternVirtualSpec(t, buildNumberA)
+	results, err := inttestutils.SearchInArtifactory(searchSpec, serverDetails, t)
+	assert.NoError(t, err)
+
+	// Each result's Path is "<backing-local-repo>/data/<file>"; assert on the trailing
+	// file names so the test is insensitive to the backing repo AQL chooses to report.
+	var names []string
+	for _, r := range results {
+		names = append(names, filepath.Base(r.Path))
+	}
+	sort.Strings(names)
+	assert.Equal(t, []string{"a1.in", "a2.in", "a3.in"}, names)
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryDownloadByBuildUsingSimpleDownloadWithProject(t *testing.T) {
 	initArtifactoryTest(t, "")
 	accessManager, err := utils.CreateAccessServiceManager(serverDetails, false)
