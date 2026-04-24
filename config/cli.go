@@ -219,7 +219,7 @@ func getConfigShowOutputFormat(c *cli.Context) (coreformat.OutputFormat, error) 
 	if !c.IsSet(cliutils.Format) {
 		return coreformat.Table, nil
 	}
-	return coreformat.GetOutputFormat(c.String(cliutils.Format))
+	return coreformat.ParseOutputFormat(c.String(cliutils.Format), []coreformat.OutputFormat{coreformat.Table, coreformat.Json})
 }
 
 func printConfigShowResponse(configs []*coreconfig.ServerDetails, outputFormat coreformat.OutputFormat, w io.Writer) error {

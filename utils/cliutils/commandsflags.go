@@ -501,6 +501,21 @@ const (
 	// General output format flag
 	Format = "format"
 
+	// Per-command format flag map keys. All share Name: "format" but restrict
+	// the description to the formats that command actually supports.
+	configShowFormat          = "config-show-format"
+	accessTokenCreateFormat   = "access-token-create-format"
+	exchangeOidcTokenFormat   = "exchange-oidc-token-format"
+	licenseAcquireFormat      = "license-acquire-format"
+	licenseDeployFormat       = "license-deploy-format"
+	jpdAddFormat              = "jpd-add-format"
+	pluginInstallFormat       = "plugin-install-format"
+	pluginPublishFormat       = "plugin-publish-format"
+	plStatusFormat            = "pl-status-format"
+	plTriggerFormat           = "pl-trigger-format"
+	plSyncFormat              = "pl-sync-format"
+	plSyncStatusFormat        = "pl-sync-status-format"
+
 	// Unique scan flags
 	scanPrefix          = "scan-"
 	scanRecursive       = scanPrefix + recursive
@@ -624,10 +639,53 @@ const (
 )
 
 var flagsMap = map[string]cli.Flag{
-	// General output format flag
-	Format: cli.StringFlag{
+	configShowFormat: cli.StringFlag{
 		Name:  Format,
-		Usage: format.GetFormatFlagDescription(format.Json) + "` `",
+		Usage: "[Optional] " + format.GetFormatFlagDescription([]format.OutputFormat{format.Table, format.Json}) + "` `",
+	},
+	accessTokenCreateFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + format.GetFormatFlagDescription([]format.OutputFormat{format.Json, format.Table}) + "` `",
+	},
+	exchangeOidcTokenFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + format.GetFormatFlagDescription([]format.OutputFormat{format.Json, format.Table}) + "` `",
+	},
+	licenseAcquireFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + format.GetFormatFlagDescription([]format.OutputFormat{format.Table, format.Json}) + "` `",
+	},
+	licenseDeployFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + format.GetFormatFlagDescription([]format.OutputFormat{format.Json, format.Table}) + "` `",
+	},
+	jpdAddFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + format.GetFormatFlagDescription([]format.OutputFormat{format.Json, format.Table}) + "` `",
+	},
+	pluginInstallFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + format.GetFormatFlagDescription([]format.OutputFormat{format.Json}) + "` `",
+	},
+	pluginPublishFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + format.GetFormatFlagDescription([]format.OutputFormat{format.Json}) + "` `",
+	},
+	plStatusFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + format.GetFormatFlagDescription([]format.OutputFormat{format.Table, format.Json}) + "` `",
+	},
+	plTriggerFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + format.GetFormatFlagDescription([]format.OutputFormat{format.Json}) + "` `",
+	},
+	plSyncFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + format.GetFormatFlagDescription([]format.OutputFormat{format.Json}) + "` `",
+	},
+	plSyncStatusFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + format.GetFormatFlagDescription([]format.OutputFormat{format.Table, format.Json}) + "` `",
 	},
 	// Common commands flags
 	platformUrl: cli.StringFlag{
@@ -1843,7 +1901,7 @@ var commandFlags = map[string][]string{
 		deleteQuiet,
 	},
 	ConfigShow: {
-		Format,
+		configShowFormat,
 	},
 	Upload: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath, uploadTargetProps,
@@ -2111,10 +2169,10 @@ var commandFlags = map[string][]string{
 	AccessTokenCreate: {
 		platformUrl, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath, ClientCertKeyPath,
 		atcProject, atcGrantAdmin, atcGroups, atcScope, atcExpiry,
-		atcRefreshable, atcDescription, atcAudience, atcReference, Format,
+		atcRefreshable, atcDescription, atcAudience, atcReference, accessTokenCreateFormat,
 	},
 	ExchangeOidcToken: {
-		url, OidcTokenID, OidcAudience, OidcProviderName, OidcProviderType, ApplicationKey, Project, repository, Format,
+		url, OidcTokenID, OidcAudience, OidcProviderName, OidcProviderType, ApplicationKey, Project, repository, exchangeOidcTokenFormat,
 	},
 	UserCreate: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId,
@@ -2146,26 +2204,26 @@ var commandFlags = map[string][]string{
 	},
 	// Plugin commands
 	PluginInstall: {
-		Format,
+		pluginInstallFormat,
 	},
 	PluginPublish: {
-		Format,
+		pluginPublishFormat,
 	},
 	// Mission Control's commands
 	McConfig: {
 		mcUrl, mcAccessToken, mcInteractive,
 	},
 	LicenseAcquire: {
-		mcUrl, mcAccessToken, Format,
+		mcUrl, mcAccessToken, licenseAcquireFormat,
 	},
 	LicenseDeploy: {
-		mcUrl, mcAccessToken, licenseCount, Format,
+		mcUrl, mcAccessToken, licenseCount, licenseDeployFormat,
 	},
 	LicenseRelease: {
 		mcUrl, mcAccessToken,
 	},
 	JpdAdd: {
-		mcUrl, mcAccessToken, Format,
+		mcUrl, mcAccessToken, jpdAddFormat,
 	},
 	JpdDelete: {
 		mcUrl, mcAccessToken,
@@ -2182,10 +2240,10 @@ var commandFlags = map[string][]string{
 	Intro: {},
 	// Pipelines commands
 	Status: {
-		branch, serverId, pipelineName, monitor, singleBranch, Format,
+		branch, serverId, pipelineName, monitor, singleBranch, plStatusFormat,
 	},
 	Trigger: {
-		serverId, singleBranch, Format,
+		serverId, singleBranch, plTriggerFormat,
 	},
 	Validate: {
 		Resources, serverId,
@@ -2194,10 +2252,10 @@ var commandFlags = map[string][]string{
 		serverId,
 	},
 	Sync: {
-		serverId, Format,
+		serverId, plSyncFormat,
 	},
 	SyncStatus: {
-		branch, repository, serverId, Format,
+		branch, repository, serverId, plSyncStatusFormat,
 	},
 	Setup: {
 		serverId, url, user, password, accessToken, sshPassphrase, sshKeyPath, ClientCertPath, ClientCertKeyPath, Project, setupRepo,

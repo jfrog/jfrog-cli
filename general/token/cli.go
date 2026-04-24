@@ -83,7 +83,7 @@ func getTokenOutputFormat(c *cli.Context) (coreformat.OutputFormat, error) {
 	if !c.IsSet(cliutils.Format) {
 		return coreformat.Json, nil
 	}
-	return coreformat.GetOutputFormat(c.String(cliutils.Format))
+	return coreformat.ParseOutputFormat(c.String(cliutils.Format), []coreformat.OutputFormat{coreformat.Json, coreformat.Table})
 }
 
 // printTokenResponse writes the token response in the requested format to w.
@@ -135,6 +135,11 @@ func ExchangeOidcTokenCmd(c *cli.Context) error {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
+	outputFormat, err := getOidcTokenOutputFormat(c)
+	if err != nil {
+		return err
+	}
+
 	serverDetails, err := createPlatformDetailsByFlags(c)
 	if err != nil {
 		return err
@@ -149,10 +154,6 @@ func ExchangeOidcTokenCmd(c *cli.Context) error {
 		return err
 	}
 
-	outputFormat, err := getOidcTokenOutputFormat(c)
-	if err != nil {
-		return err
-	}
 	return printOidcTokenResponse(oidcAccessTokenCreateCmd.Response(), outputFormat, os.Stdout)
 }
 
@@ -162,7 +163,7 @@ func getOidcTokenOutputFormat(c *cli.Context) (coreformat.OutputFormat, error) {
 	if !c.IsSet(cliutils.Format) {
 		return coreformat.Json, nil
 	}
-	return coreformat.GetOutputFormat(c.String(cliutils.Format))
+	return coreformat.ParseOutputFormat(c.String(cliutils.Format), []coreformat.OutputFormat{coreformat.Json, coreformat.Table})
 }
 
 // printOidcTokenResponse writes the OIDC exchange result in the requested format to w.

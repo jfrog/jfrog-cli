@@ -145,7 +145,7 @@ func getPipelineStatusOutputFormat(c *cli.Context) (coreformat.OutputFormat, err
 	if !c.IsSet(cliutils.Format) {
 		return coreformat.Table, nil
 	}
-	return coreformat.GetOutputFormat(c.String(cliutils.Format))
+	return coreformat.ParseOutputFormat(c.String(cliutils.Format), []coreformat.OutputFormat{coreformat.Table, coreformat.Json})
 }
 
 func printPipelineStatusResponse(resp *plservices.PipelineRunStatusResponse, outputFormat coreformat.OutputFormat, w io.Writer) error {
@@ -184,6 +184,14 @@ func printPipelineStatusTable(resp *plservices.PipelineRunStatusResponse, w io.W
 
 // syncPipelineResources sync pipelines resource
 func syncPipelineResources(c *cli.Context) error {
+	requireStructuredOutput := c.IsSet(cliutils.Format)
+
+	if requireStructuredOutput {
+		if _, fmtErr := coreformat.ParseOutputFormat(c.String(cliutils.Format), []coreformat.OutputFormat{coreformat.Json}); fmtErr != nil {
+			return fmtErr
+		}
+	}
+
 	// Get arguments repository name and branch name
 	repository := c.Args().Get(0)
 	branch := c.Args().Get(1)
@@ -206,16 +214,8 @@ func syncPipelineResources(c *cli.Context) error {
 	// error == nil guarantees the server responded with 200.
 	// The client layer discards the body, so we pass nil and let the helper
 	// synthesize {"status_code": 200, "message": "OK"}.
-	if c.IsSet(cliutils.Format) {
-		outputFormat, fmtErr := coreformat.GetOutputFormat(c.String(cliutils.Format))
-		if fmtErr != nil {
-			return fmtErr
-		}
-		if outputFormat == coreformat.Json {
-			cliutils.FormatHTTPResponseJSON(nil, 200)
-		} else {
-			return errorutils.CheckErrorf("unsupported format '%s' for pl sync. Only json is supported", outputFormat)
-		}
+	if requireStructuredOutput {
+		cliutils.FormatHTTPResponseJSON(nil, 200)
 	}
 	return nil
 }
@@ -268,7 +268,7 @@ func getSyncStatusOutputFormat(c *cli.Context) (coreformat.OutputFormat, error) 
 	if !c.IsSet(cliutils.Format) {
 		return coreformat.Table, nil
 	}
-	return coreformat.GetOutputFormat(c.String(cliutils.Format))
+	return coreformat.ParseOutputFormat(c.String(cliutils.Format), []coreformat.OutputFormat{coreformat.Table, coreformat.Json})
 }
 
 func printSyncStatusResponse(statuses []plservices.PipelineSyncStatus, outputFormat coreformat.OutputFormat, w io.Writer) error {
@@ -320,6 +320,12 @@ func getVersion(c *cli.Context) error {
 
 // triggerNewRun triggers a new run for supplied flag values
 func triggerNewRun(c *cli.Context) error {
+	if c.IsSet(cliutils.Format) {
+		if _, fmtErr := coreformat.ParseOutputFormat(c.String(cliutils.Format), []coreformat.OutputFormat{coreformat.Json}); fmtErr != nil {
+			return fmtErr
+		}
+	}
+
 	pipelineName := c.Args().Get(0)
 	branch := c.Args().Get(1)
 	multiBranch := getMultiBranch(c)
@@ -345,13 +351,7 @@ func triggerNewRun(c *cli.Context) error {
 	// The client layer discards the body, so we pass nil and let the helper
 	// synthesize {"status_code": 200, "message": "OK"}.
 	if c.IsSet(cliutils.Format) {
-		outputFormat, fmtErr := coreformat.GetOutputFormat(c.String(cliutils.Format))
-		if fmtErr != nil {
-			return fmtErr
-		}
-		if outputFormat == coreformat.Json {
-			cliutils.FormatHTTPResponseJSON(nil, 200)
-		}
+		cliutils.FormatHTTPResponseJSON(nil, 200)
 	}
 	return nil
 }

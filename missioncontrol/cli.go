@@ -93,15 +93,15 @@ func jpdAdd(c *cli.Context) error {
 	if len(c.Args()) != 1 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
+	outputFormat, err := getJpdAddOutputFormat(c)
+	if err != nil {
+		return err
+	}
 	jpdAddFlags, err := createJpdAddFlags(c)
 	if err != nil {
 		return err
 	}
 	body, err := commands.JpdAdd(jpdAddFlags)
-	if err != nil {
-		return err
-	}
-	outputFormat, err := getJpdAddOutputFormat(c)
 	if err != nil {
 		return err
 	}
@@ -112,7 +112,7 @@ func getJpdAddOutputFormat(c *cli.Context) (coreformat.OutputFormat, error) {
 	if !c.IsSet(cliutils.Format) {
 		return coreformat.Json, nil
 	}
-	return coreformat.GetOutputFormat(c.String(cliutils.Format))
+	return coreformat.ParseOutputFormat(c.String(cliutils.Format), []coreformat.OutputFormat{coreformat.Json, coreformat.Table})
 }
 
 func printJpdAddResponse(body []byte, outputFormat coreformat.OutputFormat, w io.Writer) error {
@@ -173,15 +173,15 @@ func licenseAcquire(c *cli.Context) error {
 	if size != 2 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
+	outputFormat, err := getLicenseAcquireOutputFormat(c)
+	if err != nil {
+		return err
+	}
 	mcDetails, err := createMissionControlDetails(c)
 	if err != nil {
 		return err
 	}
 	licenseKey, err := commands.LicenseAcquire(c.Args()[0], c.Args()[1], mcDetails)
-	if err != nil {
-		return err
-	}
-	outputFormat, err := getLicenseAcquireOutputFormat(c)
 	if err != nil {
 		return err
 	}
@@ -193,7 +193,7 @@ func getLicenseAcquireOutputFormat(c *cli.Context) (coreformat.OutputFormat, err
 	if !c.IsSet(cliutils.Format) {
 		return coreformat.Table, nil
 	}
-	return coreformat.GetOutputFormat(c.String(cliutils.Format))
+	return coreformat.ParseOutputFormat(c.String(cliutils.Format), []coreformat.OutputFormat{coreformat.Table, coreformat.Json})
 }
 
 func printLicenseAcquireResponse(licenseKey string, outputFormat coreformat.OutputFormat, w io.Writer) error {
@@ -216,15 +216,15 @@ func licenseDeploy(c *cli.Context) error {
 	if size != 2 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
+	outputFormat, err := getLicenseDeployOutputFormat(c)
+	if err != nil {
+		return err
+	}
 	flags, err := createLicenseDeployFlags(c)
 	if err != nil {
 		return err
 	}
 	body, err := commands.LicenseDeploy(c.Args()[0], c.Args()[1], flags)
-	if err != nil {
-		return err
-	}
-	outputFormat, err := getLicenseDeployOutputFormat(c)
 	if err != nil {
 		return err
 	}
@@ -235,7 +235,7 @@ func getLicenseDeployOutputFormat(c *cli.Context) (coreformat.OutputFormat, erro
 	if !c.IsSet(cliutils.Format) {
 		return coreformat.Json, nil
 	}
-	return coreformat.GetOutputFormat(c.String(cliutils.Format))
+	return coreformat.ParseOutputFormat(c.String(cliutils.Format), []coreformat.OutputFormat{coreformat.Json, coreformat.Table})
 }
 
 func printLicenseDeployResponse(body []byte, outputFormat coreformat.OutputFormat, w io.Writer) error {

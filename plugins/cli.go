@@ -9,42 +9,35 @@ import (
 	uninstalldocs "github.com/jfrog/jfrog-cli/docs/plugin/uninstall"
 	"github.com/jfrog/jfrog-cli/plugins/commands"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
-	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/urfave/cli"
 )
 
 func installPlugin(c *cli.Context) error {
+	if c.IsSet(cliutils.Format) {
+		if _, fmtErr := coreformat.ParseOutputFormat(c.String(cliutils.Format), []coreformat.OutputFormat{coreformat.Json}); fmtErr != nil {
+			return fmtErr
+		}
+	}
 	if err := commands.InstallCmd(c); err != nil {
 		return err
 	}
 	if c.IsSet(cliutils.Format) {
-		outputFormat, fmtErr := coreformat.GetOutputFormat(c.String(cliutils.Format))
-		if fmtErr != nil {
-			return fmtErr
-		}
-		if outputFormat == coreformat.Json {
-			cliutils.FormatHTTPResponseJSON(nil, 200)
-		} else {
-			return errorutils.CheckErrorf("unsupported format '%s' for plugin install. Only json is supported", outputFormat)
-		}
+		cliutils.FormatHTTPResponseJSON(nil, 200)
 	}
 	return nil
 }
 
 func publishPlugin(c *cli.Context) error {
+	if c.IsSet(cliutils.Format) {
+		if _, fmtErr := coreformat.ParseOutputFormat(c.String(cliutils.Format), []coreformat.OutputFormat{coreformat.Json}); fmtErr != nil {
+			return fmtErr
+		}
+	}
 	if err := commands.PublishCmd(c); err != nil {
 		return err
 	}
 	if c.IsSet(cliutils.Format) {
-		outputFormat, fmtErr := coreformat.GetOutputFormat(c.String(cliutils.Format))
-		if fmtErr != nil {
-			return fmtErr
-		}
-		if outputFormat == coreformat.Json {
-			cliutils.FormatHTTPResponseJSON(nil, 200)
-		} else {
-			return errorutils.CheckErrorf("unsupported format '%s' for plugin publish. Only json is supported", outputFormat)
-		}
+		cliutils.FormatHTTPResponseJSON(nil, 200)
 	}
 	return nil
 }
