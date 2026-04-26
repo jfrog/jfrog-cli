@@ -1,6 +1,17 @@
 name: Artifactory Tests
 on:
   workflow_dispatch:
+    inputs:
+      jfrog_url:
+        description: "External JFrog Platform URL. Leave empty for local Artifactory."
+        type: string
+        required: false
+        default: ""
+      jfrog_admin_token:
+        description: "Admin token for external JFrog Platform."
+        type: string
+        required: false
+        default: ""
   push:
     branches:
       - "master"
@@ -72,15 +83,23 @@ jobs:
 
       - name: Install local Artifactory
         if: matrix.os.name != 'macos'
-        uses: jfrog/.github/actions/install-local-artifactory@main
+        uses: jfrog/.github/actions/install-local-artifactory@fix/Updated-install-local-artfactory-setup
         with:
           RTLIC: ${{ secrets.RTLIC }}
+          JFROG_URL: ${{ inputs.jfrog_url }}
+          JFROG_ADMIN_TOKEN: ${{ inputs.jfrog_admin_token }}
           RT_CONNECTION_TIMEOUT_SECONDS: ${{ env.RT_CONNECTION_TIMEOUT_SECONDS || '1200' }}
 
       - name: Run Artifactory tests
         if: ${{ matrix.suite == 'artifactory' && matrix.os.name != 'macos' }}
-        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.artifactory --jfrog.url=http://127.0.0.1:8082 --jfrog.adminToken=${{ env.JFROG_TESTS_LOCAL_ACCESS_TOKEN }}
+        run: >-
+          go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.artifactory
+          --jfrog.url=${{ env.JFROG_TESTS_URL || 'http://127.0.0.1:8082' }}
+          --jfrog.adminToken=${{ env.JFROG_TESTS_LOCAL_ACCESS_TOKEN }}
 
       - name: Run Artifactory projects tests
         if: ${{ matrix.suite == 'artifactoryProject' && matrix.os.name != 'macos' }}
-        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.artifactoryProject --ci.runId=${{ runner.os }}-${{ matrix.suite }}
+        run: >-
+          go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.artifactoryProject
+          --ci.runId=${{ runner.os }}-${{ matrix.suite }}
+          ${{ env.JFROG_TESTS_IS_EXTERNAL == 'true' && format('--jfrog.url={0} --jfrog.adminToken={1}', env.JFROG_TESTS_URL, env.JFROG_TESTS_LOCAL_ACCESS_TOKEN) || '' }}
