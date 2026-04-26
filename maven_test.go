@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	outputFormat "github.com/jfrog/jfrog-cli-core/v2/common/format"
@@ -466,13 +467,81 @@ func runMavenAndValidateDeployedArtifacts(t *testing.T, shouldDeployArtifact boo
 	assert.NoError(t, runMaven(t, createMultiMavenProject, tests.MavenIncludeExcludePatternsConfig, args...))
 	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
 	assert.NoError(t, err)
+	expectedDeployedArtifacts := tests.GetMavenMultiIncludedDeployedArtifacts()
 	if shouldDeployArtifact {
-		inttestutils.VerifyExistInArtifactory(tests.GetMavenMultiIncludedDeployedArtifacts(), searchSpec, serverDetails, t)
+		inttestutils.VerifyExistInArtifactory(expectedDeployedArtifacts, searchSpec, serverDetails, t)
 	} else {
-		results, err := inttestutils.SearchInArtifactory(searchSpec, serverDetails, t)
-		assert.NoError(t, err)
-		assert.Zero(t, len(results))
+		assertMavenArtifactsEventuallyNotDeployed(t, searchSpec, expectedDeployedArtifacts)
 	}
+}
+
+// assertMavenArtifactsEventuallyNotDeployed polls until none of expectedDeployedArtifacts are
+// present in Artifactory for the given search spec, tolerating propagation delay and residual
+// files (e.g. maven-metadata.xml) left over from previous deploy/cleanup cycles. This is the
+// semantically correct check for Maven goals (such as `mvn package`) that should not deploy.
+func assertMavenArtifactsEventuallyNotDeployed(t *testing.T, searchSpec string, expectedDeployedArtifacts []string) {
+	const (
+		pollTimeout  = 90 * time.Second
+		pollInterval = 2 * time.Second
+	)
+	deadline := time.Now().Add(pollTimeout)
+	var (
+		lastResults   []utils.SearchResult
+		lastSearchErr error
+	)
+	for {
+		lastResults, lastSearchErr = inttestutils.SearchInArtifactory(searchSpec, serverDetails, t)
+		if lastSearchErr == nil && !anyExpectedPathPresent(lastResults, expectedDeployedArtifacts) {
+			return
+		}
+		if !time.Now().Before(deadline) {
+			break
+		}
+		time.Sleep(pollInterval)
+	}
+	present := intersectPaths(lastResults, expectedDeployedArtifacts)
+	actualPaths := pathsFromResults(lastResults)
+	assert.Failf(t, "Maven deploy artifacts should not be present",
+		"expected none of the Maven deploy artifacts %v to exist after `mvn package`, but still present: %v (last search error: %v, full search result: %v)",
+		expectedDeployedArtifacts, present, lastSearchErr, actualPaths)
+}
+
+func anyExpectedPathPresent(results []utils.SearchResult, expected []string) bool {
+	if len(results) == 0 || len(expected) == 0 {
+		return false
+	}
+	index := make(map[string]struct{}, len(results))
+	for _, r := range results {
+		index[r.Path] = struct{}{}
+	}
+	for _, path := range expected {
+		if _, ok := index[path]; ok {
+			return true
+		}
+	}
+	return false
+}
+
+func intersectPaths(results []utils.SearchResult, expected []string) []string {
+	index := make(map[string]struct{}, len(results))
+	for _, r := range results {
+		index[r.Path] = struct{}{}
+	}
+	var present []string
+	for _, path := range expected {
+		if _, ok := index[path]; ok {
+			present = append(present, path)
+		}
+	}
+	return present
+}
+
+func pathsFromResults(results []utils.SearchResult) []string {
+	paths := make([]string, 0, len(results))
+	for _, r := range results {
+		paths = append(paths, r.Path)
+	}
+	return paths
 }
 func TestMavenWithSummary(t *testing.T) {
 	testcases := []struct {
