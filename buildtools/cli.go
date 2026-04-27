@@ -370,6 +370,7 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
 			Action:          UvCmd,
+			Hidden:          true,
 		},
 		{
 			Name:            "helm",
@@ -1635,16 +1636,16 @@ type uvIndexEntry struct {
 	URL  string
 }
 
-// uvPyprojectToml holds the [tool.uv] fields we need from pyproject.toml.
+// uvToolUv holds the [tool.uv] fields we need from pyproject.toml.
+type uvToolUv struct {
+	PublishURL string         `toml:"publish-url"`
+	Index      []uvIndexEntry `toml:"index"`
+}
+
+// uvPyprojectToml holds the top-level structure we need from pyproject.toml.
 type uvPyprojectToml struct {
 	Tool struct {
-		Uv struct {
-			PublishURL string `toml:"publish-url"`
-			Index      []struct {
-				Name string `toml:"name"`
-				URL  string `toml:"url"`
-			} `toml:"index"`
-		} `toml:"uv"`
+		Uv uvToolUv `toml:"uv"`
 	} `toml:"tool"`
 }
 
@@ -1673,7 +1674,7 @@ func uvReadIndexesFromToml(workingDir string) []uvIndexEntry {
 	var entries []uvIndexEntry
 	for _, idx := range p.Tool.Uv.Index {
 		if idx.Name != "" {
-			entries = append(entries, uvIndexEntry{Name: idx.Name, URL: idx.URL})
+			entries = append(entries, idx)
 		}
 	}
 	return entries
@@ -1825,6 +1826,46 @@ func uvResolveServerDetails(serverID string) (*coreConfig.ServerDetails, error) 
 		return coreConfig.GetDefaultServerConf()
 	}
 	return coreConfig.GetSpecificConfig(serverID, true, true)
+}
+
+// uvApplyPublishAuth selects and applies publish credentials following UV's priority chain.
+// Steps 2a/2b/3/4 are native to UV; only the default branch injects jf config credentials.
+func uvApplyPublishAuth(publishURL, workingDir string, serverDetails *coreConfig.ServerDetails, user, pass string) {
+	switch {
+	case os.Getenv("UV_PUBLISH_TOKEN") != "":
+		log.Info("UV auth [publish]: using UV_PUBLISH_TOKEN (native, step 2a)")
+	case os.Getenv("UV_PUBLISH_USERNAME") != "" || os.Getenv("UV_PUBLISH_PASSWORD") != "":
+		log.Info("UV auth [publish]: using UV_PUBLISH_USERNAME/PASSWORD (native, step 2b)")
+	case uvURLHasEmbeddedCredentials(publishURL):
+		log.Info("UV auth [publish]: using credentials embedded in publish URL (native, step 3)")
+	case uvNetrcHasCredentials(publishURL):
+		log.Info(fmt.Sprintf("UV auth [publish]: using %s (native, step 4)", uvNetrcPath()))
+	default:
+		uvInjectPublishCredentials(publishURL, workingDir, serverDetails, user, pass)
+	}
+}
+
+// uvInjectPublishCredentials attempts to inject publish credentials from same-host index
+// credentials (step 4b) or the jf server config (fallback), in that priority order.
+func uvInjectPublishCredentials(publishURL, workingDir string, serverDetails *coreConfig.ServerDetails, user, pass string) {
+	if idxUser, idxPass := uvMatchingIndexCredentials(publishURL, workingDir); idxUser != "" {
+		os.Setenv("UV_PUBLISH_USERNAME", idxUser)
+		os.Setenv("UV_PUBLISH_PASSWORD", idxPass)
+		os.Setenv("UV_KEYRING_PROVIDER", "disabled")
+		log.Info("UV auth [publish]: using same-host index credentials (native, step 4b)")
+		return
+	}
+	if uvHostMatchesServer(publishURL, serverDetails.ArtifactoryUrl) {
+		os.Setenv("UV_PUBLISH_USERNAME", user)
+		os.Setenv("UV_PUBLISH_PASSWORD", pass)
+		os.Setenv("UV_KEYRING_PROVIDER", "disabled")
+		log.Info(fmt.Sprintf("UV auth [publish]: using jf server config (user: %s, fallback)", user))
+		return
+	}
+	log.Warn(fmt.Sprintf(
+		"UV auth [publish]: publish URL host (%s) does not match jf server config host (%s) — "+
+			"set UV_PUBLISH_USERNAME/UV_PUBLISH_PASSWORD or UV_PUBLISH_TOKEN to authenticate",
+		uvHostOf(publishURL), uvHostOf(serverDetails.ArtifactoryUrl)))
 }
 
 // getPrimarySourceFromToml reads pyproject.toml and returns the name of the primary source
@@ -2276,49 +2317,7 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 				}
 
 				if cmdName == "publish" {
-					// Publish auth follows UV's priority chain exactly:
-					//   Step 2a: UV_PUBLISH_TOKEN (token-only, username becomes __token__)
-					//   Step 2b: UV_PUBLISH_USERNAME + UV_PUBLISH_PASSWORD
-					//   Step 3:  Credentials embedded in publish URL
-					//   Step 4:  ~/.netrc (or $NETRC custom path)
-					//   Step 4b: Same-host index credentials reused for publish
-					//            (when index and publish URL share the same Artifactory host,
-					//             the index native credentials are valid for publish too)
-					//   Fallback: jf server config (only if publish host == jf config host)
-					switch {
-					case os.Getenv("UV_PUBLISH_TOKEN") != "":
-						log.Info("UV auth [publish]: using UV_PUBLISH_TOKEN (native, step 2a)")
-					case os.Getenv("UV_PUBLISH_USERNAME") != "" || os.Getenv("UV_PUBLISH_PASSWORD") != "":
-						log.Info("UV auth [publish]: using UV_PUBLISH_USERNAME/PASSWORD (native, step 2b)")
-					default:
-						// deployerRepo is already resolved (CLI flag > pyproject.toml) before auth block.
-						switch {
-						case uvURLHasEmbeddedCredentials(deployerRepo):
-							log.Info("UV auth [publish]: using credentials embedded in publish URL (native, step 3)")
-						case uvNetrcHasCredentials(deployerRepo):
-							log.Info(fmt.Sprintf("UV auth [publish]: using %s (native, step 4)", uvNetrcPath()))
-						default:
-							// Same-host index credentials: if any [[tool.uv.index]] on the same
-							// host has native credentials (env var or embedded URL), reuse them
-							// for publish — same Artifactory instance, same auth works.
-							if idxUser, idxPass := uvMatchingIndexCredentials(deployerRepo, workingDir); idxUser != "" {
-								os.Setenv("UV_PUBLISH_USERNAME", idxUser)
-								os.Setenv("UV_PUBLISH_PASSWORD", idxPass)
-								os.Setenv("UV_KEYRING_PROVIDER", "disabled")
-								log.Info("UV auth [publish]: using same-host index credentials (native, step 4b)")
-							} else if uvHostMatchesServer(deployerRepo, serverDetails.ArtifactoryUrl) {
-								os.Setenv("UV_PUBLISH_USERNAME", user)
-								os.Setenv("UV_PUBLISH_PASSWORD", pass)
-								os.Setenv("UV_KEYRING_PROVIDER", "disabled")
-								log.Info(fmt.Sprintf("UV auth [publish]: using jf server config (user: %s, fallback)", user))
-							} else {
-								log.Warn(fmt.Sprintf(
-									"UV auth [publish]: publish URL host (%s) does not match jf server config host (%s) — "+
-										"set UV_PUBLISH_USERNAME/UV_PUBLISH_PASSWORD or UV_PUBLISH_TOKEN to authenticate",
-									uvHostOf(deployerRepo), uvHostOf(serverDetails.ArtifactoryUrl)))
-							}
-						}
-					}
+					uvApplyPublishAuth(deployerRepo, workingDir, serverDetails, user, pass)
 				}
 			}
 		}

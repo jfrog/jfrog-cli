@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   UV-Tests:
-    name: uv ${{ matrix.os.name }}
+    name: uv ${{ matrix.os.name }} py${{ matrix.python-version }} uv${{ matrix.uv-version }}
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'safe to test')
     strategy:
       fail-fast: false
@@ -29,6 +29,8 @@ jobs:
             version: 2022
           - name: macos
             version: 14
+        python-version: ["3.11.5", "3.x"]
+        uv-version: ["0.6.17", "latest"]
     runs-on: ${{ matrix.os.name }}-${{ matrix.os.version }}
     steps:
       # macOS local Artifactory bootstrap is currently broken (JGC-413).
@@ -56,11 +58,13 @@ jobs:
         if: matrix.os.name != 'macos'
         uses: actions/setup-python@v6
         with:
-          python-version: "3.11.5"
+          python-version: ${{ matrix.python-version }}
 
       - name: Setup UV
         if: matrix.os.name != 'macos'
         uses: astral-sh/setup-uv@v5
+        with:
+          version: ${{ matrix.uv-version }}
 
       - name: Setup Go with cache
         if: matrix.os.name != 'macos'
