@@ -75,7 +75,7 @@ jobs:
 
       - name: Install NuGet
         if: matrix.os.name != 'macos'
-        uses: nuget/setup-nuget@v3
+        uses: nuget/setup-nuget@v4
         with:
           nuget-version: "6.x"
 
