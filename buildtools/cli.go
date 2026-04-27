@@ -360,7 +360,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "uv",
-			Flags:           cliutils.GetCommandFlags(cliutils.UvInstall),
+			Flags:           cliutils.GetCommandFlags(cliutils.Uv),
 			Usage:           uvcommand.GetDescription(),
 			HelpName:        corecommon.CreateUsage("uv", uvcommand.GetDescription(), uvcommand.Usage),
 			UsageText:       uvcommand.GetArguments(),
@@ -1841,6 +1841,8 @@ func UvCmd(c *cli.Context) error {
 		return fmt.Errorf("failed to extract server ID: %w", err)
 	}
 	cmdName, uvArgs := getCommandName(filteredArgs)
+	// Peek at --publish-url to populate DeployerRepo for build-info enrichment.
+	// The flag is NOT consumed here — it is forwarded to uv as-is.
 	deployerRepo := ""
 	for i, arg := range uvArgs {
 		if strings.HasPrefix(arg, "--publish-url=") {

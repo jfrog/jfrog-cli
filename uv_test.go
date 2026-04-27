@@ -22,6 +22,13 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/tests"
 )
 
+// uvIndexEnvName converts a uv index name to the UV env var suffix format:
+// e.g. "jfrog-pypi-virtual" → "JFROG_PYPI_VIRTUAL"
+func uvIndexEnvName(name string) string {
+	upper := strings.ToUpper(name)
+	return strings.NewReplacer("-", "_", ".", "_", " ", "_").Replace(upper)
+}
+
 // ---------------------------------------------------------------------------
 // Init / cleanup
 // ---------------------------------------------------------------------------
@@ -1385,7 +1392,7 @@ func TestUvBuildPublishWithCIVcsProps(t *testing.T) {
 	buildNumber := "1"
 
 	// Setup GitHub Actions environment (uses real env vars on CI, mock values locally)
-	cleanupEnv, actualOrg, actualRepo := tests.SetupGitHubActionsEnv(t)
+	cleanupEnv, _, _ := tests.SetupGitHubActionsEnv(t)
 	defer cleanupEnv()
 
 	// Clean old build
@@ -1445,7 +1452,7 @@ func TestUvBuildPublishWithCIVcsProps(t *testing.T) {
 			}
 
 			// Verify build properties ARE stamped (build.name, build.number, build.timestamp).
-			// These are set by our setPoetryBuildProperties step after jf uv publish.
+			// These are set by the UV build property stamping step after jf uv publish.
 			assert.Contains(t, props.Properties, "build.name",
 				"build.name property must be set on %s", artifact.Name)
 			assert.Contains(t, props.Properties, "build.number",
