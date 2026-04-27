@@ -1851,7 +1851,7 @@ func UvCmd(c *cli.Context) error {
 			deployerRepo = uvArgs[i+1]
 		}
 	}
-	uvCommand := python.NewNativeUvCommand().
+	uvCommand := python.NewNativeUVCommand().
 		SetCommandName(cmdName).
 		SetArgs(uvArgs).
 		SetServerID(serverID).
