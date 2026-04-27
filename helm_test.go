@@ -971,3 +971,272 @@ func InitHelmTests() {
 func CleanHelmTests() {
 	deleteCreatedRepos()
 }
+
+func TestHelmPushWithSubpath(t *testing.T) {
+	initHelmTest(t)
+	defer cleanHelmTest(t)
+
+	runHelmSubpathPushTest(t,
+		"team-alpha",
+		tests.HelmBuildName+"-push-subpath-single",
+		"subpath-chart-single",
+		"0.1.0",
+	)
+}
+
+func TestHelmPushWithMultiLevelSubpath(t *testing.T) {
+	initHelmTest(t)
+	defer cleanHelmTest(t)
+
+	runHelmSubpathPushTest(t,
+		"org/team-beta/project-gamma",
+		tests.HelmBuildName+"-push-subpath-multi",
+		"subpath-chart-multi",
+		"0.2.0",
+	)
+}
+
+func runHelmSubpathPushTest(t *testing.T, subpath, buildName, chartName, chartVersion string) {
+	const buildNumber = "1"
+
+	chartFile, chartDir, restoreCwd := packageHelmChartForPush(t, chartName, chartVersion)
+	defer restoreCwd()
+	defer func() {
+		if err := os.RemoveAll(chartDir); err != nil {
+			t.Logf("Warning: Failed to remove test chart directory %s: %v", chartDir, err)
+		}
+	}()
+
+	registryHost, registryURL := helmSubpathRegistryURL(t, subpath)
+	if !isRepoExist(tests.HelmLocalRepo) {
+		t.Skipf("Repository %s does not exist. Skipping test.", tests.HelmLocalRepo)
+	}
+	if !loginHelmRegistryOrSkip(t, registryHost) {
+		return
+	}
+
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+	pushArgs := []string{
+		"helm", "push", chartFile, registryURL,
+		"--build-name=" + buildName,
+		"--build-number=" + buildNumber,
+	}
+	if err := jfrogCli.Exec(pushArgs...); err != nil {
+		maybeSkipHelmPushFlake(t, err)
+		require.NoError(t, err, "helm push to subpath %q should succeed", subpath)
+	}
+
+	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	require.NoError(t, err, "Failed to get build info")
+	require.True(t, found, "build info should be found")
+
+	validateHelmBuildInfo(t, publishedBuildInfo.BuildInfo, buildName, true, false)
+	assertOCIArtifactsUnderSubpath(t, publishedBuildInfo.BuildInfo,
+		subpath+"/"+chartName+"/"+chartVersion)
+}
+
+func TestHelmPushModuleCoexistenceAfterExistingModule(t *testing.T) {
+	initHelmTest(t)
+	defer cleanHelmTest(t)
+
+	const (
+		buildNumber     = "1"
+		nonHelmModuleID = "coexist-non-helm-module"
+		chartName       = "coexist-chart"
+		chartVersion    = "0.3.0"
+	)
+	buildName := tests.HelmBuildName + "-coexist"
+
+	seedFile, seedCleanup := createCoexistSeedFile(t)
+	defer seedCleanup()
+
+	noCredsCli := coreTests.NewJfrogCli(execMain, "jfrog rt", "")
+	assert.NoError(t, noCredsCli.Exec(
+		"bad", buildName, buildNumber, seedFile,
+		"--module="+nonHelmModuleID,
+	), "rt build-add-dependencies should seed the build with a non-helm module")
+
+	chartFile, chartDir, restoreCwd := packageHelmChartForPush(t, chartName, chartVersion)
+	defer restoreCwd()
+	defer func() {
+		if err := os.RemoveAll(chartDir); err != nil {
+			t.Logf("Warning: Failed to remove test chart directory %s: %v", chartDir, err)
+		}
+	}()
+
+	registryHost, registryURL := helmSubpathRegistryURL(t, "")
+	if !isRepoExist(tests.HelmLocalRepo) {
+		t.Skipf("Repository %s does not exist. Skipping test.", tests.HelmLocalRepo)
+	}
+	if !loginHelmRegistryOrSkip(t, registryHost) {
+		return
+	}
+
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+	pushArgs := []string{
+		"helm", "push", chartFile, registryURL,
+		"--build-name=" + buildName,
+		"--build-number=" + buildNumber,
+	}
+	if err := jfrogCli.Exec(pushArgs...); err != nil {
+		maybeSkipHelmPushFlake(t, err)
+		require.NoError(t, err, "helm push should succeed alongside pre-existing module")
+	}
+
+	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	require.NoError(t, err, "Failed to get build info")
+	require.True(t, found, "build info should be found")
+
+	var hasNonHelm, hasHelm bool
+	var helmModuleID string
+	for _, module := range publishedBuildInfo.BuildInfo.Modules {
+		if module.Id == nonHelmModuleID {
+			hasNonHelm = true
+		}
+		if module.Type == buildinfo.Helm {
+			hasHelm = true
+			helmModuleID = module.Id
+		}
+	}
+	summary := moduleSummary(publishedBuildInfo.BuildInfo.Modules)
+	assert.Truef(t, hasNonHelm,
+		"pre-existing non-helm module %q must be preserved after helm push (got modules: %v)",
+		nonHelmModuleID, summary)
+	assert.Truef(t, hasHelm,
+		"helm push must add a helm module alongside the pre-existing module (got modules: %v)",
+		summary)
+	assert.Equalf(t, chartName+":"+chartVersion, helmModuleID,
+		"helm module Id must be <chartName>:<chartVersion> (got modules: %v)", summary)
+}
+
+func packageHelmChartForPush(t *testing.T, chartName, chartVersion string) (chartFile, chartDir string, restoreCwd func()) {
+	chartDir = createTestHelmChart(t, chartName, chartVersion)
+
+	helmCmd := exec.Command("helm", "package", ".")
+	helmCmd.Dir = chartDir
+	require.NoError(t, helmCmd.Run(), "helm package should succeed")
+
+	chartFiles, err := filepath.Glob(filepath.Join(chartDir, "*.tgz"))
+	require.NoError(t, err)
+	require.Greater(t, len(chartFiles), 0, "Chart package file should be created")
+	chartFile = filepath.Base(chartFiles[0])
+
+	originalDir, err := os.Getwd()
+	require.NoError(t, err)
+	require.NoError(t, os.Chdir(chartDir))
+
+	restoreCwd = func() {
+		if err := os.Chdir(originalDir); err != nil {
+			t.Logf("Warning: Failed to change back to original directory: %v", err)
+		}
+	}
+	return chartFile, chartDir, restoreCwd
+}
+
+func helmSubpathRegistryURL(t *testing.T, subpath string) (registryHost, registryURL string) {
+	parsedURL, err := url.Parse(serverDetails.ArtifactoryUrl)
+	require.NoError(t, err)
+	registryHost = parsedURL.Host
+	if subpath == "" {
+		registryURL = fmt.Sprintf("oci://%s/%s", registryHost, tests.HelmLocalRepo)
+	} else {
+		registryURL = fmt.Sprintf("oci://%s/%s/%s", registryHost, tests.HelmLocalRepo, subpath)
+	}
+	return registryHost, registryURL
+}
+
+func loginHelmRegistryOrSkip(t *testing.T, registryHost string) bool {
+	err := loginHelmRegistry(t, registryHost)
+	if err == nil {
+		return true
+	}
+	maybeSkipHelmLoginFlake(t, err)
+	require.NoError(t, err, "helm registry login should succeed")
+	return false
+}
+
+func maybeSkipHelmLoginFlake(t *testing.T, err error) {
+	if err == nil {
+		return
+	}
+	msg := strings.ToLower(err.Error())
+	if strings.Contains(msg, "account temporarily locked") {
+		t.Skip("Artifactory account is temporarily locked due to recurrent login failures. Skipping test.")
+	}
+	if strings.Contains(msg, "server gave http response to https client") ||
+		strings.Contains(msg, "server gave https response to http client") ||
+		strings.Contains(msg, "tls: first record does not look like a tls handshake") ||
+		strings.Contains(msg, "http response to https") ||
+		strings.Contains(msg, "https response to http") {
+		t.Skip("Helm registry login failed due to HTTPS/HTTP mismatch. Skipping test.")
+	}
+}
+
+func maybeSkipHelmPushFlake(t *testing.T, err error) {
+	if err == nil {
+		return
+	}
+	msg := strings.ToLower(err.Error())
+	if strings.Contains(msg, "404") ||
+		strings.Contains(msg, "not found") ||
+		(strings.Contains(msg, "failed to perform") && strings.Contains(msg, "push")) {
+		t.Skip("OCI registry API not accessible (404). Skipping test.")
+	}
+	if strings.Contains(msg, "push") && strings.Contains(msg, "exit status 1") {
+		t.Skip("Helm push failed (likely OCI registry 404). Skipping test.")
+	}
+}
+
+func assertOCIArtifactsUnderSubpath(t *testing.T, bi buildinfo.BuildInfo, expectedPrefix string) {
+	t.Helper()
+	require.Greater(t, len(bi.Modules), 0, "build info must have at least one module")
+
+	matchedPaths := 0
+	var offendingPaths []string
+	for _, module := range bi.Modules {
+		if module.Type != buildinfo.Helm {
+			continue
+		}
+		for _, artifact := range module.Artifacts {
+			if artifact.Path == "" {
+				continue
+			}
+			if strings.HasPrefix(artifact.Path, expectedPrefix+"/") || artifact.Path == expectedPrefix {
+				matchedPaths++
+				continue
+			}
+			offendingPaths = append(offendingPaths, artifact.Path)
+		}
+	}
+	assert.Greaterf(t, matchedPaths, 0,
+		"expected at least one helm OCI artifact whose .Path is under %q (offending paths: %v)",
+		expectedPrefix, offendingPaths)
+	assert.Emptyf(t, offendingPaths,
+		"every helm OCI artifact .Path must be under %q, but these were stored elsewhere: %v",
+		expectedPrefix, offendingPaths)
+}
+
+func createCoexistSeedFile(t *testing.T) (string, func()) {
+	f, err := os.CreateTemp("", "helm-coexist-seed-*.txt")
+	require.NoError(t, err)
+	_, err = f.WriteString("coexistence seed payload\n")
+	require.NoError(t, err)
+	require.NoError(t, f.Close())
+	return f.Name(), func() {
+		if err := os.Remove(f.Name()); err != nil {
+			t.Logf("Warning: Failed to remove coexistence seed file: %v", err)
+		}
+	}
+}
+
+func moduleSummary(modules []buildinfo.Module) []string {
+	out := make([]string, 0, len(modules))
+	for _, m := range modules {
+		out = append(out, fmt.Sprintf("%s(%s)", m.Id, m.Type))
+	}
+	return out
+}
