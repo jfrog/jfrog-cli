@@ -42,7 +42,7 @@ func initUvTest(t *testing.T) {
 	require.True(t, isRepoExist(tests.UvVirtualRepo), "UV virtual repo does not exist: "+tests.UvVirtualRepo)
 }
 
-func cleanUvTest(t *testing.T) {
+func cleanUvTest(_ *testing.T) {
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.UvBuildName, artHttpDetails)
 	tests.CleanFileSystem()
 }
@@ -101,7 +101,8 @@ func patchUvPyprojectToml(t *testing.T, projectPath string) {
 	content := string(data)
 	content = strings.ReplaceAll(content, "ARTIFACTORY_INDEX_URL", indexURL)
 	content = strings.ReplaceAll(content, "ARTIFACTORY_PUBLISH_URL", publishURL)
-	require.NoError(t, os.WriteFile(pyprojectPath, []byte(content), 0644), "failed to write patched pyproject.toml")
+	//nolint:gosec // pyprojectPath is a controlled test path built from filepath.Join; not user input
+	require.NoError(t, os.WriteFile(filepath.Clean(pyprojectPath), []byte(content), 0644), "failed to write patched pyproject.toml")
 }
 
 // runUvCmd changes to projectPath and runs `jf uv <args...>`.
@@ -122,7 +123,8 @@ func runUvCmd(t *testing.T, projectPath string, args ...string) error {
 // validateUvBuildProperties verifies that every artifact in the published build-info
 // has build.name, build.number, and build.timestamp properties set directly on the
 // Artifactory file (not just in the build-info JSON).
-func validateUvBuildProperties(t *testing.T, repo, buildName, buildNumber string) {
+func validateUvBuildProperties(t *testing.T, repo, buildName string) {
+	const buildNumber = "1"
 	t.Helper()
 
 	// Get published build-info to find artifact paths
@@ -231,7 +233,7 @@ func TestUvPublish(t *testing.T) {
 	require.NoError(t, artifactoryCli.Exec("bp", tests.UvBuildName, buildNumber))
 
 	// Build properties must be stamped
-	validateUvBuildProperties(t, tests.UvLocalRepo, tests.UvBuildName, buildNumber)
+	validateUvBuildProperties(t, tests.UvLocalRepo, tests.UvBuildName)
 
 	// Build info must have 2 artifacts with sha1+sha256
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.UvBuildName, buildNumber)
@@ -309,7 +311,7 @@ func TestUvBuildPropertiesOnArtifacts(t *testing.T) {
 		"--build-number="+buildNumber))
 	require.NoError(t, artifactoryCli.Exec("bp", tests.UvBuildName, buildNumber))
 
-	validateUvBuildProperties(t, tests.UvLocalRepo, tests.UvBuildName, buildNumber)
+	validateUvBuildProperties(t, tests.UvLocalRepo, tests.UvBuildName)
 }
 
 // ---------------------------------------------------------------------------
@@ -506,7 +508,7 @@ func TestUvPublishURLFromToml(t *testing.T) {
 		"--build-number="+buildNumber))
 
 	require.NoError(t, artifactoryCli.Exec("bp", tests.UvBuildName, buildNumber))
-	validateUvBuildProperties(t, tests.UvLocalRepo, tests.UvBuildName, buildNumber)
+	validateUvBuildProperties(t, tests.UvLocalRepo, tests.UvBuildName)
 }
 
 // TestUvPublishURLFlagOverridesToml verifies --publish-url flag takes priority
@@ -526,7 +528,7 @@ func TestUvPublishURLFlagOverridesToml(t *testing.T) {
 		"--build-number="+buildNumber))
 
 	require.NoError(t, artifactoryCli.Exec("bp", tests.UvBuildName, buildNumber))
-	validateUvBuildProperties(t, tests.UvLocalRepo, tests.UvBuildName, buildNumber)
+	validateUvBuildProperties(t, tests.UvLocalRepo, tests.UvBuildName)
 }
 
 // ---------------------------------------------------------------------------
@@ -785,7 +787,7 @@ func TestUvDependencyExpectedVsActual(t *testing.T) {
 		"dependency type should be 'whl' or 'tar.gz', got: %s", dep.Type)
 
 	// SHA256 must be present (from uv.lock)
-	assert.NotEmpty(t, dep.Checksum.Sha256,
+	assert.NotEmpty(t, dep.Sha256,
 		"sha256 must be present from uv.lock for dep %s", dep.Id)
 
 	// No scopes — Python has no compile/runtime distinction (matches pip/pipenv canonical format)
@@ -1670,7 +1672,7 @@ func TestUvBuildPromote(t *testing.T) {
 	require.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
 
 	// Verify artifacts are in the source repo
-	validateUvBuildProperties(t, tests.UvLocalRepo, buildName, buildNumber)
+	validateUvBuildProperties(t, tests.UvLocalRepo, buildName)
 
 	// Promote build to target repo using --copy (artifacts remain in source)
 	// We promote to UvRemoteRepo as the target to avoid needing a second local repo.
@@ -1687,7 +1689,7 @@ func TestUvBuildPromote(t *testing.T) {
 	assert.NoError(t, err, "jf rt build-promote should succeed with --copy to local repo")
 
 	// After promotion with --copy, artifacts should still exist in source (local) repo
-	validateUvBuildProperties(t, tests.UvLocalRepo, buildName, buildNumber)
+	validateUvBuildProperties(t, tests.UvLocalRepo, buildName)
 }
 
 // ---------------------------------------------------------------------------
