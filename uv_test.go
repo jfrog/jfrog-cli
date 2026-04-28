@@ -101,8 +101,7 @@ func patchUvPyprojectToml(t *testing.T, projectPath string) {
 	content := string(data)
 	content = strings.ReplaceAll(content, "ARTIFACTORY_INDEX_URL", indexURL)
 	content = strings.ReplaceAll(content, "ARTIFACTORY_PUBLISH_URL", publishURL)
-	//nolint:gosec // pyprojectPath is a controlled test path built from filepath.Join; not user input
-	require.NoError(t, os.WriteFile(filepath.Clean(pyprojectPath), []byte(content), 0644), "failed to write patched pyproject.toml")
+	require.NoError(t, os.WriteFile(filepath.Clean(pyprojectPath), []byte(content), 0644), "failed to write patched pyproject.toml") // #nosec G703 -- path built from filepath.Join, not user input
 }
 
 // runUvCmd changes to projectPath and runs `jf uv <args...>`.
