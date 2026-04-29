@@ -16,15 +16,15 @@ require (
 	github.com/docker/docker v28.5.2+incompatible
 	github.com/gocarina/gocsv v0.0.0-20240520201108-78e41c74b4b1
 	github.com/jfrog/archiver/v3 v3.6.3
-	github.com/jfrog/build-info-go v1.13.1-0.20260331040230-c3b53d1a24ac
+	github.com/jfrog/build-info-go v1.13.1-0.20260429070557-93b98034d295
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-application v1.0.2-0.20260405065840-c930d515ef34
-	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260406055206-755b2b3eb84d
-	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260402104745-7a0bc2c11d63
-	github.com/jfrog/jfrog-cli-evidence v0.9.1
-	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260306102152-984d60a80cec
-	github.com/jfrog/jfrog-cli-security v1.27.0
-	github.com/jfrog/jfrog-client-go v1.55.1-0.20260401130923-f5a15b584a0d
+	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260423195010-d7aa2c437305
+	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260429073430-5723b4f21705
+	github.com/jfrog/jfrog-cli-evidence v0.9.2
+	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260423120557-be568d9dd4c2
+	github.com/jfrog/jfrog-cli-security v1.28.0
+	github.com/jfrog/jfrog-client-go v1.55.1-0.20260428070955-750b933dc5c7
 	github.com/jszwec/csvutil v1.10.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/spf13/viper v1.21.0
@@ -86,7 +86,7 @@ require (
 	github.com/gfleury/go-bitbucket-v1 v0.0.0-20240917142304-df385efaac68 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.8.0 // indirect
-	github.com/go-git/go-git/v5 v5.17.1 // indirect
+	github.com/go-git/go-git/v5 v5.18.0 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
