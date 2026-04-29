@@ -79,6 +79,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pnpmconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/poetry"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/poetryconfig"
+	uvcommand "github.com/jfrog/jfrog-cli/docs/buildtools/uvcommand"
 	yarndocs "github.com/jfrog/jfrog-cli/docs/buildtools/yarn"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/yarnconfig"
 	"github.com/jfrog/jfrog-cli/docs/common"
@@ -356,6 +357,19 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
 			Action:          PoetryCmd,
+		},
+		{
+			Name:            "uv",
+			Flags:           cliutils.GetCommandFlags(cliutils.Uv),
+			Usage:           uvcommand.GetDescription(),
+			HelpName:        corecommon.CreateUsage("uv", uvcommand.GetDescription(), uvcommand.Usage),
+			UsageText:       uvcommand.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Category:        buildToolsCategory,
+			Action:          UvCmd,
+			Hidden:          true,
 		},
 		{
 			Name:            "helm",
@@ -1807,6 +1821,53 @@ func PipenvCmd(c *cli.Context) error {
 
 func PoetryCmd(c *cli.Context) error {
 	return pythonCmd(c, project.Poetry)
+}
+
+func UvCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+	if c.NArg() < 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+	args := cliutils.ExtractCommand(c)
+	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
+	if err != nil {
+		return err
+	}
+	var serverID string
+	filteredArgs, serverID, err = coreutils.ExtractServerIdFromCommand(filteredArgs)
+	if err != nil {
+		return fmt.Errorf("failed to extract server ID: %w", err)
+	}
+	cmdName, uvArgs := getCommandName(filteredArgs)
+	// Peek at --publish-url to populate DeployerRepo for build-info enrichment.
+	// The flag is NOT consumed here — it is forwarded to uv as-is.
+	deployerRepo := ""
+	for i, arg := range uvArgs {
+		if strings.HasPrefix(arg, "--publish-url=") {
+			deployerRepo = strings.TrimPrefix(arg, "--publish-url=")
+		} else if arg == "--publish-url" && i+1 < len(uvArgs) {
+			deployerRepo = uvArgs[i+1]
+		}
+	}
+	uvCommand := python.NewNativeUVCommand().
+		SetCommandName(cmdName).
+		SetArgs(uvArgs).
+		SetServerID(serverID).
+		SetDeployerRepo(deployerRepo).
+		SetBuildConfiguration(buildConfiguration)
+	// For help requests, bypass commands.Exec() to skip the concurrent usage-reporting
+	// goroutine that would otherwise make Artifactory version calls unnecessarily.
+	for _, a := range uvArgs {
+		if a == "-h" || a == "--help" {
+			return uvCommand.Run()
+		}
+	}
+	if cmdName == "help" || cmdName == "" {
+		return uvCommand.Run()
+	}
+	return commands.Exec(uvCommand)
 }
 
 // HelmCmd executes Helm commands with build info collection support

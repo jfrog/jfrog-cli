@@ -1,0 +1,9 @@
+{
+  "key": "${UV_VIRTUAL_REPO}",
+  "rclass": "virtual",
+  "packageType": "pypi",
+  "repositories": [
+    "${UV_LOCAL_REPO}",
+    "${UV_REMOTE_REPO}"
+  ]
+}

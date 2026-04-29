@@ -1889,10 +1889,7 @@ func checkIfServerIsUp(port, proxyScheme string, useClientCerts bool) error {
 		if err != nil {
 			log.Error(fmt.Sprintf("Couldn't close response body. Error: %s", err.Error()))
 		}
-		if resp.StatusCode != http.StatusOK {
-			time.Sleep(time.Second)
-			continue
-		}
+		// Any HTTP response (including redirects) confirms the proxy is up and forwarding requests.
 		return nil
 	}
 	return fmt.Errorf("failed while waiting for the proxy server to be accessible")

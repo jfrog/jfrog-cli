@@ -1,0 +1,18 @@
+[project]
+name = "uv-jfrog-test"
+version = "0.1.0"
+description = "Test package with no Artifactory index configured"
+requires-python = ">=3.11"
+dependencies = [
+    "certifi>=2024.0.0",
+]
+
+[build-system]
+requires = ["flit_core>=3.2"]
+build-backend = "flit_core.buildapi"
+
+# No [[tool.uv.index]] — resolves from lock file URLs (PyPI)
+# Tests the case where dependency enrichment is not possible
+
+[tool.uv]
+publish-url = "ARTIFACTORY_PUBLISH_URL"

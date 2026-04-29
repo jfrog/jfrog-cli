@@ -12,6 +12,7 @@ import (
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/build-info-go/flexpack"
 	"github.com/jfrog/gofrog/crypto"
+
 	artutils "github.com/jfrog/jfrog-cli-artifactory/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	buildUtils "github.com/jfrog/jfrog-cli-core/v2/common/build"
@@ -395,7 +396,7 @@ func collectPoetryBuildInfo(workingDir, buildName, buildNumber string, serverDet
 	}
 
 	// Then set build properties on uploaded artifacts (this tags them with build info)
-	err = setPoetryBuildProperties(serverDetails, artifactRepo, buildName, buildNumber, buildConfiguration.GetProject(), buildInfo)
+	err = setPythonBuildProperties(serverDetails, artifactRepo, buildName, buildNumber, buildConfiguration.GetProject(), buildInfo)
 	if err != nil {
 		log.Warn("Failed to set build properties on artifacts: " + err.Error())
 	}
@@ -472,7 +473,7 @@ func collectArtifactsWithRepositoryPaths(serverDetails *config.ServerDetails, ta
 	log.Debug("Collecting artifacts with repository paths...")
 
 	// First get the list of local artifacts to know what to search for
-	localArtifacts, err := collectPoetryArtifacts(workingDir)
+	localArtifacts, err := collectPythonDistArtifacts(workingDir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get local artifacts: %w", err)
 	}
@@ -508,16 +509,9 @@ func collectArtifactsWithRepositoryPaths(serverDetails *config.ServerDetails, ta
 
 		// Get the most recent result (should be the one we just uploaded)
 		for searchResult := new(specutils.ResultItem); searchReader.NextRecord(searchResult) == nil; searchResult = new(specutils.ResultItem) {
-			// Create artifact with complete repository path including filename
-			fullPath := searchResult.Path
-			if !strings.HasSuffix(fullPath, "/") && !strings.HasSuffix(fullPath, searchResult.Name) {
-				// Ensure path includes the filename: "test-project/1.0.1" + "/" + "filename.whl"
-				fullPath = filepath.Join(searchResult.Path, searchResult.Name)
-			}
-
 			artifact := buildinfo.Artifact{
 				Name:     searchResult.Name,
-				Path:     fullPath, // Complete path: "test-project/1.0.1/test_project-1.0.1-py3-none-any.whl"
+				Path:     searchResult.Path, // Directory only: "package-name/version"
 				Type:     getArtifactTypeFromName(searchResult.Name),
 				Checksum: localArtifact.Checksum, // Use checksums from local file
 			}
@@ -535,8 +529,8 @@ func collectArtifactsWithRepositoryPaths(serverDetails *config.ServerDetails, ta
 	return artifacts, nil
 }
 
-// collectPoetryArtifacts collects artifacts from the dist/ directory (legacy method)
-func collectPoetryArtifacts(workingDir string) ([]buildinfo.Artifact, error) {
+// collectPythonDistArtifacts collects artifacts from the dist/ directory (legacy method)
+func collectPythonDistArtifacts(workingDir string) ([]buildinfo.Artifact, error) {
 	distDir := filepath.Join(workingDir, "dist")
 
 	// Check if dist directory exists
@@ -610,11 +604,11 @@ func getArtifactTypeFromName(filename string) string {
 	return "unknown"
 }
 
-// setPoetryBuildProperties sets build properties on uploaded Poetry artifacts
+// setPythonBuildProperties sets build properties on uploaded Python dist artifacts
 // This ensures artifacts are tagged with build.name, build.number, and build.timestamp
 // just like npm, maven, and gradle package managers do
-func setPoetryBuildProperties(serverDetails *config.ServerDetails, targetRepo, buildName, buildNumber, project string, buildInfo *buildinfo.BuildInfo) error {
-	log.Debug("Setting build properties on Poetry artifacts...")
+func setPythonBuildProperties(serverDetails *config.ServerDetails, targetRepo, buildName, buildNumber, project string, buildInfo *buildinfo.BuildInfo) error {
+	log.Debug("Setting build properties on Python dist artifacts...")
 
 	// Create services manager
 	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, 0, false)
@@ -642,8 +636,7 @@ func setPoetryBuildProperties(serverDetails *config.ServerDetails, targetRepo, b
 
 	// Set properties on each specific artifact by name and path
 	for _, artifact := range module.Artifacts {
-		fullPath := fmt.Sprintf("%s/%s/%s", targetRepo, artifact.Path, artifact.Name)
-		log.Info(fmt.Sprintf("[Thread %d] Setting properties on: %s", 1, fullPath))
+		log.Debug(fmt.Sprintf("Setting properties on: %s/%s/%s", targetRepo, artifact.Path, artifact.Name))
 
 		// Create AQL query for this specific artifact
 		searchQuery := CreateAqlQueryForSearch(targetRepo, artifact.Name)
@@ -676,7 +669,7 @@ func setPoetryBuildProperties(serverDetails *config.ServerDetails, targetRepo, b
 		log.Debug(fmt.Sprintf("Successfully set properties on artifact: %s", artifact.Name))
 	}
 
-	log.Info(fmt.Sprintf("Successfully set build properties on %d Poetry artifacts", len(module.Artifacts)))
+	log.Info(fmt.Sprintf("Successfully set build properties on %d artifacts", len(module.Artifacts)))
 	return nil
 }
 
