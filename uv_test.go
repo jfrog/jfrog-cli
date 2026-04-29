@@ -576,6 +576,12 @@ func TestUvSyncNoIndexOnlySha256(t *testing.T) {
 	initUvTest(t)
 	defer cleanUvTest(t)
 
+	// Unset global UV index env vars so leaked os.Setenv calls from earlier tests
+	// or CI environment settings don't trigger Artifactory enrichment on a project
+	// that has no [[tool.uv.index]] configured.
+	t.Setenv("UV_DEFAULT_INDEX", "")
+	t.Setenv("UV_INDEX_URL", "")
+
 	// uvproject-no-index has no [[tool.uv.index]] in pyproject.toml
 	projectPath := createUvProject(t, "uv-no-index", "uvproject-no-index")
 	buildNumber := "1"
