@@ -45,6 +45,9 @@ func initUvTest(t *testing.T) {
 
 func cleanUvTest(_ *testing.T) {
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.UvBuildName, artHttpDetails)
+	// Remove local partial build-info files from the system temp dir so they
+	// don't bleed into the next test when jf rt bp merges all partial files.
+	_ = coreBuild.RemoveBuildDir(tests.UvBuildName, "1", "")
 	tests.CleanFileSystem()
 }
 
@@ -576,12 +579,6 @@ func TestUvSyncNoIndexOnlySha256(t *testing.T) {
 	initUvTest(t)
 	defer cleanUvTest(t)
 
-	// Unset global UV index env vars so leaked os.Setenv calls from earlier tests
-	// or CI environment settings don't trigger Artifactory enrichment on a project
-	// that has no [[tool.uv.index]] configured.
-	t.Setenv("UV_DEFAULT_INDEX", "")
-	t.Setenv("UV_INDEX_URL", "")
-
 	// uvproject-no-index has no [[tool.uv.index]] in pyproject.toml
 	projectPath := createUvProject(t, "uv-no-index", "uvproject-no-index")
 	buildNumber := "1"
@@ -1041,7 +1038,7 @@ func TestUvServerIDFlag(t *testing.T) {
 	assert.NoError(t, runUvCmd(t, projectPath, "sync",
 		"--build-name="+tests.UvBuildName,
 		"--build-number="+buildNumber,
-		"--server-id="+serverDetails.ServerId,
+		"--server-id=default", // createJfrogHomeConfig registers the test server as "default"
 	))
 	require.NoError(t, artifactoryCli.Exec("bp", tests.UvBuildName, buildNumber))
 
