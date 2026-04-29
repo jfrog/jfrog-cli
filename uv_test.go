@@ -578,6 +578,10 @@ func TestUvSyncNoIndexOnlySha256(t *testing.T) {
 	initUvTest(t)
 	defer cleanUvTest(t)
 
+	// Purge any leftover partial build-info files before this test starts so that
+	// a previous test's enriched sha1 values cannot bleed in when jf rt bp merges.
+	_ = coreBuild.RemoveBuildDir(tests.UvBuildName, "1", "")
+
 	// uvproject-no-index has no [[tool.uv.index]] in pyproject.toml
 	projectPath := createUvProject(t, "uv-no-index", "uvproject-no-index")
 	buildNumber := "1"
@@ -585,19 +589,17 @@ func TestUvSyncNoIndexOnlySha256(t *testing.T) {
 	assert.NoError(t, runUvCmd(t, projectPath, "sync",
 		"--build-name="+tests.UvBuildName,
 		"--build-number="+buildNumber))
-	require.NoError(t, artifactoryCli.Exec("bp", tests.UvBuildName, buildNumber))
 
-	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.UvBuildName, buildNumber)
-	require.NoError(t, err, "GetBuildInfo failed")
-	require.True(t, found, "build info not found — was jf rt bp successful?")
-	require.NotEmpty(t, publishedBuildInfo.BuildInfo.Modules,
+	// Check the local build info directly — before publishing to Artifactory — so that
+	// partial files from previous tests cannot contaminate the result via jf rt bp merging.
+	localBuilds, err := coreBuild.GetGeneratedBuildsInfo(tests.UvBuildName, buildNumber, "")
+	require.NoError(t, err, "GetGeneratedBuildsInfo failed")
+	require.Len(t, localBuilds, 1, "expected exactly one local build-info partial")
+	require.NotEmpty(t, localBuilds[0].Modules,
 		"uv sync should produce at least one build-info module even without an Artifactory index")
-
-	for _, dep := range publishedBuildInfo.BuildInfo.Modules[0].Dependencies {
-		// sha256 always comes from uv.lock regardless of Artifactory access
+	for _, dep := range localBuilds[0].Modules[0].Dependencies {
 		assert.NotEmpty(t, dep.Sha256,
 			"sha256 from uv.lock should always be present for dep %s", dep.Id)
-		// sha1 should be absent — no [[tool.uv.index]] means no Artifactory enrichment
 		assert.Empty(t, dep.Sha1,
 			"sha1 should be absent when no Artifactory index is configured for dep %s", dep.Id)
 	}
