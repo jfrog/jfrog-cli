@@ -1835,18 +1835,10 @@ func UvCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	// urfave/cli v1 reorders defined flags to the front and parses them before UvCmd
-	// runs, so they are absent from c.Args(). Fall back to the parsed flag values.
-	if m := c.String("module"); m != "" {
-		buildConfiguration.SetModule(m)
-	}
 	var serverID string
 	filteredArgs, serverID, err = coreutils.ExtractServerIdFromCommand(filteredArgs)
 	if err != nil {
 		return fmt.Errorf("failed to extract server ID: %w", err)
-	}
-	if serverID == "" {
-		serverID = c.String("server-id")
 	}
 	cmdName, uvArgs := getCommandName(filteredArgs)
 	// Peek at --publish-url to populate DeployerRepo for build-info enrichment.
