@@ -1857,6 +1857,16 @@ func UvCmd(c *cli.Context) error {
 		SetServerID(serverID).
 		SetDeployerRepo(deployerRepo).
 		SetBuildConfiguration(buildConfiguration)
+	// For help requests, bypass commands.Exec() to skip the concurrent usage-reporting
+	// goroutine that would otherwise make Artifactory version calls unnecessarily.
+	for _, a := range uvArgs {
+		if a == "-h" || a == "--help" {
+			return uvCommand.Run()
+		}
+	}
+	if cmdName == "help" || cmdName == "" {
+		return uvCommand.Run()
+	}
 	return commands.Exec(uvCommand)
 }
 
