@@ -198,7 +198,8 @@ func TestUvBuild(t *testing.T) {
 	assert.True(t, whl, "expected .whl in dist/")
 	assert.True(t, sdist, "expected .tar.gz in dist/")
 
-	// Build info must have 2 artifacts
+	// Build info records dependencies but no artifacts — artifacts are only
+	// recorded after jf uv publish (nothing is uploaded to Artifactory by build).
 	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.UvBuildName, buildNumber, "",
 		[]string{getUvModuleID(t, projectPath)}, buildinfo.Uv)
 
@@ -207,8 +208,8 @@ func TestUvBuild(t *testing.T) {
 	require.NoError(t, err, "GetBuildInfo failed")
 	require.True(t, found, "build info not found — was jf rt bp successful?")
 	require.Len(t, publishedBuildInfo.BuildInfo.Modules, 1, "expected 1 build info module")
-	assert.Len(t, publishedBuildInfo.BuildInfo.Modules[0].Artifacts, 2,
-		"build command should capture .whl and .tar.gz")
+	assert.Empty(t, publishedBuildInfo.BuildInfo.Modules[0].Artifacts,
+		"build command should not record artifacts — nothing is uploaded to Artifactory by jf uv build")
 }
 
 // TestUvPublish verifies that `jf uv publish` uploads artifacts to the local
