@@ -21,6 +21,12 @@ type httpResponse func(rw http.ResponseWriter, req *http.Request)
 
 func handleReverseProxyHttps(reverseProxy *httputil.ReverseProxy) httpResponse {
 	return func(rw http.ResponseWriter, req *http.Request) {
+		// Health-check path used by checkIfServerIsUp — return 200 directly,
+		// consistent with httpProxyHandler which also short-circuits on "/".
+		if req.RequestURI == "/" {
+			rw.WriteHeader(http.StatusOK)
+			return
+		}
 		clilog.Info("*********************************************************")
 		clilog.Info("Scheme:  ", "HTTPS")
 		clilog.Info("Host:    ", req.Host)

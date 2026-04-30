@@ -34,7 +34,6 @@ func uvIndexEnvName(name string) string {
 // ---------------------------------------------------------------------------
 
 func initUvTest(t *testing.T) {
-	t.Skip("Skipping UV tests. As they are failing.")
 	if !*tests.TestUv {
 		t.Skip("Skipping UV tests. To run UV tests add the '-test.uv=true' option.")
 	}
@@ -45,6 +44,9 @@ func initUvTest(t *testing.T) {
 
 func cleanUvTest(_ *testing.T) {
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.UvBuildName, artHttpDetails)
+	// Remove local partial build-info files from the system temp dir so they
+	// don't bleed into the next test when jf rt bp merges all partial files.
+	_ = coreBuild.RemoveBuildDir(tests.UvBuildName, "1", "")
 	tests.CleanFileSystem()
 }
 
@@ -198,7 +200,8 @@ func TestUvBuild(t *testing.T) {
 	assert.True(t, whl, "expected .whl in dist/")
 	assert.True(t, sdist, "expected .tar.gz in dist/")
 
-	// Build info must have 2 artifacts
+	// Build info records dependencies but no artifacts — artifacts are only
+	// recorded after jf uv publish (nothing is uploaded to Artifactory by build).
 	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.UvBuildName, buildNumber, "",
 		[]string{getUvModuleID(t, projectPath)}, buildinfo.Uv)
 
@@ -207,8 +210,8 @@ func TestUvBuild(t *testing.T) {
 	require.NoError(t, err, "GetBuildInfo failed")
 	require.True(t, found, "build info not found — was jf rt bp successful?")
 	require.Len(t, publishedBuildInfo.BuildInfo.Modules, 1, "expected 1 build info module")
-	assert.Len(t, publishedBuildInfo.BuildInfo.Modules[0].Artifacts, 2,
-		"build command should capture .whl and .tar.gz")
+	assert.Empty(t, publishedBuildInfo.BuildInfo.Modules[0].Artifacts,
+		"build command should not record artifacts — nothing is uploaded to Artifactory by jf uv build")
 }
 
 // TestUvPublish verifies that `jf uv publish` uploads artifacts to the local
@@ -575,6 +578,10 @@ func TestUvSyncNoIndexOnlySha256(t *testing.T) {
 	initUvTest(t)
 	defer cleanUvTest(t)
 
+	// Purge any leftover partial build-info files before this test starts so that
+	// a previous test's enriched sha1 values cannot bleed in when jf rt bp merges.
+	_ = coreBuild.RemoveBuildDir(tests.UvBuildName, "1", "")
+
 	// uvproject-no-index has no [[tool.uv.index]] in pyproject.toml
 	projectPath := createUvProject(t, "uv-no-index", "uvproject-no-index")
 	buildNumber := "1"
@@ -582,19 +589,17 @@ func TestUvSyncNoIndexOnlySha256(t *testing.T) {
 	assert.NoError(t, runUvCmd(t, projectPath, "sync",
 		"--build-name="+tests.UvBuildName,
 		"--build-number="+buildNumber))
-	require.NoError(t, artifactoryCli.Exec("bp", tests.UvBuildName, buildNumber))
 
-	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.UvBuildName, buildNumber)
-	require.NoError(t, err, "GetBuildInfo failed")
-	require.True(t, found, "build info not found — was jf rt bp successful?")
-	require.NotEmpty(t, publishedBuildInfo.BuildInfo.Modules,
+	// Check the local build info directly — before publishing to Artifactory — so that
+	// partial files from previous tests cannot contaminate the result via jf rt bp merging.
+	localBuilds, err := coreBuild.GetGeneratedBuildsInfo(tests.UvBuildName, buildNumber, "")
+	require.NoError(t, err, "GetGeneratedBuildsInfo failed")
+	require.Len(t, localBuilds, 1, "expected exactly one local build-info partial")
+	require.NotEmpty(t, localBuilds[0].Modules,
 		"uv sync should produce at least one build-info module even without an Artifactory index")
-
-	for _, dep := range publishedBuildInfo.BuildInfo.Modules[0].Dependencies {
-		// sha256 always comes from uv.lock regardless of Artifactory access
+	for _, dep := range localBuilds[0].Modules[0].Dependencies {
 		assert.NotEmpty(t, dep.Sha256,
 			"sha256 from uv.lock should always be present for dep %s", dep.Id)
-		// sha1 should be absent — no [[tool.uv.index]] means no Artifactory enrichment
 		assert.Empty(t, dep.Sha1,
 			"sha1 should be absent when no Artifactory index is configured for dep %s", dep.Id)
 	}
@@ -1034,7 +1039,7 @@ func TestUvServerIDFlag(t *testing.T) {
 	assert.NoError(t, runUvCmd(t, projectPath, "sync",
 		"--build-name="+tests.UvBuildName,
 		"--build-number="+buildNumber,
-		"--server-id="+serverDetails.ServerId,
+		"--server-id=default", // createJfrogHomeConfig registers the test server as "default"
 	))
 	require.NoError(t, artifactoryCli.Exec("bp", tests.UvBuildName, buildNumber))
 
