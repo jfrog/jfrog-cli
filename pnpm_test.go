@@ -208,6 +208,535 @@ func TestPnpmInstallAndPublishNormalProject(t *testing.T) {
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.PnpmBuildName, artHttpDetails)
 }
 
+// TestPnpmInstallSubPackageScopesBuildInfo verifies that when `jf pnpm install` is invoked
+// from inside a workspace sub-package, the build-info is scoped to that package only —
+// it must NOT contain modules from sibling workspace packages or from the workspace root.
+// This covers the fix where `pnpm ls` drops `-r` when the working directory is a
+// sub-package, so downstream SBOM/Xray consumers don't see phantom dependencies.
+func TestPnpmInstallSubPackageScopesBuildInfo(t *testing.T) {
+	initPnpmTest(t)
+	defer cleanPnpmTest(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	tempCacheDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+
+	pnpmWorkspacePath := initPnpmWorkspaceTest(t)
+	buildNumber := "650"
+	subPackageDir := filepath.Join(pnpmWorkspacePath, "packages", "nested1")
+	clientTestUtils.ChangeDirAndAssert(t, subPackageDir)
+
+	runJfrogCli(t, "pnpm", "install", "--store-dir="+tempCacheDirPath,
+		"--build-name="+tests.PnpmBuildName, "--build-number="+buildNumber)
+
+	buildInfoService := build.CreateBuildInfoService()
+	pnpmBuild, err := buildInfoService.GetOrCreateBuildWithProject(tests.PnpmBuildName, buildNumber, "")
+	assert.NoError(t, err)
+	bi, err := pnpmBuild.ToBuildInfo()
+	assert.NoError(t, err)
+
+	assert.Len(t, bi.Modules, 1,
+		"sub-package invocation must produce exactly one module (nested1); got %d modules", len(bi.Modules))
+	if len(bi.Modules) != 1 {
+		return
+	}
+	assert.Equal(t, "nested1:1.0.0", bi.Modules[0].Id,
+		"module id must match the sub-package (nested1:1.0.0), not the workspace root")
+
+	// Fixture layout (see testdata/pnpm/pnpmworkspace):
+	//   root (private)       -> devDependency: json@9.0.6
+	//   packages/nested1     -> dependency:    loadash@1.0.0
+	//   packages/nested2     -> dependency:    xml@1.0.1
+	// Running from nested1, only loadash must appear. xml would only come from nested2 (sibling leak)
+	// and json would only come from the workspace root (root leak) — each absence is a positive signal.
+	foundLoadash := false
+	for _, dep := range bi.Modules[0].Dependencies {
+		assert.False(t, strings.HasPrefix(dep.Id, "xml:"),
+			"sibling workspace package (nested2) must not leak into nested1 build-info (saw %s)", dep.Id)
+		assert.False(t, strings.HasPrefix(dep.Id, "json:"),
+			"workspace root devDependency must not leak into nested1 build-info (saw %s)", dep.Id)
+		if strings.HasPrefix(dep.Id, "loadash:") {
+			foundLoadash = true
+		}
+	}
+	assert.True(t, foundLoadash, "sub-package build-info must still include its own direct dependency (loadash)")
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.PnpmBuildName, artHttpDetails)
+}
+
+// TestPnpmInstallIgnoreWorkspaceScopesBuildInfo verifies that `--ignore-workspace` is
+// forwarded to the internal `pnpm ls` call so build-info respects the flag. Running at
+// the workspace root (where the sub-package scoping heuristic does NOT kick in) isolates
+// the flag-forwarding path: without the forwarded flag, `pnpm ls -r` would enumerate
+// every workspace package and leak their deps into the root module.
+func TestPnpmInstallIgnoreWorkspaceScopesBuildInfo(t *testing.T) {
+	initPnpmTest(t)
+	defer cleanPnpmTest(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	tempCacheDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+
+	pnpmWorkspacePath := initPnpmWorkspaceTest(t)
+	buildNumber := "651"
+	clientTestUtils.ChangeDirAndAssert(t, pnpmWorkspacePath)
+
+	runJfrogCli(t, "pnpm", "install", "--ignore-workspace", "--store-dir="+tempCacheDirPath,
+		"--build-name="+tests.PnpmBuildName, "--build-number="+buildNumber)
+
+	buildInfoService := build.CreateBuildInfoService()
+	pnpmBuild, err := buildInfoService.GetOrCreateBuildWithProject(tests.PnpmBuildName, buildNumber, "")
+	assert.NoError(t, err)
+	bi, err := pnpmBuild.ToBuildInfo()
+	assert.NoError(t, err)
+
+	assert.Len(t, bi.Modules, 1,
+		"--ignore-workspace must collapse build-info to a single module; got %d", len(bi.Modules))
+	if len(bi.Modules) != 1 {
+		return
+	}
+	assert.Equal(t, "pnpm-workspace-root:1.0.0", bi.Modules[0].Id,
+		"module id must be the root package, not a workspace sub-package")
+
+	// Fixture layout (see testdata/pnpm/pnpmworkspace):
+	//   root (private)    -> devDependency: json@9.0.6      <- the only dep we should see
+	//   packages/nested1  -> dependency:    loadash@1.0.0   <- must be absent
+	//   packages/nested2  -> dependency:    xml@1.0.1       <- must be absent
+	foundJson := false
+	for _, dep := range bi.Modules[0].Dependencies {
+		assert.False(t, strings.HasPrefix(dep.Id, "loadash:"),
+			"nested1's dep must not leak with --ignore-workspace (saw %s)", dep.Id)
+		assert.False(t, strings.HasPrefix(dep.Id, "xml:"),
+			"nested2's dep must not leak with --ignore-workspace (saw %s)", dep.Id)
+		if strings.HasPrefix(dep.Id, "json:") {
+			foundJson = true
+		}
+	}
+	assert.True(t, foundJson, "root's own devDependency (json) must be present")
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.PnpmBuildName, artHttpDetails)
+}
+
+// TestPnpmInstallProdFlagForwardedToBuildInfo verifies that dep-tree-altering install
+// flags (here: --prod) are forwarded to the internal `pnpm ls` call so build-info
+// matches what was actually installed. Without forwarding, `pnpm ls -r` would emit
+// devDependencies regardless of how install was invoked, leading to phantom deps in
+// build-info that aren't present on disk.
+//
+// Fixture (see testdata/pnpm/pnpmworkspace):
+//
+//	root (private)    -> devDependency: json@9.0.6        <- must be ABSENT with --prod
+//	packages/nested1  -> dependency:    loadash@1.0.0     <- must be present
+//	packages/nested2  -> dependency:    xml@1.0.1         <- must be present
+//
+// The orthogonal direction (devDeps preserved, regular deps filtered) is
+// covered by TestPnpmInstallDevFlagForwardedToBuildInfo.
+func TestPnpmInstallProdFlagForwardedToBuildInfo(t *testing.T) {
+	initPnpmTest(t)
+	defer cleanPnpmTest(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	tempCacheDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+
+	pnpmWorkspacePath := initPnpmWorkspaceTest(t)
+	buildNumber := "652"
+	clientTestUtils.ChangeDirAndAssert(t, pnpmWorkspacePath)
+
+	runJfrogCli(t, "pnpm", "install", "--prod", "--store-dir="+tempCacheDirPath,
+		"--build-name="+tests.PnpmBuildName, "--build-number="+buildNumber)
+
+	buildInfoService := build.CreateBuildInfoService()
+	pnpmBuild, err := buildInfoService.GetOrCreateBuildWithProject(tests.PnpmBuildName, buildNumber, "")
+	assert.NoError(t, err)
+	bi, err := pnpmBuild.ToBuildInfo()
+	assert.NoError(t, err)
+
+	foundLoadash, foundXml := false, false
+	for _, mod := range bi.Modules {
+		for _, dep := range mod.Dependencies {
+			assert.False(t, strings.HasPrefix(dep.Id, "json:"),
+				"--prod must filter devDependencies from build-info (saw %s in module %s)", dep.Id, mod.Id)
+			if strings.HasPrefix(dep.Id, "loadash:") {
+				foundLoadash = true
+			}
+			if strings.HasPrefix(dep.Id, "xml:") {
+				foundXml = true
+			}
+		}
+	}
+	assert.True(t, foundLoadash, "regular dependency loadash (nested1) must remain in build-info under --prod")
+	assert.True(t, foundXml, "regular dependency xml (nested2) must remain in build-info under --prod")
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.PnpmBuildName, artHttpDetails)
+}
+
+// TestPnpmInstallSubPackageWorkspaceRootOverride verifies that --workspace-root /-w
+// invoked from a sub-package overrides the cwd-based scoping heuristic, producing a
+// full multi-module build-info instead of a single-module one. This is the explicit
+// escape hatch for users who run `cd packages/nested1 && jf pnpm install -w` and
+// expect workspace-wide capture.
+func TestPnpmInstallSubPackageWorkspaceRootOverride(t *testing.T) {
+	initPnpmTest(t)
+	defer cleanPnpmTest(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	tempCacheDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+
+	pnpmWorkspacePath := initPnpmWorkspaceTest(t)
+	buildNumber := "653"
+	subPackageDir := filepath.Join(pnpmWorkspacePath, "packages", "nested1")
+	clientTestUtils.ChangeDirAndAssert(t, subPackageDir)
+
+	runJfrogCli(t, "pnpm", "install", "--workspace-root", "--store-dir="+tempCacheDirPath,
+		"--build-name="+tests.PnpmBuildName, "--build-number="+buildNumber)
+
+	buildInfoService := build.CreateBuildInfoService()
+	pnpmBuild, err := buildInfoService.GetOrCreateBuildWithProject(tests.PnpmBuildName, buildNumber, "")
+	assert.NoError(t, err)
+	bi, err := pnpmBuild.ToBuildInfo()
+	assert.NoError(t, err)
+
+	// Without the override, sub-package scoping would emit exactly one module
+	// "nested1:1.0.0". With --workspace-root, pnpm install runs in workspace-root
+	// context — installing the root's own dependencies — and our scoping logic
+	// is bypassed. The captured module identity must therefore flip from
+	// "nested1:1.0.0" to "pnpm-workspace-root:1.0.0".
+	modules := map[string]bool{}
+	for _, mod := range bi.Modules {
+		modules[mod.Id] = true
+	}
+	assert.False(t, modules["nested1:1.0.0"],
+		"with --workspace-root, sub-package scoping must NOT apply (got nested1 module: %v)", modules)
+	assert.True(t, modules["pnpm-workspace-root:1.0.0"],
+		"workspace root module must be captured when --workspace-root forces root context (got: %v)", modules)
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.PnpmBuildName, artHttpDetails)
+}
+
+// TestPnpmInstallSubPackageBuildInfoRoundTrip verifies that the new 1-module
+// build-info shape produced by sub-package install survives a full publish
+// (`bp`) and re-fetch round-trip, AND that the dependency module carries
+// sha1, sha256, and md5 on the dep that Artifactory's AQL can resolve.
+//
+// Why we assert checksums against nested2's `xml:1.0.1` (run from the workspace
+// root) rather than the sub-package's transitive dep: a tarball must exist in
+// `npm-remote-cache` AND be AQL-indexed for the checksum-resolver to populate
+// dep.Sha1/Sha256/Md5. xml@1.0.1 is the dep used by the existing
+// `TestPnpmInstallWithPreviousBuildCache` (which depends on Sha256 being
+// populated to function), so it is the established stable signal.
+//
+// The sub-package half of this test verifies only structure + `bp` round-trip;
+// dep-checksum completeness for *the new sub-package shape specifically* is
+// covered by the existing unit test `TestMapAQLResults` in jfrog-cli-artifactory.
+func TestPnpmInstallSubPackageBuildInfoRoundTrip(t *testing.T) {
+	initPnpmTest(t)
+	defer cleanPnpmTest(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	tempCacheDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+
+	pnpmWorkspacePath := initPnpmWorkspaceTest(t)
+
+	// Route ALL pnpm installs through Artifactory's npm-remote-cache. This must
+	// happen *before* Part 1 because:
+	//   - prepareArtifactoryForPnpmBuild already ran a pnpm install (no .npmrc),
+	//     leaving a pnpm-lock.yaml with public-registry URLs. Removing it forces
+	//     re-resolution under .npmrc.
+	//   - If Part 1 runs without .npmrc, its lockfile carries public-registry
+	//     URLs. Then Part 2's install sees "lockfile up to date" and never
+	//     re-resolves — tarballs stay in pnpm's store with public URLs, never
+	//     traverse Artifactory, and AQL returns no checksums (Sha1/256/Md5 empty).
+	registry := npmCmdUtils.GetNpmRepositoryUrl(tests.NpmRemoteRepo, serverDetails.GetArtifactoryUrl())
+	registryWithSlash := strings.TrimSuffix(registry, "/") + "/"
+	authKey, authValue := npmCmdUtils.GetNpmAuthKeyValue(serverDetails, registryWithSlash)
+	npmrcContent := fmt.Sprintf("registry=%s\n%s=%s\n", registryWithSlash, authKey, authValue)
+	assert.NoError(t, os.WriteFile(filepath.Join(pnpmWorkspacePath, ".npmrc"), []byte(npmrcContent), 0644))
+	_ = os.Remove(filepath.Join(pnpmWorkspacePath, "pnpm-lock.yaml"))
+
+	// Drop any pnpm metadata cache for this Artifactory host to avoid stale
+	// tarball URLs from previous test runs (repo names include a unique suffix).
+	artHost := strings.TrimPrefix(strings.TrimPrefix(serverDetails.GetArtifactoryUrl(), "https://"), "http://")
+	artHost = strings.SplitN(artHost, "/", 2)[0]
+	if homeDir, hErr := os.UserHomeDir(); hErr == nil {
+		_ = os.RemoveAll(filepath.Join(homeDir, "Library", "Caches", "pnpm", "metadata-v1.3", artHost))
+		_ = os.RemoveAll(filepath.Join(homeDir, ".local", "share", "pnpm", "store", "v3", "metadata", artHost))
+	}
+
+	// --- Part 1: sub-package install produces a 1-module BI that survives `bp` ---
+	subPackageDir := filepath.Join(pnpmWorkspacePath, "packages", "nested1")
+	clientTestUtils.ChangeDirAndAssert(t, subPackageDir)
+	subBuildNumber := "654"
+
+	runJfrogCli(t, "pnpm", "install", "--store-dir="+tempCacheDirPath,
+		"--build-name="+tests.PnpmBuildName, "--build-number="+subBuildNumber)
+
+	buildInfoService := build.CreateBuildInfoService()
+	subBuild, err := buildInfoService.GetOrCreateBuildWithProject(tests.PnpmBuildName, subBuildNumber, "")
+	assert.NoError(t, err)
+	subBi, err := subBuild.ToBuildInfo()
+	assert.NoError(t, err)
+
+	assert.Len(t, subBi.Modules, 1,
+		"sub-package install must produce a single module; got %d", len(subBi.Modules))
+	if len(subBi.Modules) == 1 {
+		assert.Equal(t, "nested1:1.0.0", subBi.Modules[0].Id,
+			"module id must be the sub-package, not the workspace root")
+		assert.NotEmpty(t, subBi.Modules[0].Dependencies,
+			"nested1 must have its declared dependencies in build-info")
+	}
+
+	assert.NoError(t, artifactoryCli.Exec("bp", tests.PnpmBuildName, subBuildNumber))
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.PnpmBuildName, subBuildNumber)
+	assert.NoError(t, err)
+	assert.True(t, found, "published sub-package build-info must be retrievable from Artifactory")
+	if found {
+		assert.Len(t, publishedBuildInfo.BuildInfo.Modules, 1,
+			"published sub-package build-info must contain exactly one module")
+	}
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.PnpmBuildName, artHttpDetails)
+
+	// --- Part 2: workspace-root install populates sha1/sha256/md5 on a stable dep ---
+	// .npmrc / lockfile / metadata-cache scrub already done at the top of the
+	// test, so this install also routes through Artifactory and AQL can resolve
+	// tarball checksums.
+	clientTestUtils.ChangeDirAndAssert(t, pnpmWorkspacePath)
+	rootBuildNumber := "657"
+
+	runJfrogCli(t, "pnpm", "install", "--store-dir="+tempCacheDirPath,
+		"--build-name="+tests.PnpmBuildName, "--build-number="+rootBuildNumber)
+
+	rootBuild, err := buildInfoService.GetOrCreateBuildWithProject(tests.PnpmBuildName, rootBuildNumber, "")
+	assert.NoError(t, err)
+	rootBi, err := rootBuild.ToBuildInfo()
+	assert.NoError(t, err)
+
+	var xmlDep *buildinfo.Dependency
+	for i := range rootBi.Modules {
+		for j := range rootBi.Modules[i].Dependencies {
+			if strings.HasPrefix(rootBi.Modules[i].Dependencies[j].Id, "xml:") {
+				xmlDep = &rootBi.Modules[i].Dependencies[j]
+				break
+			}
+		}
+		if xmlDep != nil {
+			break
+		}
+	}
+	if assert.NotNil(t, xmlDep, "xml:1.0.1 dep must be present in workspace build-info") {
+		assert.NotEmpty(t, xmlDep.Sha1, "xml dep must have sha1 populated")
+		assert.NotEmpty(t, xmlDep.Sha256, "xml dep must have sha256 populated")
+		assert.NotEmpty(t, xmlDep.Md5, "xml dep must have md5 populated")
+	}
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.PnpmBuildName, artHttpDetails)
+}
+
+// TestPnpmInstallSubPackageModuleOverride verifies that --module overrides the
+// auto-detected module ID even in sub-package mode. Without override, the module
+// ID would be "nested1:1.0.0" (auto-detected from the sub-package's package.json);
+// with --module=jfrog-test, the build-info module ID must be exactly "jfrog-test".
+// This locks the standard build-info contract under the new sub-package shape.
+func TestPnpmInstallSubPackageModuleOverride(t *testing.T) {
+	initPnpmTest(t)
+	defer cleanPnpmTest(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	tempCacheDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+
+	pnpmWorkspacePath := initPnpmWorkspaceTest(t)
+	buildNumber := "658"
+	subPackageDir := filepath.Join(pnpmWorkspacePath, "packages", "nested1")
+	clientTestUtils.ChangeDirAndAssert(t, subPackageDir)
+
+	runJfrogCli(t, "pnpm", "install", "--module="+ModuleNameJFrogTest,
+		"--store-dir="+tempCacheDirPath,
+		"--build-name="+tests.PnpmBuildName, "--build-number="+buildNumber)
+
+	buildInfoService := build.CreateBuildInfoService()
+	pnpmBuild, err := buildInfoService.GetOrCreateBuildWithProject(tests.PnpmBuildName, buildNumber, "")
+	assert.NoError(t, err)
+	bi, err := pnpmBuild.ToBuildInfo()
+	assert.NoError(t, err)
+
+	assert.Len(t, bi.Modules, 1,
+		"sub-package install with --module must still produce exactly one module; got %d", len(bi.Modules))
+	if len(bi.Modules) == 1 {
+		assert.Equal(t, ModuleNameJFrogTest, bi.Modules[0].Id,
+			"--module must override the auto-detected sub-package module ID (expected %q, got %q)",
+			ModuleNameJFrogTest, bi.Modules[0].Id)
+		assert.NotEmpty(t, bi.Modules[0].Dependencies,
+			"the renamed module must still carry nested1's dependencies")
+	}
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.PnpmBuildName, artHttpDetails)
+}
+
+// TestPnpmInstallSubPackageBuildInfoFromEnvVars verifies that build-name and
+// build-number sourced from env vars (the standard CI shape) are honored end-to-end
+// when running from a sub-package directory. CI pipelines almost never pass
+// --build-name/--build-number as flags; they set JFROG_CLI_BUILD_NAME and
+// JFROG_CLI_BUILD_NUMBER, and jfrog-cli reads them from the environment. The
+// sub-package scoping logic and build-info capture must both continue to work.
+func TestPnpmInstallSubPackageBuildInfoFromEnvVars(t *testing.T) {
+	initPnpmTest(t)
+	defer cleanPnpmTest(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	tempCacheDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+
+	pnpmWorkspacePath := initPnpmWorkspaceTest(t)
+	buildNumber := "659"
+	subPackageDir := filepath.Join(pnpmWorkspacePath, "packages", "nested1")
+	clientTestUtils.ChangeDirAndAssert(t, subPackageDir)
+
+	restoreName := clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.BuildName, tests.PnpmBuildName)
+	defer restoreName()
+	restoreNumber := clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.BuildNumber, buildNumber)
+	defer restoreNumber()
+
+	runJfrogCli(t, "pnpm", "install", "--store-dir="+tempCacheDirPath)
+
+	buildInfoService := build.CreateBuildInfoService()
+	pnpmBuild, err := buildInfoService.GetOrCreateBuildWithProject(tests.PnpmBuildName, buildNumber, "")
+	assert.NoError(t, err)
+	bi, err := pnpmBuild.ToBuildInfo()
+	assert.NoError(t, err)
+
+	assert.Len(t, bi.Modules, 1,
+		"sub-package install via env-var build name/number must still produce exactly one module; got %d",
+		len(bi.Modules))
+	if len(bi.Modules) == 1 {
+		assert.Equal(t, "nested1:1.0.0", bi.Modules[0].Id,
+			"sub-package scoping must apply identically when build-name/-number come from env vars")
+		assert.NotEmpty(t, bi.Modules[0].Dependencies,
+			"build-info from env-var build name/number must still capture the sub-package's dependencies")
+	}
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.PnpmBuildName, artHttpDetails)
+}
+
+// TestPnpmInstallDevFlagForwardedToBuildInfo verifies that --dev is forwarded
+// to the internal `pnpm ls` call so build-info reflects what was actually
+// installed: only devDependencies, with regular dependencies filtered out.
+// This is the symmetric counterpart of --prod and locks the same forwarding
+// path against accidental regression.
+//
+// Fixture (see testdata/pnpm/pnpmworkspace):
+//
+//	root (private)    -> devDependency: json@9.0.6        <- must be PRESENT under --dev
+//	packages/nested1  -> dependency:    loadash@1.0.0     <- must be ABSENT under --dev
+//	packages/nested2  -> dependency:    xml@1.0.1         <- must be ABSENT under --dev
+func TestPnpmInstallDevFlagForwardedToBuildInfo(t *testing.T) {
+	initPnpmTest(t)
+	defer cleanPnpmTest(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	tempCacheDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+
+	pnpmWorkspacePath := initPnpmWorkspaceTest(t)
+	buildNumber := "655"
+	clientTestUtils.ChangeDirAndAssert(t, pnpmWorkspacePath)
+
+	runJfrogCli(t, "pnpm", "install", "--dev", "--store-dir="+tempCacheDirPath,
+		"--build-name="+tests.PnpmBuildName, "--build-number="+buildNumber)
+
+	buildInfoService := build.CreateBuildInfoService()
+	pnpmBuild, err := buildInfoService.GetOrCreateBuildWithProject(tests.PnpmBuildName, buildNumber, "")
+	assert.NoError(t, err)
+	bi, err := pnpmBuild.ToBuildInfo()
+	assert.NoError(t, err)
+
+	foundJson := false
+	for _, mod := range bi.Modules {
+		for _, dep := range mod.Dependencies {
+			assert.False(t, strings.HasPrefix(dep.Id, "loadash:"),
+				"--dev must filter regular dependencies from build-info (saw %s in module %s)",
+				dep.Id, mod.Id)
+			assert.False(t, strings.HasPrefix(dep.Id, "xml:"),
+				"--dev must filter regular dependencies from build-info (saw %s in module %s)",
+				dep.Id, mod.Id)
+			if strings.HasPrefix(dep.Id, "json:") {
+				foundJson = true
+			}
+		}
+	}
+	assert.True(t, foundJson,
+		"devDependency json (workspace root) must remain in build-info under --dev")
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.PnpmBuildName, artHttpDetails)
+}
+
+// TestPnpmInstallFilterFlagForwardedToBuildInfo verifies that --filter <pattern>
+// is forwarded to `pnpm ls` so build-info modules are restricted to the matching
+// workspace member(s). Without forwarding, `pnpm ls -r` would emit every workspace
+// package regardless of the install scope.
+func TestPnpmInstallFilterFlagForwardedToBuildInfo(t *testing.T) {
+	initPnpmTest(t)
+	defer cleanPnpmTest(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	tempCacheDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+
+	pnpmWorkspacePath := initPnpmWorkspaceTest(t)
+	buildNumber := "656"
+	clientTestUtils.ChangeDirAndAssert(t, pnpmWorkspacePath)
+
+	runJfrogCli(t, "pnpm", "install", "--filter", "nested1", "--store-dir="+tempCacheDirPath,
+		"--build-name="+tests.PnpmBuildName, "--build-number="+buildNumber)
+
+	buildInfoService := build.CreateBuildInfoService()
+	pnpmBuild, err := buildInfoService.GetOrCreateBuildWithProject(tests.PnpmBuildName, buildNumber, "")
+	assert.NoError(t, err)
+	bi, err := pnpmBuild.ToBuildInfo()
+	assert.NoError(t, err)
+
+	foundLoadash := false
+	for _, mod := range bi.Modules {
+		assert.NotEqual(t, "nested2:1.0.0", mod.Id,
+			"--filter nested1 must exclude nested2 from build-info modules")
+		assert.NotEqual(t, "pnpm-workspace-root:1.0.0", mod.Id,
+			"--filter nested1 must exclude root from build-info modules")
+		for _, dep := range mod.Dependencies {
+			assert.False(t, strings.HasPrefix(dep.Id, "xml:"),
+				"--filter nested1 must exclude nested2's xml dep (saw %s)", dep.Id)
+			assert.False(t, strings.HasPrefix(dep.Id, "json:"),
+				"--filter nested1 must exclude root's json devDep (saw %s)", dep.Id)
+			if strings.HasPrefix(dep.Id, "loadash:") {
+				foundLoadash = true
+			}
+		}
+	}
+	assert.True(t, foundLoadash,
+		"filtered nested1 must still include its own dep loadash")
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.PnpmBuildName, artHttpDetails)
+}
+
 func TestPnpmInstallAndPublishWorkspace(t *testing.T) {
 	initPnpmTest(t)
 	defer cleanPnpmTest(t)
