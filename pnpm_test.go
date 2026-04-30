@@ -450,6 +450,31 @@ func TestPnpmInstallSubPackageBuildInfoRoundTrip(t *testing.T) {
 
 	pnpmWorkspacePath := initPnpmWorkspaceTest(t)
 
+	// Route ALL pnpm installs through Artifactory's npm-remote-cache. This must
+	// happen *before* Part 1 because:
+	//   - prepareArtifactoryForPnpmBuild already ran a pnpm install (no .npmrc),
+	//     leaving a pnpm-lock.yaml with public-registry URLs. Removing it forces
+	//     re-resolution under .npmrc.
+	//   - If Part 1 runs without .npmrc, its lockfile carries public-registry
+	//     URLs. Then Part 2's install sees "lockfile up to date" and never
+	//     re-resolves — tarballs stay in pnpm's store with public URLs, never
+	//     traverse Artifactory, and AQL returns no checksums (Sha1/256/Md5 empty).
+	registry := npmCmdUtils.GetNpmRepositoryUrl(tests.NpmRemoteRepo, serverDetails.GetArtifactoryUrl())
+	registryWithSlash := strings.TrimSuffix(registry, "/") + "/"
+	authKey, authValue := npmCmdUtils.GetNpmAuthKeyValue(serverDetails, registryWithSlash)
+	npmrcContent := fmt.Sprintf("registry=%s\n%s=%s\n", registryWithSlash, authKey, authValue)
+	assert.NoError(t, os.WriteFile(filepath.Join(pnpmWorkspacePath, ".npmrc"), []byte(npmrcContent), 0644))
+	_ = os.Remove(filepath.Join(pnpmWorkspacePath, "pnpm-lock.yaml"))
+
+	// Drop any pnpm metadata cache for this Artifactory host to avoid stale
+	// tarball URLs from previous test runs (repo names include a unique suffix).
+	artHost := strings.TrimPrefix(strings.TrimPrefix(serverDetails.GetArtifactoryUrl(), "https://"), "http://")
+	artHost = strings.SplitN(artHost, "/", 2)[0]
+	if homeDir, hErr := os.UserHomeDir(); hErr == nil {
+		_ = os.RemoveAll(filepath.Join(homeDir, "Library", "Caches", "pnpm", "metadata-v1.3", artHost))
+		_ = os.RemoveAll(filepath.Join(homeDir, ".local", "share", "pnpm", "store", "v3", "metadata", artHost))
+	}
+
 	// --- Part 1: sub-package install produces a 1-module BI that survives `bp` ---
 	subPackageDir := filepath.Join(pnpmWorkspacePath, "packages", "nested1")
 	clientTestUtils.ChangeDirAndAssert(t, subPackageDir)
@@ -484,28 +509,11 @@ func TestPnpmInstallSubPackageBuildInfoRoundTrip(t *testing.T) {
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.PnpmBuildName, artHttpDetails)
 
 	// --- Part 2: workspace-root install populates sha1/sha256/md5 on a stable dep ---
+	// .npmrc / lockfile / metadata-cache scrub already done at the top of the
+	// test, so this install also routes through Artifactory and AQL can resolve
+	// tarball checksums.
 	clientTestUtils.ChangeDirAndAssert(t, pnpmWorkspacePath)
 	rootBuildNumber := "657"
-
-	// Configure pnpm to resolve through Artifactory's npm-remote-cache. Without
-	// this .npmrc the install bypasses Artifactory and fetches directly from the
-	// public registry — the tarball never reaches Artifactory, AQL can't see it,
-	// and dep.Sha1/Sha256/Md5 stay empty in build-info. Same setup pattern as
-	// TestPnpmInstallWithPreviousBuildCache, which depends on the same path.
-	registry := npmCmdUtils.GetNpmRepositoryUrl(tests.NpmRemoteRepo, serverDetails.GetArtifactoryUrl())
-	registryWithSlash := strings.TrimSuffix(registry, "/") + "/"
-	authKey, authValue := npmCmdUtils.GetNpmAuthKeyValue(serverDetails, registryWithSlash)
-	npmrcContent := fmt.Sprintf("registry=%s\n%s=%s\n", registryWithSlash, authKey, authValue)
-	assert.NoError(t, os.WriteFile(filepath.Join(pnpmWorkspacePath, ".npmrc"), []byte(npmrcContent), 0644))
-
-	// Drop any pnpm metadata cache for this Artifactory host to avoid stale
-	// tarball URLs from previous test runs (repo names include a unique suffix).
-	artHost := strings.TrimPrefix(strings.TrimPrefix(serverDetails.GetArtifactoryUrl(), "https://"), "http://")
-	artHost = strings.SplitN(artHost, "/", 2)[0]
-	if homeDir, hErr := os.UserHomeDir(); hErr == nil {
-		_ = os.RemoveAll(filepath.Join(homeDir, "Library", "Caches", "pnpm", "metadata-v1.3", artHost))
-		_ = os.RemoveAll(filepath.Join(homeDir, ".local", "share", "pnpm", "store", "v3", "metadata", artHost))
-	}
 
 	runJfrogCli(t, "pnpm", "install", "--store-dir="+tempCacheDirPath,
 		"--build-name="+tests.PnpmBuildName, "--build-number="+rootBuildNumber)
