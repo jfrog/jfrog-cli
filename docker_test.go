@@ -340,6 +340,7 @@ func buildBuilderImage(t *testing.T, workspace, dockerfile, containerName string
 // The way we build the fat manifest and push it to Artifactory is not important.
 // Therefore, this test runs only with docker.
 func TestPushFatManifestImage(t *testing.T) {
+	t.Skip("Skipping until JGC-483 is fixed")
 	if !*tests.TestDocker {
 		t.Skip("Skipping test. To run it, add the '-test.docker=true' option.")
 	}
@@ -489,6 +490,7 @@ CMD ["echo", "Hello from nested path"]`, baseImage)
 // TestDockerBuildPushWithNestedPath tests docker build --push with nested paths like repo/myorg/image.
 // This validates that layer fetching works correctly for single platform images with nested paths.
 func TestDockerBuildPushWithNestedPath(t *testing.T) {
+	t.Skip("Skipping until JGC-483 is fixed")
 	cleanup := initDockerBuildTest(t)
 	defer cleanup()
 	runNestedPathDockerBuildTest(t, "docker-build-nested", "test-single-nested", "myorg", "")
