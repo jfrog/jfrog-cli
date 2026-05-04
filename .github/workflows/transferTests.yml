@@ -1,6 +1,17 @@
 name: Transfer Tests
 on:
   workflow_dispatch:
+    inputs:
+      jfrog_url:
+        description: "External JFrog Platform URL. Leave empty for local Artifactory."
+        type: string
+        required: false
+        default: ""
+      jfrog_admin_token:
+        description: "Admin token for external JFrog Platform."
+        type: string
+        required: false
+        default: ""
   push:
     branches:
       - "master"
@@ -71,12 +82,21 @@ jobs:
         uses: jfrog/.github/actions/install-local-artifactory@main
         with:
           RTLIC: ${{ secrets.RTLIC }}
+          JFROG_URL: ${{ inputs.jfrog_url }}
+          JFROG_ADMIN_TOKEN: ${{ inputs.jfrog_admin_token }}
           JFROG_HOME: ${{ runner.temp }}
           RT_CONNECTION_TIMEOUT_SECONDS: ${{ env.RT_CONNECTION_TIMEOUT_SECONDS || '1200' }}
 
       - name: Run transfer tests
         if: matrix.os.name != 'macos'
-        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.transfer --test.installDataTransferPlugin --jfrog.url=http://127.0.0.1:8082 --jfrog.targetUrl=${{ secrets.PLATFORM_URL }} --jfrog.targetAdminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --jfrog.home=${{ runner.temp }} --ci.runId=${{ runner.os }}-transfer-7
+        run: >-
+          go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.transfer --test.installDataTransferPlugin
+          --jfrog.url=${{ env.JFROG_TESTS_URL || 'http://127.0.0.1:8082' }}
+          --jfrog.adminToken=${{ env.JFROG_TESTS_LOCAL_ACCESS_TOKEN }}
+          --jfrog.targetUrl=${{ secrets.PLATFORM_URL }}
+          --jfrog.targetAdminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }}
+          --jfrog.home=${{ runner.temp }}
+          --ci.runId=${{ runner.os }}-transfer-7
 
   Transfer-Artifactory-6-Tests:
     name: artifactory-6
@@ -115,9 +135,17 @@ jobs:
         uses: jfrog/.github/actions/install-local-artifactory@main
         with:
           RTLIC: ${{ secrets.RTLIC_V6 }}
+          JFROG_URL: ${{ inputs.jfrog_url }}
+          JFROG_ADMIN_TOKEN: ${{ inputs.jfrog_admin_token }}
           JFROG_HOME: ${{ runner.temp }}
           VERSION: 6.23.21
           RT_CONNECTION_TIMEOUT_SECONDS: ${{ env.RT_CONNECTION_TIMEOUT_SECONDS || '1200' }}
 
       - name: Run transfer tests
-        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.transfer --test.installDataTransferPlugin --jfrog.targetUrl=${{ secrets.PLATFORM_URL }} --jfrog.targetAdminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --jfrog.home=${{ runner.temp }} --ci.runId=${{ runner.os }}-transfer-6
+        run: >-
+          go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.transfer --test.installDataTransferPlugin
+          --jfrog.targetUrl=${{ secrets.PLATFORM_URL }}
+          --jfrog.targetAdminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }}
+          --jfrog.home=${{ runner.temp }}
+          --ci.runId=${{ runner.os }}-transfer-6
+          ${{ env.JFROG_TESTS_IS_EXTERNAL == 'true' && format('--jfrog.url={0} --jfrog.adminToken={1}', env.JFROG_TESTS_URL, env.JFROG_TESTS_LOCAL_ACCESS_TOKEN) || '' }}

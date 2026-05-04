@@ -256,7 +256,6 @@ func TestNpmInstallClientNative(t *testing.T) {
 }
 
 func createNpmrcForTesting(t *testing.T, configFilePath string) (err error) {
-	// Creation of npmrc - npmCommand.CreateTempNpmrc() function is used to create a npmrc file
 	npmCommand := npm.NewNpmCommand("install", true)
 	npmCommand.SetConfigFilePath(configFilePath)
 	npmCommand.SetServerDetails(serverDetails)
@@ -265,7 +264,55 @@ func createNpmrcForTesting(t *testing.T, configFilePath string) (err error) {
 	err = npmCommand.PreparePrerequisites(tests.NpmRepo)
 	assert.NoError(t, err)
 	err = npmCommand.CreateTempNpmrc()
-	return
+	if err != nil {
+		return
+	}
+	return appendRegistryAuthToNpmrc(t, "")
+}
+
+// appendRegistryAuthToNpmrc writes a file-based _authToken entry directly into the
+// project .npmrc. npm 10 lowercases env-var config keys (_authToken → _authtoken),
+// which breaks the scoped auth env var that CreateTempNpmrc sets.
+// If registryURL is empty, reads it from the "registry = " line in the current .npmrc.
+func appendRegistryAuthToNpmrc(t *testing.T, registryURL string) error {
+	token := serverDetails.AccessToken
+	if token == "" {
+		return nil
+	}
+	if registryURL == "" {
+		data, err := os.ReadFile(".npmrc")
+		if err != nil {
+			return err
+		}
+		for _, line := range strings.Split(string(data), "\n") {
+			if strings.HasPrefix(line, "registry = ") {
+				registryURL = strings.TrimSpace(strings.TrimPrefix(line, "registry = "))
+				break
+			}
+		}
+	}
+	if registryURL == "" {
+		return nil
+	}
+	protocolIdx := strings.Index(registryURL, "://")
+	if protocolIdx == -1 {
+		return nil
+	}
+	nerfDart := registryURL[protocolIdx+1:]
+	if !strings.HasSuffix(nerfDart, "/") {
+		nerfDart += "/"
+	}
+	authLine := fmt.Sprintf("%s:_authToken=%s\nalways-auth=true\n", nerfDart, token)
+
+	f, err := os.OpenFile(".npmrc", os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		assert.NoError(t, f.Close())
+	}()
+	_, err = f.WriteString(authLine)
+	return err
 }
 
 func publishUsingNpmrc(configFilePath string, buildNumber string) (npm.NpmPublishCommand, error) {
@@ -298,13 +345,17 @@ func addNpmScopeRegistryToNpmRc(t *testing.T, projectPath string, packageJsonPat
 	assert.NoError(t, err)
 	scopedRegistry := scope + ":registry=" + registry
 	npmrcFilePath := filepath.Join(projectPath, ".npmrc")
-	npmrcFile, err := os.OpenFile(npmrcFilePath, os.O_APPEND|os.O_WRONLY, 0644)
-	assert.NoError(t, err)
-	defer func() {
-		_ = npmrcFile.Close()
+	func() {
+		npmrcFile, err := os.OpenFile(npmrcFilePath, os.O_APPEND|os.O_WRONLY, 0644)
+		assert.NoError(t, err)
+		defer func() {
+			_ = npmrcFile.Close()
+		}()
+		_, err = npmrcFile.WriteString(scopedRegistry + "\n")
+		assert.NoError(t, err)
 	}()
-	_, err = npmrcFile.WriteString(scopedRegistry)
-	assert.NoError(t, err)
+
+	assert.NoError(t, appendRegistryAuthToNpmrc(t, registry))
 }
 
 func getScopeFromPackageJson(t *testing.T, wd string, npmVersion *version.Version) string {
@@ -892,7 +943,9 @@ func TestNpmPublishWithWorkspacesRunNative(t *testing.T) {
 	assert.NotEmpty(t, npmBuildInfo.Started)
 
 	// Should have single module with multiple artifacts for workspaces with run-native
-	assert.GreaterOrEqual(t, len(npmBuildInfo.Modules), 1, "There should be a single module created as part of workspaces publish with run-native")
+	if !assert.GreaterOrEqual(t, len(npmBuildInfo.Modules), 1, "There should be a single module created as part of workspaces publish with run-native") {
+		return
+	}
 
 	module := npmBuildInfo.Modules[0]
 	assert.NotEmpty(t, module.Id, "Module should have an ID")

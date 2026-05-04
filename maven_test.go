@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	outputFormat "github.com/jfrog/jfrog-cli-core/v2/common/format"
@@ -459,6 +460,11 @@ func TestMavenDeploy(t *testing.T) {
 	deleteDeployedArtifacts(t)
 	runMavenAndValidateDeployedArtifacts(t, true, "deploy")
 	deleteDeployedArtifacts(t)
+	// Shared JFrog Cloud tenants occasionally leave individual files behind after a
+	// recursive folder DELETE (async folder cleanup / AQL index lag). Force the repo
+	// to be verifiably empty of the target paths before exercising `mvn package`, so
+	// the post-package assertion only observes what the current goal produced.
+	ensureMavenRepoCleanOfDeployedArtifacts(t, tests.GetMavenMultiIncludedDeployedArtifacts())
 	runMavenAndValidateDeployedArtifacts(t, false, "package")
 }
 
@@ -466,13 +472,119 @@ func runMavenAndValidateDeployedArtifacts(t *testing.T, shouldDeployArtifact boo
 	assert.NoError(t, runMaven(t, createMultiMavenProject, tests.MavenIncludeExcludePatternsConfig, args...))
 	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
 	assert.NoError(t, err)
+	expectedDeployedArtifacts := tests.GetMavenMultiIncludedDeployedArtifacts()
 	if shouldDeployArtifact {
-		inttestutils.VerifyExistInArtifactory(tests.GetMavenMultiIncludedDeployedArtifacts(), searchSpec, serverDetails, t)
+		inttestutils.VerifyExistInArtifactory(expectedDeployedArtifacts, searchSpec, serverDetails, t)
 	} else {
-		results, err := inttestutils.SearchInArtifactory(searchSpec, serverDetails, t)
-		assert.NoError(t, err)
-		assert.Zero(t, len(results))
+		assertMavenArtifactsEventuallyNotDeployed(t, searchSpec, expectedDeployedArtifacts)
 	}
+}
+
+// ensureMavenRepoCleanOfDeployedArtifacts makes sure none of expectedPaths remain in
+// Artifactory before continuing. The preceding repo-wide folder DELETE occasionally
+// leaves individual files behind on shared JFrog Cloud tenants (async folder cleanup
+// and AQL index lag). When that happens we issue targeted per-path DELETEs, which
+// take the single-item code path and are not affected by the folder-delete quirk.
+func ensureMavenRepoCleanOfDeployedArtifacts(t *testing.T, expectedPaths []string) {
+	const (
+		waitTimeout  = 2 * time.Minute
+		waitInterval = 3 * time.Second
+	)
+	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
+	if !assert.NoError(t, err) {
+		return
+	}
+	deadline := time.Now().Add(waitTimeout)
+	for {
+		results, searchErr := inttestutils.SearchInArtifactory(searchSpec, serverDetails, t)
+		if searchErr == nil {
+			stale := intersectPaths(results, expectedPaths)
+			if len(stale) == 0 {
+				return
+			}
+			for _, path := range stale {
+				targeted := spec.NewBuilder().Pattern(path).BuildSpec()
+				if _, _, delErr := tests.DeleteFiles(targeted, serverDetails); delErr != nil {
+					t.Logf("targeted delete of residual Maven artifact %q failed: %v", path, delErr)
+				}
+			}
+		}
+		if !time.Now().Before(deadline) {
+			assert.Failf(t, "Maven repo did not reach a clean state before `mvn package`",
+				"expected none of %v to remain after cleanup; last search error: %v", expectedPaths, searchErr)
+			return
+		}
+		time.Sleep(waitInterval)
+	}
+}
+
+// assertMavenArtifactsEventuallyNotDeployed polls until none of expectedDeployedArtifacts are
+// present in Artifactory for the given search spec, tolerating propagation delay and residual
+// files (e.g. maven-metadata.xml) left over from previous deploy/cleanup cycles. This is the
+// semantically correct check for Maven goals (such as `mvn package`) that should not deploy.
+func assertMavenArtifactsEventuallyNotDeployed(t *testing.T, searchSpec string, expectedDeployedArtifacts []string) {
+	const (
+		pollTimeout  = 3 * time.Minute
+		pollInterval = 2 * time.Second
+	)
+	deadline := time.Now().Add(pollTimeout)
+	var (
+		lastResults   []utils.SearchResult
+		lastSearchErr error
+	)
+	for {
+		lastResults, lastSearchErr = inttestutils.SearchInArtifactory(searchSpec, serverDetails, t)
+		if lastSearchErr == nil && !anyExpectedPathPresent(lastResults, expectedDeployedArtifacts) {
+			return
+		}
+		if !time.Now().Before(deadline) {
+			break
+		}
+		time.Sleep(pollInterval)
+	}
+	present := intersectPaths(lastResults, expectedDeployedArtifacts)
+	actualPaths := pathsFromResults(lastResults)
+	assert.Failf(t, "Maven deploy artifacts should not be present",
+		"expected none of the Maven deploy artifacts %v to exist after `mvn package`, but still present: %v (last search error: %v, full search result: %v)",
+		expectedDeployedArtifacts, present, lastSearchErr, actualPaths)
+}
+
+func anyExpectedPathPresent(results []utils.SearchResult, expected []string) bool {
+	if len(results) == 0 || len(expected) == 0 {
+		return false
+	}
+	index := make(map[string]struct{}, len(results))
+	for _, r := range results {
+		index[r.Path] = struct{}{}
+	}
+	for _, path := range expected {
+		if _, ok := index[path]; ok {
+			return true
+		}
+	}
+	return false
+}
+
+func intersectPaths(results []utils.SearchResult, expected []string) []string {
+	index := make(map[string]struct{}, len(results))
+	for _, r := range results {
+		index[r.Path] = struct{}{}
+	}
+	var present []string
+	for _, path := range expected {
+		if _, ok := index[path]; ok {
+			present = append(present, path)
+		}
+	}
+	return present
+}
+
+func pathsFromResults(results []utils.SearchResult) []string {
+	paths := make([]string, 0, len(results))
+	for _, r := range results {
+		paths = append(paths, r.Path)
+	}
+	return paths
 }
 func TestMavenWithSummary(t *testing.T) {
 	testcases := []struct {
