@@ -5,7 +5,7 @@ resources:
       path: jfrog/jfrog-cli
       gitProvider: jfrog_cli_gh
       branches:
-        include: jfrogpipelines
+        include: master
   - name: cli_coreapps_env_details
     type: PropertyBag
     configuration:
@@ -60,7 +60,7 @@ pipelines:
             description: "org/repo passed to Actions as jfrog_cli_repository"
             allowCustom: true
           JFROG_CLI_GITHUB_REF:
-            default: "jfrogpipelines"
+            default: "master"
             description: "Git ref to checkout in jfrog/jfrog-cli (branch, tag, or SHA)."
             allowCustom: true
           GITHUB_DISPATCH_TOKEN:
