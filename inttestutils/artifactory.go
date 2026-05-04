@@ -2,6 +2,7 @@ package inttestutils
 
 import (
 	"testing"
+	"time"
 
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
@@ -11,13 +12,25 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// Verify the input slice exist in Artifactory
-// expected - The slice to check
-// specFile - File spec for the search command
-// serverDetails - Target Artifactory server details
-// t - Tests object
+// VerifyExistInArtifactory verifies that the expected artifacts exist in Artifactory.
+// It retries up to 5 times with 3-second intervals to handle Artifactory's async indexing delay.
 func VerifyExistInArtifactory(expected []string, specFile string, serverDetails *config.ServerDetails, t *testing.T) {
-	results, _ := SearchInArtifactory(specFile, serverDetails, t)
+	const maxRetries = 5
+	const retryInterval = 3 * time.Second
+	var results []utils.SearchResult
+	for i := 0; i < maxRetries; i++ {
+		var err error
+		results, err = SearchInArtifactory(specFile, serverDetails, t)
+		if err != nil {
+			return
+		}
+		if len(results) >= len(expected) {
+			break
+		}
+		if i < maxRetries-1 {
+			time.Sleep(retryInterval)
+		}
+	}
 	tests.CompareExpectedVsActual(expected, results, t)
 }
 
@@ -26,14 +39,26 @@ func SearchInArtifactory(specFile string, serverDetails *config.ServerDetails, t
 	searchCmd := generic.NewSearchCommand()
 	searchCmd.SetServerDetails(serverDetails).SetSpec(searchSpec)
 	reader, err := searchCmd.Search()
-	assert.NoError(t, err)
-	var resultItems []utils.SearchResult
+	// When Search() fails (e.g. a transient network error on the AQL POST),
+	// reader is nil. Returning early prevents a nil-pointer panic from
+	// tearing down the whole test binary and cascading into every
+	// subsequent test in the shard.
+	if err != nil || reader == nil {
+		assert.NoError(t, err)
+		return nil, err
+	}
+	defer func() {
+		assert.NoError(t, reader.Close(), "Couldn't close reader")
+		assert.NoError(t, reader.GetError(), "Couldn't get reader error")
+	}()
 	readerNoDate, err := utils.SearchResultNoDate(reader)
-	assert.NoError(t, err)
+	if err != nil || readerNoDate == nil {
+		assert.NoError(t, err)
+		return nil, err
+	}
+	var resultItems []utils.SearchResult
 	for searchResult := new(utils.SearchResult); readerNoDate.NextRecord(searchResult) == nil; searchResult = new(utils.SearchResult) {
 		resultItems = append(resultItems, *searchResult)
 	}
-	assert.NoError(t, reader.Close(), "Couldn't close reader")
-	assert.NoError(t, reader.GetError(), "Couldn't get reader error")
-	return resultItems, err
+	return resultItems, nil
 }

@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/gradle"
@@ -637,6 +638,13 @@ func prepareGradleSetupTest(t *testing.T) func() {
 	require.NoError(t, err)
 	assert.NoError(t, os.Chdir(gradleProjectDir))
 	restoreDir := clientTestUtils.ChangeDirWithCallback(t, wd, gradleProjectDir)
+
+	// Evict any previously cached artifacts from the remote repo cache so the
+	// precondition check ("artifact must not exist in cache yet") always starts
+	// from a clean state, even when Artifactory is reused across test runs.
+	cacheDeleteSpec := spec.NewBuilder().Pattern(tests.GradleRemoteRepo + "-cache/").BuildSpec()
+	_, _, _ = tests.DeleteFiles(cacheDeleteSpec, serverDetails)
+
 	return func() {
 		restoreDir()
 	}
@@ -679,10 +687,17 @@ func TestGradleBuildPublishWithCIVcsProps(t *testing.T) {
 	// Restore working directory before searching
 	clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 
-	// Get the published build info to find artifact paths and repo
-	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
-	assert.NoError(t, err)
-	assert.True(t, found, "Build info was not found")
+	// Get the published build info to find artifact paths and repo (with retry for eventual consistency)
+	var publishedBuildInfo *buildinfo.PublishedBuildInfo
+	var found bool
+	assert.Eventuallyf(t, func() bool {
+		var biErr error
+		publishedBuildInfo, found, biErr = tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+		return biErr == nil && found
+	}, 30*time.Second, 2*time.Second, "Build info was not found for %s/%s", buildName, buildNumber)
+	if !found || publishedBuildInfo == nil {
+		return
+	}
 
 	// Create service manager for getting artifact properties
 	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)

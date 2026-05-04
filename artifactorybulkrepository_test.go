@@ -8,6 +8,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Minimum Artifactory versions enforced server-side (and re-checked by the CLI)
+// for bulk repository operations. Snapshot/draft Artifactory builds whose
+// version string starts with "7.x-" parse as 7.0 and trip these gates, so we
+// skip the affected subtests cleanly on unsupported tenants.
+const (
+	bulkRepoCreateMinVersion = "7.84.3"
+	bulkRepoUpdateMinVersion = "7.104.2"
+)
+
 func TestRepositoryCreateAndUpdateIntegration(t *testing.T) {
 	initArtifactoryTest(t, "")
 	defer cleanArtifactoryTest()
@@ -60,6 +69,8 @@ func testSingleRepositoryUpdate(t *testing.T) {
 }
 
 func testMultipleRepositoryCreate(t *testing.T) {
+	validateArtifactoryVersion(t, bulkRepoCreateMinVersion)
+
 	repo1Name := "test-maven-repo1"
 	repo2Name := "test-npm-repo2"
 	repo3Name := "test-docker-repo3"
@@ -79,6 +90,9 @@ func testMultipleRepositoryCreate(t *testing.T) {
 }
 
 func testMultipleRepositoryUpdate(t *testing.T) {
+	// Update is gated higher than create; checking the stricter bound is enough.
+	validateArtifactoryVersion(t, bulkRepoUpdateMinVersion)
+
 	repo1Name := "test-multi-repo1"
 	repo2Name := "test-multi-repo2"
 	repo3Name := "test-multi-repo3"

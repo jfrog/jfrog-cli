@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
@@ -19,6 +20,7 @@ import (
 	buildInfo "github.com/jfrog/build-info-go/entities"
 	biutils "github.com/jfrog/build-info-go/utils"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/dotnet"
+	coreBuild "github.com/jfrog/jfrog-cli-core/v2/common/build"
 	"github.com/jfrog/jfrog-cli-core/v2/common/project"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -201,9 +203,67 @@ func assertNugetMultiPackagesConfigDependencies(t *testing.T, module buildInfo.M
 
 func runNuGet(t *testing.T, args ...string) error {
 	artifactoryNuGetCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
-	err := artifactoryNuGetCli.Exec(args...)
+	err := execNuGetWithTransientRetry(t, artifactoryNuGetCli, args)
 	assert.NoError(t, err)
 	return err
+}
+
+// execNuGetWithTransientRetry runs the JFrog CLI nuget command and retries
+// once on failure to absorb a known Mono/BoringSSL transient flake.
+//
+// On Linux runners the JFrog CLI shells out to nuget.exe under Mono. Mono's
+// HTTPS stack uses BoringSSL (mono-6.12 .../external/boringssl) and has a
+// well-documented race in concurrent TLS handshakes: parallel index.json
+// fetches occasionally fail with
+//
+//	Ssl error:1000007d:SSL routines:OPENSSL_internal:CERTIFICATE_VERIFY_FAILED
+//	  at /build/mono-6.12.0.200/external/boringssl/ssl/handshake_client.c:1132
+//
+// even though the server cert is valid - the very next nuget invocation
+// against the same host succeeds in <2s. NuGet's own per-request retry does
+// not help because BoringSSL state is process-local; only a fresh nuget
+// process clears the race.
+//
+// We treat any first-attempt failure as potentially transient: if the second
+// attempt succeeds the failure was indeed flaky, and a real bug in the CLI
+// or test will reproduce on the second attempt and fail the test as before.
+//
+// Because nuget restore writes build-info partials keyed by --build-name /
+// --build-number, we clear the partial dir between attempts so the retry's
+// build-info is a clean snapshot of one restore (and not the union of two).
+func execNuGetWithTransientRetry(t *testing.T, cli *coreTests.JfrogCli, args []string) error {
+	if err := cli.Exec(args...); err == nil {
+		return nil
+	} else {
+		t.Logf("nuget command failed on first attempt (%v); retrying once "+
+			"to absorb a likely Mono/BoringSSL TLS-handshake flake", err)
+	}
+	if buildName, buildNumber, projectKey, ok := extractBuildIdentifiers(args); ok {
+		if rmErr := coreBuild.RemoveBuildDir(buildName, buildNumber, projectKey); rmErr != nil {
+			t.Logf("could not clean partial build-info dir before retry: %v", rmErr)
+		}
+	}
+	time.Sleep(2 * time.Second)
+	return cli.Exec(args...)
+}
+
+// extractBuildIdentifiers pulls --build-name / --build-number / --project out
+// of the JFrog CLI argument slice so we can clean partial build-info between
+// retry attempts. Returns ok=false if either build-name or build-number is
+// missing - in that case there are no partials to clean.
+func extractBuildIdentifiers(args []string) (buildName, buildNumber, projectKey string, ok bool) {
+	for _, a := range args {
+		switch {
+		case strings.HasPrefix(a, "--build-name="):
+			buildName = strings.TrimPrefix(a, "--build-name=")
+		case strings.HasPrefix(a, "--build-number="):
+			buildNumber = strings.TrimPrefix(a, "--build-number=")
+		case strings.HasPrefix(a, "--project="):
+			projectKey = strings.TrimPrefix(a, "--project=")
+		}
+	}
+	ok = buildName != "" && buildNumber != ""
+	return
 }
 
 type testInitNewConfigDescriptor struct {

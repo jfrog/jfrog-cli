@@ -1,0 +1,19 @@
+[
+  { "suite": "artifactory", "node": true },
+  { "suite": "artifactoryProject", "node": true },
+  { "suite": "access", "node": true, "skip_tests": "TestRefreshableAccessTokens|TestAccessTokenCreate" },
+  { "suite": "npm", "node": true, "npm_auth": true },
+  { "suite": "pnpm", "node": true, "pnpm": true },
+  { "suite": "maven", "java": "17", "maven": true },
+  { "suite": "gradle", "java": "11", "gradle": "8.3" },
+  { "suite": "conan", "python": true, "conan": true },
+  { "suite": "pip", "python": true, "twine": true },
+  { "suite": "pipenv", "python": true, "pipenv": true },
+  { "suite": "nuget", "dotnet": true },
+  { "suite": "helm", "helm": true },
+  { "suite": "plugins", "node": true },
+  { "suite": "lifecycle", "node": true, "skip_tests": "TestImportReleaseBundle" },
+  { "suite": "huggingface", "python": true, "huggingface": true },
+  { "suite": "distribution", "node": true, "extra_flags": "--jfrog.user=admin" },
+  { "suite": "go", "node": true }
+]

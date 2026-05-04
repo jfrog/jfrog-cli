@@ -36,6 +36,7 @@ import (
 
 const (
 	artifactoryLifecycleMinVersion          = "7.68.3"
+	releaseBundleImportMinVersion           = "7.63.2"
 	signingKeyOptionalArtifactoryMinVersion = "7.104.1"
 	promotionTypeFlagArtifactoryMinVersion  = "7.106.1"
 	draftBundleArtifactoryMinVersion        = "7.136.0"

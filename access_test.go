@@ -1,11 +1,13 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/v2/general/token"
 	"net/http"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
@@ -144,6 +146,12 @@ func generateNewLongTermRefreshableAccessToken(server *config.ServerDetails) (er
 	// Create refreshable accessToken with 1 year expiry from the given short expiry token.
 	params := createLongExpirationRefreshableTokenParams()
 	token, err := accessManager.CreateAccessToken(*params)
+	if err != nil && isInvalidFormattedNameError(err) {
+		if username, ok := getCloudCompatibleUsername(*tests.JfrogAccessToken); ok {
+			params.Username = username
+			token, err = accessManager.CreateAccessToken(*params)
+		}
+	}
 	if err != nil {
 		return
 	}
@@ -245,8 +253,13 @@ func TestAccessTokenCreate(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			var token auth.CreateTokenResponseData
-			output := accessCli.RunCliCmdWithOutput(t, testCase.args...)
-			assert.NoError(t, json.Unmarshal([]byte(output), &token))
+			output, err := runAtcWithCloudFallback(t, testCase.args...)
+			if !assert.NoError(t, err) {
+				return
+			}
+			if !assert.NoError(t, json.Unmarshal([]byte(output), &token)) {
+				return
+			}
 			defer revokeToken(t, token.TokenId)
 
 			if testCase.shouldExpire {
@@ -269,6 +282,68 @@ func TestAccessTokenCreate(t *testing.T) {
 				"--url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint+" --access-token="+token.AccessToken).Exec("ping"))
 		})
 	}
+}
+
+func runAtcWithCloudFallback(t *testing.T, args ...string) (string, error) {
+	output, err := accessCli.RunCliCmdWithOutputs(t, args...)
+	if err == nil || !isInvalidFormattedNameError(err) {
+		return output, err
+	}
+	username, ok := getCloudCompatibleUsername(*tests.JfrogAccessToken)
+	if !ok {
+		return output, err
+	}
+	fallbackArgs := replaceOrInsertUsernameArg(args, username)
+	return accessCli.RunCliCmdWithOutputs(t, fallbackArgs...)
+}
+
+func replaceOrInsertUsernameArg(args []string, username string) []string {
+	if len(args) <= 1 {
+		return append(args, username)
+	}
+	newArgs := append([]string{}, args...)
+	// Username is positional arg #1 for "jfrog atc". If absent, first arg after "atc" starts with '-'.
+	if strings.HasPrefix(newArgs[1], "-") {
+		return append([]string{newArgs[0], username}, newArgs[1:]...)
+	}
+	newArgs[1] = username
+	return newArgs
+}
+
+func isInvalidFormattedNameError(err error) bool {
+	return err != nil && strings.Contains(err.Error(), "Invalid formatted name")
+}
+
+func getCloudCompatibleUsername(accessToken string) (string, bool) {
+	subject, err := auth.ExtractSubjectFromAccessToken(accessToken)
+	if err != nil || subject == "" {
+		return "", false
+	}
+	// Already cloud-formatted or service formatted subject.
+	if strings.Contains(subject, "/users/") || strings.HasPrefix(subject, "jfrt@") {
+		return subject, true
+	}
+	payload, err := extractTokenPayload(accessToken)
+	if err != nil || payload.Issuer == "" {
+		return "", false
+	}
+	return payload.Issuer + "/users/" + subject, true
+}
+
+func extractTokenPayload(tokenValue string) (*auth.TokenPayload, error) {
+	parts := strings.Split(tokenValue, ".")
+	if len(parts) < 2 {
+		return nil, fmt.Errorf("invalid token format")
+	}
+	payloadBytes, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return nil, err
+	}
+	var payload auth.TokenPayload
+	if err = json.Unmarshal(payloadBytes, &payload); err != nil {
+		return nil, err
+	}
+	return &payload, nil
 }
 
 func TestOidcExchangeToken(t *testing.T) {
