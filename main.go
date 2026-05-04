@@ -17,6 +17,7 @@ import (
 	appTrustCLI "github.com/jfrog/jfrog-cli-application/cli"
 	artifactoryCLI "github.com/jfrog/jfrog-cli-artifactory/cli"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
+	corecommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/plugins/components"
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -89,8 +90,8 @@ func execMain() error {
 		return err
 	}
 
-	// Set JFrog CLI's user-agent on the jfrog-client-go.
-	clientutils.SetUserAgent(coreutils.GetCliUserAgent())
+	// Set JFrog CLI's user-agent on the jfrog-client-go, enriched with invoker info.
+	clientutils.SetUserAgent(buildEnrichedUserAgent(corecommands.DetectExecutionContext()))
 
 	app := cli.NewApp()
 	app.Name = jfrogAppName
@@ -165,17 +166,41 @@ func displaySurveyLinkIfNeeded() {
 	fmt.Fprintln(os.Stderr, "\n💬 Help us improve JFrog CLI! \033]8;;https://www.surveymonkey.com/r/JFCLICLI\033\\https://www.surveymonkey.com/r/JFCLICLI\033]8;;\033\\")
 }
 
-// This command generates and sets an Uber Trace ID token which will be attached as a header to every request.
+// This command sets an Uber Trace ID token which will be attached as a header to every request.
+// If the parent agent (e.g. Cursor) propagates a trace ID via env, reuse it so server-side logs
+// correlate end-to-end with the agent's trace. Otherwise generate a fresh one.
 // This allows users to easily identify which logs on the server side are related to the command executed by the CLI.
 func setUberTraceIdToken() error {
-	var err error
-	traceID, err = generateTraceIdToken()
-	if err != nil {
-		return err
+	if propagated := corecommands.DetectExecutionContext().TraceID; propagated != "" {
+		traceID = propagated
+	} else {
+		generated, err := generateTraceIdToken()
+		if err != nil {
+			return err
+		}
+		traceID = generated
 	}
 	httpclient.SetUberTraceIdToken(traceID)
 	clientlog.Debug(traceIdLogMsg, traceID)
 	return nil
+}
+
+// buildEnrichedUserAgent appends invoker context (agent / ci) to the base CLI user-agent.
+// Examples: "jfrog-cli-go/2.x (claude)", "jfrog-cli-go/2.x (ci=github_actions)",
+// "jfrog-cli-go/2.x (cursor; ci=github_actions)".
+func buildEnrichedUserAgent(ec corecommands.ExecutionContext) string {
+	base := coreutils.GetCliUserAgent()
+	parts := []string{}
+	if ec.Agent != "" {
+		parts = append(parts, ec.Agent)
+	}
+	if ec.CISystem != "" {
+		parts = append(parts, "ci="+ec.CISystem)
+	}
+	if len(parts) == 0 {
+		return base
+	}
+	return fmt.Sprintf("%s (%s)", base, strings.Join(parts, "; "))
 }
 
 // Generates a 16 chars hexadecimal string to be used as a Trace ID token.
