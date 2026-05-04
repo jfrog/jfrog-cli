@@ -389,7 +389,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "permission-target-create",
 			Aliases:      []string{"ptc"},
-			Flags:        cliutils.GetCommandFlags(cliutils.TemplateConsumer),
+			Flags:        cliutils.GetCommandFlags(cliutils.PermissionTargetCreate),
 			Usage:        permissiontargetcreate.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt ptc", permissiontargetcreate.GetDescription(), permissiontargetcreate.Usage),
 			UsageText:    permissiontargetcreate.GetArguments(),
@@ -801,15 +801,28 @@ func permissionTargetCreateCmd(c *cli.Context) error {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
+	if c.IsSet(cliutils.Format) {
+		if _, fmtErr := coreformat.ParseOutputFormat(c.String(cliutils.Format), []coreformat.OutputFormat{coreformat.Json}); fmtErr != nil {
+			return fmtErr
+		}
+	}
+
 	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
 
 	// Run command.
-	permissionTargetCreateCmd := permissiontarget.NewPermissionTargetCreateCommand()
-	permissionTargetCreateCmd.SetTemplatePath(c.Args().Get(0)).SetServerDetails(rtDetails).SetVars(c.String("vars"))
-	return commands.Exec(permissionTargetCreateCmd)
+	permissionTargetCreateCommand := permissiontarget.NewPermissionTargetCreateCommand()
+	permissionTargetCreateCommand.SetTemplatePath(c.Args().Get(0)).SetServerDetails(rtDetails).SetVars(c.String("vars"))
+	if err = commands.Exec(permissionTargetCreateCommand); err != nil {
+		return err
+	}
+	if c.IsSet(cliutils.Format) {
+		// Client layer discards body; nil + 200 produces {"status_code":200,"message":"OK"}
+		cliutils.FormatHTTPResponseJSON(nil, 200)
+	}
+	return nil
 }
 
 func permissionTargetUpdateCmd(c *cli.Context) error {
