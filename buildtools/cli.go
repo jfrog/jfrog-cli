@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	conancommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/conan"
+	nixcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nix"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -53,6 +54,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/terraformconfig"
 	twinedocs "github.com/jfrog/jfrog-cli/docs/artifactory/twine"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/conan"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/nix"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/docker"
 	dotnetdocs "github.com/jfrog/jfrog-cli/docs/buildtools/dotnet"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/dotnetconfig"
@@ -381,6 +383,19 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
 			Action:          ConanCmd,
+		},
+		{
+			Name:            "nix",
+			Hidden:          false,
+			Flags:           cliutils.GetCommandFlags(cliutils.Nix),
+			Usage:           nix.GetDescription(),
+			HelpName:        corecommon.CreateUsage("nix", nix.GetDescription(), nix.Usage),
+			UsageText:       nix.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Category:        buildToolsCategory,
+			Action:          NixCmd,
 		},
 		{
 			Name:         "ruby-config",
@@ -1876,6 +1891,30 @@ func ConanCmd(c *cli.Context) error {
 	conanCommand := conancommand.NewConanCommand().SetCommandName(cmdName).SetArgs(conanArgs).SetBuildConfiguration(buildConfiguration)
 
 	return commands.Exec(conanCommand)
+}
+
+func NixCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+	if c.NArg() < 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	args := cliutils.ExtractCommand(c)
+
+	// Extract build flags (--build-name, --build-number, --module, --project) before passing to Nix
+	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
+	if err != nil {
+		return err
+	}
+
+	cmdName, nixArgs := getCommandName(filteredArgs)
+
+	// Use jfrog-cli-artifactory Nix command with build info support
+	cmd := nixcommand.NewNixCommand().SetCommandName(cmdName).SetArgs(nixArgs).SetBuildConfiguration(buildConfiguration)
+
+	return commands.Exec(cmd)
 }
 
 func pythonCmd(c *cli.Context, projectType project.ProjectType) error {

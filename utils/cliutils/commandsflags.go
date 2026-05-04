@@ -84,6 +84,7 @@ const (
 	HuggingFaceDownload    = "hugging-face-download"
 	RubyConfig             = "ruby-config"
 	Conan                  = "conan"
+	Nix                    = "nix"
 	Ping                   = "ping"
 	RtCurl                 = "rt-curl"
 	TemplateConsumer       = "template-consumer"
@@ -2028,6 +2029,9 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	Conan: {
+		BuildName, BuildNumber, module, Project,
+	},
+	Nix: {
 		BuildName, BuildNumber, module, Project,
 	},
 	Stats: {

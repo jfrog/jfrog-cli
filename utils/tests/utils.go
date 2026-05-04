@@ -69,6 +69,7 @@ var (
 	TestPip                   *bool
 	TestPipenv                *bool
 	TestPoetry                *bool
+	TestNix                   *bool
 	TestConan                 *bool
 	TestHelm                  *bool
 	TestHuggingFace           *bool
@@ -111,6 +112,7 @@ func init() {
 	TestPip = flag.Bool("test.pip", false, "Test Pip")
 	TestPipenv = flag.Bool("test.pipenv", false, "Test Pipenv")
 	TestPoetry = flag.Bool("test.poetry", false, "Test Poetry")
+	TestNix = flag.Bool("test.nix", false, "Test Nix")
 	TestConan = flag.Bool("test.conan", false, "Test Conan")
 	TestHelm = flag.Bool("test.helm", false, "Test Helm")
 	TestHuggingFace = flag.Bool("test.huggingface", false, "Test HuggingFace")
@@ -286,6 +288,9 @@ var reposConfigMap = map[*string]string{
 	&PypiVirtualRepo:                PypiVirtualRepositoryConfig,
 	&PipenvRemoteRepo:               PipenvRemoteRepositoryConfig,
 	&PipenvVirtualRepo:              PipenvVirtualRepositoryConfig,
+	&NixLocalRepo:                   NixLocalRepositoryConfig,
+	&NixRemoteRepo:                  NixRemoteRepositoryConfig,
+	&NixVirtualRepo:                 NixVirtualRepositoryConfig,
 	&PoetryLocalRepo:                PoetryLocalRepositoryConfig,
 	&PoetryRemoteRepo:               PoetryRemoteRepositoryConfig,
 	&PoetryVirtualRepo:              PoetryVirtualRepositoryConfig,
@@ -358,6 +363,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestNuget:              {&NugetRemoteRepo},
 		TestPip:                {&PypiLocalRepo, &PypiRemoteRepo},
 		TestPipenv:             {&PipenvRemoteRepo},
+		TestNix:                {&NixLocalRepo, &NixRemoteRepo},
 		TestPoetry:             {&PoetryLocalRepo, &PoetryRemoteRepo},
 		TestConan:              {&ConanLocalRepo, &ConanRemoteRepo},
 		TestHelm:               {&HelmLocalRepo},
@@ -388,6 +394,7 @@ func GetVirtualRepositories() map[*string]string {
 		TestNuget:        {},
 		TestPip:          {&PypiVirtualRepo},
 		TestPipenv:       {&PipenvVirtualRepo},
+		TestNix:          {&NixVirtualRepo},
 		TestPoetry:       {&PoetryVirtualRepo},
 		TestConan:        {&ConanVirtualRepo},
 		TestHelm:         {},
@@ -429,6 +436,7 @@ func GetBuildNames() []string {
 		TestNuget:        {&NuGetBuildName},
 		TestPip:          {&PipBuildName},
 		TestPipenv:       {&PipenvBuildName},
+		TestNix:          {&NixBuildName},
 		TestPoetry:       {&PoetryBuildName},
 		TestConan:        {&ConanBuildName},
 		TestHelm:         {&HelmBuildName},
@@ -487,6 +495,9 @@ func getSubstitutionMap() map[string]string {
 		"${PYPI_VIRTUAL_REPO}":         PypiVirtualRepo,
 		"${PIPENV_REMOTE_REPO}":        PipenvRemoteRepo,
 		"${PIPENV_VIRTUAL_REPO}":       PipenvVirtualRepo,
+		"${NIX_LOCAL_REPO}":            NixLocalRepo,
+		"${NIX_REMOTE_REPO}":           NixRemoteRepo,
+		"${NIX_VIRTUAL_REPO}":          NixVirtualRepo,
 		"${POETRY_LOCAL_REPO}":         PoetryLocalRepo,
 		"${POETRY_REMOTE_REPO}":        PoetryRemoteRepo,
 		"${POETRY_VIRTUAL_REPO}":       PoetryVirtualRepo,
