@@ -20,6 +20,7 @@ pipelines:
     configuration:
       integrations:
         - name: jfrog_cli_tests
+        - name: github_dispatch
       environmentVariables:
         readOnly:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
