@@ -103,6 +103,8 @@ pipelines:
               echo "Environment URL: ${env_url}"
               
               # Write to resource
+              prefix="${server_name%${suffix}}"
+              write_output "cli_coreapps_env_details" "prefix=${prefix}"
               write_output "cli_coreapps_env_details" "suffix=${suffix}"
               write_output "cli_coreapps_env_details" "env_url=${env_url}"
               
@@ -132,7 +134,7 @@ pipelines:
                 - success
           jenkinsJobName: tools/platform/environment_setup_gen2
           buildParameters:
-            SERVER_NAME: "cli${res_cli_coreapps_env_details_suffix}"
+            SERVER_NAME: "${res_cli_coreapps_env_details_prefix}${res_cli_coreapps_env_details_suffix}"
             DEPLOYMENT_TYPE: onprem
             ACCOUNT_TYPE: "enterprise_plus"
             GROUP: "ARTIFACTORY"
@@ -555,9 +557,11 @@ pipelines:
                 - skipped
                 - unstable
                 - timeout
+          inputResources:
+            - name: cli_coreapps_env_details
           integrations:
             - name: jenkins_entplus_rt
           jenkinsJobName: tools/platform/environment_operate
           buildParameters:
-            SERVER_NAME: "${server_name}"
+            SERVER_NAME: "${res_cli_coreapps_env_details_prefix}${res_cli_coreapps_env_details_suffix}"
             ACTION: "delete"
