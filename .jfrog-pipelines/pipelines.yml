@@ -64,7 +64,7 @@ pipelines:
             description: "Git ref to checkout in jfrog/jfrog-cli (branch, tag, or SHA)."
             allowCustom: true
           GITHUB_DISPATCH_TOKEN:
-            default: ""
+            default: "${int_github_dispatch_token}"
             description: "Token for github.jfrog.info API (repo + workflow scopes). MUST be a fine-grained PAT, a GitHub App installation token, or an OAuth App token — the JFROG org on github.jfrog.info forbids classic PATs and will return 403 with message 'forbids access via a personal access token (classic)'. If left empty, int_jfrog_cli_gh_token from the jfrog_cli_gh integration is used, and that integration itself must be configured with a fine-grained PAT (classic PATs will be rejected the same way)."
             allowCustom: true
           GHE_ACTIONS_RUNNER:
