@@ -20,6 +20,7 @@ pipelines:
     configuration:
       integrations:
         - name: jfrog_cli_tests
+        - name: github_dispatch
       environmentVariables:
         readOnly:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
@@ -297,6 +298,23 @@ pipelines:
               GH_JF_CLI_REPO="${JFROG_CLI_GITHUB_REPO:-jfrog/jfrog-cli}"
               GH_ACTIONS_RUNNER="${GHE_ACTIONS_RUNNER:-artifactory-dind-amd-scale-set}"
 
+              # DEBUG: verify github_dispatch integration wiring (remove after verification).
+              # We do NOT echo the token in cleartext (Pipelines does not reliably mask
+              # ad-hoc echo output of isSecure values). Instead we print length plus a
+              # truncated sha256 fingerprint of each candidate so you can confirm that
+              # ${GITHUB_DISPATCH_TOKEN} == ${int_github_dispatch_token} (i.e. the
+              # pipeline-level remap took effect) without leaking the secret.
+              echo "DEBUG: github_dispatch integration check"
+              echo "  int_github_dispatch_token length=${#int_github_dispatch_token}"
+              echo "  GITHUB_DISPATCH_TOKEN     length=${#GITHUB_DISPATCH_TOKEN}"
+              if [[ -n "${int_github_dispatch_token:-}" ]]; then
+                echo "  int_github_dispatch_token sha256(prefix12)=$(printf '%s' "${int_github_dispatch_token}" | sha256sum | head -c 12)"
+              fi
+              if [[ -n "${GITHUB_DISPATCH_TOKEN:-}" ]]; then
+                echo "  GITHUB_DISPATCH_TOKEN     sha256(prefix12)=$(printf '%s' "${GITHUB_DISPATCH_TOKEN}" | sha256sum | head -c 12)"
+              fi
+              echo "  int_github_dispatch_* env keys present: $(env | awk -F= '/^int_github_dispatch_/ {print $1}' | tr '\n' ' ')"
+
               GITHUB_TOKEN_RESOLVED="${GITHUB_DISPATCH_TOKEN:-}"
               if [[ -z "${GITHUB_TOKEN_RESOLVED}" ]]; then GITHUB_TOKEN_RESOLVED="${int_jfrog_cli_gh_token:-}"; fi
               if [[ -z "${GITHUB_TOKEN_RESOLVED}" ]]; then GITHUB_TOKEN_RESOLVED="${int_jfrog_cli_gh_accessToken:-}"; fi
@@ -304,6 +322,7 @@ pipelines:
                 fail_jf_cli_tests "No GitHub token for API calls. Set GITHUB_DISPATCH_TOKEN (repo + workflow PAT), or configure jfrog_cli_gh integration with a PAT."
               fi
               echo "Using GitHub API token (length ${#GITHUB_TOKEN_RESOLVED}) against ${GH_API_URL}"
+              echo "DEBUG: GITHUB_TOKEN_RESOLVED sha256(prefix12)=$(printf '%s' "${GITHUB_TOKEN_RESOLVED}" | sha256sum | head -c 12)"
 
               # ── Build the list of workflows to dispatch ──────────────────────
               # Docker suite consumes RTLIC (Artifactory license) from the
