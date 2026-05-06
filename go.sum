@@ -109,8 +109,8 @@ github.com/bshuster-repo/logrus-logstash-hook v1.0.0 h1:e+C0SB5R1pu//O4MQ3f9cFuP
 github.com/bshuster-repo/logrus-logstash-hook v1.0.0/go.mod h1:zsTqEiSzDgAa/8GZR7E1qaXrhYNDKBYy5/dWPTIflbk=
 github.com/bufbuild/protocompile v0.14.1 h1:iA73zAf/fyljNjQKwYzUHD6AD4R8KMasmwa/FBatYVw=
 github.com/bufbuild/protocompile v0.14.1/go.mod h1:ppVdAIhbr2H8asPk6k4pY7t9zB1OU5DoEw9xY/FUi1c=
-github.com/buger/jsonparser v1.1.2 h1:frqHqw7otoVbk5M8LlE/L7HTnIq2v9RX6EJ48i9AxJk=
-github.com/buger/jsonparser v1.1.2/go.mod h1:6RYKKt7H4d4+iWqouImQ9R2FZql3VbhNgx27UK13J/0=
+github.com/buger/jsonparser v1.2.0 h1:4EFcvK1kD4jyj6YqNK6skK6w+y7FHHBR+XBCtxwu/6g=
+github.com/buger/jsonparser v1.2.0/go.mod h1:6RYKKt7H4d4+iWqouImQ9R2FZql3VbhNgx27UK13J/0=
 github.com/c-bata/go-prompt v0.2.5 h1:3zg6PecEywxNn0xiqcXHD96fkbxghD+gdB2tbsYfl+Y=
 github.com/c-bata/go-prompt v0.2.5/go.mod h1:vFnjEGDIIA/Lib7giyE4E9c50Lvl8j0S+7FVlAwDAVw=
 github.com/cenkalti/backoff/v4 v4.3.0 h1:MyRJ/UdXutAwSAT+s3wNd7MfTIcy71VQueUuFK343L8=
@@ -420,8 +420,6 @@ github.com/jfrog/jfrog-cli-application v1.0.2-0.20260405065840-c930d515ef34 h1:q
 github.com/jfrog/jfrog-cli-application v1.0.2-0.20260405065840-c930d515ef34/go.mod h1:xum2HquWO5uExa/A7MQs3TgJJVEeoqTR+6Z4mfBr1Xw=
 github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260429074430-a5871f2898b5 h1:+52DDmdSZFP1dxgeu0pkB1sQuoHa0PWbW7HVdFOqK3A=
 github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260429074430-a5871f2898b5/go.mod h1:BV+aCTQsaZeFec2WjgmQjqlxecju4CkkM9NqfiFyjo0=
-github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260430091103-6242ecf15d29 h1:J5+08rOpv/avgt53jNFZ+j5gU8mllcj7Dcfja5Ewodw=
-github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260430091103-6242ecf15d29/go.mod h1:bjAkVD8c2W+jg4whqy10bSXDC/c+Se8/ll/GPp5F/+0=
 github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260430125911-ad12ac6f1316 h1:xAl5D+SjLeRH1gCsSHFPpXJeQQBv2HDGqDTDkFOKJ2s=
 github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260430125911-ad12ac6f1316/go.mod h1:bjAkVD8c2W+jg4whqy10bSXDC/c+Se8/ll/GPp5F/+0=
 github.com/jfrog/jfrog-cli-evidence v0.9.2 h1:huiBzQSI9z3OF3l2RphthdXl1aH9zBsvAt+zLsApORI=
