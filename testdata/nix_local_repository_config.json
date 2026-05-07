@@ -1,0 +1,5 @@
+{
+  "key": "${NIX_LOCAL_REPO}",
+  "rclass": "local",
+  "packageType": "nix"
+}

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	conancommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/conan"
+	nixcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nix"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -32,8 +33,8 @@ import (
 	huggingfaceCommands "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/huggingface"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/mvn"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/npm"
-	containerutils "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/ocicontainer"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/pnpm"
+	containerutils "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/ocicontainer"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/terraform"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/yarn"
 	commandsUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
@@ -53,7 +54,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/terraformconfig"
 	twinedocs "github.com/jfrog/jfrog-cli/docs/artifactory/twine"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/conan"
-	"github.com/jfrog/jfrog-cli/docs/buildtools/conanconfig"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/nix"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/docker"
 	dotnetdocs "github.com/jfrog/jfrog-cli/docs/buildtools/dotnet"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/dotnetconfig"
@@ -69,17 +70,16 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/buildtools/mvnconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npmcommand"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npmconfig"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/pnpmcommand"
 	nugetdocs "github.com/jfrog/jfrog-cli/docs/buildtools/nuget"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/nugetconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pipconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pipenvconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pipenvinstall"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pipinstall"
-	"github.com/jfrog/jfrog-cli/docs/buildtools/pnpmcommand"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pnpmconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/poetry"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/poetryconfig"
-	uvcommand "github.com/jfrog/jfrog-cli/docs/buildtools/uvcommand"
 	yarndocs "github.com/jfrog/jfrog-cli/docs/buildtools/yarn"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/yarnconfig"
 	"github.com/jfrog/jfrog-cli/docs/common"
@@ -359,19 +359,6 @@ func GetCommands() []cli.Command {
 			Action:          PoetryCmd,
 		},
 		{
-			Name:            "uv",
-			Flags:           cliutils.GetCommandFlags(cliutils.Uv),
-			Usage:           uvcommand.GetDescription(),
-			HelpName:        corecommon.CreateUsage("uv", uvcommand.GetDescription(), uvcommand.Usage),
-			UsageText:       uvcommand.GetArguments(),
-			ArgsUsage:       common.CreateEnvVars(),
-			SkipFlagParsing: true,
-			BashComplete:    corecommon.CreateBashCompletionFunc(),
-			Category:        buildToolsCategory,
-			Action:          UvCmd,
-			Hidden:          true,
-		},
-		{
 			Name:            "helm",
 			Flags:           cliutils.GetCommandFlags(cliutils.Helm),
 			Usage:           helmcommand.GetDescription(),
@@ -385,19 +372,6 @@ func GetCommands() []cli.Command {
 			Action:          HelmCmd,
 		},
 		{
-			Name:         "conan-config",
-			Flags:        cliutils.GetCommandFlags(cliutils.ConanConfig),
-			Aliases:      []string{"conanc"},
-			Usage:        conanconfig.GetDescription(),
-			HelpName:     corecommon.CreateUsage("conan-config", conanconfig.GetDescription(), conanconfig.Usage),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Category:     buildToolsCategory,
-			Action: func(c *cli.Context) error {
-				return cliutils.CreateConfigCmd(c, project.Conan)
-			},
-		},
-		{
 			Name:            "conan",
 			Hidden:          false,
 			Flags:           cliutils.GetCommandFlags(cliutils.Conan),
@@ -409,6 +383,19 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
 			Action:          ConanCmd,
+		},
+		{
+			Name:            "nix",
+			Hidden:          false,
+			Flags:           cliutils.GetCommandFlags(cliutils.Nix),
+			Usage:           nix.GetDescription(),
+			HelpName:        corecommon.CreateUsage("nix", nix.GetDescription(), nix.Usage),
+			UsageText:       nix.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Category:        buildToolsCategory,
+			Action:          NixCmd,
 		},
 		{
 			Name:         "ruby-config",
@@ -707,12 +694,9 @@ func MvnCmd(c *cli.Context) (err error) {
 	if !xrayScan && format != "" {
 		return cliutils.PrintHelpAndReturnError("The --format option can be sent only with the --scan option", c)
 	}
-	scanOutputFormat := outputFormat.Table
-	if format != "" {
-		scanOutputFormat, err = outputFormat.ParseOutputFormat(format, outputFormat.All)
-		if err != nil {
-			return err
-		}
+	scanOutputFormat, err := outputFormat.GetOutputFormat(format)
+	if err != nil {
+		return err
 	}
 	mvnCmd := mvn.NewMvnCommand().SetConfiguration(buildConfiguration).SetConfigPath(configFilePath).SetGoals(filteredMavenArgs).SetThreads(threads).SetInsecureTls(insecureTls).SetDetailedSummary(detailedSummary || printDeploymentView).SetXrayScan(xrayScan).SetScanOutputFormat(scanOutputFormat)
 	err = commands.Exec(mvnCmd)
@@ -816,14 +800,9 @@ func GradleCmd(c *cli.Context) (err error) {
 	if !xrayScan && format != "" {
 		return cliutils.PrintHelpAndReturnError("The --format option can be sent only with the --scan option", c)
 	}
-	var scanOutputFormat outputFormat.OutputFormat
-	if format == "" {
-		scanOutputFormat = outputFormat.Table
-	} else {
-		scanOutputFormat, err = outputFormat.ParseOutputFormat(format, outputFormat.All)
-		if err != nil {
-			return err
-		}
+	scanOutputFormat, err := outputFormat.GetOutputFormat(format)
+	if err != nil {
+		return err
 	}
 	printDeploymentView := log.IsStdErrTerminal()
 	gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(filteredGradleArgs).SetConfigPath(configFilePath).SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetXrayScan(xrayScan).SetScanOutputFormat(scanOutputFormat)
@@ -1080,52 +1059,6 @@ func goCmdVerification(c *cli.Context) (string, error) {
 	return configFilePath, nil
 }
 
-// containerManagerEnvVar lets users force the container manager used by 'jf docker'
-// subcommands, bypassing auto-detection. Accepted values (case-insensitive): "docker", "podman".
-const containerManagerEnvVar = "JFROG_CLI_CONTAINER_MANAGER"
-
-// podmanDetector is indirected through a package-level variable so tests can
-// replace the real 'docker version' probe with a deterministic stub.
-var podmanDetector = dockerIsPodman
-
-// resolveContainerManagerType returns the container manager to use when running 'jf docker' subcommands.
-//
-// Resolution order:
-//  1. Explicit override via the JFROG_CLI_CONTAINER_MANAGER env var ("docker" or "podman").
-//  2. Auto-detection: if the local 'docker' binary reports Podman in its version output
-//     (i.e. the podman-docker shim or native podman aliased as docker), treat it as Podman
-//     so 'jf docker ...' works transparently for Podman users without daemon-socket access.
-//  3. Default: Docker.
-//
-// Detection is intentionally conservative: only a positive "Podman" signal from 'docker version'
-// switches behavior. Real Docker installations are unaffected.
-func resolveContainerManagerType() containerutils.ContainerManagerType {
-	switch strings.ToLower(strings.TrimSpace(os.Getenv(containerManagerEnvVar))) {
-	case "podman":
-		log.Debug(containerManagerEnvVar + "=podman. Routing 'jf docker' subcommands through Podman.")
-		return containerutils.Podman
-	case "docker":
-		log.Debug(containerManagerEnvVar + "=docker. Routing 'jf docker' subcommands through Docker.")
-		return containerutils.DockerClient
-	}
-	if podmanDetector() {
-		log.Debug("Detected Podman-backed 'docker' CLI. Routing 'jf docker' subcommands through Podman.")
-		return containerutils.Podman
-	}
-	return containerutils.DockerClient
-}
-
-// dockerIsPodman returns true if the local 'docker' binary is actually Podman
-// (either via the podman-docker shim or an alias). Any error or missing binary returns false.
-func dockerIsPodman() bool {
-	cmd := exec.Command("docker", "version")
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return false
-	}
-	return strings.Contains(strings.ToLower(string(out)), "podman")
-}
-
 func dockerCmd(c *cli.Context) error {
 	args := cliutils.ExtractCommand(c)
 	var cmd, cmdArg string
@@ -1177,7 +1110,7 @@ func pullCmd(c *cli.Context, image string) error {
 	if err != nil {
 		return err
 	}
-	PullCommand := container.NewPullCommand(resolveContainerManagerType())
+	PullCommand := container.NewPullCommand(containerutils.DockerClient)
 	PullCommand.SetCmdParams(filteredDockerArgs).SetSkipLogin(skipLogin).SetImageTag(image).SetServerDetails(rtDetails).SetBuildConfiguration(buildConfiguration)
 	supported, err := PullCommand.IsGetRepoSupported()
 	if err != nil {
@@ -1201,7 +1134,7 @@ func pushCmd(c *cli.Context, image string) (err error) {
 		return
 	}
 	printDeploymentView := log.IsStdErrTerminal()
-	pushCommand := container.NewPushCommand(resolveContainerManagerType())
+	pushCommand := container.NewPushCommand(containerutils.DockerClient)
 	pushCommand.SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetCmdParams(filteredDockerArgs).SetSkipLogin(skipLogin).SetBuildConfiguration(buildConfiguration).SetServerDetails(rtDetails).SetValidateSha(validateSha).SetImageTag(image)
 	supported, err := pushCommand.IsGetRepoSupported()
 	if err != nil {
@@ -1524,7 +1457,7 @@ func dockerNativeCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	cm := containerutils.NewManager(resolveContainerManagerType())
+	cm := containerutils.NewManager(containerutils.DockerClient)
 	return cm.RunNativeCmd(cleanArgs)
 }
 
@@ -1831,53 +1764,6 @@ func PoetryCmd(c *cli.Context) error {
 	return pythonCmd(c, project.Poetry)
 }
 
-func UvCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
-		return err
-	}
-	if c.NArg() < 1 {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
-	}
-	args := cliutils.ExtractCommand(c)
-	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
-	if err != nil {
-		return err
-	}
-	var serverID string
-	filteredArgs, serverID, err = coreutils.ExtractServerIdFromCommand(filteredArgs)
-	if err != nil {
-		return fmt.Errorf("failed to extract server ID: %w", err)
-	}
-	cmdName, uvArgs := getCommandName(filteredArgs)
-	// Peek at --publish-url to populate DeployerRepo for build-info enrichment.
-	// The flag is NOT consumed here — it is forwarded to uv as-is.
-	deployerRepo := ""
-	for i, arg := range uvArgs {
-		if strings.HasPrefix(arg, "--publish-url=") {
-			deployerRepo = strings.TrimPrefix(arg, "--publish-url=")
-		} else if arg == "--publish-url" && i+1 < len(uvArgs) {
-			deployerRepo = uvArgs[i+1]
-		}
-	}
-	uvCommand := python.NewNativeUVCommand().
-		SetCommandName(cmdName).
-		SetArgs(uvArgs).
-		SetServerID(serverID).
-		SetDeployerRepo(deployerRepo).
-		SetBuildConfiguration(buildConfiguration)
-	// For help requests, bypass commands.Exec() to skip the concurrent usage-reporting
-	// goroutine that would otherwise make Artifactory version calls unnecessarily.
-	for _, a := range uvArgs {
-		if a == "-h" || a == "--help" {
-			return uvCommand.Run()
-		}
-	}
-	if cmdName == "help" || cmdName == "" {
-		return uvCommand.Run()
-	}
-	return commands.Exec(uvCommand)
-}
-
 // HelmCmd executes Helm commands with build info collection support
 func HelmCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
@@ -2005,6 +1891,65 @@ func ConanCmd(c *cli.Context) error {
 	conanCommand := conancommand.NewConanCommand().SetCommandName(cmdName).SetArgs(conanArgs).SetBuildConfiguration(buildConfiguration)
 
 	return commands.Exec(conanCommand)
+}
+
+func NixCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+	if c.NArg() < 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	args := cliutils.ExtractCommand(c)
+
+	// Extract build flags (--build-name, --build-number, --module, --project) before passing to Nix
+	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
+	if err != nil {
+		return err
+	}
+
+	// Extract --repo and --server-id flags before passing to nix
+	var repo, serverID string
+	var cleanedArgs []string
+	for i := 0; i < len(filteredArgs); i++ {
+		arg := filteredArgs[i]
+		if strings.HasPrefix(arg, "--repo=") {
+			repo = strings.TrimPrefix(arg, "--repo=")
+		} else if arg == "--repo" && i+1 < len(filteredArgs) {
+			repo = filteredArgs[i+1]
+			i++
+		} else if strings.HasPrefix(arg, "--server-id=") {
+			serverID = strings.TrimPrefix(arg, "--server-id=")
+		} else if arg == "--server-id" && i+1 < len(filteredArgs) {
+			serverID = filteredArgs[i+1]
+			i++
+		} else {
+			cleanedArgs = append(cleanedArgs, arg)
+		}
+	}
+	filteredArgs = cleanedArgs
+
+	cmdName, nixArgs := getCommandName(filteredArgs)
+
+	// Use jfrog-cli-artifactory Nix command with build info support
+	cmd := nixcommand.NewNixCommand().SetCommandName(cmdName).SetArgs(nixArgs).SetBuildConfiguration(buildConfiguration)
+	if repo != "" {
+		cmd.SetRepo(repo)
+	}
+
+	// Pass server details — use specific server if --server-id provided, else default
+	var serverDetails *coreConfig.ServerDetails
+	if serverID != "" {
+		serverDetails, err = coreConfig.GetSpecificConfig(serverID, true, true)
+	} else {
+		serverDetails, err = coreConfig.GetDefaultServerConf()
+	}
+	if err == nil && serverDetails != nil {
+		cmd.SetServerDetails(serverDetails)
+	}
+
+	return commands.Exec(cmd)
 }
 
 func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
