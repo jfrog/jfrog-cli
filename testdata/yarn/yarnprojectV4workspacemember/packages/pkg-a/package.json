@@ -1,0 +1,8 @@
+{
+  "name": "pkg-a",
+  "version": "1.0.0",
+  "dependencies": {
+    "xml": "1.0.1",
+    "pkg-b": "workspace:*"
+  }
+}
