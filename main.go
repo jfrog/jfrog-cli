@@ -91,7 +91,7 @@ func execMain() error {
 	}
 
 	// Set JFrog CLI's user-agent on the jfrog-client-go, enriched with invoker info.
-	clientutils.SetUserAgent(buildEnrichedUserAgent(corecommands.DetectExecutionContext()))
+	clientutils.SetUserAgent(corecommands.EnrichUserAgent(coreutils.GetCliUserAgent()))
 
 	app := cli.NewApp()
 	app.Name = jfrogAppName
@@ -183,24 +183,6 @@ func setUberTraceIdToken() error {
 	httpclient.SetUberTraceIdToken(traceID)
 	clientlog.Debug(traceIdLogMsg, traceID)
 	return nil
-}
-
-// buildEnrichedUserAgent appends invoker context (agent / ci) to the base CLI user-agent.
-// Examples: "jfrog-cli-go/2.x (claude)", "jfrog-cli-go/2.x (ci=github_actions)",
-// "jfrog-cli-go/2.x (cursor; ci=github_actions)".
-func buildEnrichedUserAgent(ec corecommands.ExecutionContext) string {
-	base := coreutils.GetCliUserAgent()
-	parts := []string{}
-	if ec.Agent != "" {
-		parts = append(parts, ec.Agent)
-	}
-	if ec.CISystem != "" {
-		parts = append(parts, "ci="+ec.CISystem)
-	}
-	if len(parts) == 0 {
-		return base
-	}
-	return fmt.Sprintf("%s (%s)", base, strings.Join(parts, "; "))
 }
 
 // Generates a 16 chars hexadecimal string to be used as a Trace ID token.
