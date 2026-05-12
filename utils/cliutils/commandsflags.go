@@ -94,6 +94,8 @@ const (
 	RepoDelete             = "repo-delete"
 	ReplicationDelete      = "replication-delete"
 	PermissionTargetDelete = "permission-target-delete"
+	PermissionTargetCreate = "permission-target-create"
+	PermissionTargetUpdate = "permission-target-update"
 	// #nosec G101 -- False positive - no hardcoded credentials.
 	ArtifactoryAccessTokenCreate = "artifactory-access-token-create"
 	UserCreate                   = "user-create"
@@ -517,7 +519,13 @@ const (
 	plStatusFormat            = "pl-status-format"
 	plTriggerFormat           = "pl-trigger-format"
 	plSyncFormat              = "pl-sync-format"
-	plSyncStatusFormat        = "pl-sync-status-format"
+	plSyncStatusFormat           = "pl-sync-status-format"
+	permissionTargetCreateFormat = "permission-target-create-format"
+	permissionTargetUpdateFormat = "permission-target-update-format"
+	transferConfigFormat         = "transfer-config-format"
+	transferConfigMergeFormat    = "transfer-config-merge-format"
+	transferFilesFormat          = "transfer-files-format"
+	usersCreateFormat            = "users-create-format"
 
 	// Unique scan flags
 	scanPrefix          = "scan-"
@@ -689,6 +697,30 @@ var flagsMap = map[string]cli.Flag{
 	plSyncStatusFormat: cli.StringFlag{
 		Name:  Format,
 		Usage: "[Optional] " + components.GetFormatFlagDescription([]format.OutputFormat{format.Table, format.Json}) + "` `",
+	},
+	permissionTargetCreateFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + components.GetFormatFlagDescription([]format.OutputFormat{format.Json}) + "` `",
+	},
+	permissionTargetUpdateFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + components.GetFormatFlagDescription([]format.OutputFormat{format.Json}) + "` `",
+	},
+	transferConfigFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + components.GetFormatFlagDescription([]format.OutputFormat{format.Json}) + "` `",
+	},
+	transferConfigMergeFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + components.GetFormatFlagDescription([]format.OutputFormat{format.Json, format.Table}) + "` `",
+	},
+	transferFilesFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + components.GetFormatFlagDescription([]format.OutputFormat{format.Json, format.Table}) + "` `",
+	},
+	usersCreateFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + components.GetFormatFlagDescription([]format.OutputFormat{format.Json}) + "` `",
 	},
 	// Common commands flags
 	platformUrl: cli.StringFlag{
@@ -2093,10 +2125,10 @@ var commandFlags = map[string][]string{
 		BuildName, BuildNumber, module, Project,
 	},
 	TransferConfig: {
-		Force, Verbose, IncludeRepos, ExcludeRepos, SourceWorkingDir, TargetWorkingDir, PreChecks,
+		Force, Verbose, IncludeRepos, ExcludeRepos, SourceWorkingDir, TargetWorkingDir, PreChecks, transferConfigFormat,
 	},
 	TransferConfigMerge: {
-		IncludeRepos, ExcludeRepos, IncludeProjects, ExcludeProjects,
+		IncludeRepos, ExcludeRepos, IncludeProjects, ExcludeProjects, transferConfigMergeFormat,
 	},
 	Ping: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
@@ -2171,6 +2203,14 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
 		ClientCertKeyPath, deleteQuiet,
 	},
+	PermissionTargetCreate: {
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
+		ClientCertKeyPath, vars, permissionTargetCreateFormat,
+	},
+	PermissionTargetUpdate: {
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
+		ClientCertKeyPath, vars, permissionTargetUpdateFormat,
+	},
 	ArtifactoryAccessTokenCreate: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
 		ClientCertKeyPath, rtAtcGroups, rtAtcGrantAdmin, rtAtcExpiry, rtAtcRefreshable, rtAtcAudience,
@@ -2189,7 +2229,7 @@ var commandFlags = map[string][]string{
 	},
 	UsersCreate: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId,
-		usersCreateCsv, UsersGroups, Replace,
+		usersCreateCsv, UsersGroups, Replace, usersCreateFormat,
 	},
 	UsersDelete: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId,
@@ -2206,7 +2246,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, deleteQuiet,
 	},
 	TransferFiles: {
-		Filestore, IncludeRepos, ExcludeRepos, IncludeFiles, IgnoreState, ProxyKey, transferFilesStatus, Stop, PreChecks,
+		Filestore, IncludeRepos, ExcludeRepos, IncludeFiles, IgnoreState, ProxyKey, transferFilesStatus, Stop, PreChecks, transferFilesFormat,
 	},
 	TransferInstall: {
 		installPluginVersion, InstallPluginSrcDir, InstallPluginHomeDir,

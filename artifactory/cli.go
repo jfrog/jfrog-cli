@@ -1,10 +1,13 @@
 package artifactory
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strings"
+	"text/tabwriter"
 
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/python"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/cocoapodsconfig"
@@ -27,6 +30,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	coreformat "github.com/jfrog/jfrog-cli-core/v2/common/format"
 	"github.com/jfrog/jfrog-cli-core/v2/common/project"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
@@ -385,7 +389,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "permission-target-create",
 			Aliases:      []string{"ptc"},
-			Flags:        cliutils.GetCommandFlags(cliutils.TemplateConsumer),
+			Flags:        cliutils.GetCommandFlags(cliutils.PermissionTargetCreate),
 			Usage:        permissiontargetcreate.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt ptc", permissiontargetcreate.GetDescription(), permissiontargetcreate.Usage),
 			UsageText:    permissiontargetcreate.GetArguments(),
@@ -397,7 +401,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "permission-target-update",
 			Aliases:      []string{"ptu"},
-			Flags:        cliutils.GetCommandFlags(cliutils.TemplateConsumer),
+			Flags:        cliutils.GetCommandFlags(cliutils.PermissionTargetUpdate),
 			Usage:        permissiontargetupdate.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt ptu", permissiontargetupdate.GetDescription(), permissiontargetupdate.Usage),
 			UsageText:    permissiontargetupdate.GetArguments(),
@@ -797,15 +801,28 @@ func permissionTargetCreateCmd(c *cli.Context) error {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
+	if c.IsSet(cliutils.Format) {
+		if _, fmtErr := coreformat.ParseOutputFormat(c.String(cliutils.Format), []coreformat.OutputFormat{coreformat.Json}); fmtErr != nil {
+			return fmtErr
+		}
+	}
+
 	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
 
 	// Run command.
-	permissionTargetCreateCmd := permissiontarget.NewPermissionTargetCreateCommand()
-	permissionTargetCreateCmd.SetTemplatePath(c.Args().Get(0)).SetServerDetails(rtDetails).SetVars(c.String("vars"))
-	return commands.Exec(permissionTargetCreateCmd)
+	permissionTargetCreateCommand := permissiontarget.NewPermissionTargetCreateCommand()
+	permissionTargetCreateCommand.SetTemplatePath(c.Args().Get(0)).SetServerDetails(rtDetails).SetVars(c.String("vars"))
+	if err = commands.Exec(permissionTargetCreateCommand); err != nil {
+		return err
+	}
+	if c.IsSet(cliutils.Format) {
+		// Client layer discards body; nil + 200 produces {"status_code":200,"message":"OK"}
+		cliutils.FormatHTTPResponseJSON(nil, 200)
+	}
+	return nil
 }
 
 func permissionTargetUpdateCmd(c *cli.Context) error {
@@ -813,15 +830,28 @@ func permissionTargetUpdateCmd(c *cli.Context) error {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
+	if c.IsSet(cliutils.Format) {
+		if _, fmtErr := coreformat.ParseOutputFormat(c.String(cliutils.Format), []coreformat.OutputFormat{coreformat.Json}); fmtErr != nil {
+			return fmtErr
+		}
+	}
+
 	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
 
 	// Run command.
-	permissionTargetUpdateCmd := permissiontarget.NewPermissionTargetUpdateCommand()
-	permissionTargetUpdateCmd.SetTemplatePath(c.Args().Get(0)).SetServerDetails(rtDetails).SetVars(c.String("vars"))
-	return commands.Exec(permissionTargetUpdateCmd)
+	permissionTargetUpdateCommand := permissiontarget.NewPermissionTargetUpdateCommand()
+	permissionTargetUpdateCommand.SetTemplatePath(c.Args().Get(0)).SetServerDetails(rtDetails).SetVars(c.String("vars"))
+	if err = commands.Exec(permissionTargetUpdateCommand); err != nil {
+		return err
+	}
+	if c.IsSet(cliutils.Format) {
+		// Client layer discards body; nil + 200 produces {"status_code":200,"message":"OK"}
+		cliutils.FormatHTTPResponseJSON(nil, 200)
+	}
+	return nil
 }
 
 func permissionTargetDeleteCmd(c *cli.Context) error {
@@ -871,12 +901,18 @@ func usersCreateCmd(c *cli.Context) error {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
+	if c.IsSet(cliutils.Format) {
+		if _, fmtErr := coreformat.ParseOutputFormat(c.String(cliutils.Format), []coreformat.OutputFormat{coreformat.Json}); fmtErr != nil {
+			return fmtErr
+		}
+	}
+
 	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
 
-	usersCreateCmd := usersmanagement.NewUsersCreateCommand()
+	usersCreateCommand := usersmanagement.NewUsersCreateCommand()
 	csvFilePath := c.String("csv")
 	if csvFilePath == "" {
 		return cliutils.PrintHelpAndReturnError("missing --csv <File Path>", c)
@@ -890,8 +926,15 @@ func usersCreateCmd(c *cli.Context) error {
 	}
 	usersGroups := parseUsersGroupsFlag(c)
 	// Run command.
-	usersCreateCmd.SetServerDetails(rtDetails).SetUsers(usersList).SetUsersGroups(usersGroups).SetReplaceIfExists(c.Bool(cliutils.Replace))
-	return commands.Exec(usersCreateCmd)
+	usersCreateCommand.SetServerDetails(rtDetails).SetUsers(usersList).SetUsersGroups(usersGroups).SetReplaceIfExists(c.Bool(cliutils.Replace))
+	if err = commands.Exec(usersCreateCommand); err != nil {
+		return err
+	}
+	if c.IsSet(cliutils.Format) {
+		// Client layer discards body; nil + 200 produces {"status_code":200,"message":"OK"}
+		cliutils.FormatHTTPResponseJSON(nil, 200)
+	}
+	return nil
 }
 
 func parseUsersGroupsFlag(c *cli.Context) *[]string {
@@ -1053,6 +1096,12 @@ func transferConfigCmd(c *cli.Context) error {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
+	if c.IsSet(cliutils.Format) {
+		if _, fmtErr := coreformat.ParseOutputFormat(c.String(cliutils.Format), []coreformat.OutputFormat{coreformat.Json}); fmtErr != nil {
+			return fmtErr
+		}
+	}
+
 	// Get source Artifactory server
 	sourceServerDetails, err := coreConfig.GetSpecificConfig(c.Args()[0], false, true)
 	if err != nil {
@@ -1066,15 +1115,22 @@ func transferConfigCmd(c *cli.Context) error {
 	}
 
 	// Run transfer config command
-	transferConfigCmd := transferconfigcore.NewTransferConfigCommand(sourceServerDetails, targetServerDetails).
+	transferConfigCommand := transferconfigcore.NewTransferConfigCommand(sourceServerDetails, targetServerDetails).
 		SetForce(c.Bool(cliutils.Force)).SetVerbose(c.Bool(cliutils.Verbose)).SetPreChecks(c.Bool(cliutils.PreChecks)).
 		SetSourceWorkingDir(c.String(cliutils.SourceWorkingDir)).
 		SetTargetWorkingDir(c.String(cliutils.TargetWorkingDir))
 	includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
-	transferConfigCmd.SetIncludeReposPatterns(includeReposPatterns)
-	transferConfigCmd.SetExcludeReposPatterns(excludeReposPatterns)
+	transferConfigCommand.SetIncludeReposPatterns(includeReposPatterns)
+	transferConfigCommand.SetExcludeReposPatterns(excludeReposPatterns)
 
-	return transferConfigCmd.Run()
+	if err = transferConfigCommand.Run(); err != nil {
+		return err
+	}
+	if c.IsSet(cliutils.Format) {
+		// Client layer discards body; nil + 200 produces {"status_code":200,"message":"OK"}
+		cliutils.FormatHTTPResponseJSON(nil, 200)
+	}
+	return nil
 }
 
 func transferConfigMergeCmd(c *cli.Context) error {
@@ -1094,14 +1150,99 @@ func transferConfigMergeCmd(c *cli.Context) error {
 		return err
 	}
 
-	// Run transfer config command
+	// Run transfer config merge command
 	includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
 	includeProjectsPatterns, excludeProjectsPatterns := getTransferIncludeExcludeProjects(c)
-	transferConfigMergeCmd := transferconfigmergecore.NewTransferConfigMergeCommand(sourceServerDetails, targetServerDetails).
+	cmd := transferconfigmergecore.NewTransferConfigMergeCommand(sourceServerDetails, targetServerDetails).
 		SetIncludeProjectsPatterns(includeProjectsPatterns).SetExcludeProjectsPatterns(excludeProjectsPatterns)
-	transferConfigMergeCmd.SetIncludeReposPatterns(includeReposPatterns).SetExcludeReposPatterns(excludeReposPatterns)
-	_, err = transferConfigMergeCmd.Run()
-	return err
+	cmd.SetIncludeReposPatterns(includeReposPatterns).SetExcludeReposPatterns(excludeReposPatterns)
+	csvPath, runErr := cmd.Run()
+
+	outputFormat, fmtErr := getTransferConfigMergeOutputFormat(c)
+	if fmtErr != nil {
+		return fmtErr
+	}
+	if outputFormat == coreformat.None {
+		return runErr
+	}
+	return printTransferConfigMergeResponse(csvPath, outputFormat, os.Stdout, runErr)
+}
+
+// transferConfigMergeResult is the structured result of a transfer-config-merge operation.
+type transferConfigMergeResult struct {
+	Status              string `json:"status"`
+	ConflictsReportPath string `json:"conflicts_report_path,omitempty"`
+	Message             string `json:"message"`
+}
+
+// getTransferConfigMergeOutputFormat reads the --format flag and returns the resolved output format.
+// When the flag is not set the function returns coreformat.None, preserving the
+// previous behaviour (log output only).
+func getTransferConfigMergeOutputFormat(c *cli.Context) (coreformat.OutputFormat, error) {
+	if !c.IsSet(cliutils.Format) {
+		return coreformat.None, nil
+	}
+	return coreformat.ParseOutputFormat(c.String(cliutils.Format), []coreformat.OutputFormat{coreformat.Json, coreformat.Table})
+}
+
+// printTransferConfigMergeResponse renders the transfer-config-merge result in the requested output format.
+func printTransferConfigMergeResponse(csvPath string, outputFormat coreformat.OutputFormat, w io.Writer, originalErr error) error {
+	switch outputFormat {
+	case coreformat.Json:
+		return printTransferConfigMergeJSON(csvPath, originalErr)
+	case coreformat.Table:
+		return printTransferConfigMergeTable(csvPath, w, originalErr)
+	default:
+		return errorutils.CheckErrorf("unsupported format '%s' for rt transfer-config-merge. Acceptable values are: json, table", outputFormat)
+	}
+}
+
+// printTransferConfigMergeJSON emits a JSON summary of the transfer-config-merge operation to stdout via log.Output.
+func printTransferConfigMergeJSON(csvPath string, originalErr error) error {
+	result := buildTransferConfigMergeResult(csvPath, originalErr)
+	data, err := json.Marshal(result)
+	if err != nil {
+		return err
+	}
+	log.Output(clientutils.IndentJson(data))
+	return originalErr
+}
+
+// printTransferConfigMergeTable renders a summary table for the transfer-config-merge operation.
+func printTransferConfigMergeTable(csvPath string, w io.Writer, originalErr error) error {
+	result := buildTransferConfigMergeResult(csvPath, originalErr)
+	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
+	_, _ = fmt.Fprintln(tw, "FIELD\tVALUE")
+	_, _ = fmt.Fprintf(tw, "status\t%s\n", result.Status)
+	_, _ = fmt.Fprintf(tw, "message\t%s\n", result.Message)
+	if result.ConflictsReportPath != "" {
+		_, _ = fmt.Fprintf(tw, "conflicts_report_path\t%s\n", result.ConflictsReportPath)
+	}
+	if err := tw.Flush(); err != nil {
+		return err
+	}
+	return originalErr
+}
+
+// buildTransferConfigMergeResult builds a transferConfigMergeResult from the command output.
+func buildTransferConfigMergeResult(csvPath string, originalErr error) transferConfigMergeResult {
+	if originalErr != nil {
+		return transferConfigMergeResult{
+			Status:  "failure",
+			Message: originalErr.Error(),
+		}
+	}
+	if csvPath != "" {
+		return transferConfigMergeResult{
+			Status:              "conflicts_found",
+			ConflictsReportPath: csvPath,
+			Message:             "Conflicts were found. Review the report at: " + csvPath,
+		}
+	}
+	return transferConfigMergeResult{
+		Status:  "success",
+		Message: "Config transfer merge completed successfully!",
+	}
 }
 
 func dataTransferPluginInstallCmd(c *cli.Context) error {
@@ -1164,6 +1305,11 @@ func transferFilesCmd(c *cli.Context) error {
 		return err
 	}
 
+	outputFormat, err := commonCliUtils.GetOutputFormat(c, coreformat.None)
+	if err != nil {
+		return err
+	}
+
 	// Run transfer data command
 	newTransferFilesCmd, err := transferfilescore.NewTransferFilesCommand(sourceServerDetails, targetServerDetails)
 	if err != nil {
@@ -1177,7 +1323,78 @@ func transferFilesCmd(c *cli.Context) error {
 	newTransferFilesCmd.SetIncludeFilesPatterns(getIncludeFilesPatterns(c))
 	newTransferFilesCmd.SetIgnoreState(c.Bool(cliutils.IgnoreState))
 	newTransferFilesCmd.SetProxyKey(c.String(cliutils.ProxyKey))
-	return newTransferFilesCmd.Run()
+	runErr := newTransferFilesCmd.Run()
+	if outputFormat == coreformat.None {
+		return runErr
+	}
+	return printTransferFilesResponse(newTransferFilesCmd.Result(), outputFormat, os.Stdout, runErr)
+}
+
+// transferFilesResult is the structured result of a transfer-files operation.
+type transferFilesResult struct {
+	Status                  string `json:"status"`
+	TotalRepositories       int64  `json:"total_repositories"`
+	RepositoriesTransferred int64  `json:"repositories_transferred"`
+	TotalFiles              int64  `json:"total_files"`
+	FilesTransferred        int64  `json:"files_transferred"`
+	TotalSizeBytes          int64  `json:"total_size_bytes"`
+	TransferredSizeBytes    int64  `json:"transferred_size_bytes"`
+	FilesFailed             uint64 `json:"files_failed"`
+}
+
+func buildTransferFilesResult(result transferfilescore.TransferFilesResult, originalErr error) transferFilesResult {
+	status := "success"
+	if originalErr != nil {
+		status = "failure"
+	}
+	return transferFilesResult{
+		Status:                  status,
+		TotalRepositories:       result.TotalRepositories,
+		RepositoriesTransferred: result.TransferredRepositories,
+		TotalFiles:              result.TotalFiles,
+		FilesTransferred:        result.TransferredFiles,
+		TotalSizeBytes:          result.TotalSizeBytes,
+		TransferredSizeBytes:    result.TransferredSizeBytes,
+		FilesFailed:             result.TransferFailures,
+	}
+}
+
+// printTransferFilesResponse renders the transfer-files result in the requested output format.
+func printTransferFilesResponse(result transferfilescore.TransferFilesResult, outputFormat coreformat.OutputFormat, w io.Writer, originalErr error) error {
+	switch outputFormat {
+	case coreformat.Json:
+		return printTransferFilesJSON(result, originalErr)
+	case coreformat.Table:
+		return printTransferFilesTable(result, w, originalErr)
+	default:
+		return errorutils.CheckErrorf("unsupported format '%s' for rt transfer-files. Acceptable values are: json, table", outputFormat)
+	}
+}
+
+// printTransferFilesJSON emits a JSON summary of the transfer-files operation to stdout via log.Output.
+func printTransferFilesJSON(result transferfilescore.TransferFilesResult, originalErr error) error {
+	out := buildTransferFilesResult(result, originalErr)
+	data, err := json.Marshal(out)
+	if err != nil {
+		return err
+	}
+	log.Output(clientutils.IndentJson(data))
+	return originalErr
+}
+
+// printTransferFilesTable renders a summary table for the transfer-files operation.
+func printTransferFilesTable(result transferfilescore.TransferFilesResult, w io.Writer, originalErr error) error {
+	out := buildTransferFilesResult(result, originalErr)
+	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
+	_, _ = fmt.Fprintln(tw, "FIELD\tVALUE")
+	_, _ = fmt.Fprintf(tw, "status\t%s\n", out.Status)
+	_, _ = fmt.Fprintf(tw, "repositories_transferred\t%d/%d\n", out.RepositoriesTransferred, out.TotalRepositories)
+	_, _ = fmt.Fprintf(tw, "files_transferred\t%d/%d\n", out.FilesTransferred, out.TotalFiles)
+	_, _ = fmt.Fprintf(tw, "files_failed\t%d\n", out.FilesFailed)
+	if err := tw.Flush(); err != nil {
+		return err
+	}
+	return originalErr
 }
 
 func getTransferIncludeExcludeRepos(c *cli.Context) (includeReposPatterns, excludeReposPatterns []string) {
