@@ -363,16 +363,12 @@ func permissionTargetCreateFormatGuard(c *cli.Context) error {
 }
 
 func TestPermissionTargetCreate_FormatNotSet_NoError(t *testing.T) {
-	app := newPermissionTargetCreateFormatApp(func(c *cli.Context) error {
-		return permissionTargetCreateFormatGuard(c)
-	})
+	app := newPermissionTargetCreateFormatApp(permissionTargetCreateFormatGuard)
 	require.NoError(t, app.Run([]string{"app"}))
 }
 
 func TestPermissionTargetCreate_FormatJSON_NoError(t *testing.T) {
-	app := newPermissionTargetCreateFormatApp(func(c *cli.Context) error {
-		return permissionTargetCreateFormatGuard(c)
-	})
+	app := newPermissionTargetCreateFormatApp(permissionTargetCreateFormatGuard)
 	require.NoError(t, app.Run([]string{"app", "--format", "json"}))
 }
 
@@ -420,16 +416,12 @@ func transferConfigFormatGuard(c *cli.Context) error {
 }
 
 func TestTransferConfig_FormatNotSet_NoError(t *testing.T) {
-	app := newTransferConfigFormatApp(func(c *cli.Context) error {
-		return transferConfigFormatGuard(c)
-	})
+	app := newTransferConfigFormatApp(transferConfigFormatGuard)
 	require.NoError(t, app.Run([]string{"app"}))
 }
 
 func TestTransferConfig_FormatJSON_NoError(t *testing.T) {
-	app := newTransferConfigFormatApp(func(c *cli.Context) error {
-		return transferConfigFormatGuard(c)
-	})
+	app := newTransferConfigFormatApp(transferConfigFormatGuard)
 	require.NoError(t, app.Run([]string{"app", "--format", "json"}))
 }
 
@@ -477,16 +469,12 @@ func permissionTargetUpdateFormatGuard(c *cli.Context) error {
 }
 
 func TestPermissionTargetUpdate_FormatNotSet_NoError(t *testing.T) {
-	app := newPermissionTargetUpdateFormatApp(func(c *cli.Context) error {
-		return permissionTargetUpdateFormatGuard(c)
-	})
+	app := newPermissionTargetUpdateFormatApp(permissionTargetUpdateFormatGuard)
 	require.NoError(t, app.Run([]string{"app"}))
 }
 
 func TestPermissionTargetUpdate_FormatJSON_NoError(t *testing.T) {
-	app := newPermissionTargetUpdateFormatApp(func(c *cli.Context) error {
-		return permissionTargetUpdateFormatGuard(c)
-	})
+	app := newPermissionTargetUpdateFormatApp(permissionTargetUpdateFormatGuard)
 	require.NoError(t, app.Run([]string{"app", "--format", "json"}))
 }
 
@@ -673,16 +661,12 @@ func usersCreateFormatGuard(c *cli.Context) error {
 }
 
 func TestUsersCreate_FormatNotSet_NoError(t *testing.T) {
-	app := newUsersCreateFormatApp(func(c *cli.Context) error {
-		return usersCreateFormatGuard(c)
-	})
+	app := newUsersCreateFormatApp(usersCreateFormatGuard)
 	require.NoError(t, app.Run([]string{"app"}))
 }
 
 func TestUsersCreate_FormatJSON_NoError(t *testing.T) {
-	app := newUsersCreateFormatApp(func(c *cli.Context) error {
-		return usersCreateFormatGuard(c)
-	})
+	app := newUsersCreateFormatApp(usersCreateFormatGuard)
 	require.NoError(t, app.Run([]string{"app", "--format", "json"}))
 }
 
