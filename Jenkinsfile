@@ -1,6 +1,8 @@
 properties([
     parameters([
         stringParam(name: 'BRANCH', defaultValue: 'master', description: 'Git branch to checkout'),
+        booleanParam(name: 'RUN_JF_RELEASE', defaultValue: true, description: 'Run jf release phase'),
+        booleanParam(name: 'RUN_JFROG_RELEASE', defaultValue: true, description: 'Run jfrog release phase'),
         booleanParam(name: 'RUN_BUILD_RPM', defaultValue: true, description: 'Run build RPM step'),
         booleanParam(name: 'RUN_NPM_PACKAGE', defaultValue: true, description: 'Run NPM package publish'),
         booleanParam(name: 'RUN_DOCKER_PUBLISH', defaultValue: true, description: 'Run Docker image publish'),
@@ -82,14 +84,18 @@ node("docker-ubuntu20-xlarge") {
             installNpm(nodeVersion)
         }
 
-        stage('jf release phase') {
-            runRelease(architectures)
+        if (params.RUN_JF_RELEASE) {
+            stage('jf release phase') {
+                runRelease(architectures)
+            }
         }
 
-        stage('jfrog release phase') {
-            cliExecutableName = 'jfrog'
-            identifier = 'v2'
-            runRelease(architectures)
+        if (params.RUN_JFROG_RELEASE) {
+            stage('jfrog release phase') {
+                cliExecutableName = 'jfrog'
+                identifier = 'v2'
+                runRelease(architectures)
+            }
         }
     }
 }
