@@ -8,6 +8,8 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+	"errors"
+    "github.com/jfrog/jfrog-cli/internal/certbootstrap"
 
 	statsDocs "github.com/jfrog/jfrog-cli/docs/general/stats"
 	"github.com/jfrog/jfrog-cli/general/ai"
@@ -98,6 +100,11 @@ func execMain() error {
 	app.Version = cliutils.GetVersion()
 	args := os.Args
 	cliutils.SetCliExecutableName(args[0])
+	if bootstrapErr := certbootstrap.Preflight(args); bootstrapErr != nil {
+	if !errors.Is(bootstrapErr, certbootstrap.ErrSkipBootstrap) {
+		clientlog.Debug("auto CA bootstrap skipped:", bootstrapErr)
+	}
+}
 	app.EnableBashCompletion = true
 	commands, err := getCommands()
 	if err != nil {
