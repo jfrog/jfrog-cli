@@ -257,6 +257,94 @@ func TestContainerPushWithDetailedSummary(t *testing.T) {
 	}
 }
 
+// TestContainerPushFatManifestWithDetailedSummary validates that --detailed-summary
+// works for fat-manifest (multi-arch) images. Before the fix, the detailed-summary
+// post-processing only knew about manifest.json and failed for fat-manifest images
+// with: "could not find image manifest in Artifactory".
+//
+// We exercise SearchLayersForDetailedSummary - the exact function invoked by
+// 'jf docker push --detailed-summary' when build-info collection isn't requested -
+// against an image pushed to Artifactory as a fat manifest via 'docker buildx build --push'.
+// The buildx setup mirrors TestPushFatManifestImage since 'docker push' alone
+// can't produce a multi-arch manifest list locally.
+func TestContainerPushFatManifestWithDetailedSummary(t *testing.T) {
+	if !*tests.TestDocker {
+		t.Skip("Skipping test. To run it, add the '-test.docker=true' option.")
+	}
+
+	workspace, err := filepath.Abs(tests.Out)
+	assert.NoError(t, err)
+	assert.NoError(t, fileutils.CreateDirIfNotExist(workspace))
+	testDataDir := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "docker")
+	files, err := os.ReadDir(testDataDir)
+	assert.NoError(t, err)
+	for _, file := range files {
+		if !file.IsDir() {
+			_, err := tests.ReplaceTemplateVariables(filepath.Join(testDataDir, file.Name()), tests.Out)
+			assert.NoError(t, err)
+		}
+	}
+
+	testContainer := buildBuilderImage(t, workspace, "Dockerfile.Buildx.Fatmanifest", "buildx_detailed_summary_container")
+	defer func() { assert.NoError(t, testContainer.Terminate(context.Background())) }()
+
+	err = testContainer.Exec(context.Background(), "sh", "script.sh")
+	assert.NoError(t, err)
+
+	loginToArtifactory(t, testContainer)
+
+	imageName := tests.DockerImageName + "-multiarch-detailed-summary"
+	imageTag := path.Join(tests.RtContainerHostName, tests.DockerLocalRepo, imageName) + ":1"
+
+	assert.NoError(t, testContainer.Exec(
+		context.Background(),
+		"docker",
+		"buildx",
+		"build",
+		"--platform",
+		"linux/amd64,linux/arm64,linux/arm/v7",
+		"--tag",
+		imageTag,
+		"-f",
+		"Dockerfile.Fatmanifest",
+		"--push",
+		".",
+	))
+	defer inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, imageName, "", tests.DockerLocalRepo)
+
+	serviceManager, err := utils.CreateServiceManager(serverDetails, -1, 0, false)
+	require.NoError(t, err)
+	image := container.NewImage(imageTag)
+	repo, err := image.ExtractArtifactoryRepoKey()
+	require.NoError(t, err)
+
+	layers, err := container.SearchLayersForDetailedSummary(image, repo, serviceManager, "")
+	require.NoError(t, err, "SearchLayersForDetailedSummary should succeed for fat-manifest images")
+	require.NotNil(t, layers)
+	require.NotEmpty(t, *layers, "fat-manifest detailed summary should not be empty")
+
+	const (
+		fatManifestFile = "list.manifest.json"
+		manifestFile    = "manifest.json"
+	)
+	var foundFatManifest bool
+	var manifestCount int
+	var blobCount int
+	for _, layer := range *layers {
+		switch layer.Name {
+		case fatManifestFile:
+			foundFatManifest = true
+		case manifestFile:
+			manifestCount++
+		default:
+			blobCount++
+		}
+	}
+	assert.True(t, foundFatManifest, "fat manifest (list.manifest.json) should be in detailed summary")
+	assert.GreaterOrEqual(t, manifestCount, 3, "expected at least one manifest.json per platform (3 platforms requested)")
+	assert.Greater(t, blobCount, 0, "expected at least one image blob (config/layer) in detailed summary")
+}
+
 func TestContainerPushWithMultipleSlash(t *testing.T) {
 	containerManagers := initContainerTest(t)
 	for _, repo := range []string{tests.DockerLocalRepo, tests.DockerVirtualRepo} {
