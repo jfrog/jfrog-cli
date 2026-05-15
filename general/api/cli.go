@@ -185,6 +185,21 @@ func exchangeAndPrint(client *httpclient.HttpClient, c commandContext, method, f
 
 	log.Info("Http Status:", resp.StatusCode)
 
+	isError := resp.StatusCode < 200 || resp.StatusCode > 399
+
+	// Opt-in (JFROG_CLI_ERROR_OUTPUT_FORMAT=json, or --format=json auto-promote):
+	// for HTTP error responses, emit the response as a structured JSON object on
+	// stdout — the same data channel where the successful body would have gone —
+	// and skip dumping the raw body. Stderr keeps its log lines untouched, so
+	// `jf api ... | jq` works in both success and error cases.
+	if isError && cliutils.HandleHTTPErrorAsJSON(stdOut, &errorutils.HttpResponseError{
+		StatusCode: resp.StatusCode,
+		Status:     resp.Status,
+		Body:       respBody,
+	}) {
+		return cli.NewExitError("", 1)
+	}
+
 	if _, err = stdOut.Write(respBody); err != nil {
 		return errorutils.CheckError(err)
 	}
@@ -194,7 +209,7 @@ func exchangeAndPrint(client *httpclient.HttpClient, c commandContext, method, f
 		}
 	}
 
-	if resp.StatusCode < 200 || resp.StatusCode > 399 {
+	if isError {
 		log.Warn("jf api:", method, fullURL, "returned", resp.Status)
 		// Exit code only: a non-empty ExitError message would be printed again by urfave/cli's
 		// HandleExitCoder after the response body when stdout and stderr are combined.
