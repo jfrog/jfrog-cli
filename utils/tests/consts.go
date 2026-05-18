@@ -262,6 +262,7 @@ var (
 	PipenvBuildName             = "cli-pipenv-build"
 	PoetryBuildName             = "cli-poetry-build"
 	UvBuildName                 = "cli-uv-build"
+	NixBuildName                = "cli-nix-build"
 	ConanBuildName              = "cli-conan-build"
 	HelmBuildName               = "cli-helm-build"
 	HuggingFaceBuildName        = "cli-huggingface-build"

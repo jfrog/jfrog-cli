@@ -1903,48 +1903,25 @@ func NixCmd(c *cli.Context) error {
 
 	args := cliutils.ExtractCommand(c)
 
-	// Extract build flags (--build-name, --build-number, --module, --project) before passing to Nix
-	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
+	// The first arg determines which native tool to run:
+	// jf nix nix-channel --add ... → nativeTool="nix-channel", args=["--add", ...]
+	// jf nix nix-env -iA ...       → nativeTool="nix-env", args=["-iA", ...]
+	// jf nix nix-build '<nixpkgs>' → nativeTool="nix-build", args=["'<nixpkgs>'", ...]
+	// jf nix copy --to ...         → nativeTool="copy" (runs as "nix copy"), args=["--to", ...]
+	nativeTool, remainingArgs := getCommandName(args)
+
+	// Extract build flags (--build-name, --build-number, --module, --project)
+	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(remainingArgs)
 	if err != nil {
 		return err
 	}
 
-	// Extract --repo and --server-id flags before passing to nix
-	var repo, serverID string
-	var cleanedArgs []string
-	for i := 0; i < len(filteredArgs); i++ {
-		arg := filteredArgs[i]
-		if strings.HasPrefix(arg, "--repo=") {
-			repo = strings.TrimPrefix(arg, "--repo=")
-		} else if arg == "--repo" && i+1 < len(filteredArgs) {
-			repo = filteredArgs[i+1]
-			i++
-		} else if strings.HasPrefix(arg, "--server-id=") {
-			serverID = strings.TrimPrefix(arg, "--server-id=")
-		} else if arg == "--server-id" && i+1 < len(filteredArgs) {
-			serverID = filteredArgs[i+1]
-			i++
-		} else {
-			cleanedArgs = append(cleanedArgs, arg)
-		}
-	}
-	filteredArgs = cleanedArgs
+	// Use jfrog-cli-artifactory Nix command
+	cmd := nixcommand.NewNixCommand().SetNativeTool(nativeTool).SetArgs(filteredArgs).SetBuildConfiguration(buildConfiguration)
 
-	cmdName, nixArgs := getCommandName(filteredArgs)
-
-	// Use jfrog-cli-artifactory Nix command with build info support
-	cmd := nixcommand.NewNixCommand().SetCommandName(cmdName).SetArgs(nixArgs).SetBuildConfiguration(buildConfiguration)
-	if repo != "" {
-		cmd.SetRepo(repo)
-	}
-
-	// Pass server details — use specific server if --server-id provided, else default
+	// Pass server details
 	var serverDetails *coreConfig.ServerDetails
-	if serverID != "" {
-		serverDetails, err = coreConfig.GetSpecificConfig(serverID, true, true)
-	} else {
-		serverDetails, err = coreConfig.GetDefaultServerConf()
-	}
+	serverDetails, err = coreConfig.GetDefaultServerConf()
 	if err == nil && serverDetails != nil {
 		cmd.SetServerDetails(serverDetails)
 	}

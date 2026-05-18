@@ -70,6 +70,7 @@ var (
 	TestPipenv                *bool
 	TestPoetry                *bool
 	TestUv                    *bool
+	TestNix                   *bool
 	TestConan                 *bool
 	TestHelm                  *bool
 	TestHuggingFace           *bool
@@ -114,6 +115,7 @@ func init() {
 	TestPipenv = flag.Bool("test.pipenv", false, "Test Pipenv")
 	TestPoetry = flag.Bool("test.poetry", false, "Test Poetry")
 	TestUv     = flag.Bool("test.uv", false, "Test UV")
+	TestNix   = flag.Bool("test.nix", false, "Test Nix")
 	TestConan = flag.Bool("test.conan", false, "Test Conan")
 	TestHelm = flag.Bool("test.helm", false, "Test Helm")
 	TestHuggingFace = flag.Bool("test.huggingface", false, "Test HuggingFace")
@@ -296,6 +298,9 @@ var reposConfigMap = map[*string]string{
 	&UvLocalRepo:                    UvLocalRepositoryConfig,
 	&UvRemoteRepo:                   UvRemoteRepositoryConfig,
 	&UvVirtualRepo:                  UvVirtualRepositoryConfig,
+	&NixLocalRepo:                   NixLocalRepositoryConfig,
+	&NixRemoteRepo:                  NixRemoteRepositoryConfig,
+	&NixVirtualRepo:                 NixVirtualRepositoryConfig,
 	&ConanLocalRepo:                 ConanLocalRepositoryConfig,
 	&ConanRemoteRepo:                ConanRemoteRepositoryConfig,
 	&ConanVirtualRepo:               ConanVirtualRepositoryConfig,
@@ -367,6 +372,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestPipenv:             {&PipenvRemoteRepo},
 		TestPoetry:             {&PoetryLocalRepo, &PoetryRemoteRepo},
 		TestUv:                 {&UvLocalRepo, &UvRemoteRepo},
+		TestNix:                {&NixLocalRepo, &NixRemoteRepo},
 		TestConan:              {&ConanLocalRepo, &ConanRemoteRepo},
 		TestHelm:               {&HelmLocalRepo},
 		TestHuggingFace:        {&HuggingFaceLocalRepo},
@@ -398,6 +404,7 @@ func GetVirtualRepositories() map[*string]string {
 		TestPipenv:       {&PipenvVirtualRepo},
 		TestPoetry:       {&PoetryVirtualRepo},
 		TestUv:           {&UvVirtualRepo},
+		TestNix:          {&NixVirtualRepo},
 		TestConan:        {&ConanVirtualRepo},
 		TestHelm:         {},
 		TestHuggingFace:  {},
@@ -440,6 +447,7 @@ func GetBuildNames() []string {
 		TestPipenv:       {&PipenvBuildName},
 		TestPoetry:       {&PoetryBuildName},
 		TestUv:           {&UvBuildName},
+		TestNix:          {&NixBuildName},
 		TestConan:        {&ConanBuildName},
 		TestHelm:         {&HelmBuildName},
 		TestHuggingFace:  {&HuggingFaceBuildName},
@@ -503,6 +511,9 @@ func getSubstitutionMap() map[string]string {
 		"${UV_LOCAL_REPO}":             UvLocalRepo,
 		"${UV_REMOTE_REPO}":            UvRemoteRepo,
 		"${UV_VIRTUAL_REPO}":           UvVirtualRepo,
+		"${NIX_LOCAL_REPO}":            NixLocalRepo,
+		"${NIX_REMOTE_REPO}":           NixRemoteRepo,
+		"${NIX_VIRTUAL_REPO}":          NixVirtualRepo,
 		"${CONAN_LOCAL_REPO}":          ConanLocalRepo,
 		"${CONAN_REMOTE_REPO}":         ConanRemoteRepo,
 		"${CONAN_VIRTUAL_REPO}":        ConanVirtualRepo,
