@@ -33,8 +33,8 @@ import (
 	huggingfaceCommands "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/huggingface"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/mvn"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/npm"
-	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/pnpm"
 	containerutils "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/ocicontainer"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/pnpm"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/terraform"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/yarn"
 	commandsUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
@@ -54,7 +54,6 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/terraformconfig"
 	twinedocs "github.com/jfrog/jfrog-cli/docs/artifactory/twine"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/conan"
-	"github.com/jfrog/jfrog-cli/docs/buildtools/nix"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/docker"
 	dotnetdocs "github.com/jfrog/jfrog-cli/docs/buildtools/dotnet"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/dotnetconfig"
@@ -68,15 +67,16 @@ import (
 	huggingfaceuploaddocs "github.com/jfrog/jfrog-cli/docs/buildtools/huggingfaceupload"
 	mvndoc "github.com/jfrog/jfrog-cli/docs/buildtools/mvn"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/mvnconfig"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/nix"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npmcommand"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npmconfig"
-	"github.com/jfrog/jfrog-cli/docs/buildtools/pnpmcommand"
 	nugetdocs "github.com/jfrog/jfrog-cli/docs/buildtools/nuget"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/nugetconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pipconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pipenvconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pipenvinstall"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pipinstall"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/pnpmcommand"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pnpmconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/poetry"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/poetryconfig"
@@ -1910,18 +1910,29 @@ func NixCmd(c *cli.Context) error {
 	// jf nix copy --to ...         → nativeTool="copy" (runs as "nix copy"), args=["--to", ...]
 	nativeTool, remainingArgs := getCommandName(args)
 
+	// Extract --server-id flag before passing to native tool
+	var serverID string
+	var err error
+	remainingArgs, serverID, err = coreutils.ExtractServerIdFromCommand(remainingArgs)
+	if err != nil {
+		return fmt.Errorf("failed to extract server ID: %w", err)
+	}
+
 	// Extract build flags (--build-name, --build-number, --module, --project)
 	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(remainingArgs)
 	if err != nil {
 		return err
 	}
 
-	// Use jfrog-cli-artifactory Nix command
 	cmd := nixcommand.NewNixCommand().SetNativeTool(nativeTool).SetArgs(filteredArgs).SetBuildConfiguration(buildConfiguration)
 
-	// Pass server details
+	// Pass server details — use --server-id if provided, otherwise default
 	var serverDetails *coreConfig.ServerDetails
-	serverDetails, err = coreConfig.GetDefaultServerConf()
+	if serverID != "" {
+		serverDetails, err = coreConfig.GetSpecificConfig(serverID, false, false)
+	} else {
+		serverDetails, err = coreConfig.GetDefaultServerConf()
+	}
 	if err == nil && serverDetails != nil {
 		cmd.SetServerDetails(serverDetails)
 	}
