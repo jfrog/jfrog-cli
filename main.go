@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	statsDocs "github.com/jfrog/jfrog-cli/docs/general/stats"
-	"github.com/jfrog/jfrog-cli/general/ai"
 	services "github.com/jfrog/jfrog-cli/stats"
 
 	"github.com/agnivade/levenshtein"
@@ -29,7 +28,6 @@ import (
 	"github.com/jfrog/jfrog-cli/completion"
 	"github.com/jfrog/jfrog-cli/config"
 	"github.com/jfrog/jfrog-cli/docs/common"
-	aiDocs "github.com/jfrog/jfrog-cli/docs/general/ai"
 	apiDocs "github.com/jfrog/jfrog-cli/docs/general/api"
 	loginDocs "github.com/jfrog/jfrog-cli/docs/general/login"
 	oidcDocs "github.com/jfrog/jfrog-cli/docs/general/oidc"
@@ -302,13 +300,6 @@ func getCommands() ([]cli.Command, error) {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     otherCategory,
 			Action:       login.LoginCmd,
-		},
-		{
-			Name:         "how",
-			Usage:        aiDocs.GetDescription(),
-			HelpName:     corecommon.CreateUsage("how", aiDocs.GetDescription(), aiDocs.Usage),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       ai.HowCmd,
 		},
 		{
 			Name:         "access-token-create",
