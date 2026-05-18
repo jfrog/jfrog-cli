@@ -16,7 +16,6 @@ const persistenceFileName = "persistence.json"
 // PersistenceFile holds various indicators that need to be persisted between CLI runs
 type PersistenceFile struct {
 	LatestCliVersionCheckTime *int64 `json:"latestCliVersionCheckTime,omitempty"`
-	LatestAiTermsRevision     *int   `json:"latestAiTermsRevision,omitempty"`
 }
 
 var (
@@ -61,33 +60,6 @@ func getLatestCliVersionCheckTime() (*int64, error) {
 	}
 
 	return info.LatestCliVersionCheckTime, nil
-}
-
-// SetLatestAiTermsRevision updates the AI terms version in the persistence file
-func SetLatestAiTermsRevision(version int) error {
-	fileLock.Lock()
-	defer fileLock.Unlock()
-
-	info, err := getPersistenceInfo()
-	if err != nil {
-		return err
-	}
-
-	info.LatestAiTermsRevision = &version
-	return setPersistenceInfo(info)
-}
-
-// GetLatestAiTermsRevision retrieves the AI terms version from the persistence file
-func GetLatestAiTermsRevision() (*int, error) {
-	fileLock.Lock()
-	defer fileLock.Unlock()
-
-	info, err := getPersistenceInfo()
-	if err != nil {
-		return nil, err
-	}
-
-	return info.LatestAiTermsRevision, nil
 }
 
 // getPersistenceInfo reads the persistence file, creates it if it doesn't exist, and returns the persisted info
