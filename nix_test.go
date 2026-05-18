@@ -131,9 +131,9 @@ func testNixCmd(t *testing.T, projectPath, buildNumber, module string, expectedD
 
 	// Validate Nix-specific: narHash checksums in SRI format
 	for _, dep := range buildInfoModules[0].Dependencies {
-		assert.NotEmpty(t, dep.Checksum.Sha256, "SHA256 (narHash) should be present for dep %s", dep.Id)
-		assert.Contains(t, dep.Checksum.Sha256, "sha256-",
-			"narHash should be in SRI format for dep %s, got: %s", dep.Id, dep.Checksum.Sha256)
+		assert.NotEmpty(t, dep.Sha256, "SHA256 (narHash) should be present for dep %s", dep.Id)
+		assert.Contains(t, dep.Sha256, "sha256-",
+			"narHash should be in SRI format for dep %s, got: %s", dep.Id, dep.Sha256)
 	}
 
 	// Validate scopes
@@ -409,10 +409,10 @@ func TestNixDependencyChecksums(t *testing.T) {
 
 	depsWithChecksums := 0
 	for _, dep := range publishedBuildInfo.BuildInfo.Modules[0].Dependencies {
-		if dep.Checksum.Sha256 != "" {
+		if dep.Sha256 != "" {
 			depsWithChecksums++
 			// Verify SRI format
-			assert.Contains(t, dep.Checksum.Sha256, "sha256-",
+			assert.Contains(t, dep.Sha256, "sha256-",
 				"dep %s should have narHash in SRI format", dep.Id)
 		}
 	}
@@ -620,12 +620,12 @@ func TestNixBuild_DepChecksums(t *testing.T) {
 		for _, dep := range publishedBuildInfo.BuildInfo.Modules[0].Dependencies {
 			// Channel-based deps should have actual file checksums (sha1/md5) from AQL
 			// not SRI narHash format
-			if dep.Checksum.Sha1 != "" {
+			if dep.Sha1 != "" {
 				depsWithAQLChecksums++
-				assert.NotEmpty(t, dep.Checksum.Sha256, "sha256 should be set for %s", dep.Id)
-				assert.NotEmpty(t, dep.Checksum.Md5, "md5 should be set for %s", dep.Id)
+				assert.NotEmpty(t, dep.Sha256, "sha256 should be set for %s", dep.Id)
+				assert.NotEmpty(t, dep.Md5, "md5 should be set for %s", dep.Id)
 				// Should NOT be SRI format (that's the flake collector)
-				assert.NotContains(t, dep.Checksum.Sha1, "sha",
+				assert.NotContains(t, dep.Sha1, "sha",
 					"sha1 should be hex, not SRI for %s", dep.Id)
 			}
 		}
@@ -1574,7 +1574,7 @@ func TestNixRoundTrip(t *testing.T) {
 	depIDs := make(map[string]bool)
 	for _, dep := range module.Dependencies {
 		depIDs[dep.Id] = true
-		assert.Contains(t, dep.Checksum.Sha256, "sha256-")
+		assert.Contains(t, dep.Sha256, "sha256-")
 		assert.Equal(t, []string{"build"}, dep.Scopes)
 		assert.Contains(t, dep.Id, ":")
 	}
