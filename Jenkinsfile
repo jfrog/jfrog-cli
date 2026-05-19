@@ -556,7 +556,17 @@ def publishChocoPackage(version, jfrogCliRepoDir, architecture) {
                 cp $jfrogCliRepoDir/${cliExecutableName}.exe $jfrogCliRepoDir/build/chocolatey/$identifier/tools
                 cp $jfrogCliRepoDir/LICENSE $jfrogCliRepoDir/build/chocolatey/$identifier/tools
                 docker run -v \$PWD:/work -w /work $architecture.chocoImage choco pack version=$version
-                docker run -v \$PWD:/work -w /work $architecture.chocoImage choco push --source='https://push.chocolatey.org/' --apiKey \$CHOCO_API_KEY ${packageName}.${version}.nupkg
+                output=\$(docker run -v \$PWD:/work -w /work $architecture.chocoImage choco push --source='https://push.chocolatey.org/' --apiKey \$CHOCO_API_KEY ${packageName}.${version}.nupkg 2>&1)
+                exit_code=\$?
+                echo "\$output"
+                if [[ \$exit_code -ne 0 ]]; then
+                    if echo "\$output" | grep -qi "already exists"; then
+                        echo "Choco package publish skipped - $packageName $version already exists"
+                        exit 0
+                    else
+                        exit \$exit_code
+                    fi
+                fi
             """
         }
     }
