@@ -381,6 +381,7 @@ func TestUvModuleTypeIsUv(t *testing.T) {
 
 // TestUvArtifactTypeIsExtension verifies artifact types are "wheel" (for .whl)
 // or "sdist" (for .tar.gz), as returned by getArtifactTypeFromName.
+// Artifacts are only recorded after publish (nothing is uploaded to Artifactory by build).
 func TestUvArtifactTypeIsExtension(t *testing.T) {
 	initUvTest(t)
 	defer cleanUvTest(t)
@@ -388,7 +389,8 @@ func TestUvArtifactTypeIsExtension(t *testing.T) {
 	projectPath := createUvProject(t, "uv-art-type", "uvproject")
 	buildNumber := "1"
 
-	assert.NoError(t, runUvCmd(t, projectPath, "build",
+	assert.NoError(t, runUvCmd(t, projectPath, "build"))
+	assert.NoError(t, runUvCmd(t, projectPath, "publish",
 		"--build-name="+tests.UvBuildName,
 		"--build-number="+buildNumber))
 	require.NoError(t, artifactoryCli.Exec("bp", tests.UvBuildName, buildNumber))
@@ -399,7 +401,6 @@ func TestUvArtifactTypeIsExtension(t *testing.T) {
 	require.NotEmpty(t, publishedBuildInfo.BuildInfo.Modules)
 
 	for _, a := range publishedBuildInfo.BuildInfo.Modules[0].Artifacts {
-		// getArtifactTypeFromName returns "wheel" for .whl files, "sdist" for .tar.gz files
 		assert.True(t, a.Type == "wheel" || a.Type == "sdist",
 			"artifact type %q should be 'wheel' (for .whl) or 'sdist' (for .tar.gz)", a.Type)
 	}

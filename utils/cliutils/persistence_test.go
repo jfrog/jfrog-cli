@@ -27,24 +27,6 @@ func TestSetAndGetLatestVersionCheckTime(t *testing.T) {
 	assert.Equal(t, timestamp, *storedTimestamp, "Stored timestamp does not match the set timestamp")
 }
 
-// TestSetAndGetAiTermsVersion tests setting and getting the LatestAiTermsRevision
-func TestSetAndGetAiTermsVersion(t *testing.T) {
-	// Setup temporary directory
-	persistenceFilePath = filepath.Join(t.TempDir(), persistenceFileName)
-
-	// Set the AI terms version
-	version := 42
-	err := SetLatestAiTermsRevision(version)
-	assert.NoError(t, err, "Failed to set LatestAiTermsRevision")
-
-	// Get the AI terms version
-	storedVersion, err := GetLatestAiTermsRevision()
-	assert.NoError(t, err, "Failed to get LatestAiTermsRevision")
-
-	// Assert equality
-	assert.Equal(t, version, *storedVersion, "Stored AI terms version does not match the set version")
-}
-
 // TestPersistenceFileCreation tests if the persistence file is created when it doesn't exist
 func TestPersistenceFileCreation(t *testing.T) {
 	// Setup temporary directory

@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	testhelpers "github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -486,7 +487,7 @@ func TestApi(t *testing.T) {
 			t.Cleanup(func() { clientlog.SetLogger(prevLogger) })
 			clientlog.SetLogger(clientlog.NewLoggerWithFlags(clientlog.INFO, &stdErr, 0))
 
-			err := runApiCmd(ctx, serverDetails, &stdOut)
+			err := runApiCmd(ctx, serverDetails, &stdOut, nil)
 
 			if tt.wantErr != nil {
 				assert.Error(t, err)
@@ -529,7 +530,7 @@ func TestApiTimeoutExpired(t *testing.T) {
 	})
 
 	var stdOut bytes.Buffer
-	err := runApiCmd(ctx, serverDetails, &stdOut)
+	err := runApiCmd(ctx, serverDetails, &stdOut, nil)
 	assert.Error(t, err, "expected a timeout error")
 }
 
@@ -647,4 +648,132 @@ func (mc *mockContext) setStringSlice(name string, values []string) {
 func (mc *mockContext) setInt(name string, value int) {
 	mc.intMap[name] = value
 	mc.setMap[name] = true
+}
+
+// swapReportUsageFn replaces reportUsageFn for the duration of the test and
+// restores it on cleanup. Tests using this must not run in parallel.
+func swapReportUsageFn(t *testing.T, fn func(string, *coreConfig.ServerDetails, chan<- bool)) {
+	t.Helper()
+	prev := reportUsageFn
+	reportUsageFn = fn
+	t.Cleanup(func() { reportUsageFn = prev })
+}
+
+// newTestServer starts an httptest server that returns 200/OK and serverDetails
+// pointing at it. Adequate for tests that only care about runApiCmd flow.
+func newTestServer(t *testing.T) *coreConfig.ServerDetails {
+	t.Helper()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		if _, err := w.Write([]byte("OK")); err != nil {
+			t.Log(err)
+		}
+	}))
+	t.Cleanup(srv.Close)
+	return &coreConfig.ServerDetails{Url: srv.URL, AccessToken: "my-token"}
+}
+
+func TestRunApiCmd_CollectsMetrics(t *testing.T) {
+	// Prevent the real reporter from doing anything during the test.
+	swapReportUsageFn(t, func(_ string, _ *coreConfig.ServerDetails, ch chan<- bool) {
+		ch <- true
+	})
+
+	serverDetails := newTestServer(t)
+	ctx := newMockContext(&commandArgs{path: "/success"})
+
+	var stdOut bytes.Buffer
+	flags := []string{"verbose", "header"}
+	require.NoError(t, runApiCmd(ctx, serverDetails, &stdOut, flags))
+
+	got := commands.GetCollectedMetrics("jf api")
+	require.NotNil(t, got, "expected metrics to be collected for command \"jf api\"")
+	assert.Equal(t, flags, got.Flags)
+}
+
+func TestWaitForUsageReport(t *testing.T) {
+	t.Run("non-positive timeout waits for signal", func(t *testing.T) {
+		ch := make(chan bool, 1)
+		ch <- true
+		start := time.Now()
+		waitForUsageReport(ch, 0)
+		assert.Less(t, time.Since(start), 50*time.Millisecond)
+	})
+
+	t.Run("returns immediately when signaled before timeout", func(t *testing.T) {
+		ch := make(chan bool, 1)
+		ch <- true
+		start := time.Now()
+		waitForUsageReport(ch, time.Second)
+		assert.Less(t, time.Since(start), 50*time.Millisecond)
+	})
+
+	t.Run("returns at timeout when never signaled", func(t *testing.T) {
+		ch := make(chan bool)
+		start := time.Now()
+		waitForUsageReport(ch, 100*time.Millisecond)
+		elapsed := time.Since(start)
+		assert.GreaterOrEqual(t, elapsed, 100*time.Millisecond)
+		assert.Less(t, elapsed, 500*time.Millisecond)
+	})
+}
+
+func TestRunApiCmd_UsageReportDisabled(t *testing.T) {
+	t.Setenv("JFROG_CLI_REPORT_USAGE", "false")
+
+	serverDetails := newTestServer(t)
+	ctx := newMockContext(&commandArgs{path: "/success"})
+
+	var stdOut bytes.Buffer
+	start := time.Now()
+	require.NoError(t, runApiCmd(ctx, serverDetails, &stdOut, nil))
+	// With reporting disabled the real reporter is a near-instant no-op.
+	assert.Less(t, time.Since(start), 2*time.Second)
+}
+
+func TestStartUsageReport_PanicIsRecovered(t *testing.T) {
+	swapReportUsageFn(t, func(_ string, _ *coreConfig.ServerDetails, _ chan<- bool) {
+		panic("boom")
+	})
+
+	ch := startUsageReport(&coreConfig.ServerDetails{})
+	select {
+	case <-ch:
+		// Channel was closed by the recover path; receive returns the zero value.
+	case <-time.After(time.Second):
+		t.Fatal("startUsageReport did not unblock after panic")
+	}
+}
+
+func TestRunApiCmd_UsageReportTimeout(t *testing.T) {
+	swapReportUsageFn(t, func(_ string, _ *coreConfig.ServerDetails, ch chan<- bool) {
+		time.Sleep(3 * time.Second)
+		ch <- true
+	})
+
+	serverDetails := newTestServer(t)
+	ctx := newMockContext(&commandArgs{path: "/success", timeout: 1})
+
+	var stdOut bytes.Buffer
+	start := time.Now()
+	require.NoError(t, runApiCmd(ctx, serverDetails, &stdOut, nil))
+	elapsed := time.Since(start)
+	// Should bail out at the 1 s usage-report timeout, not wait the full 3 s.
+	assert.GreaterOrEqual(t, elapsed, time.Second)
+	assert.Less(t, elapsed, 2500*time.Millisecond)
+}
+
+func TestRunApiCmd_UsageReportCompletes(t *testing.T) {
+	swapReportUsageFn(t, func(_ string, _ *coreConfig.ServerDetails, ch chan<- bool) {
+		ch <- true
+	})
+
+	serverDetails := newTestServer(t)
+	ctx := newMockContext(&commandArgs{path: "/success", timeout: 30})
+
+	var stdOut bytes.Buffer
+	start := time.Now()
+	require.NoError(t, runApiCmd(ctx, serverDetails, &stdOut, nil))
+	// Reporter signals immediately, so the call should not approach the timeout.
+	assert.Less(t, time.Since(start), 2*time.Second)
 }
