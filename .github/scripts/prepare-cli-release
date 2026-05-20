@@ -102,16 +102,37 @@ def compute_next_version(version_type: str, current_version: str) -> str:
     return next_version
 
 
+def get_gh_identity(gh_token: Optional[str] = None) -> Tuple[str, str]:
+    """Return (login, email) of the user bound to the gh auth/token.
+
+    Falls back to github-actions[bot] if the lookup fails (e.g. the token
+    lacks read:user scope or gh is not authenticated).
+    """
+    fallback = ("github-actions[bot]", "action@github.com")
+
+    env = {}
+    if gh_token:
+        env["GH_TOKEN"] = gh_token
+
+    rc, login, _ = run_command(["gh", "api", "user", "--jq", ".login"], check=False, env=env)
+    if rc != 0 or not login:
+        print("Warning: could not query gh user; falling back to github-actions[bot]")
+        return fallback
+
+    rc, uid, _ = run_command(["gh", "api", "user", "--jq", ".id"], check=False, env=env)
+    if rc != 0 or not uid:
+        print("Warning: could not query gh user id; falling back to github-actions[bot]")
+        return fallback
+
+    return login, f"{uid}+{login}@users.noreply.github.com"
+
+
 def create_and_checkout_branch(current_version: str, next_version: str, ref: str) -> str:
     """Create and checkout a new branch for the version bump."""
     print("\n=== Creating and checking out new branch ===")
-    
+
     branch_name = f"bump-ver-from-{current_version}-to-{next_version}"
-    
-    # Configure git user
-    run_command(["git", "config", "--local", "user.email", "action@github.com"], check=True)
-    run_command(["git", "config", "--local", "user.name", "github-actions[bot]"], check=True)
-    
+
     # Checkout the base ref first
     run_command(["git", "checkout", ref], check=True)
     
@@ -148,25 +169,33 @@ def check_binary(go_home: Optional[str] = None):
     print(f"Binary version: {output}")
 
 
-def commit_and_push(branch_name: str, next_version: str):
+def commit_and_push(branch_name: str, next_version: str, gh_token: Optional[str] = None):
     """Commit changes and push to remote."""
     print("\n=== Committing and pushing changes ===")
-    
+
     # Ensure we're on the correct branch
     returncode, current_branch, _ = run_command(["git", "rev-parse", "--abbrev-ref", "HEAD"], check=False)
     if current_branch != branch_name:
         print(f"Switching to branch: {branch_name}")
         run_command(["git", "checkout", branch_name], check=True)
-    
+
     # Check if there are changes to commit
     returncode, status_output, _ = run_command(["git", "status", "--porcelain"], check=False)
     if not status_output.strip():
         print("No changes to commit")
     else:
         run_command(["git", "add", "."], check=True)
+        login, email = get_gh_identity(gh_token)
+        print(f"Committing as {login} <{email}>")
         run_command(
             ["git", "commit", "-m", f"Bump version to {next_version}"],
-            check=True
+            check=True,
+            env={
+                "GIT_AUTHOR_NAME": login,
+                "GIT_AUTHOR_EMAIL": email,
+                "GIT_COMMITTER_NAME": login,
+                "GIT_COMMITTER_EMAIL": email,
+            },
         )
     
     # Push with explicit upstream setting
@@ -561,7 +590,7 @@ def main():
             if not branch_name:
                 returncode, git_branch, _ = run_command(["git", "rev-parse", "--abbrev-ref", "HEAD"], check=False)
                 branch_name = git_branch if git_branch else "unknown"
-            commit_and_push(branch_name, next_version)
+            commit_and_push(branch_name, next_version, gh_token)
         
         # Step 8: Create pull request
         if should_run_step("create-pull-request"):
