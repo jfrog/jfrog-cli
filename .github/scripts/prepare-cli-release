@@ -70,34 +70,16 @@ def compute_current_version(go_home: Optional[str] = None) -> str:
     return current_version
 
 
-def compute_next_version(version_type: str, gh_token: Optional[str] = None) -> str:
-    """Compute next version based on the latest GitHub release tag."""
+def compute_next_version(version_type: str, current_version: str) -> str:
+    """Compute next version by incrementing the current local version."""
     print(f"\n=== Computing next {version_type} version ===")
-    
-    # Use GitHub CLI to get the latest release tag
-    env = {}
-    if gh_token:
-        env["GH_TOKEN"] = gh_token
-    
-    returncode, tag_output, _ = run_command(
-        ["gh", "release", "view", "--repo", "jfrog/jfrog-cli", "--json", "tagName", "-q", ".tagName"],
-        check=True,
-        env=env
-    )
-    
-    if not tag_output:
-        print("Error: Could not determine latest release tag from jfrog/jfrog-cli.")
-        sys.exit(1)
-    
-    # Remove 'v' prefix if present
-    version_core = tag_output.lstrip('v')
-    
-    # Parse semantic version (MAJOR.MINOR.PATCH)
-    parts = version_core.split('.')
+
+    # Parse semantic version (MAJOR.MINOR.PATCH) from current_version
+    parts = current_version.split('.')
     if len(parts) < 3:
-        print(f"Error: Tag '{tag_output}' is not a valid semver (expected MAJOR.MINOR.PATCH).")
+        print(f"Error: Current version '{current_version}' is not a valid semver (expected MAJOR.MINOR.PATCH).")
         sys.exit(1)
-    
+
     major = int(parts[0])
     minor = int(parts[1])
     # Strip any suffix from patch (e.g. 1-rc.1 -> 1)
@@ -521,11 +503,11 @@ def main():
         
         # Step 2: Compute next version (always needed for later steps)
         if should_run_step("compute-next-version"):
-            next_version = compute_next_version(args.version, gh_token)
+            next_version = compute_next_version(args.version, current_version)
         else:
             # Still compute it silently if needed for later steps
             print("Computing next version (required for later steps)...")
-            next_version = compute_next_version(args.version, gh_token)
+            next_version = compute_next_version(args.version, current_version)
         
         if args.dry_run:
             print("\n=== DRY RUN: Would perform the following actions ===")
