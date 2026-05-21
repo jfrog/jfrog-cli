@@ -278,42 +278,54 @@ func searchSimilarCmds(cmds []cli.Command, toCompare string) (bestSimilarity []s
 const otherCategory = "Other"
 const commandNamespacesCategory = "Command Namespaces"
 
+// AI-mode usage strings for namespace shells. These commands have no Action; they
+// only host subcommands. The strings appear in `jf --help` and `jf rt --help`.
+const (
+	rtAIUsage         = "Artifactory operations namespace: upload, download, search, copy, move, build-info, repository CRUD, transfer-files, RBAC. Most commands need 'jf c add' first. Use 'jf rt <subcmd> --help' for details."
+	mcAIUsage         = "Mission Control namespace: register JPDs, manage license buckets, acquire/deploy/release licenses across a fleet of Artifactory deployments. Requires a mission-control URL in the active config."
+	plAIUsage         = "JFrog Pipelines namespace: status, trigger, sync, sync-status, version. Requires a pipelines URL in the active config."
+	completionAIUsage = "Emit shell completion scripts. Subcommands: bash, zsh, fish. Pipe the output into your shell init file, or use --install to write a system path."
+	pluginAIUsage     = "JFrog CLI plugin management: install, uninstall, publish. Plugins are external Go binaries that extend the jf binary with custom subcommands."
+	configAIUsage     = "Server configuration namespace under ~/.jfrog/: add, edit, show, use, rm, import, export. Run 'jf c add' first to bootstrap a server profile."
+	optionsAIUsage    = "Print all JFrog CLI environment variables and their effects. Useful when scripting jf without flags."
+)
+
 func getCommands() ([]cli.Command, error) {
 	cliNameSpaces := []cli.Command{
 		{
 			Name:        cliutils.CmdArtifactory,
-			Usage:       "Artifactory commands",
+			Usage:       corecommon.ResolveDescription("Artifactory commands", rtAIUsage),
 			Subcommands: artifactory.GetCommands(),
 			Category:    commandNamespacesCategory,
 		},
 		{
 			Name:        cliutils.CmdMissionControl,
-			Usage:       "Mission Control commands",
+			Usage:       corecommon.ResolveDescription("Mission Control commands", mcAIUsage),
 			Subcommands: missioncontrol.GetCommands(),
 			Category:    commandNamespacesCategory,
 		},
 		{
 			Name:        cliutils.CmdPipelines,
-			Usage:       "Pipelines commands",
+			Usage:       corecommon.ResolveDescription("Pipelines commands", plAIUsage),
 			Subcommands: pipelines.GetCommands(),
 			Category:    commandNamespacesCategory,
 		},
 		{
 			Name:        cliutils.CmdCompletion,
-			Usage:       "Generate autocomplete scripts",
+			Usage:       corecommon.ResolveDescription("Generate autocomplete scripts", completionAIUsage),
 			Subcommands: completion.GetCommands(),
 			Category:    otherCategory,
 		},
 		{
 			Name:        cliutils.CmdPlugin,
-			Usage:       "Plugin commands",
+			Usage:       corecommon.ResolveDescription("Plugin commands", pluginAIUsage),
 			Subcommands: plugins.GetCommands(),
 			Category:    commandNamespacesCategory,
 		},
 		{
 			Name:        cliutils.CmdConfig,
 			Aliases:     []string{"c"},
-			Usage:       "Server configuration commands",
+			Usage:       corecommon.ResolveDescription("Server configuration commands", configAIUsage),
 			Subcommands: config.GetCommands(),
 			Category:    commandNamespacesCategory,
 		},
@@ -338,7 +350,7 @@ func getCommands() ([]cli.Command, error) {
 		},
 		{
 			Name:     cliutils.CmdOptions,
-			Usage:    "Show all supported environment variables",
+			Usage:    corecommon.ResolveDescription("Show all supported environment variables", optionsAIUsage),
 			Category: otherCategory,
 			Action: func(*cli.Context) {
 				fmt.Println(common.GetGlobalEnvVars())
@@ -346,8 +358,8 @@ func getCommands() ([]cli.Command, error) {
 		},
 		{
 			Name:         "login",
-			Usage:        loginDocs.GetDescription(),
-			HelpName:     corecommon.CreateUsage("login", loginDocs.GetDescription(), loginDocs.Usage),
+			Usage:        corecommon.ResolveDescription(loginDocs.GetDescription(), loginDocs.GetAIDescription()),
+			HelpName:     corecommon.CreateUsage("login", corecommon.ResolveDescription(loginDocs.GetDescription(), loginDocs.GetAIDescription()), loginDocs.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     otherCategory,
 			Action:       login.LoginCmd,
@@ -356,8 +368,8 @@ func getCommands() ([]cli.Command, error) {
 			Name:         "access-token-create",
 			Aliases:      []string{"atc"},
 			Flags:        cliutils.GetCommandFlags(cliutils.AccessTokenCreate),
-			Usage:        tokenDocs.GetDescription(),
-			HelpName:     corecommon.CreateUsage("atc", tokenDocs.GetDescription(), tokenDocs.Usage),
+			Usage:        corecommon.ResolveDescription(tokenDocs.GetDescription(), tokenDocs.GetAIDescription()),
+			HelpName:     corecommon.CreateUsage("atc", corecommon.ResolveDescription(tokenDocs.GetDescription(), tokenDocs.GetAIDescription()), tokenDocs.Usage),
 			UsageText:    tokenDocs.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
@@ -367,8 +379,8 @@ func getCommands() ([]cli.Command, error) {
 		{
 			Name:         "api",
 			Flags:        cliutils.GetCommandFlags(cliutils.Api),
-			Usage:        apiDocs.GetDescription(),
-			HelpName:     corecommon.CreateUsage("api", apiDocs.GetDescription(), apiDocs.Usage),
+			Usage:        corecommon.ResolveDescription(apiDocs.GetDescription(), apiDocs.GetAIDescription()),
+			HelpName:     corecommon.CreateUsage("api", corecommon.ResolveDescription(apiDocs.GetDescription(), apiDocs.GetAIDescription()), apiDocs.Usage),
 			UsageText:    apiDocs.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
@@ -379,8 +391,8 @@ func getCommands() ([]cli.Command, error) {
 			Name:         "exchange-oidc-token",
 			Aliases:      []string{"eot"},
 			Flags:        cliutils.GetCommandFlags(cliutils.ExchangeOidcToken),
-			Usage:        oidcDocs.GetDescription(),
-			HelpName:     corecommon.CreateUsage("eot", oidcDocs.GetDescription(), oidcDocs.Usage),
+			Usage:        corecommon.ResolveDescription(oidcDocs.GetDescription(), oidcDocs.GetAIDescription()),
+			HelpName:     corecommon.CreateUsage("eot", corecommon.ResolveDescription(oidcDocs.GetDescription(), oidcDocs.GetAIDescription()), oidcDocs.Usage),
 			UsageText:    oidcDocs.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
@@ -390,8 +402,8 @@ func getCommands() ([]cli.Command, error) {
 		{
 			Name:     "generate-summary-markdown",
 			Aliases:  []string{"gsm"},
-			Usage:    summaryDocs.GetDescription(),
-			HelpName: corecommon.CreateUsage("gsm", summaryDocs.GetDescription(), summaryDocs.Usage),
+			Usage:    corecommon.ResolveDescription(summaryDocs.GetDescription(), summaryDocs.GetAIDescription()),
+			HelpName: corecommon.CreateUsage("gsm", corecommon.ResolveDescription(summaryDocs.GetDescription(), summaryDocs.GetAIDescription()), summaryDocs.Usage),
 			Category: otherCategory,
 			Action:   summary.FinalizeCommandSummaries,
 		},
@@ -399,8 +411,8 @@ func getCommands() ([]cli.Command, error) {
 			Name:         "stats",
 			Aliases:      []string{"st"},
 			Flags:        cliutils.GetCommandFlags(cliutils.Stats),
-			Usage:        statsDocs.GetDescription(),
-			HelpName:     corecommon.CreateUsage("st", statsDocs.GetDescription(), statsDocs.Usage),
+			Usage:        corecommon.ResolveDescription(statsDocs.GetDescription(), statsDocs.GetAIDescription()),
+			HelpName:     corecommon.CreateUsage("st", corecommon.ResolveDescription(statsDocs.GetDescription(), statsDocs.GetAIDescription()), statsDocs.Usage),
 			UsageText:    statsDocs.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),

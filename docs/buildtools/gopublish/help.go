@@ -10,3 +10,26 @@ func GetArguments() string {
 	return `	project version
 		Package version to be published.`
 }
+
+func GetAIDescription() string {
+	return `Publish a Go module (and optionally its dependencies) to an Artifactory Go repository. The version argument is the semver tag attached to the module in the repository.
+
+When to use:
+- Releasing a new version of a Go module to a private Artifactory Go repo.
+
+Prerequisites:
+- A configured server.
+- 'jf go-config' must be run with --repo-deploy set.
+- A go.mod in the project root.
+
+Common patterns:
+  $ jf gp v1.2.3
+  $ jf gp v1.2.3 --deps=ALL:ALL --build-name=my-svc --build-number=12
+
+Gotchas:
+- The version must follow Go module versioning (vMAJOR.MINOR.PATCH); without 'v' prefix go tooling will reject it.
+- --deps publishes dependency versions in addition to the module itself; usually optional.
+- Republishing the same version is rejected by Artifactory's Go repository.
+
+Related: jf go, jf go-config, jf rt build-publish`
+}
