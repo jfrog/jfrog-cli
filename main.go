@@ -98,6 +98,18 @@ func execMain() error {
 		return err
 	}
 
+	// AI-help argv pre-pass: detect `--ai-help` (or `-ai-help`) anywhere in argv and
+	// pin the env var before getCommands() runs. The conversion layer calls
+	// corecommon.ResolveDescription during command setup, which reads this env
+	// var — by the time urfave/cli parses global flags inside app.Run, command
+	// strings have already been frozen.
+	for _, a := range os.Args[1:] {
+		if a == "--ai-help" || a == "-ai-help" {
+			_ = os.Setenv(corecommon.EnvAIHelp, "true")
+			break
+		}
+	}
+
 	// Set JFrog CLI's user-agent on the jfrog-client-go.
 	clientutils.SetUserAgent(coreutils.GetCliUserAgent())
 
@@ -105,6 +117,17 @@ func execMain() error {
 	app.Name = jfrogAppName
 	app.Usage = "For full documentation, visit https://docs.jfrog.com/"
 	app.Version = cliutils.GetVersion()
+	app.Flags = []cli.Flag{
+		// EnvVar intentionally omitted: the argv pre-pass above already bridges
+		// --ai-help to JFROG_CLI_AI_HELP, and urfave/cli's BoolFlag EnvVar binding
+		// would crash startup on unparseable env values (e.g. JFROG_CLI_AI_HELP=maybe).
+		// Our resolver in docs/common.AIHelpEnabled treats unparseable as "fall back
+		// to detection" instead of erroring.
+		cli.BoolFlag{
+			Name:  "ai-help",
+			Usage: "Render agent-oriented help text. Also enabled by $JFROG_CLI_AI_HELP=true or when an AI agent is auto-detected.",
+		},
+	}
 	args := os.Args
 	cliutils.SetCliExecutableName(args[0])
 	// Auto-promote --format=json (already supported by many commands and by
