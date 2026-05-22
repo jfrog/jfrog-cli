@@ -24,7 +24,7 @@ require (
 	github.com/jfrog/jfrog-cli-evidence v0.9.4
 	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260430094150-ce7d9b371c6f
 	github.com/jfrog/jfrog-cli-security v1.29.0
-	github.com/jfrog/jfrog-client-go v1.55.1-0.20260521115926-32f082854b39
+	github.com/jfrog/jfrog-client-go v1.55.1-0.20260522071027-8b60a715d6e4
 	github.com/jszwec/csvutil v1.10.0
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1

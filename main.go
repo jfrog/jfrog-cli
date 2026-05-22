@@ -79,6 +79,15 @@ func main() {
 	if cleanupErr := fileutils.CleanOldDirs(); cleanupErr != nil {
 		clientlog.Warn("failed while attempting to cleanup old CLI temp directories:", cleanupErr)
 	}
+	// Opt-in (JFROG_CLI_ERROR_OUTPUT_FORMAT=json, or --format=json auto-promoted
+	// in execMain): emit HTTP response errors as structured JSON on stdout —
+	// the data channel — so scripts can pipe to jq. Stderr continues to receive
+	// the existing logger output (Info/Warn lines, trace ID) unchanged. Covers
+	// every command that hits the platform via the standard jfrog-client-go
+	// helpers, including OIDC token-exchange failures.
+	if cliutils.HandleHTTPErrorAsJSON(os.Stdout, err) {
+		os.Exit(coreutils.GetExitCode(err, 0, 0, false).Code)
+	}
 	coreutils.ExitOnErr(err)
 }
 
@@ -97,6 +106,11 @@ func execMain() error {
 	app.Version = cliutils.GetVersion()
 	args := os.Args
 	cliutils.SetCliExecutableName(args[0])
+	// Auto-promote --format=json (already supported by many commands and by
+	// commands.Exec subcommands) to JFROG_CLI_ERROR_OUTPUT_FORMAT=json so that
+	// HTTP error responses are emitted as JSON on stderr without requiring a
+	// second env var. Explicit env var wins.
+	cliutils.EnableJSONErrorIfFormatJSON(args)
 	app.EnableBashCompletion = true
 	commands, err := getCommands()
 	if err != nil {

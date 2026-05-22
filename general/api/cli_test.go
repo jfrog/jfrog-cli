@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -776,4 +777,84 @@ func TestRunApiCmd_UsageReportCompletes(t *testing.T) {
 	require.NoError(t, runApiCmd(ctx, serverDetails, &stdOut, nil))
 	// Reporter signals immediately, so the call should not approach the timeout.
 	assert.Less(t, time.Since(start), 2*time.Second)
+}
+
+// newTestServerWithStatus starts an httptest server returning the given status
+// and body. Used to drive the HTTP-error code path in `jf api`.
+func newTestServerWithStatus(t *testing.T, status int, body []byte, contentType string) *coreConfig.ServerDetails {
+	t.Helper()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		if contentType != "" {
+			w.Header().Set("Content-Type", contentType)
+		}
+		w.WriteHeader(status)
+		if _, err := w.Write(body); err != nil {
+			t.Log(err)
+		}
+	}))
+	t.Cleanup(srv.Close)
+	return &coreConfig.ServerDetails{Url: srv.URL, AccessToken: "my-token"}
+}
+
+// TestApiJSONErrorMode_EmitsJSONOnStdout verifies that when the opt-in
+// JFROG_CLI_ERROR_OUTPUT_FORMAT=json env var is set, `jf api` emits a
+// structured JSON object describing the HTTP error on stdout (the data
+// channel) rather than the raw body. Stderr keeps its log lines untouched.
+func TestApiJSONErrorMode_EmitsJSONOnStdout(t *testing.T) {
+	t.Setenv("JFROG_CLI_ERROR_OUTPUT_FORMAT", "json")
+
+	body := []byte(`{"errors":[{"code":"UNAUTHORIZED","message":"bad creds"}]}`)
+	serverDetails := newTestServerWithStatus(t, http.StatusUnauthorized, body, "application/json")
+	ctx := newMockContext(&commandArgs{path: "/unauthorized"})
+
+	var stdOut bytes.Buffer
+	err := runApiCmd(ctx, serverDetails, &stdOut, nil)
+
+	// Must signal failure (urfave/cli ExitError with code 1, empty message).
+	assert.Error(t, err)
+
+	// stdout must contain a parseable JSON object with the structured fields —
+	// not the raw response body as in legacy mode.
+	var out map[string]interface{}
+	require.NoError(t, json.Unmarshal(stdOut.Bytes(), &out), "stdout must be parseable JSON")
+	assert.EqualValues(t, http.StatusUnauthorized, out["status_code"])
+	assert.Equal(t, "401 Unauthorized", out["status"])
+	bodyOut, ok := out["body"].(map[string]interface{})
+	require.True(t, ok, "body field must be a nested JSON object")
+	errorsArr, ok := bodyOut["errors"].([]interface{})
+	require.True(t, ok)
+	assert.NotEmpty(t, errorsArr)
+}
+
+// TestApiJSONErrorMode_SuccessUnchanged verifies that 2xx responses still
+// write the body to stdout even when the env var is set — JSON mode only
+// changes the error path.
+func TestApiJSONErrorMode_SuccessUnchanged(t *testing.T) {
+	t.Setenv("JFROG_CLI_ERROR_OUTPUT_FORMAT", "json")
+
+	body := []byte(`{"ok":true}`)
+	serverDetails := newTestServerWithStatus(t, http.StatusOK, body, "application/json")
+	ctx := newMockContext(&commandArgs{path: "/ok"})
+
+	var stdOut bytes.Buffer
+	require.NoError(t, runApiCmd(ctx, serverDetails, &stdOut, nil))
+	assert.Equal(t, string(body), strings.TrimSpace(stdOut.String()))
+}
+
+// TestApiDefaultMode_ErrorStillDumpsBody guards against regressing the legacy
+// curl-like behavior: with the env var unset, errors still dump the body to
+// stdout and the command exits non-zero.
+func TestApiDefaultMode_ErrorStillDumpsBody(t *testing.T) {
+	t.Setenv("JFROG_CLI_ERROR_OUTPUT_FORMAT", "")
+
+	// 4xx is returned as a non-retried response; 5xx would trip the client's
+	// retry loop and never reach the body-write branch under test.
+	body := []byte(`{"errors":["nope"]}`)
+	serverDetails := newTestServerWithStatus(t, http.StatusUnauthorized, body, "application/json")
+	ctx := newMockContext(&commandArgs{path: "/unauthorized-default"})
+
+	var stdOut bytes.Buffer
+	err := runApiCmd(ctx, serverDetails, &stdOut, nil)
+	assert.Error(t, err)
+	assert.Equal(t, string(body), strings.TrimSpace(stdOut.String()))
 }
