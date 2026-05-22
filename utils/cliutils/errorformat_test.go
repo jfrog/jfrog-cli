@@ -129,6 +129,38 @@ func TestParseLegacyHTTPResponseError_StatusOnly(t *testing.T) {
 	}
 }
 
+// TestLegacyHTTPErrorCodeDigitLimits exercises the status-code digit-count
+// boundary in parseLegacyHTTPResponseError and the end-to-end behavior in
+// HandleHTTPErrorAsJSON. Real HTTP statuses are 3 digits; the parser accepts
+// up to 9 (overflow protection under int32) and rejects longer inputs as
+// malformed so the caller falls back to the text path rather than emitting
+// a truncated status_code the server never sent.
+func TestLegacyHTTPErrorCodeDigitLimits(t *testing.T) {
+	t.Run("9-digit code accepted (upper boundary)", func(t *testing.T) {
+		got := parseLegacyHTTPResponseError("server response: 123456789 Pathological")
+		if assert.NotNil(t, got) {
+			assert.Equal(t, 123456789, got.StatusCode)
+			assert.Equal(t, "123456789 Pathological", got.Status)
+		}
+	})
+
+	t.Run("10-digit code rejected (one over the cap)", func(t *testing.T) {
+		assert.Nil(t, parseLegacyHTTPResponseError("server response: 1234567890 Custom"))
+	})
+
+	t.Run("very long code rejected", func(t *testing.T) {
+		assert.Nil(t, parseLegacyHTTPResponseError("server response: 99999999999999999999 Custom"))
+	})
+
+	t.Run("HandleHTTPErrorAsJSON falls back to text on too-long code", func(t *testing.T) {
+		t.Setenv(JfrogCliErrorOutputFormat, "json")
+		var buf bytes.Buffer
+		plain := errors.New("server response: 1234567890 Custom\n{\"err\":\"x\"}")
+		assert.False(t, HandleHTTPErrorAsJSON(&buf, plain))
+		assert.Empty(t, buf.String())
+	})
+}
+
 func TestEnableJSONErrorIfFormatJSON_EqualsForm(t *testing.T) {
 	t.Setenv(JfrogCliErrorOutputFormat, "")
 	EnableJSONErrorIfFormatJSON([]string{"jf", "rt", "ping", "--format=json"})

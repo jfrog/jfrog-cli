@@ -133,13 +133,15 @@ func parseLegacyHTTPResponseError(msg string) *errorutils.HttpResponseError {
 	statusLine = strings.TrimSpace(statusLine)
 
 	// First token must be a numeric status code (e.g. "401 Unauthorized").
-	// Cap the digit count so Atoi cannot overflow on malformed input — real
-	// HTTP statuses are 3 digits; 9 leaves plenty of headroom under int32.
+	// Real HTTP statuses are 3 digits. We accept up to 9 to leave headroom
+	// under int32, but anything longer is malformed — return nil so the
+	// caller falls back to the text path rather than emitting a truncated
+	// status_code the server never sent.
 	codeEnd := 0
-	for codeEnd < len(statusLine) && codeEnd < 9 && statusLine[codeEnd] >= '0' && statusLine[codeEnd] <= '9' {
+	for codeEnd < len(statusLine) && statusLine[codeEnd] >= '0' && statusLine[codeEnd] <= '9' {
 		codeEnd++
 	}
-	if codeEnd == 0 {
+	if codeEnd == 0 || codeEnd > 9 {
 		return nil
 	}
 	code, _ := strconv.Atoi(statusLine[:codeEnd])
