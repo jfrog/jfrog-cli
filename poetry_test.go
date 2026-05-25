@@ -38,8 +38,13 @@ func TestPoetryInstallNativeFlexPack(t *testing.T) {
 	testPoetryInstall(t, false, true)
 }
 
-// Deprecated - Test legacy syntax for backward compatibility
+// Deprecated - Test legacy syntax for backward compatibility.
+// The `jf rt poetry-install` command was removed from the CLI when the
+// top-level `jf poetry` command was introduced (buildtools/cli.go registers
+// only `poetry-config` and `poetry`). Skip until/unless the rt-prefixed
+// command is restored.
 func TestPoetryInstallLegacy(t *testing.T) {
+	t.Skip("Skipping: 'jf rt poetry-install' is no longer a registered command.")
 	testPoetryInstall(t, true, false)
 }
 
