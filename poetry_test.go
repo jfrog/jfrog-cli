@@ -283,9 +283,9 @@ func testPoetryPublishCmd(t *testing.T, projectPath, buildNumber, expectedModule
 	// `/` character. Trim `/simple` from the resolver-config file just for
 	// publish-side tests so pc.repository is a clean repo name there.
 	cfgPath := filepath.Join(projectPath, ".jfrog", "projects", "poetry.yaml")
-	if data, err := os.ReadFile(cfgPath); err == nil {
+	if data, err := os.ReadFile(cfgPath); err == nil { // #nosec G304 -- cfgPath is composed in test from tests.Out and known literals.
 		fixed := strings.ReplaceAll(string(data), "/simple", "")
-		assert.NoError(t, os.WriteFile(cfgPath, []byte(fixed), 0644))
+		assert.NoError(t, os.WriteFile(cfgPath, []byte(fixed), 0644)) // #nosec G306 G703 -- test-only rewrite of a path under tests.Out (no user-controlled input).
 	}
 
 	wd, err := os.Getwd()
