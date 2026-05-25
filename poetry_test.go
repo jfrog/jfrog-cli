@@ -139,9 +139,10 @@ func testPoetryInstall(t *testing.T, isLegacy bool, useFlexPack bool) {
 			//       full lock size — assert on > 0 rather than the per-case number.
 			//     * ignores `--module`; module ID is always <pyproject.name>:<version>.
 			//     * emits module type = "pypi".
-			expectedDeps := test.expectedDependencies
+			var expectedDeps int
 			expectedModule := test.moduleId
 			expectedType := buildinfo.Python
+			_ = test.expectedDependencies // kept for documentation in the struct; overridden per code path below.
 			if !useFlexPack {
 				expectedDeps = 0
 				hasModule := false
