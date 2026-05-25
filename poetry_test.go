@@ -263,6 +263,20 @@ func TestPoetryPublish(t *testing.T) {
 }
 
 func testPoetryPublishCmd(t *testing.T, projectPath, buildNumber, expectedModuleId string, expectedArtifacts int, args []string) {
+	// poetry.yaml in createPoetryProject carries `repo: <virtual>/simple` so the
+	// legacy install path's SetPypiRepoUrlWithCredentials produces a usable PyPI
+	// index URL (the `/simple` suffix is otherwise stripped by the legacy
+	// `TrimSuffix(baseUrl, "/simple")` and source resolution breaks). The
+	// legacy publish path reads the same value as `pc.repository` and feeds it
+	// to `poetry config repositories.<name>` and `-r <name>` — both reject the
+	// `/` character. Trim `/simple` from the resolver-config file just for
+	// publish-side tests so pc.repository is a clean repo name there.
+	cfgPath := filepath.Join(projectPath, ".jfrog", "projects", "poetry.yaml")
+	if data, err := os.ReadFile(cfgPath); err == nil {
+		fixed := strings.ReplaceAll(string(data), "/simple", "")
+		assert.NoError(t, os.WriteFile(cfgPath, []byte(fixed), 0644))
+	}
+
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
@@ -295,7 +309,7 @@ func testPoetryPublishCmd(t *testing.T, projectPath, buildNumber, expectedModule
 	}
 
 	buildInfoModules := publishedBuildInfo.BuildInfo.Modules
-	assert.Len(t, buildInfoModules, 1)
+	require.Len(t, buildInfoModules, 1)
 	assert.Equal(t, expectedModuleId, buildInfoModules[0].Id)
 	assert.Len(t, buildInfoModules[0].Artifacts, expectedArtifacts)
 
