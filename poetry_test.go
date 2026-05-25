@@ -25,6 +25,7 @@ import (
 
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -61,10 +62,14 @@ func testPoetryInstall(t *testing.T, isLegacy bool, useFlexPack bool) {
 	// FlexPack's `inferPoetryConfigFromToml` shells out to `jf config show` to
 	// discover configured servers (utils/buildinfo/buildinfo.go). The CI runner
 	// only has the compiled `go test` binary, not a separately-installed `jf`
-	// CLI, so build one on demand and put it on PATH.
+	// CLI, so build one on demand and put it on PATH. Also set the
+	// POETRY_HTTP_BASIC_* env vars so the poetry CLI can authenticate against
+	// the Artifactory PyPI virtual repo declared in createPoetryProject.
 	if useFlexPack {
 		restorePath := buildJfBinaryAndAddToPath(t)
 		defer restorePath()
+		restoreAuth := setPoetryHTTPBasicAuth(t)
+		defer restoreAuth()
 	}
 
 	// Populate cli config with 'default' server
@@ -557,6 +562,17 @@ func TestPoetryBuildInfoCollection(t *testing.T) {
 }
 
 func createPoetryProject(t *testing.T, outputFolder, projectName string) string {
+	// Clear any global viper override left over from a previous Poetry invocation.
+	// The legacy install path calls viper.Set("tool.poetry.source", ...) in
+	// jfrog-cli-artifactory/.../python/poetry.go's addRepoToPyprojectFile, and
+	// that override persists on the global viper for the whole `go test` process.
+	// A subsequent FlexPack-mode test would otherwise read the stale value via
+	// inferPoetryConfigFromToml and fail with "invalid Poetry sources format in
+	// pyproject.toml" because the cached value's runtime type
+	// ([]map[string]string) is not the []interface{} that the FlexPack code
+	// asserts against.
+	viper.Reset()
+
 	projectSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "poetry", projectName)
 	projectTarget := filepath.Join(tests.Out, outputFolder+"-"+projectName)
 
@@ -579,7 +595,47 @@ func createPoetryProject(t *testing.T, outputFolder, projectName string) string 
 	_, err := tests.ReplaceTemplateVariables(configSrc, configTarget)
 	assert.NoError(t, err)
 
+	// Append a [[tool.poetry.source]] block pointing to the Artifactory PyPI virtual
+	// repo. The legacy path overwrites this block during `addRepoToPyprojectFile`
+	// (so it's idempotent for legacy tests); the FlexPack path relies on the block
+	// being present at install time because `inferPoetryConfigFromToml` needs a
+	// matching source to resolve which configured JFrog server owns the repo, and
+	// it never writes one itself. `priority = "primary"` (Poetry 1.5+) makes Poetry
+	// use Artifactory instead of public PyPI for resolution, removing the test's
+	// dependence on egress to pypi.org.
+	sourceURL := strings.TrimSuffix(serverDetails.ArtifactoryUrl, "/") + "/api/pypi/" + tests.PoetryVirtualRepo + "/simple/"
+	sourceBlock := fmt.Sprintf("\n[[tool.poetry.source]]\nname = %q\nurl = %q\npriority = \"primary\"\n", tests.PoetryVirtualRepo, sourceURL)
+	pyprojectPath := filepath.Join(projectTarget, "pyproject.toml")
+	f, err := os.OpenFile(pyprojectPath, os.O_APPEND|os.O_WRONLY, 0644)
+	assert.NoError(t, err)
+	_, err = f.WriteString(sourceBlock)
+	assert.NoError(t, err)
+	assert.NoError(t, f.Close())
+
 	return projectTarget
+}
+
+// setPoetryHTTPBasicAuth sets the POETRY_HTTP_BASIC_<NAME>_USERNAME and
+// POETRY_HTTP_BASIC_<NAME>_PASSWORD env vars so the Poetry CLI authenticates
+// against the Artifactory PyPI virtual repo declared by createPoetryProject.
+// Poetry uppercases the source name and converts "-" to "_" for env-var
+// lookup. Returns a callback that restores prior env state.
+func setPoetryHTTPBasicAuth(t *testing.T) func() {
+	envName := strings.ToUpper(strings.ReplaceAll(tests.PoetryVirtualRepo, "-", "_"))
+	user := serverDetails.User
+	password := serverDetails.Password
+	if serverDetails.AccessToken != "" {
+		if user == "" {
+			user = "admin"
+		}
+		password = serverDetails.AccessToken
+	}
+	unsetUser := clientTestUtils.SetEnvWithCallbackAndAssert(t, "POETRY_HTTP_BASIC_"+envName+"_USERNAME", user)
+	unsetPass := clientTestUtils.SetEnvWithCallbackAndAssert(t, "POETRY_HTTP_BASIC_"+envName+"_PASSWORD", password)
+	return func() {
+		unsetPass()
+		unsetUser()
+	}
 }
 
 // jfBinaryOnce ensures the `jf` test binary is built at most once per
