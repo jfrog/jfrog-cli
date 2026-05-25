@@ -6,8 +6,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -55,6 +57,15 @@ func testPoetryInstall(t *testing.T, isLegacy bool, useFlexPack bool) {
 		restoreEnv = clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_RUN_NATIVE", "")
 	}
 	defer restoreEnv()
+
+	// FlexPack's `inferPoetryConfigFromToml` shells out to `jf config show` to
+	// discover configured servers (utils/buildinfo/buildinfo.go). The CI runner
+	// only has the compiled `go test` binary, not a separately-installed `jf`
+	// CLI, so build one on demand and put it on PATH.
+	if useFlexPack {
+		restorePath := buildJfBinaryAndAddToPath(t)
+		defer restorePath()
+	}
 
 	// Populate cli config with 'default' server
 	oldHomeDir, newHomeDir := prepareHomeDir(t)
@@ -569,6 +580,61 @@ func createPoetryProject(t *testing.T, outputFolder, projectName string) string 
 	assert.NoError(t, err)
 
 	return projectTarget
+}
+
+// jfBinaryOnce ensures the `jf` test binary is built at most once per
+// `go test` process even when several FlexPack-mode tests invoke
+// buildJfBinaryAndAddToPath sequentially.
+var (
+	jfBinaryOnce    sync.Once
+	jfBinaryDir     string
+	jfBinaryBuildErr error
+)
+
+// buildJfBinaryAndAddToPath builds (lazily, once per process) a `jf` binary
+// from the current jfrog-cli source tree into tests.Out and prepends that
+// directory to PATH so subprocesses (notably the FlexPack Poetry path's
+// `exec.Command("jf", "config", "show")` in utils/buildinfo/buildinfo.go) can
+// locate it. CI runs the `go test` binary directly, so there is no
+// externally-installed `jf` on PATH otherwise.
+// Returns a callback that restores PATH for the current test; the binary is
+// kept on disk for the lifetime of the process and is cleaned up alongside
+// tests.Out at suite teardown.
+func buildJfBinaryAndAddToPath(t *testing.T) func() {
+	jfBinaryOnce.Do(func() {
+		repoRoot, err := os.Getwd()
+		if err != nil {
+			jfBinaryBuildErr = fmt.Errorf("failed to get repo root for jf build: %w", err)
+			return
+		}
+
+		binDir := filepath.Join(repoRoot, tests.Out, "jf-bin")
+		if err := fileutils.CreateDirIfNotExist(binDir); err != nil {
+			jfBinaryBuildErr = fmt.Errorf("failed to create jf bin dir: %w", err)
+			return
+		}
+
+		binName := "jf"
+		if runtime.GOOS == "windows" {
+			binName = "jf.exe"
+		}
+		binPath := filepath.Join(binDir, binName)
+
+		// Mirror what build/build.sh does so the produced binary behaves like a
+		// published `jf`: static, no debug info.
+		cmd := exec.Command("go", "build", "-o", binPath, "-ldflags", "-w -extldflags '-static'", "main.go")
+		cmd.Dir = repoRoot
+		cmd.Env = append(os.Environ(), "CGO_ENABLED=0")
+		if out, err := cmd.CombinedOutput(); err != nil {
+			jfBinaryBuildErr = fmt.Errorf("go build for jf binary failed: %s: %w", string(out), err)
+			return
+		}
+		jfBinaryDir = binDir
+	})
+	require.NoError(t, jfBinaryBuildErr)
+
+	newPath := jfBinaryDir + string(os.PathListSeparator) + os.Getenv("PATH")
+	return clientTestUtils.SetEnvWithCallbackAndAssert(t, "PATH", newPath)
 }
 
 func initPoetryTest(t *testing.T) {
