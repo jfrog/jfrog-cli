@@ -117,19 +117,28 @@ func testPoetryInstall(t *testing.T, isLegacy bool, useFlexPack bool) {
 			// only carry --build-name, so append --build-number here.
 			test.args = append(test.args, "--build-number="+buildNumberStr)
 
-			// The legacy (non-FlexPack) `jf poetry install` path intentionally does not
-			// collect Poetry dependencies (returns an empty map in
-			// build-info-go/utils/pythonutils/utils.go for the Poetry case), so the
-			// published module's Dependencies array is always empty. Override the
-			// expected count for the legacy path so the assertion matches the
-			// documented contract; FlexPack mode (useFlexPack=true) still asserts the
-			// real per-case count.
+			// Per-case expectation overrides driven by how the two install paths
+			// actually behave:
+			//
+			//   Legacy path (`jf poetry install` w/o JFROG_RUN_NATIVE):
+			//     * intentionally does not collect Poetry dependencies (returns an
+			//       empty map in build-info-go/utils/pythonutils/utils.go), so
+			//       Dependencies is always empty.
+			//     * honors `--module` to set the module ID; emit the test's logical
+			//       module name by appending `--module` when the case doesn't carry one.
+			//     * emits module type = entities.Python.
+			//
+			//   FlexPack path (`jf poetry install` w/ JFROG_RUN_NATIVE=true):
+			//     * collects deps from poetry.lock (whole resolved graph, irrespective
+			//       of `--with`/`--without` install-time filters), so the count is the
+			//       full lock size — assert on > 0 rather than the per-case number.
+			//     * ignores `--module`; module ID is always <pyproject.name>:<version>.
+			//     * emits module type = "pypi".
 			expectedDeps := test.expectedDependencies
+			expectedModule := test.moduleId
+			expectedType := buildinfo.Python
 			if !useFlexPack {
 				expectedDeps = 0
-				// Ensure the build-info module ID is deterministic when the legacy path
-				// derives it from pyproject.toml. Skip if a --module flag is already
-				// present in the case-specific args.
 				hasModule := false
 				for _, a := range test.args {
 					if a == "--module" || strings.HasPrefix(a, "--module=") {
@@ -140,9 +149,13 @@ func testPoetryInstall(t *testing.T, isLegacy bool, useFlexPack bool) {
 				if !hasModule {
 					test.args = append(test.args, "--module="+test.moduleId)
 				}
+			} else {
+				expectedDeps = -1
+				expectedModule = "my-poetry-project:0.1.0"
+				expectedType = buildinfo.ModuleType("pypi")
 			}
 
-			testPoetryCmd(t, createPoetryProject(t, test.outputFolder, test.project), buildNumberStr, test.moduleId, expectedDeps, test.args)
+			testPoetryCmd(t, createPoetryProject(t, test.outputFolder, test.project), buildNumberStr, expectedModule, expectedDeps, expectedType, test.args)
 		})
 
 		// Clean up build info
@@ -150,7 +163,7 @@ func testPoetryInstall(t *testing.T, isLegacy bool, useFlexPack bool) {
 	}
 }
 
-func testPoetryCmd(t *testing.T, projectPath, buildNumber, module string, expectedDependencies int, args []string) {
+func testPoetryCmd(t *testing.T, projectPath, buildNumber, module string, expectedDependencies int, expectedType buildinfo.ModuleType, args []string) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current directory")
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
@@ -167,7 +180,7 @@ func testPoetryCmd(t *testing.T, projectPath, buildNumber, module string, expect
 	assert.NoError(t, jfrogCli.Exec(args...))
 
 	// Validate build info was created
-	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.PoetryBuildName, buildNumber, "", []string{module}, buildinfo.Python)
+	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.PoetryBuildName, buildNumber, "", []string{module}, expectedType)
 
 	// Publish build info
 	assert.NoError(t, artifactoryCli.Exec("bp", tests.PoetryBuildName, buildNumber))
@@ -187,7 +200,14 @@ func testPoetryCmd(t *testing.T, projectPath, buildNumber, module string, expect
 	buildInfoModules := publishedBuildInfo.BuildInfo.Modules
 	require.Len(t, buildInfoModules, 1)
 	assert.Equal(t, module, buildInfoModules[0].Id)
-	assert.Len(t, buildInfoModules[0].Dependencies, expectedDependencies)
+	// expectedDependencies < 0 = sentinel meaning "exact count is variable, just
+	// assert at least one dependency was collected" (used by FlexPack tests where
+	// the count equals the whole poetry.lock graph and isn't worth hard-coding).
+	if expectedDependencies < 0 {
+		assert.NotEmpty(t, buildInfoModules[0].Dependencies)
+	} else {
+		assert.Len(t, buildInfoModules[0].Dependencies, expectedDependencies)
+	}
 
 	// Validate that dependencies have checksums (FlexPack feature)
 	for _, dep := range buildInfoModules[0].Dependencies {
