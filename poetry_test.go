@@ -548,6 +548,13 @@ func TestPoetryBuildInfoCollection(t *testing.T) {
 func createPoetryProject(t *testing.T, outputFolder, projectName string) string {
 	projectSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "poetry", projectName)
 	projectTarget := filepath.Join(tests.Out, outputFolder+"-"+projectName)
+
+	// Remove any stale project (in particular a leftover poetry.lock from a previous
+	// test run) before copying. Different TestPoetry* functions reuse the same
+	// outputFolder names, and the legacy install path writes a poetry.lock that
+	// would otherwise be inherited by a subsequent FlexPack-mode run, causing
+	// `pyproject.toml changed significantly since poetry.lock was last generated`.
+	assert.NoError(t, os.RemoveAll(projectTarget))
 	assert.NoError(t, fileutils.CreateDirIfNotExist(projectTarget))
 
 	// Copy the poetry project sources.
