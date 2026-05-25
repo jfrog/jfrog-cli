@@ -72,16 +72,17 @@ func testPoetryInstall(t *testing.T, isLegacy bool, useFlexPack bool) {
 		args                 []string
 		expectedDependencies int
 	}{
-		// Basic Poetry install tests
-		{"poetry-basic", "poetryproject", "poetry-basic", "poetry-basic", []string{".", "--build-name=" + tests.PoetryBuildName}, 3},
-		{"poetry-verbose", "poetryproject", "poetry-verbose", "poetry-verbose", []string{".", "-v", "--build-name=" + tests.PoetryBuildName}, 3},
-		{"poetry-with-module", "poetryproject", "poetry-with-module", "poetry-with-module", []string{".", "--build-name=" + tests.PoetryBuildName, "--module=poetry-with-module"}, 3},
+		// Basic Poetry install tests. `poetry install` does not accept positional args
+		// (Poetry 1.8.x rejects them outright; Poetry 2.x silently ignores), so no `.`.
+		{"poetry-basic", "poetryproject", "poetry-basic", "poetry-basic", []string{"--build-name=" + tests.PoetryBuildName}, 3},
+		{"poetry-verbose", "poetryproject", "poetry-verbose", "poetry-verbose", []string{"-v", "--build-name=" + tests.PoetryBuildName}, 3},
+		{"poetry-with-module", "poetryproject", "poetry-with-module", "poetry-with-module", []string{"--build-name=" + tests.PoetryBuildName, "--module=poetry-with-module"}, 3},
 
 		// Poetry with dev dependencies
-		{"poetry-with-dev", "poetryproject", "poetry-with-dev", "poetry-with-dev", []string{".", "--with=dev", "--build-name=" + tests.PoetryBuildName}, 5},
+		{"poetry-with-dev", "poetryproject", "poetry-with-dev", "poetry-with-dev", []string{"--with=dev", "--build-name=" + tests.PoetryBuildName}, 5},
 
 		// Poetry with specific groups
-		{"poetry-without-dev", "poetryproject", "poetry-without-dev", "poetry-without-dev", []string{".", "--without=dev", "--build-name=" + tests.PoetryBuildName}, 2},
+		{"poetry-without-dev", "poetryproject", "poetry-without-dev", "poetry-without-dev", []string{"--without=dev", "--build-name=" + tests.PoetryBuildName}, 2},
 	}
 
 	// Run tests
