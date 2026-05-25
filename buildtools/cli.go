@@ -190,7 +190,10 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action:          YarnCmd,
+			Action: func(c *cli.Context) (errFromCmd error) {
+				cmdName, _ := getCommandName(c.Args())
+				return securityCLI.WrapCmdWithCurationPostFailureRun(c, YarnCmd, techutils.Yarn, cmdName)
+			},
 		},
 		{
 			Name:         "nuget-config",
@@ -358,7 +361,10 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action:          PoetryCmd,
+			Action: func(c *cli.Context) (err error) {
+				cmdName, _ := getCommandName(c.Args())
+				return securityCLI.WrapCmdWithCurationPostFailureRun(c, PoetryCmd, techutils.Poetry, cmdName)
+			},
 		},
 		{
 			Name:            "uv",
