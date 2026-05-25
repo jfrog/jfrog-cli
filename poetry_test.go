@@ -599,7 +599,15 @@ func createPoetryProject(t *testing.T, outputFolder, projectName string) string 
 	viper.Reset()
 
 	projectSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "poetry", projectName)
-	projectTarget := filepath.Join(tests.Out, outputFolder+"-"+projectName)
+	// Anchor projectTarget to an absolute path. The downstream test code does
+	// ChangeDirWithCallback(t, wd, projectPath) (which calls os.Chdir on the
+	// returned path) followed by exec.Command{Dir: projectPath}; if projectPath
+	// is relative, the second use joins it against the *new* CWD and double-
+	// nests — `chdir out/foo: no such file or directory`. tests.Out is relative,
+	// so resolve once here.
+	absOut, err := filepath.Abs(tests.Out)
+	assert.NoError(t, err)
+	projectTarget := filepath.Join(absOut, outputFolder+"-"+projectName)
 
 	// Remove any stale project (in particular a leftover poetry.lock from a previous
 	// test run) before copying. Different TestPoetry* functions reuse the same
@@ -617,7 +625,7 @@ func createPoetryProject(t *testing.T, outputFolder, projectName string) string 
 	// `.jfrog/projects/poetry.yaml`.
 	configSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "poetry", "poetry.yaml")
 	configTarget := filepath.Join(projectTarget, ".jfrog", "projects")
-	_, err := tests.ReplaceTemplateVariables(configSrc, configTarget)
+	_, err = tests.ReplaceTemplateVariables(configSrc, configTarget)
 	assert.NoError(t, err)
 
 	// Append a [[tool.poetry.source]] block pointing to the Artifactory PyPI virtual
