@@ -1,0 +1,11 @@
+version: 1
+type: poetry
+resolver:
+  # Append /simple so the legacy `jf poetry install` path writes the canonical
+  # Artifactory PyPI index URL (.../api/pypi/<repo>/simple/) to pyproject.toml.
+  # Without /simple here, jfrog-cli-artifactory/.../python/poetry.go strips the
+  # /simple suffix from the URL before writing it as `tool.poetry.source`, leaving
+  # Poetry unable to resolve packages. The customer reproduction in RTECO-1189
+  # uses the same workaround.
+  repo: ${POETRY_VIRTUAL_REPO}/simple
+  serverId: default
