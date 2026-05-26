@@ -369,7 +369,6 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
 			Action:          UvCmd,
-			Hidden:          true,
 		},
 		{
 			Name:            "helm",
