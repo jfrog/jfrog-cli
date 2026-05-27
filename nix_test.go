@@ -64,62 +64,6 @@ func initGitForFlake(t *testing.T, projectPath string) {
 	}
 }
 
-func testNixCmd(t *testing.T, projectPath, buildNumber, module string, expectedDependencies int, args []string) {
-	wd, err := os.Getwd()
-	assert.NoError(t, err, "Failed to get current directory")
-	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
-	defer chdirCallback()
-
-	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
-	assert.NoError(t, jfrogCli.Exec(args...))
-
-	// Validate local build-info was created with Nix module type
-	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.NixBuildName, buildNumber, "", []string{module}, buildinfo.Nix)
-
-	// Publish build-info
-	assert.NoError(t, artifactoryCli.Exec("bp", tests.NixBuildName, buildNumber))
-
-	// Get and validate published build-info
-	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.NixBuildName, buildNumber)
-	if err != nil {
-		assert.NoError(t, err)
-		return
-	}
-	if !found {
-		assert.True(t, found, "build info was expected to be found")
-		return
-	}
-
-	buildInfoModules := publishedBuildInfo.BuildInfo.Modules
-	require.Len(t, buildInfoModules, 1)
-	assert.Equal(t, module, buildInfoModules[0].Id)
-	assert.Equal(t, buildinfo.Nix, buildInfoModules[0].Type)
-	assert.Len(t, buildInfoModules[0].Dependencies, expectedDependencies)
-
-	// Validate Nix-specific: narHash checksums in SRI format
-	for _, dep := range buildInfoModules[0].Dependencies {
-		assert.NotEmpty(t, dep.Sha256, "SHA256 (narHash) should be present for dep %s", dep.Id)
-		assert.Contains(t, dep.Sha256, "sha256-",
-			"narHash should be in SRI format for dep %s, got: %s", dep.Id, dep.Sha256)
-	}
-
-	// Validate scopes
-	for _, dep := range buildInfoModules[0].Dependencies {
-		assert.Equal(t, []string{"build"}, dep.Scopes,
-			"dep %s should have scope [build]", dep.Id)
-	}
-
-	// Validate requestedBy is present
-	hasRequestedBy := false
-	for _, dep := range buildInfoModules[0].Dependencies {
-		if len(dep.RequestedBy) > 0 {
-			hasRequestedBy = true
-			break
-		}
-	}
-	assert.True(t, hasRequestedBy, "at least one dependency should have RequestedBy")
-}
-
 func TestNixBuildInfoBuildNameOnly(t *testing.T) {
 	initNixTest(t)
 
