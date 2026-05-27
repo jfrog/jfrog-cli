@@ -126,6 +126,10 @@ def runRelease(architectures) {
             stage("Audit") {
                 dir("$jfrogCliRepoDir") {
                     sh """#!/bin/bash
+                        set -e
+                        if ! command -v unzip >/dev/null 2>&1 && ! command -v 7z >/dev/null 2>&1; then
+                            apt-get update && apt-get install -y unzip
+                        fi
                         ../$builderPath audit --fail=false
                     """
                 }
