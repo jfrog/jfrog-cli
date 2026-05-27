@@ -63,7 +63,7 @@ jobs:
 
       - name: Install Nix
         if: matrix.os.name != 'macos'
-        uses: cachix/install-nix-action@v32
+        uses: cachix/install-nix-action@v31
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
