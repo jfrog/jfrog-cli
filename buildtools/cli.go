@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	conancommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/conan"
+	nixcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nix"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -67,6 +68,7 @@ import (
 	huggingfaceuploaddocs "github.com/jfrog/jfrog-cli/docs/buildtools/huggingfaceupload"
 	mvndoc "github.com/jfrog/jfrog-cli/docs/buildtools/mvn"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/mvnconfig"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/nix"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npmcommand"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npmconfig"
 	nugetdocs "github.com/jfrog/jfrog-cli/docs/buildtools/nuget"
@@ -408,6 +410,19 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
 			Action:          ConanCmd,
+		},
+		{
+			Name:            "nix",
+			Hidden:          true,
+			Flags:           cliutils.GetCommandFlags(cliutils.Nix),
+			Usage:           nix.GetDescription(),
+			HelpName:        corecommon.CreateUsage("nix", nix.GetDescription(), nix.Usage),
+			UsageText:       nix.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Category:        buildToolsCategory,
+			Action:          NixCmd,
 		},
 		{
 			Name:         "ruby-config",
@@ -2008,6 +2023,53 @@ func ConanCmd(c *cli.Context) error {
 	conanCommand := conancommand.NewConanCommand().SetCommandName(cmdName).SetArgs(conanArgs).SetBuildConfiguration(buildConfiguration)
 
 	return commands.Exec(conanCommand)
+}
+
+func NixCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+	if c.NArg() < 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	args := cliutils.ExtractCommand(c)
+
+	// The first arg determines which native tool to run:
+	// jf nix nix-channel --add ... → nativeTool="nix-channel", args=["--add", ...]
+	// jf nix nix-env -iA ...       → nativeTool="nix-env", args=["-iA", ...]
+	// jf nix nix-build '<nixpkgs>' → nativeTool="nix-build", args=["'<nixpkgs>'", ...]
+	// jf nix copy --to ...         → nativeTool="copy" (runs as "nix copy"), args=["--to", ...]
+	nativeTool, remainingArgs := getCommandName(args)
+
+	// Extract --server-id flag before passing to native tool
+	var serverID string
+	var err error
+	remainingArgs, serverID, err = coreutils.ExtractServerIdFromCommand(remainingArgs)
+	if err != nil {
+		return fmt.Errorf("failed to extract server ID: %w", err)
+	}
+
+	// Extract build flags (--build-name, --build-number, --module, --project)
+	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(remainingArgs)
+	if err != nil {
+		return err
+	}
+
+	cmd := nixcommand.NewNixCommand().SetNativeTool(nativeTool).SetArgs(filteredArgs).SetBuildConfiguration(buildConfiguration)
+
+	// Pass server details — use --server-id if provided, otherwise default
+	var serverDetails *coreConfig.ServerDetails
+	if serverID != "" {
+		serverDetails, err = coreConfig.GetSpecificConfig(serverID, false, false)
+	} else {
+		serverDetails, err = coreConfig.GetDefaultServerConf()
+	}
+	if err == nil && serverDetails != nil {
+		cmd.SetServerDetails(serverDetails)
+	}
+
+	return commands.Exec(cmd)
 }
 
 func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
