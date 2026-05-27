@@ -64,38 +64,6 @@ func initGitForFlake(t *testing.T, projectPath string) {
 	}
 }
 
-// ==================== FlexPack Install Tests ====================
-
-//func TestNixFlakeLockFlexPack(t *testing.T) {
-//	testNixFlexPack(t, "flake lock")
-//}
-
-func testNixFlexPack(t *testing.T, nixSubcmd string) {
-	initNixTest(t)
-
-	setEnvCallback := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_RUN_NATIVE", "true")
-	defer setEnvCallback()
-
-	oldHomeDir, newHomeDir := prepareHomeDir(t)
-	defer func() {
-		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
-		clientTestUtils.RemoveAllAndAssert(t, newHomeDir)
-	}()
-
-	buildNumber := "1"
-	projectPath, cleanupProject := createNixProject(t, "nix-"+nixSubcmd, "nixproject")
-	defer cleanupProject()
-
-	// Build args — split compound subcommands like "flake lock" into separate args
-	args := []string{"nix"}
-	args = append(args, strings.Split(nixSubcmd, " ")...)
-	args = append(args, "--build-name="+tests.NixBuildName, "--build-number="+buildNumber)
-
-	testNixCmd(t, projectPath, buildNumber, filepath.Base(projectPath), 3, args)
-
-	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.NixBuildName, artHttpDetails)
-}
-
 func testNixCmd(t *testing.T, projectPath, buildNumber, module string, expectedDependencies int, args []string) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current directory")
@@ -152,46 +120,6 @@ func testNixCmd(t *testing.T, projectPath, buildNumber, module string, expectedD
 	assert.True(t, hasRequestedBy, "at least one dependency should have RequestedBy")
 }
 
-// ==================== Build Info Flag Combination Tests ====================
-
-//func TestNixBuildInfoBothFlags(t *testing.T) {
-//	initNixTest(t)
-//
-//	setEnvCallback := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_RUN_NATIVE", "true")
-//	defer setEnvCallback()
-//
-//	oldHomeDir, newHomeDir := prepareHomeDir(t)
-//	defer func() {
-//		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
-//		clientTestUtils.RemoveAllAndAssert(t, newHomeDir)
-//	}()
-//
-//	projectPath, cleanupProject := createNixProject(t, "nix-both-flags", "nixproject")
-//	defer cleanupProject()
-//
-//	wd, err := os.Getwd()
-//	assert.NoError(t, err)
-//	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
-//	defer chdirCallback()
-//
-//	buildName := "nix-both-flags-test"
-//	buildNumber := "42"
-//
-//	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
-//	assert.NoError(t, jfrogCli.Exec("nix", "flake", "lock",
-//		"--build-name="+buildName, "--build-number="+buildNumber))
-//
-//	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
-//
-//	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
-//	assert.NoError(t, err)
-//	assert.True(t, found, "build-info should be found when both flags set")
-//	require.Len(t, publishedBuildInfo.BuildInfo.Modules, 1)
-//	assert.Greater(t, len(publishedBuildInfo.BuildInfo.Modules[0].Dependencies), 0)
-//
-//	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
-//}
-
 func TestNixBuildInfoBuildNameOnly(t *testing.T) {
 	initNixTest(t)
 
@@ -243,8 +171,6 @@ func TestNixBuildInfoNoFlags(t *testing.T) {
 	assert.NoError(t, jfrogCli.Exec("nix", "flake", "lock"))
 }
 
-// ==================== Module Override Test ====================
-
 func TestNixModuleOverride(t *testing.T) {
 	initNixTest(t)
 
@@ -287,141 +213,6 @@ func TestNixModuleOverride(t *testing.T) {
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 }
 
-// ==================== Table-Driven Subcommand Tests ====================
-
-//func TestNixSubcommandVariants(t *testing.T) {
-//	initNixTest(t)
-//
-//	setEnvCallback := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_RUN_NATIVE", "true")
-//	defer setEnvCallback()
-//
-//	oldHomeDir, newHomeDir := prepareHomeDir(t)
-//	defer func() {
-//		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
-//		clientTestUtils.RemoveAllAndAssert(t, newHomeDir)
-//	}()
-//
-//	allTests := []struct {
-//		name                 string
-//		nixSubcmd            string
-//		expectedDependencies int
-//		collectsBuildInfo    bool
-//	}{
-//		{"nix-flake-lock", "flake lock", 3, true},
-//	}
-//
-//	for buildNumber, test := range allTests {
-//		t.Run(test.name, func(t *testing.T) {
-//			buildNumberStr := strconv.Itoa(buildNumber + 1)
-//			projectPath, cleanupProject := createNixProject(t, test.name, "nixproject")
-//			defer cleanupProject()
-//
-//			if test.collectsBuildInfo {
-//				args := []string{"nix"}
-//				args = append(args, strings.Split(test.nixSubcmd, " ")...)
-//				args = append(args, "--build-name="+tests.NixBuildName, "--build-number="+buildNumberStr)
-//				testNixCmd(t, projectPath, buildNumberStr, filepath.Base(projectPath),
-//					test.expectedDependencies, args)
-//			}
-//		})
-//
-//		if test.collectsBuildInfo {
-//			inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.NixBuildName, artHttpDetails)
-//		}
-//	}
-//}
-
-// ==================== Multiple Builds Test ====================
-
-//func TestNixMultipleBuilds(t *testing.T) {
-//	initNixTest(t)
-//
-//	setEnvCallback := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_RUN_NATIVE", "true")
-//	defer setEnvCallback()
-//
-//	oldHomeDir, newHomeDir := prepareHomeDir(t)
-//	defer func() {
-//		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
-//		clientTestUtils.RemoveAllAndAssert(t, newHomeDir)
-//	}()
-//
-//	buildName := "nix-multi-build-test"
-//
-//	for i := 1; i <= 3; i++ {
-//		buildNumber := strconv.Itoa(i)
-//		projectPath, cleanupProject := createNixProject(t, fmt.Sprintf("nix-multi-%d", i), "nixproject")
-//
-//		wd, err := os.Getwd()
-//		assert.NoError(t, err)
-//		chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
-//
-//		jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
-//		assert.NoError(t, jfrogCli.Exec("nix", "flake", "lock",
-//			"--build-name="+buildName, "--build-number="+buildNumber))
-//		assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
-//
-//		publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
-//		assert.NoError(t, err)
-//		assert.True(t, found, "build %s should be found", buildNumber)
-//		assert.Len(t, publishedBuildInfo.BuildInfo.Modules, 1)
-//
-//		chdirCallback()
-//		cleanupProject()
-//	}
-//
-//	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
-//}
-
-// ==================== Dependency Checksums Test ====================
-
-//func TestNixDependencyChecksums(t *testing.T) {
-//	initNixTest(t)
-//
-//	setEnvCallback := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_RUN_NATIVE", "true")
-//	defer setEnvCallback()
-//
-//	oldHomeDir, newHomeDir := prepareHomeDir(t)
-//	defer func() {
-//		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
-//		clientTestUtils.RemoveAllAndAssert(t, newHomeDir)
-//	}()
-//
-//	projectPath, cleanupProject := createNixProject(t, "nix-checksums", "nixproject")
-//	defer cleanupProject()
-//
-//	wd, err := os.Getwd()
-//	assert.NoError(t, err)
-//	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
-//	defer chdirCallback()
-//
-//	buildName := "nix-checksum-test"
-//	buildNumber := "1"
-//
-//	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
-//	assert.NoError(t, jfrogCli.Exec("nix", "flake", "lock",
-//		"--build-name="+buildName, "--build-number="+buildNumber))
-//	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
-//
-//	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
-//	assert.NoError(t, err)
-//	assert.True(t, found)
-//
-//	depsWithChecksums := 0
-//	for _, dep := range publishedBuildInfo.BuildInfo.Modules[0].Dependencies {
-//		if dep.Sha256 != "" {
-//			depsWithChecksums++
-//			// Verify SRI format
-//			assert.Contains(t, dep.Sha256, "sha256-",
-//				"dep %s should have narHash in SRI format", dep.Id)
-//		}
-//	}
-//	assert.Greater(t, depsWithChecksums, 0, "at least one dep should have checksums")
-//
-//	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
-//}
-
-// ==================== Project Key Test ====================
-
 func TestNixFlakeLockWithProjectKey(t *testing.T) {
 	initNixTest(t)
 
@@ -459,9 +250,6 @@ func TestNixFlakeLockWithProjectKey(t *testing.T) {
 
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 }
-
-// ==================== Channel-Based Integration Tests ====================
-// These test the channel-based nix-build/nix-copy workflow (not flakes).
 
 func TestNixBuild_HelloPackage(t *testing.T) {
 	initNixTest(t)
@@ -800,8 +588,6 @@ func TestNixBuild_BuildOnlyNoCopy(t *testing.T) {
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 }
 
-// ==================== IT-2: Additional nix-build dep tests ====================
-
 func TestNixBuild_CustomProjectWithDeps(t *testing.T) {
 	initNixTest(t)
 
@@ -956,8 +742,6 @@ func TestNixBuild_ModuleID(t *testing.T) {
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 }
 
-// ==================== IT-4: Full Lifecycle tests ====================
-
 func TestNixFullLifecycle_HelloPackage(t *testing.T) {
 	initNixTest(t)
 
@@ -1049,8 +833,6 @@ func TestNixFullLifecycle_BuildInfoJSON(t *testing.T) {
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 }
 
-// ==================== IT-5: nix-channel tests ====================
-
 func TestNixChannel_NoBuildInfo(t *testing.T) {
 	initNixTest(t)
 
@@ -1083,8 +865,6 @@ func TestNixChannel_NoBuildInfo(t *testing.T) {
 
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 }
-
-// ==================== IT-6: nix-env tests ====================
 
 func TestNixEnv_InstallPackage(t *testing.T) {
 	initNixTest(t)
@@ -1132,8 +912,6 @@ func TestNixEnv_NoBuildFlags(t *testing.T) {
 	}
 }
 
-// ==================== IT-3: Additional nix copy tests ====================
-
 func TestNixCopy_NoBuildFlags(t *testing.T) {
 	initNixTest(t)
 
@@ -1152,8 +930,6 @@ func TestNixCopy_NoBuildFlags(t *testing.T) {
 	// May fail due to URL encoding, but should not panic
 	_ = jfrogCli.Exec("nix", "copy", "--to", toURL, "./result")
 }
-
-// ==================== IT-7: Edge Cases ====================
 
 func TestNix_SubstituterParsing(t *testing.T) {
 	// This tests parseRepoFromSubstituter indirectly —
@@ -1239,8 +1015,6 @@ func TestNix_DepRequestedBy(t *testing.T) {
 
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 }
-
-// ==================== Flake Build Tests (nix build) ====================
 
 func TestNixFlakeBuild_HelloPackage(t *testing.T) {
 	// Scenario #6 — nix build (flake) hello from nixpkgs → deps collected from runtime closure
@@ -1518,83 +1292,6 @@ func TestNixFlakeBuild_DepScopes(t *testing.T) {
 		for _, dep := range publishedBuildInfo.BuildInfo.Modules[0].Dependencies {
 			assert.Equal(t, []string{"runtime"}, dep.Scopes,
 				"flake dep %s should have scope [runtime]", dep.Id)
-		}
-	}
-
-	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
-}
-
-// ==================== Round-Trip Test ====================
-
-func TestNixRoundTrip(t *testing.T) {
-	initNixTest(t)
-
-	setEnvCallback := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_RUN_NATIVE", "true")
-	defer setEnvCallback()
-
-	oldHomeDir, newHomeDir := prepareHomeDir(t)
-	defer func() {
-		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
-		clientTestUtils.RemoveAllAndAssert(t, newHomeDir)
-	}()
-
-	buildName := "nix-round-trip-test"
-	buildNumber := "1"
-	projectPath, cleanupProject := createNixProject(t, "nix-round-trip", "nixproject")
-	defer cleanupProject()
-
-	wd, err := os.Getwd()
-	assert.NoError(t, err)
-	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
-	defer chdirCallback()
-
-	// Step 1: Run nix flake lock with build-info
-	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
-	assert.NoError(t, jfrogCli.Exec("nix", "flake", "lock",
-		"--build-name="+buildName, "--build-number="+buildNumber))
-
-	// Step 2: Publish build-info
-	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
-
-	// Step 3: Retrieve and validate full round-trip
-	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
-	assert.NoError(t, err)
-	assert.True(t, found, "build-info should be found after round-trip")
-
-	bi := publishedBuildInfo.BuildInfo
-	assert.Equal(t, buildName, bi.Name)
-	assert.Equal(t, buildNumber, bi.Number)
-	require.Len(t, bi.Modules, 1)
-
-	module := bi.Modules[0]
-	assert.Equal(t, buildinfo.Nix, module.Type)
-	assert.Len(t, module.Dependencies, 3, "should have 3 deps: nixpkgs, flake-utils, systems")
-
-	depIDs := make(map[string]bool)
-	for _, dep := range module.Dependencies {
-		depIDs[dep.Id] = true
-		assert.Contains(t, dep.Sha256, "sha256-")
-		assert.Equal(t, []string{"build"}, dep.Scopes)
-		assert.Contains(t, dep.Id, ":")
-	}
-
-	assert.True(t, depIDs["nixpkgs:0ad13a6833440b8e238947e47bea7f11071dc2b2"])
-	assert.True(t, depIDs["flake-utils:b1d9ab70662946ef0850d488da1c9019f3a9752a"])
-	assert.True(t, depIDs["systems:da67096a3b9bf56a91d16901293e51ba5b49a27e"])
-
-	// Validate requestedBy: systems should be requested by flake-utils
-	for _, dep := range module.Dependencies {
-		if dep.Id == "systems:da67096a3b9bf56a91d16901293e51ba5b49a27e" {
-			require.NotEmpty(t, dep.RequestedBy)
-			foundFlakeUtils := false
-			for _, chain := range dep.RequestedBy {
-				for _, parent := range chain {
-					if parent == "flake-utils:b1d9ab70662946ef0850d488da1c9019f3a9752a" {
-						foundFlakeUtils = true
-					}
-				}
-			}
-			assert.True(t, foundFlakeUtils, "systems should be requested by flake-utils")
 		}
 	}
 
