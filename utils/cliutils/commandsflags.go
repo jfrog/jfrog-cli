@@ -149,6 +149,7 @@ const (
 	password            = "password"
 	accessToken         = "access-token"
 	serverId            = "server-id"
+	serverIdYarn        = "server-id-yarn"
 	disableTokenRefresh = "disable-token-refresh"
 
 	passwordStdin    = "password-stdin"
@@ -747,6 +748,10 @@ var flagsMap = map[string]cli.Flag{
 	serverId: cli.StringFlag{
 		Name:  serverId,
 		Usage: "[Optional] Server ID configured using the 'jf config' command.` `",
+	},
+	serverIdYarn: cli.StringFlag{
+		Name:  serverId,
+		Usage: "[Optional] Server ID configured using the 'jf config' command. Supported from yarn v4+ in native mode (JFROG_RUN_NATIVE=true).` `",
 	},
 	passwordStdin: cli.BoolFlag{
 		Name:  passwordStdin,
@@ -2092,7 +2097,7 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, repoResolve,
 	},
 	Yarn: {
-		BuildName, BuildNumber, module, Project,
+		BuildName, BuildNumber, module, Project, serverIdYarn,
 	},
 	NugetConfig: {
 		global, serverIdResolve, repoResolve, nugetV2,

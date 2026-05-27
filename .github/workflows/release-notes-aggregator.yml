@@ -209,10 +209,15 @@ jobs:
 
               for c in commits:
                   sha       = c["sha"]
-                  first_line = c["commit"]["message"].split("\n")[0]
+                  message    = c["commit"]["message"]
+                  first_line = message.split("\n")[0]
 
                   # Skip dep-bump commits in the main repo
                   if repo == REPO and re.search(r"\bbump\b", first_line, re.I):
+                      continue
+
+                  # Skip commits opting out via marker (works for direct commits too)
+                  if re.search(r"\[skip[- ]release[- ]notes\]", message, re.I):
                       continue
 
                   pr_list = api_paged(f"/repos/{repo}/commits/{sha}/pulls")
@@ -220,13 +225,16 @@ jobs:
                       for pr in pr_list:
                           n = pr["number"]
                           if n in seen or not pr.get("merged_at"): continue
+                          labels = [l["name"] for l in pr.get("labels", [])]
+                          if any(lbl.lower() == "ignore for release" for lbl in labels):
+                              continue
                           seen.add(n)
                           results.append({
                               "number": n,
                               "title":  pr["title"],
                               "url":    pr["html_url"],
                               "author": pr["user"]["login"],
-                              "labels": [l["name"] for l in pr.get("labels", [])],
+                              "labels": labels,
                               "repo":   repo,
                               "sha":    sha[:12],
                           })
