@@ -19,7 +19,7 @@ import (
 
 	tests2 "github.com/jfrog/jfrog-cli-artifactory/utils/tests"
 
-	"github.com/docker/docker/api/types/mount"
+	"github.com/moby/moby/api/types/mount"
 
 	biutils "github.com/jfrog/build-info-go/utils"
 
