@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	corecommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 )
 
@@ -84,6 +85,139 @@ func startVisMockServer(t *testing.T) (*httptest.Server, chan visReq) {
 	})
 	srv := httptest.NewServer(mux)
 	return srv, ch
+}
+
+// TestVisibility_AgentContext_E2E verifies that agent execution context
+// (is_agent / agent / is_interactive) flows end-to-end from env vars through
+// the metrics pipeline into the visibility wire payload.
+//
+// ExecutionContext memoizes via sync.Once for the process lifetime, and other
+// tests in this binary trigger the metrics path first under `go test`, so we
+// must reset the cache before re-evaluating env vars and reset again on
+// cleanup so this test cannot leak agent state into anything that follows.
+func TestVisibility_AgentContext_E2E(t *testing.T) {
+	corecommands.ResetExecutionContextForTest()
+	t.Cleanup(corecommands.ResetExecutionContextForTest)
+	t.Setenv("CURSOR_AGENT", "1")
+
+	srv, ch := startMockServer(t)
+	defer srv.Close()
+
+	home := t.TempDir()
+	t.Setenv("JFROG_CLI_HOME_DIR", home)
+	t.Setenv("JFROG_CLI_REPORT_USAGE", "true")
+
+	jf := coreTests.NewJfrogCli(execMain, "jf", "").WithoutCredentials()
+	platformURL := srv.URL + "/"
+	artURL := srv.URL + "/artifactory/"
+	if err := jf.Exec("c", "add", "agent-mock",
+		"--url", platformURL,
+		"--artifactory-url", artURL,
+		"--access-token", "dummy",
+		"--interactive=false",
+		"--enc-password=false",
+	); err != nil {
+		t.Fatalf("config add failed: %v", err)
+	}
+	if err := jf.Exec("c", "use", "agent-mock"); err != nil {
+		t.Fatalf("config use failed: %v", err)
+	}
+
+	if err := jf.Exec("rt", "ping", "--server-id", "agent-mock"); err != nil {
+		t.Fatalf("jf exec failed: %v", err)
+	}
+
+	select {
+	case req := <-ch:
+		if req.Path != "/jfconnect/api/v1/backoffice/metrics/log" {
+			t.Fatalf("unexpected path: %s", req.Path)
+		}
+		var payload struct {
+			Labels struct {
+				IsAgent       string `json:"is_agent"`
+				Agent         string `json:"agent"`
+				IsInteractive string `json:"is_interactive"`
+			} `json:"labels"`
+		}
+		if err := json.Unmarshal(req.Body, &payload); err != nil {
+			t.Fatalf("bad JSON: %v\nbody: %s", err, string(req.Body))
+		}
+		if payload.Labels.IsAgent != "true" {
+			t.Errorf("is_agent: got %q want %q (body: %s)", payload.Labels.IsAgent, "true", string(req.Body))
+		}
+		if payload.Labels.Agent != "cursor" {
+			t.Errorf("agent: got %q want %q (body: %s)", payload.Labels.Agent, "cursor", string(req.Body))
+		}
+		// Stdout is not a TTY under `go test`, so is_interactive should be "false".
+		if payload.Labels.IsInteractive != "false" {
+			t.Errorf("is_interactive: got %q want %q (body: %s)", payload.Labels.IsInteractive, "false", string(req.Body))
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatalf("timeout waiting for metrics POST")
+	}
+}
+
+// TestVisibility_NoAgent_E2E is the negative counterpart to
+// TestVisibility_AgentContext_E2E: with no agent env var set, the wire payload
+// must carry is_agent="false" and an empty agent name. ExecutionContext is
+// reset because the positive test above memoizes IsAgent=true earlier in this
+// binary.
+func TestVisibility_NoAgent_E2E(t *testing.T) {
+	corecommands.ResetExecutionContextForTest()
+	t.Cleanup(corecommands.ResetExecutionContextForTest)
+	t.Setenv("CURSOR_AGENT", "")
+	t.Setenv("CLAUDECODE", "")
+	t.Setenv("AGENT", "")
+
+	srv, ch := startMockServer(t)
+	defer srv.Close()
+
+	home := t.TempDir()
+	t.Setenv("JFROG_CLI_HOME_DIR", home)
+	t.Setenv("JFROG_CLI_REPORT_USAGE", "true")
+
+	jf := coreTests.NewJfrogCli(execMain, "jf", "").WithoutCredentials()
+	platformURL := srv.URL + "/"
+	artURL := srv.URL + "/artifactory/"
+	if err := jf.Exec("c", "add", "noagent-mock",
+		"--url", platformURL,
+		"--artifactory-url", artURL,
+		"--access-token", "dummy",
+		"--interactive=false",
+		"--enc-password=false",
+	); err != nil {
+		t.Fatalf("config add failed: %v", err)
+	}
+	if err := jf.Exec("c", "use", "noagent-mock"); err != nil {
+		t.Fatalf("config use failed: %v", err)
+	}
+	if err := jf.Exec("rt", "ping", "--server-id", "noagent-mock"); err != nil {
+		t.Fatalf("jf exec failed: %v", err)
+	}
+
+	select {
+	case req := <-ch:
+		if req.Path != "/jfconnect/api/v1/backoffice/metrics/log" {
+			t.Fatalf("unexpected path: %s", req.Path)
+		}
+		var payload struct {
+			Labels struct {
+				IsAgent string `json:"is_agent"`
+				Agent   string `json:"agent"`
+			} `json:"labels"`
+		}
+		if err := json.Unmarshal(req.Body, &payload); err != nil {
+			t.Fatalf("bad JSON: %v\nbody: %s", err, string(req.Body))
+		}
+		if payload.Labels.IsAgent != "false" {
+			t.Errorf("is_agent: got %q want %q (body: %s)", payload.Labels.IsAgent, "false", string(req.Body))
+		}
+		if payload.Labels.Agent != "" {
+			t.Errorf("agent: got %q want %q (body: %s)", payload.Labels.Agent, "", string(req.Body))
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatalf("timeout waiting for metrics POST")
+	}
 }
 
 func TestVisibilitySendUsage_RtCurl_E2E(t *testing.T) {
