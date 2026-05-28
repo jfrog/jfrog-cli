@@ -15,10 +15,10 @@ require (
 	github.com/buger/jsonparser v1.2.0
 	github.com/gocarina/gocsv v0.0.0-20260523204920-c264028e67ea
 	github.com/jfrog/archiver/v3 v3.6.3
-	github.com/jfrog/build-info-go v1.13.1-0.20260526201157-3dd942bd9e1f
+	github.com/jfrog/build-info-go v1.13.1-0.20260528065004-80409c046540
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-application v1.0.2-0.20260511133105-55a0ab56fd64
-	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260527043943-fdf755c4f4c2
+	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260528073225-e2d59f90c8c6
 	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260528061115-b41c87af0194
 	github.com/jfrog/jfrog-cli-evidence v0.9.4
 	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260430094150-ce7d9b371c6f
@@ -241,8 +241,6 @@ require (
 //replace github.com/gfleury/go-bitbucket-v1 => github.com/gfleury/go-bitbucket-v1 v0.0.0-20230825095122-9bc1711434ab
 
 //replace github.com/ktrysmt/go-bitbucket => github.com/ktrysmt/go-bitbucket v0.9.80
-
-// replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260416054314-f941180fccc3
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.13.1-0.20260428071432-1e9d9a1991ad
 
