@@ -14,7 +14,7 @@ properties([
     ])
 ])
 
-node("docker-ubuntu20-xlarge") {
+node("docker-ubuntu24-xlarge") {
     cleanWs()
     // Subtract repo name from the repo url (https://REPO_NAME/ -> REPO_NAME/)
     withCredentials([string(credentialsId: 'repo21-url', variable: 'REPO21_URL')]) {
