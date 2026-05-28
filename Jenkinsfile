@@ -145,7 +145,9 @@ def runRelease(architectures) {
         }
 
         // We sign the binary also for the standalone Windows executable, and not just for Windows executable packaged inside Chocolaty.
-        downloadToolsCert()
+        if (params.RUN_CHOCOLATEY) {
+            downloadToolsCert()
+        }
         if (params.RUN_UPLOAD_CLI) {
             stage('Upload CLI') {
                 print "Uploading version $version to Repo21"
@@ -445,7 +447,7 @@ def build(goos, goarch, pkg, fileName) {
         env.GOOS=""
         env.GOARCH=""
 
-        if (goos == 'windows') {
+        if (goos == 'windows' && params.RUN_CHOCOLATEY) {
             dir("${jfrogCliRepoDir}build/sign") {
                 // Move the jfrog executable into the 'sign' directory, so that it is signed there.
                 sh "mv ${jfrogCliRepoDir}${fileName} ${fileName}.unsigned"
