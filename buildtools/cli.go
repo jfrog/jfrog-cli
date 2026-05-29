@@ -495,7 +495,10 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc("install", "i", "publish", "p"),
 			Category:        buildToolsCategory,
-			Action:          pnpmCmd,
+			Action: func(c *cli.Context) error {
+				cmdName, _ := getCommandName(c.Args())
+				return securityCLI.WrapCmdWithCurationPostFailureRun(c, pnpmCmd, techutils.Pnpm, cmdName)
+			},
 		},
 		{
 			Name:            "docker",
