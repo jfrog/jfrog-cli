@@ -78,7 +78,7 @@ pipelines:
             allowCustom: true
           DEPLOYMENT_SIZING:
             default: "large"
-            description: "Artifactory deployment sizing profile. Maps to the DEPLOYMENT_SIZING parameter of the environment_setup_gen2 Jenkins job. Valid values: common, xsmall, small, medium, mediumha, large, large-xray-old, large-xray-dynamic-sizing-1, large-xray-dynamic-sizing-2, large-xray, large-xray-art-2. Reference: https://git.jfrog.info/projects/devops/repos/saas-configuration/browse/development/jfrogregions/global/jfrog_application_sizing_info.yaml"
+            description: "Artifactory deployment sizing profile."
             allowCustom: true
     steps:
       - name: setup_cli_test
