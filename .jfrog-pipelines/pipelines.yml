@@ -76,6 +76,10 @@ pipelines:
             default: "true"
             description: "Forward Artifactory logs from the deployed ephemeral environment to Kibana (via Coralogix). Maps to the LOGS_TO_KIBANA parameter of the environment_setup_gen2 Jenkins job. Set 'false' to disable."
             allowCustom: true
+          DEPLOYMENT_SIZING:
+            default: "large"
+            description: "Artifactory deployment sizing profile. Maps to the DEPLOYMENT_SIZING parameter of the environment_setup_gen2 Jenkins job. Valid values: common, xsmall, small, medium, mediumha, large, large-xray-old, large-xray-dynamic-sizing-1, large-xray-dynamic-sizing-2, large-xray, large-xray-art-2. Reference: https://git.jfrog.info/projects/devops/repos/saas-configuration/browse/development/jfrogregions/global/jfrog_application_sizing_info.yaml"
+            allowCustom: true
     steps:
       - name: setup_cli_test
         type: Bash
@@ -145,6 +149,7 @@ pipelines:
             GROUP: "ARTIFACTORY"
             EXPIRY: 2d
             LOGS_TO_KIBANA: "${LOGS_TO_KIBANA}"
+            DEPLOYMENT_SIZING: "${DEPLOYMENT_SIZING}"
             EXTRA_PARAMS: "conf_artifactory_unified_version=${RT_VERSION} master_key=${MASTER_KEY}"
 
       - name: setup_environment
