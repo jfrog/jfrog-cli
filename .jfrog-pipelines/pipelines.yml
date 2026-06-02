@@ -80,6 +80,14 @@ pipelines:
             default: "large"
             description: "Artifactory deployment sizing profile."
             allowCustom: true
+          MAX_RUN_RETRIES:
+            default: "2"
+            description: "Per-workflow run-level retry budget. When a dispatched workflow run finishes with a non-success conclusion, the pipeline calls GitHub's rerun-failed-jobs API up to this many times before declaring it failed. Set 0 to disable run-level retry."
+            allowCustom: true
+          MAX_WAIT_SECONDS:
+            default: "14400"
+            description: "Maximum total seconds to wait for all dispatched workflow runs (including reruns) to complete. Default 4h to accommodate up to MAX_RUN_RETRIES reruns of slow suites."
+            allowCustom: true
     steps:
       - name: setup_cli_test
         type: Bash
@@ -308,6 +316,10 @@ pipelines:
               GH_JF_CLI_REPO="${JFROG_CLI_GITHUB_REPO:-jfrog/jfrog-cli}"
               GH_ACTIONS_RUNNER="${GHE_ACTIONS_RUNNER:-artifactory-dind-amd-scale-set}"
 
+              # Run-level retry knobs (see the readOnly env vars above).
+              MAX_RUN_RETRIES_RESOLVED="${MAX_RUN_RETRIES:-2}"
+              MAX_WAIT_RESOLVED="${MAX_WAIT_SECONDS:-14400}"
+
               GITHUB_TOKEN_RESOLVED="${GITHUB_DISPATCH_TOKEN:-}"
               if [[ -z "${GITHUB_TOKEN_RESOLVED}" ]]; then GITHUB_TOKEN_RESOLVED="${int_jfrog_cli_gh_token:-}"; fi
               if [[ -z "${GITHUB_TOKEN_RESOLVED}" ]]; then GITHUB_TOKEN_RESOLVED="${int_jfrog_cli_gh_accessToken:-}"; fi
@@ -327,6 +339,8 @@ pipelines:
               echo "  jfrog_cli_repo : ${GH_JF_CLI_REPO}"
               echo "  jfrog_cli_ref  : ${CLI_REF}"
               echo "  jfrog_url      : ${JFROG_URL}"
+              echo "  run-level retries per workflow : ${MAX_RUN_RETRIES_RESOLVED}"
+              echo "  total wait budget (seconds)    : ${MAX_WAIT_RESOLVED}"
 
               # ── Verify repo access ───────────────────────────────────────────
               REPO_CODE=$(curl -sS -o /tmp/gh_repo.json -w "%{http_code}" \
@@ -490,14 +504,42 @@ pipelines:
                 RUN_ENTRIES="${RUN_ENTRIES} ${GH_WF_FILE}:${RUN_ID}"
               done
 
+              # ── Initialise per-workflow retry budgets ────────────────────────
+              # We can't use a bash associative array because the script may
+              # run under /bin/sh on some images. Use a single space-separated
+              # string of "name=count" entries and update it in-place.
+              RETRIES_LEFT=""
+              for ENTRY in ${RUN_ENTRIES}; do
+                GH_WF_FILE="${ENTRY%%:*}"
+                RETRIES_LEFT="${RETRIES_LEFT} ${GH_WF_FILE}=${MAX_RUN_RETRIES_RESOLVED}"
+              done
+
+              get_retries_left() {
+                local name="$1"
+                echo "${RETRIES_LEFT}" \
+                  | tr ' ' '\n' \
+                  | awk -F= -v n="${name}" '$1 == n {print $2; exit}'
+              }
+              set_retries_left() {
+                local name="$1"
+                local count="$2"
+                local rebuilt=""
+                for kv in ${RETRIES_LEFT}; do
+                  case "${kv}" in
+                    "${name}="*) rebuilt="${rebuilt} ${name}=${count}" ;;
+                    *)           rebuilt="${rebuilt} ${kv}" ;;
+                  esac
+                done
+                RETRIES_LEFT="${rebuilt}"
+              }
+
               # ── Poll all runs until every one completes ──────────────────────
               echo ""
-              echo "Monitoring all workflow runs..."
-              MAX_WAIT=7200
+              echo "Monitoring all workflow runs (retry budget: ${MAX_RUN_RETRIES_RESOLVED} per workflow, total wait ${MAX_WAIT_RESOLVED}s)..."
               ELAPSED=0
               INTERVAL=60
 
-              while [[ ${ELAPSED} -lt ${MAX_WAIT} ]]; do
+              while [[ ${ELAPSED} -lt ${MAX_WAIT_RESOLVED} ]]; do
                 ALL_DONE=true
                 ANY_FAILED=false
                 FAILED_WORKFLOWS=""
@@ -513,18 +555,42 @@ pipelines:
                     "${GH_API_URL}/repos/${GH_WORKFLOWS_REPO}/actions/runs/${RUN_ID}")
                   STATUS=$(echo "${RUN_JSON}" | jq -r '.status // empty')
                   CONCLUSION=$(echo "${RUN_JSON}" | jq -r '.conclusion // empty')
+                  RUN_ATTEMPT=$(echo "${RUN_JSON}" | jq -r '.run_attempt // 1')
 
                   if [[ "${STATUS}" != "completed" ]]; then
                     ALL_DONE=false
-                    echo "  [running] ${GH_WF_FILE} (${RUN_ID}): ${STATUS}"
+                    echo "  [running] ${GH_WF_FILE} (${RUN_ID}, attempt ${RUN_ATTEMPT}): ${STATUS}"
                     LAST_SUMMARY="${LAST_SUMMARY}${GH_WF_FILE}:${STATUS};"
                   elif [[ "${CONCLUSION}" != "success" ]]; then
-                    ANY_FAILED=true
-                    echo "  [FAILED]  ${GH_WF_FILE} (${RUN_ID}): ${CONCLUSION}"
-                    FAILED_WORKFLOWS="${FAILED_WORKFLOWS} ${GH_WF_FILE}"
-                    LAST_SUMMARY="${LAST_SUMMARY}${GH_WF_FILE}:${CONCLUSION};"
+                    RL=$(get_retries_left "${GH_WF_FILE}")
+                    RL="${RL:-0}"
+                    if [[ "${RL}" -gt 0 ]]; then
+                      NEW_RL=$((RL - 1))
+                      echo "  [retry]   ${GH_WF_FILE} (${RUN_ID}, attempt ${RUN_ATTEMPT}): ${CONCLUSION} -> calling rerun-failed-jobs (retries left after this: ${NEW_RL})"
+                      RR_CODE=$(curl -sS -o /tmp/gh_rerun.json -w "%{http_code}" -X POST \
+                        -H "Accept: application/vnd.github+json" \
+                        -H "Authorization: Bearer ${GITHUB_TOKEN_RESOLVED}" \
+                        -H "X-GitHub-Api-Version: 2022-11-28" \
+                        "${GH_API_URL}/repos/${GH_WORKFLOWS_REPO}/actions/runs/${RUN_ID}/rerun-failed-jobs")
+                      if [[ "${RR_CODE}" == "201" ]]; then
+                        set_retries_left "${GH_WF_FILE}" "${NEW_RL}"
+                        ALL_DONE=false
+                        LAST_SUMMARY="${LAST_SUMMARY}${GH_WF_FILE}:retrying;"
+                      else
+                        echo "  [retry]   rerun-failed-jobs returned HTTP ${RR_CODE}; treating ${GH_WF_FILE} as failed"
+                        cat /tmp/gh_rerun.json 2>/dev/null || true
+                        ANY_FAILED=true
+                        FAILED_WORKFLOWS="${FAILED_WORKFLOWS} ${GH_WF_FILE}"
+                        LAST_SUMMARY="${LAST_SUMMARY}${GH_WF_FILE}:${CONCLUSION};"
+                      fi
+                    else
+                      ANY_FAILED=true
+                      echo "  [FAILED]  ${GH_WF_FILE} (${RUN_ID}, attempt ${RUN_ATTEMPT}): ${CONCLUSION} (no retries left)"
+                      FAILED_WORKFLOWS="${FAILED_WORKFLOWS} ${GH_WF_FILE}"
+                      LAST_SUMMARY="${LAST_SUMMARY}${GH_WF_FILE}:${CONCLUSION};"
+                    fi
                   else
-                    echo "  [ok]      ${GH_WF_FILE} (${RUN_ID}): success"
+                    echo "  [ok]      ${GH_WF_FILE} (${RUN_ID}, attempt ${RUN_ATTEMPT}): success"
                     LAST_SUMMARY="${LAST_SUMMARY}${GH_WF_FILE}:success;"
                   fi
                 done
@@ -532,18 +598,18 @@ pipelines:
                 if [[ "${ALL_DONE}" == "true" ]]; then
                   echo ""
                   if [[ "${ANY_FAILED}" == "true" ]]; then
-                    fail_jf_cli_tests "One or more workflow runs failed. ${LAST_SUMMARY}"
+                    fail_jf_cli_tests "One or more workflow runs failed after exhausting retries. ${LAST_SUMMARY}"
                   fi
-                  echo "All workflow runs completed successfully."
+                  echo "All workflow runs completed successfully. ${LAST_SUMMARY}"
                   exit 0
                 fi
 
-                echo "  --- sleeping ${INTERVAL}s (elapsed ${ELAPSED}s / ${MAX_WAIT}s) ---"
+                echo "  --- sleeping ${INTERVAL}s (elapsed ${ELAPSED}s / ${MAX_WAIT_RESOLVED}s) ---"
                 sleep "${INTERVAL}"
                 ELAPSED=$((ELAPSED + INTERVAL))
               done
 
-              fail_jf_cli_tests "Timed out after ${MAX_WAIT}s while waiting for workflow runs. ${LAST_SUMMARY}"
+              fail_jf_cli_tests "Timed out after ${MAX_WAIT_RESOLVED}s while waiting for workflow runs. ${LAST_SUMMARY}"
 
           onSuccess:
             - echo "JFrog CLI integration tests finished successfully."
