@@ -8,6 +8,22 @@
 
 [Website](http://www.jfrog.com)  •  [Docs](https://docs.jfrog-applications.jfrog.io/jfrog-applications/jfrog-cli)  •  [Issues](https://github.com/jfrog/jfrog-cli/issues)  •  [Blog](https://jfrog.com/blog/)  •  [We're Hiring](https://join.jfrog.com/)  •  [Artifactory Free Trial](https://jfrog.com/artifactory/free-trial/)
 
+> [!IMPORTANT]
+> **Please migrate to [`jfrog-cli-v2-jf`](https://www.npmjs.com/package/jfrog-cli-v2-jf).**
+>
+> This package (`jfrog-cli-v2`) installs the CLI under the **`jfrog`** executable name. The actively maintained package, [`jfrog-cli-v2-jf`](https://www.npmjs.com/package/jfrog-cli-v2-jf), installs the very same CLI but under the shorter **`jf`** executable name, which is now the standard across JFrog's documentation, examples, and CI/CD integrations.
+>
+> **What this means for you:**
+> - The command you type changes from `jfrog ...` to `jf ...` — update your scripts, pipelines, aliases, and shell completions accordingly.
+> - Both executables share the same configuration, so your existing servers and settings continue to work.
+> - You can install both side by side during the transition, but to avoid confusion we recommend switching fully to `jf`.
+>
+> To migrate:
+> ```bash
+> npm uninstall -g jfrog-cli-v2
+> npm install -g jfrog-cli-v2-jf
+> ```
+
 ## Overview
 
 JFrog CLI is a compact and smart client that provides a simple interface that automates access to *Artifactory*, *Xray*,
