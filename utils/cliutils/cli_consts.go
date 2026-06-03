@@ -28,6 +28,12 @@ const (
 	//#nosec G101
 	JfrogCliGithubToken = "JFROG_CLI_GITHUB_TOKEN"
 	JfrogCliHideSurvey  = "JFROG_CLI_HIDE_SURVEY"
+	JfrogCliUrl         = "JFROG_CLI_URL"
+	//#nosec G101
+	JfrogCliAccessToken = "JFROG_CLI_ACCESS_TOKEN"
+	JfrogCliUser        = "JFROG_CLI_USER"
+	//#nosec G101
+	JfrogCliPassword = "JFROG_CLI_PASSWORD"
 	// JfrogCliErrorOutputFormat controls how HTTP response errors are surfaced.
 	// Set to "json" to emit the structured response (status code + body) as JSON
 	// on stderr instead of the default human-readable text. Unset or "text" keeps

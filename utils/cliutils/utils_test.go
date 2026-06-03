@@ -289,6 +289,100 @@ func TestGetFlagOrEnvValue(t *testing.T) {
 	}
 }
 
+func TestCreateServerDetailsFromFlagsEnvFallback(t *testing.T) {
+	testCases := []struct {
+		name                string
+		flags               map[string]string
+		env                 map[string]string
+		expectedUrl         string
+		expectedUser        string
+		expectedPassword    string
+		expectedAccessToken string
+	}{
+		{
+			name:        "url falls back to env",
+			env:         map[string]string{JfrogCliUrl: "https://acme.jfrog.io"},
+			expectedUrl: "https://acme.jfrog.io/",
+		},
+		{
+			name:        "url flag wins over env",
+			flags:       map[string]string{url: "https://flag.jfrog.io"},
+			env:         map[string]string{JfrogCliUrl: "https://env.jfrog.io"},
+			expectedUrl: "https://flag.jfrog.io/",
+		},
+		{
+			name:                "access token falls back to env",
+			env:                 map[string]string{JfrogCliAccessToken: "env-token"},
+			expectedAccessToken: "env-token",
+		},
+		{
+			name:                "access token flag wins over env",
+			flags:               map[string]string{accessToken: "flag-token"},
+			env:                 map[string]string{JfrogCliAccessToken: "env-token"},
+			expectedAccessToken: "flag-token",
+		},
+		{
+			name:             "user and password fall back to env",
+			env:              map[string]string{JfrogCliUser: "env-user", JfrogCliPassword: "env-password"},
+			expectedUser:     "env-user",
+			expectedPassword: "env-password",
+		},
+		{
+			name:             "user and password flags win over env",
+			flags:            map[string]string{user: "flag-user", password: "flag-password"},
+			env:              map[string]string{JfrogCliUser: "env-user", JfrogCliPassword: "env-password"},
+			expectedUser:     "flag-user",
+			expectedPassword: "flag-password",
+		},
+		{
+			name: "neither flags nor env keeps connection fields empty",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			for _, envVarName := range []string{JfrogCliUrl, JfrogCliAccessToken, JfrogCliUser, JfrogCliPassword} {
+				t.Setenv(envVarName, "")
+			}
+			for envVarName, envVarValue := range tc.env {
+				t.Setenv(envVarName, envVarValue)
+			}
+
+			flagValue := func(flagName string) string {
+				return tc.flags[flagName]
+			}
+			set := flag.NewFlagSet("test", 0)
+			set.String(url, flagValue(url), "")
+			set.String(configRtUrl, "", "")
+			set.String(configDistUrl, "", "")
+			set.String(configXrUrl, "", "")
+			set.String(configMcUrl, "", "")
+			set.String(configPlUrl, "", "")
+			set.String(user, flagValue(user), "")
+			set.String(password, flagValue(password), "")
+			set.Bool(passwordStdin, false, "")
+			set.String(accessToken, flagValue(accessToken), "")
+			set.Bool(accessTokenStdin, false, "")
+			set.String(sshKeyPath, "", "")
+			set.String(sshPassphrase, "", "")
+			set.String(ClientCertPath, "", "")
+			set.String(ClientCertKeyPath, "", "")
+			set.String(serverId, "", "")
+			set.Bool(InsecureTls, false, "")
+			set.Bool(disableTokenRefresh, false, "")
+			c := cli.NewContext(nil, set, nil)
+
+			details, err := CreateServerDetailsFromFlags(c)
+
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expectedUrl, details.Url)
+			assert.Equal(t, tc.expectedUser, details.User)
+			assert.Equal(t, tc.expectedPassword, details.Password)
+			assert.Equal(t, tc.expectedAccessToken, details.AccessToken)
+		})
+	}
+}
+
 // TestAuthorizationHeaderInCliVersionCheck tests that the HTTP request for checking new CLI versions
 // includes an authorization header when a GitHub token is provided.
 func TestAuthorizationHeaderInCliVersionCheck(t *testing.T) {
