@@ -1,6 +1,7 @@
 package buildinfo
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"os"
@@ -44,7 +45,9 @@ func GetBuildInfoForPackageManager(pkgManager, workingDir string, buildConfigura
 
 	switch pkgManager {
 	case "poetry":
-		return GetPoetryBuildInfo(workingDir, buildConfiguration, "") // Empty deployer repo - will use from pyproject.toml
+		// No cmd/args context available from this entry point — falls back to
+		// the existing lock-file-driven behaviour (no installed-set filtering).
+		return GetPoetryBuildInfo(workingDir, buildConfiguration, "", "", nil) // Empty deployer repo - will use from pyproject.toml
 	case "mvn", "maven":
 		// Maven FlexPack is handled directly in jfrog-cli-artifactory Maven command
 		return GetBuildInfoForUploadedArtifacts("", buildConfiguration)
@@ -61,8 +64,15 @@ func GetBuildInfoForPackageManager(pkgManager, workingDir string, buildConfigura
 	}
 }
 
-// GetPoetryBuildInfo collects build info for Poetry projects
-func GetPoetryBuildInfo(workingDir string, buildConfiguration *buildUtils.BuildConfiguration, deployerRepo string) error {
+// GetPoetryBuildInfo collects build info for Poetry projects.
+//
+// cmdName and args describe the poetry sub-command that just ran (e.g. "install",
+// "--only", "main"). They are used to decide whether to query the active poetry
+// venv for the ground-truth installed set — which is how we honor poetry's
+// --only/--without/--with flags in build-info, mirroring the proven UV pattern.
+// When cmdName is empty (legacy entry points), no ground-truth query is made
+// and the existing lock-file-driven behaviour is preserved.
+func GetPoetryBuildInfo(workingDir string, buildConfiguration *buildUtils.BuildConfiguration, deployerRepo, cmdName string, args []string) error {
 	log.Debug("Collecting Poetry build info from directory: " + workingDir)
 	log.Debug("Deployer repository: " + deployerRepo)
 
@@ -102,7 +112,17 @@ func GetPoetryBuildInfo(workingDir string, buildConfiguration *buildUtils.BuildC
 	}
 	log.Info(fmt.Sprintf("Using repository for artifacts: %s", artifactRepo))
 
-	err = collectPoetryBuildInfo(workingDir, buildName, buildNumber, serverDetails, repoConfig.TargetRepo(), artifactRepo, buildConfiguration)
+	// For venv-modifying commands (install/add/remove/update/sync), capture the
+	// real installed set from poetry so build-info reflects what was actually
+	// installed — honouring --only/--without/--with without any flag parsing.
+	// For other commands and on any error this stays nil → legacy behaviour.
+	var installed map[string]string
+	_ = args // reserved for future per-arg behaviour; ground truth comes from poetry itself
+	if poetryModifiesVenv(cmdName) {
+		installed = poetryInstalledPackages(workingDir)
+	}
+
+	err = collectPoetryBuildInfo(workingDir, buildName, buildNumber, serverDetails, repoConfig.TargetRepo(), artifactRepo, installed, buildConfiguration)
 	if err != nil {
 		log.Warn("Enhanced Poetry collection failed, falling back to standard method: " + err.Error())
 		err = saveBuildInfo(serverDetails, artifactRepo, "", buildConfiguration)
@@ -359,14 +379,19 @@ func CreateAqlQueryForSearch(repo, file string) string {
 	return fmt.Sprintf(itemsPart, repo, file)
 }
 
-// collectPoetryBuildInfo collects Poetry dependencies and artifacts for build info
-func collectPoetryBuildInfo(workingDir, buildName, buildNumber string, serverDetails *config.ServerDetails, _ string, artifactRepo string, buildConfiguration *buildUtils.BuildConfiguration) error {
+// collectPoetryBuildInfo collects Poetry dependencies and artifacts for build info.
+//
+// installedPackages, when non-nil, is the ground-truth set captured from
+// `poetry run pip list`. Only lockfile entries present in this map are included
+// in build-info, which is how --only/--without/--with are honoured.
+func collectPoetryBuildInfo(workingDir, buildName, buildNumber string, serverDetails *config.ServerDetails, _ string, artifactRepo string, installedPackages map[string]string, buildConfiguration *buildUtils.BuildConfiguration) error {
 	log.Debug("Initializing Poetry dependency collection...")
 
 	// Create Poetry configuration
 	config := flexpack.PoetryConfig{
 		WorkingDirectory:       workingDir,
 		IncludeDevDependencies: false, // Match standard behavior
+		InstalledPackages:      installedPackages,
 	}
 
 	// Create Poetry instance
@@ -798,4 +823,67 @@ func extractRepoNameFromPypiURL(urlStr string) string {
 	}
 
 	return ""
+}
+
+// poetryModifiesVenv reports whether the named poetry sub-command actually
+// installs/uninstalls packages into the venv. Only for these commands does
+// querying the venv for the installed set make sense — for lock/build/publish
+// etc. the venv state is unrelated to the operation.
+func poetryModifiesVenv(cmdName string) bool {
+	switch cmdName {
+	case "install", "add", "remove", "update", "sync":
+		return true
+	}
+	return false
+}
+
+// poetryPipPackage is the shape of one entry in `pip list --format=json`.
+type poetryPipPackage struct {
+	Name    string `json:"name"`
+	Version string `json:"version"`
+}
+
+// poetryInstalledPackages runs `poetry run pip list --format=json` inside
+// workingDir and returns the installed set as normalised name → version.
+// Normalisation matches PEP 503 (lowercase, runs of [-_.] collapsed to "-"),
+// the same normalisation applied to lockfile names by PoetryFlexPack.
+// Returns nil on any error so the caller falls back to lock-file-driven
+// resolution (no regression).
+func poetryInstalledPackages(workingDir string) map[string]string {
+	cmd := exec.Command("poetry", "run", "pip", "list", "--format=json")
+	cmd.Dir = workingDir
+	out, err := cmd.Output()
+	if err != nil {
+		log.Debug("Poetry build-info: 'poetry run pip list' failed, falling back to lock-file resolution: " + err.Error())
+		return nil
+	}
+	var list []poetryPipPackage
+	if err := json.Unmarshal(out, &list); err != nil {
+		log.Debug("Poetry build-info: failed to parse 'pip list' output: " + err.Error())
+		return nil
+	}
+	installed := make(map[string]string, len(list))
+	for _, p := range list {
+		installed[normalizePoetryPipName(p.Name)] = p.Version
+	}
+	return installed
+}
+
+func normalizePoetryPipName(name string) string {
+	lower := strings.ToLower(name)
+	var b strings.Builder
+	b.Grow(len(lower))
+	prevSep := false
+	for _, r := range lower {
+		if r == '-' || r == '_' || r == '.' {
+			if !prevSep && b.Len() > 0 {
+				b.WriteByte('-')
+			}
+			prevSep = true
+			continue
+		}
+		b.WriteRune(r)
+		prevSep = false
+	}
+	return strings.TrimSuffix(b.String(), "-")
 }
