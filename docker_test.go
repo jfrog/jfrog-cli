@@ -1573,3 +1573,71 @@ CMD ["echo", "Hello from CI VCS test"]`, baseImage)
 	}
 	assert.Greater(t, artifactCount, 0, "No artifacts in build info")
 }
+
+// TestSetupDockerCommand verifies `jf setup docker --url ...` end-to-end.
+//
+// Guards RTECO-1352: configureContainer (in jfrog-cli-artifactory) used to read
+// ServerDetails.GetUrl(), which createServerDetailsFromFlags clears for the Rt
+// command domain after copying it into ArtifactoryUrl. On the --url invocation
+// path that left the registry host empty and routed `docker login ""` to Docker
+// Hub, producing a misleading 401. The corresponding fix in jfrog-cli-artifactory
+// derives the host from GetArtifactoryUrl() (with GetUrl() fallback for the
+// --server-id path) and asserts a non-empty host.
+//
+// This e2e test exercises the *exact* failure path — `--url` + `--access-token`
+// flags with no saved config — and verifies that the docker config file ends up
+// with an auth entry keyed by the Artifactory registry hostname.
+func TestSetupDockerCommand(t *testing.T) {
+	if !*tests.TestDocker {
+		t.Skip("Skipping setup docker test. To run it, add the '-test.docker=true' option.")
+	}
+
+	// Isolate the docker config to a temp dir so the test never touches the
+	// developer's ~/.docker/config.json. The docker CLI honors DOCKER_CONFIG
+	// as the config-file directory.
+	dockerConfigDir := t.TempDir()
+	t.Setenv("DOCKER_CONFIG", dockerConfigDir)
+
+	// Build credentials from the test globals. The --url path is what the bug
+	// hit, so pass it explicitly along with --access-token (or --user/--password)
+	// rather than relying on a saved server config.
+	artifactoryUrl := *tests.JfrogUrl + tests.ArtifactoryEndpoint
+	user := *tests.JfrogUser
+	credFlag := ""
+	switch {
+	case *tests.JfrogAccessToken != "":
+		credFlag = "--access-token=" + *tests.JfrogAccessToken
+		if user == "" {
+			user = auth.ExtractUsernameFromAccessToken(*tests.JfrogAccessToken)
+		}
+	case *tests.JfrogPassword != "":
+		credFlag = "--password=" + *tests.JfrogPassword
+	default:
+		t.Skip("Skipping setup docker test: no JFrog credentials available.")
+	}
+
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+	require.NoError(t, jfrogCli.Exec(
+		"setup", "docker",
+		"--url="+artifactoryUrl,
+		"--user="+user,
+		credFlag,
+		"--repo="+tests.DockerVirtualRepo,
+	))
+
+	// Derive the expected registry host the same way the fix does: take the
+	// host component of the Artifactory URL.
+	parsedUrl, err := url.Parse(artifactoryUrl)
+	require.NoError(t, err)
+	expectedRegistryHost := parsedUrl.Host
+	require.NotEmpty(t, expectedRegistryHost, "Artifactory URL must have a host")
+
+	// Verify the docker config file was updated with an auth entry for the
+	// derived registry host. Before the fix the entry would have been keyed by
+	// an empty string (and the underlying `docker login` would have failed).
+	dockerConfigPath := filepath.Join(dockerConfigDir, "config.json")
+	contentBytes, err := os.ReadFile(dockerConfigPath)
+	require.NoError(t, err, "docker config file should be created by setup docker")
+	assert.Contains(t, string(contentBytes), expectedRegistryHost,
+		"docker config should contain the Artifactory registry host derived from --url")
+}
