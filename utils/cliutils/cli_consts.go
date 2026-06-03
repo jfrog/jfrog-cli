@@ -15,6 +15,7 @@ const (
 	CmdConfig         = "config"
 	CmdOptions        = "options"
 	CmdPipelines      = "pl"
+	CmdMcp            = "mcp"
 
 	// Common
 	Retries                       = 3
@@ -34,6 +35,9 @@ const (
 	// the legacy behavior. Applies uniformly to all commands, including OIDC
 	// token-exchange failures.
 	JfrogCliErrorOutputFormat = "JFROG_CLI_ERROR_OUTPUT_FORMAT"
+	// JfrogCliMcpUrl overrides the remote MCP server endpoint used by the 'jf mcp'
+	// commands. When unset, the endpoint is derived as <platform-url>/mcp.
+	JfrogCliMcpUrl = "JFROG_CLI_MCP_URL"
 )
 
 // ErrorFormatJSON is the env-var value that switches HTTP error reporting to JSON-on-stderr.

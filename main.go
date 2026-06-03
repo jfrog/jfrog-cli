@@ -15,8 +15,8 @@ import (
 	"github.com/agnivade/levenshtein"
 	appTrustCLI "github.com/jfrog/jfrog-cli-application/cli"
 	artifactoryCLI "github.com/jfrog/jfrog-cli-artifactory/cli"
-	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	corecommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli-core/v2/plugins/components"
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -38,6 +38,7 @@ import (
 	"github.com/jfrog/jfrog-cli/general/login"
 	"github.com/jfrog/jfrog-cli/general/summary"
 	"github.com/jfrog/jfrog-cli/general/token"
+	"github.com/jfrog/jfrog-cli/mcp"
 	"github.com/jfrog/jfrog-cli/missioncontrol"
 	"github.com/jfrog/jfrog-cli/packagealias"
 	"github.com/jfrog/jfrog-cli/pipelines"
@@ -291,6 +292,12 @@ func getCommands() ([]cli.Command, error) {
 			Aliases:     []string{"c"},
 			Usage:       "Server configuration commands",
 			Subcommands: config.GetCommands(),
+			Category:    commandNamespacesCategory,
+		},
+		{
+			Name:        cliutils.CmdMcp,
+			Usage:       "MCP (Model Context Protocol) server commands",
+			Subcommands: mcp.GetCommands(),
 			Category:    commandNamespacesCategory,
 		},
 		{
