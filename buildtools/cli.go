@@ -674,9 +674,13 @@ func MvnCmd(c *cli.Context) (err error) {
 		if err != nil {
 			return err
 		}
-		// Create Maven command with empty config for FlexPack
-		mvnCmd := mvn.NewMvnCommand().SetConfigPath("").SetGoals(filteredMavenArgs).SetConfiguration(buildConfiguration)
-		return commands.Exec(mvnCmd)
+		// Maven does not accept --server-id; use the default configured server for usage reporting.
+		serverDetails, err := coreConfig.GetDefaultServerConf()
+		if err != nil {
+			return err
+		}
+		mvnCmd := mvn.NewMvnCommand().SetConfigPath("").SetGoals(filteredMavenArgs).SetConfiguration(buildConfiguration).SetServerDetails(serverDetails)
+		return commands.ExecWithPackageManager(mvnCmd, project.Maven.String())
 	}
 
 	// If config file is missing and not in native mode, return the standard missing-config error.
@@ -729,7 +733,7 @@ func MvnCmd(c *cli.Context) (err error) {
 		}
 	}
 	mvnCmd := mvn.NewMvnCommand().SetConfiguration(buildConfiguration).SetConfigPath(configFilePath).SetGoals(filteredMavenArgs).SetThreads(threads).SetInsecureTls(insecureTls).SetDetailedSummary(detailedSummary || printDeploymentView).SetXrayScan(xrayScan).SetScanOutputFormat(scanOutputFormat)
-	err = commands.Exec(mvnCmd)
+	err = commands.ExecWithPackageManager(mvnCmd, project.Maven.String())
 	result := mvnCmd.Result()
 	defer cliutils.CleanupResult(result, &err)
 	err = cliutils.PrintCommandSummary(mvnCmd.Result(), detailedSummary, printDeploymentView, false, err)
@@ -789,7 +793,7 @@ func GradleCmd(c *cli.Context) (err error) {
 
 		// Create Gradle command with FlexPack (no config file needed)
 		gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(filteredGradleArgs).SetConfigPath("").SetServerDetails(serverDetails)
-		return commands.Exec(gradleCmd)
+		return commands.ExecWithPackageManager(gradleCmd, project.Gradle.String())
 	}
 
 	// If config file is missing and not in native mode, return the standard missing-config error.
@@ -841,7 +845,7 @@ func GradleCmd(c *cli.Context) (err error) {
 	}
 	printDeploymentView := log.IsStdErrTerminal()
 	gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(filteredGradleArgs).SetConfigPath(configFilePath).SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetXrayScan(xrayScan).SetScanOutputFormat(scanOutputFormat)
-	err = commands.Exec(gradleCmd)
+	err = commands.ExecWithPackageManager(gradleCmd, project.Gradle.String())
 	result := gradleCmd.Result()
 	defer cliutils.CleanupResult(result, &err)
 	err = cliutils.PrintCommandSummary(gradleCmd.Result(), detailedSummary, printDeploymentView, false, err)
@@ -863,7 +867,7 @@ func YarnCmd(c *cli.Context) error {
 	}
 
 	yarnCmd := yarn.NewYarnCommand().SetConfigFilePath(configFilePath).SetArgs(c.Args())
-	return commands.Exec(yarnCmd)
+	return commands.ExecWithPackageManager(yarnCmd, project.Yarn.String())
 }
 
 func pnpmCmd(c *cli.Context) error {
@@ -889,7 +893,7 @@ func pnpmCmd(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
-		return commands.Exec(pnpmCommand)
+		return commands.ExecWithPackageManager(pnpmCommand, project.Pnpm.String())
 	default:
 		return runNativePackageManagerCmd("pnpm", append([]string{cmdName}, cleanArgs...))
 	}
@@ -964,7 +968,7 @@ func NugetCmd(c *cli.Context) error {
 	if len(filteredNugetArgs) > 1 {
 		nugetCmd.SetArgAndFlags(filteredNugetArgs[1:])
 	}
-	return commands.Exec(nugetCmd)
+	return commands.ExecWithPackageManager(nugetCmd, project.Nuget.String())
 }
 
 func DotnetCmd(c *cli.Context) error {
@@ -1008,7 +1012,7 @@ func DotnetCmd(c *cli.Context) error {
 	if len(filteredDotnetArgs) > 1 {
 		dotnetCmd.SetArgAndFlags(filteredDotnetArgs[1:])
 	}
-	return commands.Exec(dotnetCmd)
+	return commands.ExecWithPackageManager(dotnetCmd, project.Dotnet.String())
 }
 
 func getNugetAndDotnetConfigFields(configFilePath string) (rtDetails *coreConfig.ServerDetails, targetRepo string, useNugetV2 bool, err error) {
@@ -1058,7 +1062,7 @@ func GoCmd(c *cli.Context) error {
 	args := cliutils.ExtractCommand(c)
 	goCommand := golang.NewGoCommand()
 	goCommand.SetConfigFilePath(configFilePath).SetGoArg(args)
-	return commands.Exec(goCommand)
+	return commands.ExecWithPackageManager(goCommand, project.Go.String())
 }
 
 func GoPublishCmd(c *cli.Context) (err error) {
@@ -1077,7 +1081,7 @@ func GoPublishCmd(c *cli.Context) (err error) {
 	printDeploymentView, detailedSummary := log.IsStdErrTerminal(), c.Bool("detailed-summary")
 	goPublishCmd := golang.NewGoPublishCommand()
 	goPublishCmd.SetConfigFilePath(configFilePath).SetBuildConfiguration(buildConfiguration).SetVersion(version).SetDetailedSummary(detailedSummary || printDeploymentView).SetExcludedPatterns(cliutils.GetStringsArrFlagValue(c, "exclusions"))
-	err = commands.Exec(goPublishCmd)
+	err = commands.ExecWithPackageManager(goPublishCmd, project.Go.String())
 	result := goPublishCmd.Result()
 	defer cliutils.CleanupResult(result, &err)
 	err = cliutils.PrintCommandSummary(goPublishCmd.Result(), detailedSummary, printDeploymentView, false, err)
@@ -1166,7 +1170,7 @@ func dockerCmd(c *cli.Context) error {
 	case "push":
 		err = pushCmd(c, cmdArg)
 	case "login":
-		err = loginCmd(c)
+		err = loginCmd(c, true)
 	case "scan":
 		return dockerScanCmd(c, cmdArg)
 	case "build":
@@ -1204,7 +1208,7 @@ func pullCmd(c *cli.Context, image string) error {
 	if !supported {
 		return cliutils.NotSupportedNativeDockerCommand("docker-pull")
 	}
-	return commands.Exec(PullCommand)
+	return commands.ExecWithPackageManager(PullCommand, project.Docker.String())
 }
 
 func pushCmd(c *cli.Context, image string) (err error) {
@@ -1228,7 +1232,7 @@ func pushCmd(c *cli.Context, image string) (err error) {
 	if !supported {
 		return cliutils.NotSupportedNativeDockerCommand("docker-push")
 	}
-	err = commands.Exec(pushCommand)
+	err = commands.ExecWithPackageManager(pushCommand, project.Docker.String())
 	result := pushCommand.Result()
 	defer cliutils.CleanupResult(result, &err)
 	err = cliutils.PrintCommandSummary(pushCommand.Result(), detailedSummary, printDeploymentView, false, err)
@@ -1251,7 +1255,7 @@ func buildCmd(c *cli.Context) error {
 	}
 
 	if !skipLogin {
-		err = loginCmd(c)
+		err = loginCmd(c, false)
 		if err != nil {
 			return err
 		}
@@ -1266,10 +1270,10 @@ func buildCmd(c *cli.Context) error {
 	buildCommand := container.NewBuildCommand(cleanArgs).SetDockerBuildOptions(dockerOptions).SetBuildConfiguration(buildConfiguration)
 	buildCommand.SetServerDetails(rtDetails)
 
-	return commands.Exec(buildCommand)
+	return commands.ExecWithPackageManager(buildCommand, project.Docker.String())
 }
 
-func loginCmd(c *cli.Context) error {
+func loginCmd(c *cli.Context, reportMetrics bool) error {
 	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "dockerloginhelp"); show || err != nil {
 		return err
 	}
@@ -1278,6 +1282,19 @@ func loginCmd(c *cli.Context) error {
 	_, rtDetails, _, _, _, _, _, err := extractDockerOptionsFromArgs(c.Args())
 	if err != nil {
 		return err
+	}
+
+	// Report usage metrics only when invoked as a standalone command.
+	// When called from buildCmd, metrics are already reported for the build itself.
+	if reportMetrics {
+		metricCmdName := "rt_docker_login"
+		commands.SetPackageManagerContext(project.Docker.String())
+		commands.CollectMetrics(metricCmdName, nil)
+		defer func() {
+			if rtDetails != nil {
+				commands.ReportUsage(metricCmdName, rtDetails, nil)
+			}
+		}()
 	}
 
 	// extract login specific options
@@ -1382,7 +1399,7 @@ func huggingFaceUploadCmd(c *cli.Context) error {
 		SetRevision(revision).
 		SetServerDetails(serverDetails).
 		SetBuildConfiguration(buildConfiguration)
-	return commands.Exec(cmd)
+	return commands.ExecWithPackageManager(cmd, "huggingface")
 }
 
 func huggingFaceDownloadCmd(c *cli.Context) error {
@@ -1432,7 +1449,7 @@ func huggingFaceDownloadCmd(c *cli.Context) error {
 		SetEtagTimeout(etagTimeout).
 		SetServerDetails(serverDetails).
 		SetBuildConfiguration(buildConfiguration)
-	return commands.Exec(cmd)
+	return commands.ExecWithPackageManager(cmd, "huggingface")
 }
 
 // validateFolderHasUploadableFiles walks the folder recursively and returns an error
@@ -1730,15 +1747,15 @@ func npmGenericCmd(c *cli.Context, cmdName string, collectBuildInfoIfRequested b
 	// Run generic npm command.
 	npmCmd := npm.NewNpmCommand(cmdName, collectBuildInfoIfRequested)
 
-	configFilePath, args, err := GetNpmConfigAndArgs(c)
+	configFilePath, args, useNative, err := GetNpmConfigAndArgs(c)
 	if err != nil {
 		return err
 	}
-	npmCmd.SetConfigFilePath(configFilePath).SetNpmArgs(args)
+	npmCmd.SetConfigFilePath(configFilePath).SetNpmArgs(args).SetUseNative(useNative)
 	if err = npmCmd.Init(); err != nil {
 		return err
 	}
-	return commands.Exec(npmCmd)
+	return commands.ExecWithPackageManager(npmCmd, project.Npm.String())
 }
 
 func NpmPublishCmd(c *cli.Context) (err error) {
@@ -1746,13 +1763,13 @@ func NpmPublishCmd(c *cli.Context) (err error) {
 		return err
 	}
 
-	configFilePath, args, err := GetNpmConfigAndArgs(c)
+	configFilePath, args, useNative, err := GetNpmConfigAndArgs(c)
 	if err != nil {
 		return err
 	}
 
 	npmCmd := npm.NewNpmPublishCommand()
-	npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
+	npmCmd.SetConfigFilePath(configFilePath).SetArgs(args).SetUseNative(useNative)
 	if err = npmCmd.Init(); err != nil {
 		return err
 	}
@@ -1764,7 +1781,7 @@ func NpmPublishCmd(c *cli.Context) (err error) {
 	if !detailedSummary {
 		npmCmd.SetDetailedSummary(printDeploymentView)
 	}
-	err = commands.Exec(npmCmd)
+	err = commands.ExecWithPackageManager(npmCmd, project.Npm.String())
 	result := npmCmd.Result()
 	defer cliutils.CleanupResult(result, &err)
 	err = cliutils.PrintCommandSummary(npmCmd.Result(), detailedSummary, printDeploymentView, false, err)
@@ -1803,7 +1820,7 @@ func setupCmd(c *cli.Context) (err error) {
 		}
 	}
 	setupCmd.SetServerDetails(artDetails).SetRepoName(repoName).SetProjectKey(cliutils.GetProject(c))
-	return commands.Exec(setupCmd)
+	return commands.ExecWithPackageManager(setupCmd, packageManager.String())
 }
 
 // validateRepoExists checks if the specified repository exists in Artifactory.
@@ -1828,12 +1845,22 @@ func selectPackageManagerInteractively() (selectedPackageManager project.Project
 	return
 }
 
-func GetNpmConfigAndArgs(c *cli.Context) (configFilePath string, args []string, err error) {
-	configFilePath, err = getProjectConfigPathOrThrow(project.Npm, "npm", "npm-config")
+func GetNpmConfigAndArgs(c *cli.Context) (configFilePath string, args []string, useNative bool, err error) {
+	var configExists bool
+	configFilePath, configExists, err = project.GetProjectConfFilePath(project.Npm)
 	if err != nil {
 		return
 	}
 	_, args = getCommandName(c.Args())
+	useNative, args, err = npm.CheckIsNativeAndFetchFilteredArgs(args)
+	if err != nil {
+		return
+	}
+	if !configExists && !useNative {
+		configFilePath, err = getProjectConfigPathOrThrow(project.Npm, "npm", "npm-config")
+	} else if !configExists {
+		configFilePath = ""
+	}
 	return
 }
 
@@ -1893,7 +1920,7 @@ func UvCmd(c *cli.Context) error {
 	if cmdName == "help" || cmdName == "" {
 		return uvCommand.Run()
 	}
-	return commands.Exec(uvCommand)
+	return commands.ExecWithPackageManager(uvCommand, project.UV.String())
 }
 
 // HelmCmd executes Helm commands with build info collection support
@@ -1938,7 +1965,7 @@ func HelmCmd(c *cli.Context) error {
 		SetWorkingDirectory(workingDir).
 		SetHelmCmdName(cmdName)
 
-	return commands.Exec(helmCmd)
+	return commands.ExecWithPackageManager(helmCmd, project.Helm.String())
 }
 
 // extractRepositoryCacheFromArgs extracts the --repository-cache flag value from Helm command arguments
@@ -2011,6 +2038,16 @@ func ConanCmd(c *cli.Context) error {
 
 	args := cliutils.ExtractCommand(c)
 
+	// Extract --server-id (or fall back to default) so usage metrics can be reported.
+	args, serverID, err := coreutils.ExtractServerIdFromCommand(args)
+	if err != nil {
+		return fmt.Errorf("failed to extract server ID: %w", err)
+	}
+	serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, false)
+	if err != nil {
+		return err
+	}
+
 	// Extract build flags (--build-name, --build-number) before passing to Conan
 	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
 	if err != nil {
@@ -2020,9 +2057,9 @@ func ConanCmd(c *cli.Context) error {
 	cmdName, conanArgs := getCommandName(filteredArgs)
 
 	// Use jfrog-cli-artifactory Conan command with build info support
-	conanCommand := conancommand.NewConanCommand().SetCommandName(cmdName).SetArgs(conanArgs).SetBuildConfiguration(buildConfiguration)
+	conanCommand := conancommand.NewConanCommand().SetCommandName(cmdName).SetArgs(conanArgs).SetBuildConfiguration(buildConfiguration).SetServerDetails(serverDetails)
 
-	return commands.Exec(conanCommand)
+	return commands.ExecWithPackageManager(conanCommand, project.Conan.String())
 }
 
 func NixCmd(c *cli.Context) error {
@@ -2069,7 +2106,7 @@ func NixCmd(c *cli.Context) error {
 		cmd.SetServerDetails(serverDetails)
 	}
 
-	return commands.Exec(cmd)
+	return commands.ExecWithPackageManager(cmd, "nix")
 }
 
 func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
@@ -2084,11 +2121,31 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 	if artutils.ShouldRunNative("") && projectType == project.Poetry {
 		log.Debug("Routing to Poetry native implementation")
 		args := cliutils.ExtractCommand(c)
+		// Extract --server-id so usage metrics can be reported in native mode.
+		args, serverID, err := coreutils.ExtractServerIdFromCommand(args)
+		if err != nil {
+			return fmt.Errorf("failed to extract server ID: %w", err)
+		}
+		serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, false)
+		if err != nil {
+			log.Debug("Failed to resolve server for usage reporting:", err.Error())
+		}
 		filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
 		if err != nil {
 			return err
 		}
 		cmdName, poetryArgs := getCommandName(filteredArgs)
+
+		// Tag usage metric with package_manager=poetry and collect.
+		// Defer reporting so metrics are sent even when poetry fails.
+		metricCmdName := "rt_poetry_" + cmdName
+		commands.SetPackageManagerContext(project.Poetry.String())
+		commands.CollectMetrics(metricCmdName, nil)
+		defer func() {
+			if serverDetails != nil {
+				commands.ReportUsage(metricCmdName, serverDetails, nil)
+			}
+		}()
 
 		// Extract --repository flag for artifact collection (if publishing)
 		deployerRepo := ""
@@ -2165,15 +2222,15 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 	case project.Pip:
 		pipCommand := python.NewPipCommand()
 		pipCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
-		return commands.Exec(pipCommand)
+		return commands.ExecWithPackageManager(pipCommand, project.Pip.String())
 	case project.Pipenv:
 		pipenvCommand := python.NewPipenvCommand()
 		pipenvCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
-		return commands.Exec(pipenvCommand)
+		return commands.ExecWithPackageManager(pipenvCommand, project.Pipenv.String())
 	case project.Poetry:
 		poetryCommand := python.NewPoetryCommand()
 		poetryCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
-		return commands.Exec(poetryCommand)
+		return commands.ExecWithPackageManager(poetryCommand, project.Poetry.String())
 	default:
 		return errorutils.CheckErrorf("%s is not supported", projectType)
 	}
@@ -2212,7 +2269,7 @@ func terraformPublishCmd(configFilePath string, args []string, c *cli.Context) e
 	if err := terraformCmd.Init(); err != nil {
 		return err
 	}
-	err := commands.Exec(terraformCmd)
+	err := commands.ExecWithPackageManager(terraformCmd, project.Terraform.String())
 	result := terraformCmd.Result()
 	return cliutils.PrintBriefSummaryReport(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
 }
