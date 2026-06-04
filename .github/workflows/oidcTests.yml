@@ -2,15 +2,8 @@
 # After the server has been configured the CLI will ping the server to make sure we have access
 name: "Config OIDC test"
 on:
+  workflow_call:
   workflow_dispatch:
-  push:
-    branches:
-      - "master"
-  # Triggers the workflow on PRs to master branch only.
-  pull_request_target:
-    types: [labeled]
-    branches:
-      - "master"
 
 # Ensures that only the latest commit is running for each PR at a time.
 concurrency:
@@ -26,7 +19,6 @@ permissions:
   contents: read
 jobs:
   config-oidc:
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'safe to test')
     strategy:
       fail-fast: false
       matrix:
