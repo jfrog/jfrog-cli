@@ -18,7 +18,7 @@ Prerequisites:
 - Run from the project root.
 
 Common patterns:
-  $ jf pnpm-config --server-id-resolve=my-server --repo-resolve=npm-virtual --repo-deploy=npm-local
+  $ jf pnpm-config --server-id-resolve=my-server --repo-resolve=npm-virtual
 
 Gotchas:
 - Interactive prompts run when required flags are missing.

@@ -24,11 +24,10 @@ Prerequisites:
 
 Common patterns:
   $ jf gp v1.2.3
-  $ jf gp v1.2.3 --deps=ALL:ALL --build-name=my-svc --build-number=12
+  $ jf gp v1.2.3 --build-name=my-svc --build-number=12
 
 Gotchas:
 - The version must follow Go module versioning (vMAJOR.MINOR.PATCH); without 'v' prefix go tooling will reject it.
-- --deps publishes dependency versions in addition to the module itself; usually optional.
 - Republishing the same version is rejected by Artifactory's Go repository.
 
 Related: jf go, jf go-config, jf rt build-publish`

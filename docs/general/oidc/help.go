@@ -1,6 +1,6 @@
 package token
 
-var Usage = []string{"eot  <oidc-provider-name> <oidc-token-id> [--platformUrl <platformUrl>] [--oidc-audience <audience>] [--oidc-provider-type <type>] [--application-key <key>] [--Project <project>] [--repository <repository>]"}
+var Usage = []string{"eot  <oidc-provider-name> <oidc-token-id> [--url <url>] [--oidc-audience <audience>] [--oidc-provider-type <type>] [--application-key <key>] [--Project <project>] [--repository <repository>]"}
 
 func GetDescription() string {
 	return `Exchanges a token ID from an OIDC provider with a JFrog server to a valid access token and returns the access token and the username.`
@@ -28,10 +28,10 @@ When to use:
 Prerequisites:
 - An OIDC identity mapping configured in the JFrog Platform (Admin > User Management > OIDC).
 - An OIDC ID token from the provider (usually injected by the CI environment via ACTIONS_ID_TOKEN_REQUEST_TOKEN or equivalent).
-- --platform-url or a configured server.
+- --url or a configured server.
 
 Common patterns:
-  $ jf eot --oidc-provider-name=my-gh-provider --oidc-token-id=$ACTIONS_ID_TOKEN --platform-url=https://mycorp.jfrog.io
+  $ jf eot --oidc-provider-name=my-gh-provider --oidc-token-id=$ACTIONS_ID_TOKEN --url=https://mycorp.jfrog.io
   $ jf eot --oidc-provider-name=my-provider --oidc-token-id=$ID_TOKEN --oidc-provider-type=github --application-key=my-app
 
 Gotchas:

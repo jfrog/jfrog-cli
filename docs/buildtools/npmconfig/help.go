@@ -23,7 +23,7 @@ Common patterns:
   $ jf npm-config --global
 
 Gotchas:
-- Interactive by default. Pass --interactive=false in scripts.
+- Prompts run when required flags are missing; pass --repo-resolve / --repo-deploy to avoid them.
 - --global writes to ~/.jfrog/projects/ and affects all subsequent jf npm runs on the machine.
 - A separate npm-config is needed per project; running 'jf npm' from a directory without one fails.
 

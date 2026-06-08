@@ -17,7 +17,7 @@ Prerequisites:
 - The Artifactory PyPI repository key.
 
 Common patterns:
-  $ jf poetry-config --server-id-resolve=my-server --repo-resolve=pypi-virtual --repo-deploy=pypi-local
+  $ jf poetry-config --server-id-resolve=my-server --repo-resolve=pypi-virtual
 
 Gotchas:
 - Interactive prompts trigger when required flags are missing.

@@ -17,7 +17,7 @@ Prerequisites:
 - The Artifactory Terraform repository key.
 
 Common patterns:
-  $ jf terraform-config --server-id-resolve=my-server --repo-resolve=terraform-virtual --repo-deploy=terraform-local
+  $ jf terraform-config --server-id-deploy=my-server --repo-deploy=terraform-local
 
 Gotchas:
 - Interactive prompts trigger when required flags are missing.

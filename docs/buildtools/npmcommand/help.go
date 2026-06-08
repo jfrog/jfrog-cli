@@ -38,5 +38,5 @@ Gotchas:
 - Some flags conflict between the npm version and the JFrog wrapper; in case of doubt, use --command-name to be explicit.
 - Curation (if enabled) can block install on policy-failed packages; surface those errors with --verbose.
 
-Related: jf npm-config, jf rt build-publish, jf xr audit npm`
+Related: jf npm-config, jf rt build-publish, jf audit`
 }

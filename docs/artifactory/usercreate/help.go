@@ -19,7 +19,7 @@ Prerequisites:
 Common patterns:
   $ jf rt user-create alice 'S3cret!' alice@example.com
   $ jf rt user-create alice 'S3cret!' alice@example.com --admin=true
-  $ jf rt user-create alice 'S3cret!' alice@example.com --groups=readers,writers
+  $ jf rt user-create alice 'S3cret!' alice@example.com --users-groups=readers,writers
 
 Gotchas:
 - Password is passed on the command line; consider 'jf rt uc' with a CSV or 'jf api' for safer handling.

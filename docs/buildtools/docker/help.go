@@ -39,5 +39,5 @@ Gotchas:
 - Push/pull collect build-info only when --build-name and --build-number are present.
 - docker buildx (BuildKit) is supported but multi-platform manifests need extra care with build-info.
 
-Related: jf dl, jf docker-promote, jf xr docker-scan`
+Related: jf dl, jf docker-promote, jf docker scan`
 }
