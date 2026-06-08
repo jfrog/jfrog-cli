@@ -1,14 +1,7 @@
 name: Evidence Tests
 on:
+  workflow_call:
   workflow_dispatch:
-  push:
-    branches:
-      - "master"
-  # Triggers the workflow on PRs to master branch only.
-  pull_request_target:
-    types: [labeled]
-    branches:
-      - "master"
 
 # Ensures that only the latest commit is running for each PR at a time.
 concurrency:
