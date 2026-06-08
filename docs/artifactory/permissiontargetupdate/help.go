@@ -18,7 +18,7 @@ func GetAIDescription() string {
 
 When to use:
 - Modifying RBAC after the fact (adding repos, users, or actions to a permission target).
-- Drift correction in GitOps-style RBAC management.
+- Re-applying a known-good permission-target definition (e.g. from version control) to correct configuration drift.
 
 Prerequisites:
 - A configured Artifactory server.
@@ -31,7 +31,7 @@ Common patterns:
 
 Gotchas:
 - The update is a full replacement; missing fields revert to defaults.
-- Failures roll back partially; verify with 'jf api /artifactory/api/v2/security/permissions/<name>'.
+- After updating, verify the result with 'jf api /artifactory/api/v2/security/permissions/<name>'.
 
 Related: jf rt ptt, jf rt ptc, jf rt ptdel`
 }
