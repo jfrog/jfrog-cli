@@ -2187,7 +2187,7 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 				workingDir, err := os.Getwd()
 				if err != nil {
 					log.Warn("Failed to get working directory, skipping build info collection: " + err.Error())
-				} else if err := buildinfo.GetPoetryBuildInfo(workingDir, buildConfiguration, deployerRepo); err != nil {
+				} else if err := buildinfo.GetPoetryBuildInfo(workingDir, buildConfiguration, deployerRepo, cmdName, poetryArgs); err != nil {
 					log.Warn("Failed to collect Poetry build info: " + err.Error())
 				} else {
 					buildNumber, err := buildConfiguration.GetBuildNumber()

@@ -18,7 +18,7 @@ require (
 	github.com/buger/jsonparser v1.2.0
 	github.com/gocarina/gocsv v0.0.0-20260523204920-c264028e67ea
 	github.com/jfrog/archiver/v3 v3.6.3
-	github.com/jfrog/build-info-go v1.13.1-0.20260528065004-80409c046540
+	github.com/jfrog/build-info-go v1.13.1-0.20260609173330-a8a3ed3919af
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-application v1.0.2-0.20260608074325-4de652aef752
 	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260609101705-321f68d15a6d
@@ -248,7 +248,7 @@ require (
 
 // replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260608132618-003a2af3b8a3
 
-// replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.13.1-0.20260428071432-1e9d9a1991ad
+// replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.13.1-0.20260603044611-897a097a7031
 
 // replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260604085947-7c110b77b4b4
 
