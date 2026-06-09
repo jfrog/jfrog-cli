@@ -67,11 +67,8 @@ func GetBuildInfoForPackageManager(pkgManager, workingDir string, buildConfigura
 // GetPoetryBuildInfo collects build info for Poetry projects.
 //
 // cmdName and args describe the poetry sub-command that just ran (e.g. "install",
-// "--only", "main"). They are used to decide whether to query the active poetry
-// venv for the ground-truth installed set — which is how we honor poetry's
-// --only/--without/--with flags in build-info, mirroring the proven UV pattern.
-// When cmdName is empty (legacy entry points), no ground-truth query is made
-// and the existing lock-file-driven behaviour is preserved.
+// "--only", "main"). They are used to decide whether to query poetry for the
+// group-filtered installed set
 func GetPoetryBuildInfo(workingDir string, buildConfiguration *buildUtils.BuildConfiguration, deployerRepo, cmdName string, args []string) error {
 	log.Debug("Collecting Poetry build info from directory: " + workingDir)
 	log.Debug("Deployer repository: " + deployerRepo)
@@ -113,13 +110,12 @@ func GetPoetryBuildInfo(workingDir string, buildConfiguration *buildUtils.BuildC
 	log.Info(fmt.Sprintf("Using repository for artifacts: %s", artifactRepo))
 
 	// For venv-modifying commands (install/add/remove/update/sync), capture the
-	// real installed set from poetry so build-info reflects what was actually
-	// installed — honouring --only/--without/--with without any flag parsing.
-	// For other commands and on any error this stays nil → legacy behaviour.
+	// group-filtered set from `poetry show`, forwarding the same
+	// --only/--with/--without flags that were passed to the poetry command so
+	// build-info reflects exactly the groups that were installed.
 	var installed map[string]string
-	_ = args // reserved for future per-arg behaviour; ground truth comes from poetry itself
 	if poetryModifiesVenv(cmdName) {
-		installed = poetryInstalledPackages(workingDir)
+		installed = poetryInstalledPackages(workingDir, args)
 	}
 
 	err = collectPoetryBuildInfo(workingDir, buildName, buildNumber, serverDetails, repoConfig.TargetRepo(), artifactRepo, installed, buildConfiguration)
@@ -381,9 +377,10 @@ func CreateAqlQueryForSearch(repo, file string) string {
 
 // collectPoetryBuildInfo collects Poetry dependencies and artifacts for build info.
 //
-// installedPackages, when non-nil, is the ground-truth set captured from
-// `poetry run pip list`. Only lockfile entries present in this map are included
-// in build-info, which is how --only/--without/--with are honoured.
+// installedPackages, when non-nil, is the group-filtered set captured from
+// `poetry show` (with the install command's --only/--with/--without flags
+// forwarded). Only lockfile entries present in this map are included in
+// build-info, which is how --only/--without/--with are honoured.
 func collectPoetryBuildInfo(workingDir, buildName, buildNumber string, serverDetails *config.ServerDetails, _ string, artifactRepo string, installedPackages map[string]string, buildConfiguration *buildUtils.BuildConfiguration) error {
 	log.Debug("Initializing Poetry dependency collection...")
 
@@ -827,8 +824,8 @@ func extractRepoNameFromPypiURL(urlStr string) string {
 
 // poetryModifiesVenv reports whether the named poetry sub-command actually
 // installs/uninstalls packages into the venv. Only for these commands does
-// querying the venv for the installed set make sense — for lock/build/publish
-// etc. the venv state is unrelated to the operation.
+// querying poetry for the group-filtered installed set make sense — for
+// lock/build/publish etc. the installed state is unrelated to the operation.
 func poetryModifiesVenv(cmdName string) bool {
 	switch cmdName {
 	case "install", "add", "remove", "update", "sync":
@@ -837,29 +834,75 @@ func poetryModifiesVenv(cmdName string) bool {
 	return false
 }
 
-// poetryPipPackage is the shape of one entry in `pip list --format=json`.
-type poetryPipPackage struct {
+// poetryShowPackage is the shape of one entry in `poetry show --format json`.
+// poetry show emits more fields (installed_status, description, ...) but only
+// name and version are needed here.
+type poetryShowPackage struct {
 	Name    string `json:"name"`
 	Version string `json:"version"`
 }
 
-// poetryInstalledPackages runs `poetry run pip list --format=json` inside
-// workingDir and returns the installed set as normalised name → version.
-// Normalisation matches PEP 503 (lowercase, runs of [-_.] collapsed to "-"),
-// the same normalisation applied to lockfile names by PoetryFlexPack.
-// Returns nil on any error so the caller falls back to lock-file-driven
-// resolution (no regression).
-func poetryInstalledPackages(workingDir string) map[string]string {
-	cmd := exec.Command("poetry", "run", "pip", "list", "--format=json")
+// poetryShowGroupArgs extracts the dependency-group filter flags
+// (--only/--with/--without and their values) from the poetry command args so
+// they can be forwarded verbatim to `poetry show`. Other install flags are not
+// valid for `poetry show` and are intentionally dropped.
+//
+// includeAll is true when the args request every group (e.g. --all-groups), in
+// which case no `poetry show` filtering is needed — the legacy include-all
+// behaviour already produces the correct result.
+func poetryShowGroupArgs(args []string) (groupArgs []string, includeAll bool) {
+	groupFlags := map[string]bool{"--only": true, "--with": true, "--without": true}
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		if a == "--all-groups" {
+			return nil, true
+		}
+		// --flag=value form
+		if eq := strings.IndexByte(a, '='); eq > 0 {
+			if groupFlags[a[:eq]] {
+				groupArgs = append(groupArgs, a)
+			}
+			continue
+		}
+		// --flag value form
+		if groupFlags[a] {
+			groupArgs = append(groupArgs, a)
+			if i+1 < len(args) {
+				groupArgs = append(groupArgs, args[i+1])
+				i++
+			}
+		}
+	}
+	return groupArgs, false
+}
+
+// poetryInstalledPackages runs `poetry show --format json` inside workingDir,
+// forwarding the dependency-group filter flags (--only/--with/--without) that
+// were passed to the poetry command. poetry show resolves the activated groups
+// via its own solver, so the result is exactly the set produced by the
+// group-filtered install — honouring --only/--without/--with.
+//
+// Returns the set as normalised name → version. Normalisation matches PEP 503
+// (lowercase, runs of [-_.] collapsed to "-"), the same normalisation applied
+// to lockfile names by PoetryFlexPack. Returns nil on any error so the caller
+// falls back to lock-file-driven resolution (no regression).
+func poetryInstalledPackages(workingDir string, args []string) map[string]string {
+	groupArgs, includeAll := poetryShowGroupArgs(args)
+	if includeAll {
+		// Every group requested → legacy include-all behaviour is already correct.
+		return nil
+	}
+	cmdArgs := append([]string{"show", "--format", "json"}, groupArgs...)
+	cmd := exec.Command("poetry", cmdArgs...)
 	cmd.Dir = workingDir
 	out, err := cmd.Output()
 	if err != nil {
-		log.Debug("Poetry build-info: 'poetry run pip list' failed, falling back to lock-file resolution: " + err.Error())
+		log.Debug("Poetry build-info: 'poetry show' failed, falling back to lock-file resolution: " + err.Error())
 		return nil
 	}
-	var list []poetryPipPackage
+	var list []poetryShowPackage
 	if err := json.Unmarshal(out, &list); err != nil {
-		log.Debug("Poetry build-info: failed to parse 'pip list' output: " + err.Error())
+		log.Debug("Poetry build-info: failed to parse 'poetry show' output: " + err.Error())
 		return nil
 	}
 	installed := make(map[string]string, len(list))
