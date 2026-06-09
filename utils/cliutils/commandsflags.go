@@ -158,6 +158,7 @@ const (
 	accessToken         = "access-token"
 	serverId            = "server-id"
 	serverIdYarn        = "server-id-yarn"
+	serverIdNpm         = "server-id-npm"
 	disableTokenRefresh = "disable-token-refresh"
 
 	passwordStdin    = "password-stdin"
@@ -770,6 +771,10 @@ var flagsMap = map[string]cli.Flag{
 	serverIdYarn: cli.StringFlag{
 		Name:  serverId,
 		Usage: "[Optional] Server ID configured using the 'jf config' command. Supported from yarn v4+ in native mode (JFROG_RUN_NATIVE=true).` `",
+	},
+	serverIdNpm: cli.StringFlag{
+		Name:  serverId,
+		Usage: "[Optional] Server ID configured using the 'jf config' command. Used in native mode (JFROG_RUN_NATIVE=true) to identify the JFrog server for usage reporting.` `",
 	},
 	passwordStdin: cli.BoolFlag{
 		Name:  passwordStdin,
@@ -2132,10 +2137,10 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	NpmInstallCi: {
-		BuildName, BuildNumber, module, Project, runNative,
+		BuildName, BuildNumber, module, Project, runNative, serverIdNpm,
 	},
 	NpmPublish: {
-		BuildName, BuildNumber, module, Project, npmDetailedSummary, xrayScan, XrFormat, runNative, npmWorkspaces,
+		BuildName, BuildNumber, module, Project, npmDetailedSummary, xrayScan, XrFormat, runNative, npmWorkspaces, serverIdNpm,
 	},
 	PnpmConfig: {
 		global, serverIdResolve, repoResolve,
