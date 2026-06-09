@@ -13,6 +13,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	testhelpers "github.com/jfrog/jfrog-cli/utils/tests"
+	"github.com/jfrog/jfrog-cli/utils/usage"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/stretchr/testify/assert"
@@ -651,13 +652,13 @@ func (mc *mockContext) setInt(name string, value int) {
 	mc.setMap[name] = true
 }
 
-// swapReportUsageFn replaces reportUsageFn for the duration of the test and
-// restores it on cleanup. Tests using this must not run in parallel.
+// swapReportUsageFn replaces the shared usage.ReportUsageFn for the duration of
+// the test and restores it on cleanup. Tests using this must not run in parallel.
 func swapReportUsageFn(t *testing.T, fn func(string, *coreConfig.ServerDetails, chan<- bool)) {
 	t.Helper()
-	prev := reportUsageFn
-	reportUsageFn = fn
-	t.Cleanup(func() { reportUsageFn = prev })
+	prev := usage.ReportUsageFn
+	usage.ReportUsageFn = fn
+	t.Cleanup(func() { usage.ReportUsageFn = prev })
 }
 
 // newTestServer starts an httptest server that returns 200/OK and serverDetails
@@ -692,33 +693,6 @@ func TestRunApiCmd_CollectsMetrics(t *testing.T) {
 	assert.Equal(t, flags, got.Flags)
 }
 
-func TestWaitForUsageReport(t *testing.T) {
-	t.Run("non-positive timeout waits for signal", func(t *testing.T) {
-		ch := make(chan bool, 1)
-		ch <- true
-		start := time.Now()
-		waitForUsageReport(ch, 0)
-		assert.Less(t, time.Since(start), 50*time.Millisecond)
-	})
-
-	t.Run("returns immediately when signaled before timeout", func(t *testing.T) {
-		ch := make(chan bool, 1)
-		ch <- true
-		start := time.Now()
-		waitForUsageReport(ch, time.Second)
-		assert.Less(t, time.Since(start), 50*time.Millisecond)
-	})
-
-	t.Run("returns at timeout when never signaled", func(t *testing.T) {
-		ch := make(chan bool)
-		start := time.Now()
-		waitForUsageReport(ch, 100*time.Millisecond)
-		elapsed := time.Since(start)
-		assert.GreaterOrEqual(t, elapsed, 100*time.Millisecond)
-		assert.Less(t, elapsed, 500*time.Millisecond)
-	})
-}
-
 func TestRunApiCmd_UsageReportDisabled(t *testing.T) {
 	t.Setenv("JFROG_CLI_REPORT_USAGE", "false")
 
@@ -730,20 +704,6 @@ func TestRunApiCmd_UsageReportDisabled(t *testing.T) {
 	require.NoError(t, runApiCmd(ctx, serverDetails, &stdOut, nil))
 	// With reporting disabled the real reporter is a near-instant no-op.
 	assert.Less(t, time.Since(start), 2*time.Second)
-}
-
-func TestStartUsageReport_PanicIsRecovered(t *testing.T) {
-	swapReportUsageFn(t, func(_ string, _ *coreConfig.ServerDetails, _ chan<- bool) {
-		panic("boom")
-	})
-
-	ch := startUsageReport(&coreConfig.ServerDetails{})
-	select {
-	case <-ch:
-		// Channel was closed by the recover path; receive returns the zero value.
-	case <-time.After(time.Second):
-		t.Fatal("startUsageReport did not unblock after panic")
-	}
 }
 
 func TestRunApiCmd_UsageReportTimeout(t *testing.T) {
