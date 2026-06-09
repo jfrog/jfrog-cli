@@ -361,6 +361,7 @@ func getCommands() ([]cli.Command, error) {
 			Usage:        corecommon.ResolveDescription(loginDocs.GetDescription(), loginDocs.GetAIDescription()),
 			HelpName:     corecommon.CreateUsage("login", corecommon.ResolveDescription(loginDocs.GetDescription(), loginDocs.GetAIDescription()), loginDocs.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Flags:        cliutils.GetCommandFlags(cliutils.Login),
 			Category:     otherCategory,
 			Action:       login.LoginCmd,
 		},
