@@ -190,7 +190,10 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action:          YarnCmd,
+			Action: func(c *cli.Context) (errFromCmd error) {
+				cmdName, _ := getCommandName(c.Args())
+				return securityCLI.WrapCmdWithCurationPostFailureRun(c, YarnCmd, techutils.Yarn, cmdName)
+			},
 		},
 		{
 			Name:         "nuget-config",
@@ -489,7 +492,10 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc("install", "i", "publish", "p"),
 			Category:        buildToolsCategory,
-			Action:          pnpmCmd,
+			Action: func(c *cli.Context) error {
+				cmdName, _ := getCommandName(c.Args())
+				return securityCLI.WrapCmdWithCurationPostFailureRun(c, pnpmCmd, techutils.Pnpm, cmdName)
+			},
 		},
 		{
 			Name:            "docker",
