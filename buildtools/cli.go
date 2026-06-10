@@ -119,8 +119,8 @@ func GetCommands() []cli.Command {
 			Name:         "mvn-config",
 			Aliases:      []string{"mvnc"},
 			Flags:        cliutils.GetCommandFlags(cliutils.MvnConfig),
-			Usage:        mvnconfig.GetDescription(),
-			HelpName:     corecommon.CreateUsage("mvn-config", mvnconfig.GetDescription(), mvnconfig.Usage),
+			Usage:        corecommon.ResolveDescription(mvnconfig.GetDescription(), mvnconfig.GetAIDescription()),
+			HelpName:     corecommon.CreateUsage("mvn-config", corecommon.ResolveDescription(mvnconfig.GetDescription(), mvnconfig.GetAIDescription()), mvnconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     buildToolsCategory,
@@ -131,8 +131,8 @@ func GetCommands() []cli.Command {
 		{
 			Name:            "mvn",
 			Flags:           cliutils.GetCommandFlags(cliutils.Mvn),
-			Usage:           mvndoc.GetDescription(),
-			HelpName:        corecommon.CreateUsage("mvn", mvndoc.GetDescription(), mvndoc.Usage),
+			Usage:           corecommon.ResolveDescription(mvndoc.GetDescription(), mvndoc.GetAIDescription()),
+			HelpName:        corecommon.CreateUsage("mvn", corecommon.ResolveDescription(mvndoc.GetDescription(), mvndoc.GetAIDescription()), mvndoc.Usage),
 			UsageText:       mvndoc.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(mvndoc.EnvVar...),
 			SkipFlagParsing: true,
@@ -147,8 +147,8 @@ func GetCommands() []cli.Command {
 			Name:         "gradle-config",
 			Aliases:      []string{"gradlec"},
 			Flags:        cliutils.GetCommandFlags(cliutils.GradleConfig),
-			Usage:        gradleconfig.GetDescription(),
-			HelpName:     corecommon.CreateUsage("gradle-config", gradleconfig.GetDescription(), gradleconfig.Usage),
+			Usage:        corecommon.ResolveDescription(gradleconfig.GetDescription(), gradleconfig.GetAIDescription()),
+			HelpName:     corecommon.CreateUsage("gradle-config", corecommon.ResolveDescription(gradleconfig.GetDescription(), gradleconfig.GetAIDescription()), gradleconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     buildToolsCategory,
@@ -159,8 +159,8 @@ func GetCommands() []cli.Command {
 		{
 			Name:            "gradle",
 			Flags:           cliutils.GetCommandFlags(cliutils.Gradle),
-			Usage:           gradledoc.GetDescription(),
-			HelpName:        corecommon.CreateUsage("gradle", gradledoc.GetDescription(), gradledoc.Usage),
+			Usage:           corecommon.ResolveDescription(gradledoc.GetDescription(), gradledoc.GetAIDescription()),
+			HelpName:        corecommon.CreateUsage("gradle", corecommon.ResolveDescription(gradledoc.GetDescription(), gradledoc.GetAIDescription()), gradledoc.Usage),
 			UsageText:       gradledoc.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(gradledoc.EnvVar...),
 			SkipFlagParsing: true,
@@ -172,8 +172,8 @@ func GetCommands() []cli.Command {
 			Name:         "yarn-config",
 			Aliases:      []string{"yarnc"},
 			Flags:        cliutils.GetCommandFlags(cliutils.YarnConfig),
-			Usage:        yarnconfig.GetDescription(),
-			HelpName:     corecommon.CreateUsage("yarn-config", yarnconfig.GetDescription(), yarnconfig.Usage),
+			Usage:        corecommon.ResolveDescription(yarnconfig.GetDescription(), yarnconfig.GetAIDescription()),
+			HelpName:     corecommon.CreateUsage("yarn-config", corecommon.ResolveDescription(yarnconfig.GetDescription(), yarnconfig.GetAIDescription()), yarnconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     buildToolsCategory,
@@ -184,8 +184,8 @@ func GetCommands() []cli.Command {
 		{
 			Name:            "yarn",
 			Flags:           cliutils.GetCommandFlags(cliutils.Yarn),
-			Usage:           yarndocs.GetDescription(),
-			HelpName:        corecommon.CreateUsage("yarn", yarndocs.GetDescription(), yarndocs.Usage),
+			Usage:           corecommon.ResolveDescription(yarndocs.GetDescription(), yarndocs.GetAIDescription()),
+			HelpName:        corecommon.CreateUsage("yarn", corecommon.ResolveDescription(yarndocs.GetDescription(), yarndocs.GetAIDescription()), yarndocs.Usage),
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
@@ -199,8 +199,8 @@ func GetCommands() []cli.Command {
 			Name:         "nuget-config",
 			Flags:        cliutils.GetCommandFlags(cliutils.NugetConfig),
 			Aliases:      []string{"nugetc"},
-			Usage:        nugetconfig.GetDescription(),
-			HelpName:     corecommon.CreateUsage("nuget-config", nugetconfig.GetDescription(), nugetconfig.Usage),
+			Usage:        corecommon.ResolveDescription(nugetconfig.GetDescription(), nugetconfig.GetAIDescription()),
+			HelpName:     corecommon.CreateUsage("nuget-config", corecommon.ResolveDescription(nugetconfig.GetDescription(), nugetconfig.GetAIDescription()), nugetconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     buildToolsCategory,
@@ -211,8 +211,8 @@ func GetCommands() []cli.Command {
 		{
 			Name:            "nuget",
 			Flags:           cliutils.GetCommandFlags(cliutils.Nuget),
-			Usage:           nugetdocs.GetDescription(),
-			HelpName:        corecommon.CreateUsage("nuget", nugetdocs.GetDescription(), nugetdocs.Usage),
+			Usage:           corecommon.ResolveDescription(nugetdocs.GetDescription(), nugetdocs.GetAIDescription()),
+			HelpName:        corecommon.CreateUsage("nuget", corecommon.ResolveDescription(nugetdocs.GetDescription(), nugetdocs.GetAIDescription()), nugetdocs.Usage),
 			UsageText:       nugetdocs.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
@@ -224,8 +224,8 @@ func GetCommands() []cli.Command {
 			Name:         "dotnet-config",
 			Flags:        cliutils.GetCommandFlags(cliutils.DotnetConfig),
 			Aliases:      []string{"dotnetc"},
-			Usage:        dotnetconfig.GetDescription(),
-			HelpName:     corecommon.CreateUsage("dotnet-config", dotnetconfig.GetDescription(), dotnetconfig.Usage),
+			Usage:        corecommon.ResolveDescription(dotnetconfig.GetDescription(), dotnetconfig.GetAIDescription()),
+			HelpName:     corecommon.CreateUsage("dotnet-config", corecommon.ResolveDescription(dotnetconfig.GetDescription(), dotnetconfig.GetAIDescription()), dotnetconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     buildToolsCategory,
@@ -236,8 +236,8 @@ func GetCommands() []cli.Command {
 		{
 			Name:            "dotnet",
 			Flags:           cliutils.GetCommandFlags(cliutils.Dotnet),
-			Usage:           dotnetdocs.GetDescription(),
-			HelpName:        corecommon.CreateUsage("dotnet", dotnetdocs.GetDescription(), dotnetdocs.Usage),
+			Usage:           corecommon.ResolveDescription(dotnetdocs.GetDescription(), dotnetdocs.GetAIDescription()),
+			HelpName:        corecommon.CreateUsage("dotnet", corecommon.ResolveDescription(dotnetdocs.GetDescription(), dotnetdocs.GetAIDescription()), dotnetdocs.Usage),
 			UsageText:       dotnetdocs.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
@@ -249,8 +249,8 @@ func GetCommands() []cli.Command {
 			Name:         "go-config",
 			Aliases:      []string{"goc"},
 			Flags:        cliutils.GetCommandFlags(cliutils.GoConfig),
-			Usage:        goconfig.GetDescription(),
-			HelpName:     corecommon.CreateUsage("go-config", goconfig.GetDescription(), goconfig.Usage),
+			Usage:        corecommon.ResolveDescription(goconfig.GetDescription(), goconfig.GetAIDescription()),
+			HelpName:     corecommon.CreateUsage("go-config", corecommon.ResolveDescription(goconfig.GetDescription(), goconfig.GetAIDescription()), goconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     buildToolsCategory,
@@ -261,8 +261,8 @@ func GetCommands() []cli.Command {
 		{
 			Name:            "go",
 			Flags:           cliutils.GetCommandFlags(cliutils.Go),
-			Usage:           gocommand.GetDescription(),
-			HelpName:        corecommon.CreateUsage("go", gocommand.GetDescription(), gocommand.Usage),
+			Usage:           corecommon.ResolveDescription(gocommand.GetDescription(), gocommand.GetAIDescription()),
+			HelpName:        corecommon.CreateUsage("go", corecommon.ResolveDescription(gocommand.GetDescription(), gocommand.GetAIDescription()), gocommand.Usage),
 			UsageText:       gocommand.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
@@ -277,8 +277,8 @@ func GetCommands() []cli.Command {
 			Name:         "go-publish",
 			Flags:        cliutils.GetCommandFlags(cliutils.GoPublish),
 			Aliases:      []string{"gp"},
-			Usage:        gopublish.GetDescription(),
-			HelpName:     corecommon.CreateUsage("go-publish", gopublish.GetDescription(), gopublish.Usage),
+			Usage:        corecommon.ResolveDescription(gopublish.GetDescription(), gopublish.GetAIDescription()),
+			HelpName:     corecommon.CreateUsage("go-publish", corecommon.ResolveDescription(gopublish.GetDescription(), gopublish.GetAIDescription()), gopublish.Usage),
 			UsageText:    gopublish.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
@@ -289,8 +289,8 @@ func GetCommands() []cli.Command {
 			Name:         "pip-config",
 			Flags:        cliutils.GetCommandFlags(cliutils.PipConfig),
 			Aliases:      []string{"pipc"},
-			Usage:        pipconfig.GetDescription(),
-			HelpName:     corecommon.CreateUsage("pip-config", pipconfig.GetDescription(), pipconfig.Usage),
+			Usage:        corecommon.ResolveDescription(pipconfig.GetDescription(), pipconfig.GetAIDescription()),
+			HelpName:     corecommon.CreateUsage("pip-config", corecommon.ResolveDescription(pipconfig.GetDescription(), pipconfig.GetAIDescription()), pipconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     buildToolsCategory,
@@ -301,8 +301,8 @@ func GetCommands() []cli.Command {
 		{
 			Name:            "pip",
 			Flags:           cliutils.GetCommandFlags(cliutils.PipInstall),
-			Usage:           pipinstall.GetDescription(),
-			HelpName:        corecommon.CreateUsage("pip", pipinstall.GetDescription(), pipinstall.Usage),
+			Usage:           corecommon.ResolveDescription(pipinstall.GetDescription(), pipinstall.GetAIDescription()),
+			HelpName:        corecommon.CreateUsage("pip", corecommon.ResolveDescription(pipinstall.GetDescription(), pipinstall.GetAIDescription()), pipinstall.Usage),
 			UsageText:       pipinstall.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
@@ -317,8 +317,8 @@ func GetCommands() []cli.Command {
 			Name:         "pipenv-config",
 			Flags:        cliutils.GetCommandFlags(cliutils.PipenvConfig),
 			Aliases:      []string{"pipec"},
-			Usage:        pipenvconfig.GetDescription(),
-			HelpName:     corecommon.CreateUsage("pipenv-config", pipenvconfig.GetDescription(), pipenvconfig.Usage),
+			Usage:        corecommon.ResolveDescription(pipenvconfig.GetDescription(), pipenvconfig.GetAIDescription()),
+			HelpName:     corecommon.CreateUsage("pipenv-config", corecommon.ResolveDescription(pipenvconfig.GetDescription(), pipenvconfig.GetAIDescription()), pipenvconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     buildToolsCategory,
@@ -329,8 +329,8 @@ func GetCommands() []cli.Command {
 		{
 			Name:            "pipenv",
 			Flags:           cliutils.GetCommandFlags(cliutils.PipenvInstall),
-			Usage:           pipenvinstall.GetDescription(),
-			HelpName:        corecommon.CreateUsage("pipenv", pipenvinstall.GetDescription(), pipenvinstall.Usage),
+			Usage:           corecommon.ResolveDescription(pipenvinstall.GetDescription(), pipenvinstall.GetAIDescription()),
+			HelpName:        corecommon.CreateUsage("pipenv", corecommon.ResolveDescription(pipenvinstall.GetDescription(), pipenvinstall.GetAIDescription()), pipenvinstall.Usage),
 			UsageText:       pipenvinstall.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
@@ -342,8 +342,8 @@ func GetCommands() []cli.Command {
 			Name:         "poetry-config",
 			Flags:        cliutils.GetCommandFlags(cliutils.PoetryConfig),
 			Aliases:      []string{"poc"},
-			Usage:        poetryconfig.GetDescription(),
-			HelpName:     corecommon.CreateUsage("poetry-config", poetryconfig.GetDescription(), poetryconfig.Usage),
+			Usage:        corecommon.ResolveDescription(poetryconfig.GetDescription(), poetryconfig.GetAIDescription()),
+			HelpName:     corecommon.CreateUsage("poetry-config", corecommon.ResolveDescription(poetryconfig.GetDescription(), poetryconfig.GetAIDescription()), poetryconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     buildToolsCategory,
@@ -354,8 +354,8 @@ func GetCommands() []cli.Command {
 		{
 			Name:            "poetry",
 			Flags:           cliutils.GetCommandFlags(cliutils.Poetry),
-			Usage:           poetry.GetDescription(),
-			HelpName:        corecommon.CreateUsage("poetry", poetry.GetDescription(), poetry.Usage),
+			Usage:           corecommon.ResolveDescription(poetry.GetDescription(), poetry.GetAIDescription()),
+			HelpName:        corecommon.CreateUsage("poetry", corecommon.ResolveDescription(poetry.GetDescription(), poetry.GetAIDescription()), poetry.Usage),
 			UsageText:       poetry.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
@@ -378,8 +378,8 @@ func GetCommands() []cli.Command {
 		{
 			Name:            "helm",
 			Flags:           cliutils.GetCommandFlags(cliutils.Helm),
-			Usage:           helmcommand.GetDescription(),
-			HelpName:        corecommon.CreateUsage("helm", helmcommand.GetDescription(), helmcommand.Usage),
+			Usage:           corecommon.ResolveDescription(helmcommand.GetDescription(), helmcommand.GetAIDescription()),
+			HelpName:        corecommon.CreateUsage("helm", corecommon.ResolveDescription(helmcommand.GetDescription(), helmcommand.GetAIDescription()), helmcommand.Usage),
 			UsageText:       helmcommand.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
@@ -392,8 +392,8 @@ func GetCommands() []cli.Command {
 			Name:         "conan-config",
 			Flags:        cliutils.GetCommandFlags(cliutils.ConanConfig),
 			Aliases:      []string{"conanc"},
-			Usage:        conanconfig.GetDescription(),
-			HelpName:     corecommon.CreateUsage("conan-config", conanconfig.GetDescription(), conanconfig.Usage),
+			Usage:        corecommon.ResolveDescription(conanconfig.GetDescription(), conanconfig.GetAIDescription()),
+			HelpName:     corecommon.CreateUsage("conan-config", corecommon.ResolveDescription(conanconfig.GetDescription(), conanconfig.GetAIDescription()), conanconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     buildToolsCategory,
@@ -405,8 +405,8 @@ func GetCommands() []cli.Command {
 			Name:            "conan",
 			Hidden:          false,
 			Flags:           cliutils.GetCommandFlags(cliutils.Conan),
-			Usage:           conan.GetDescription(),
-			HelpName:        corecommon.CreateUsage("conan", conan.GetDescription(), conan.Usage),
+			Usage:           corecommon.ResolveDescription(conan.GetDescription(), conan.GetAIDescription()),
+			HelpName:        corecommon.CreateUsage("conan", corecommon.ResolveDescription(conan.GetDescription(), conan.GetAIDescription()), conan.Usage),
 			UsageText:       conan.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
@@ -431,8 +431,8 @@ func GetCommands() []cli.Command {
 			Name:         "ruby-config",
 			Flags:        cliutils.GetCommandFlags(cliutils.RubyConfig),
 			Aliases:      []string{"rubyc"},
-			Usage:        rubyconfig.GetDescription(),
-			HelpName:     corecommon.CreateUsage("ruby-config", rubyconfig.GetDescription(), rubyconfig.Usage),
+			Usage:        corecommon.ResolveDescription(rubyconfig.GetDescription(), rubyconfig.GetAIDescription()),
+			HelpName:     corecommon.CreateUsage("ruby-config", corecommon.ResolveDescription(rubyconfig.GetDescription(), rubyconfig.GetAIDescription()), rubyconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     buildToolsCategory,
@@ -444,8 +444,8 @@ func GetCommands() []cli.Command {
 			Name:         "npm-config",
 			Flags:        cliutils.GetCommandFlags(cliutils.NpmConfig),
 			Aliases:      []string{"npmc"},
-			Usage:        npmconfig.GetDescription(),
-			HelpName:     corecommon.CreateUsage("npm-config", npmconfig.GetDescription(), npmconfig.Usage),
+			Usage:        corecommon.ResolveDescription(npmconfig.GetDescription(), npmconfig.GetAIDescription()),
+			HelpName:     corecommon.CreateUsage("npm-config", corecommon.ResolveDescription(npmconfig.GetDescription(), npmconfig.GetAIDescription()), npmconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     buildToolsCategory,
@@ -455,8 +455,8 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "npm",
-			Usage:           npmcommand.GetDescription(),
-			HelpName:        corecommon.CreateUsage("npm", npmcommand.GetDescription(), npmcommand.Usage),
+			Usage:           corecommon.ResolveDescription(npmcommand.GetDescription(), npmcommand.GetAIDescription()),
+			HelpName:        corecommon.CreateUsage("npm", corecommon.ResolveDescription(npmcommand.GetDescription(), npmcommand.GetAIDescription()), npmcommand.Usage),
 			UsageText:       npmcommand.GetArguments(),
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc("install", "i", "isntall", "add", "ci", "publish", "p"),
@@ -474,8 +474,8 @@ func GetCommands() []cli.Command {
 			Name:         "pnpm-config",
 			Flags:        cliutils.GetCommandFlags(cliutils.PnpmConfig),
 			Aliases:      []string{"pnpmc"},
-			Usage:        pnpmconfig.GetDescription(),
-			HelpName:     corecommon.CreateUsage("pnpm-config", pnpmconfig.GetDescription(), pnpmconfig.Usage),
+			Usage:        corecommon.ResolveDescription(pnpmconfig.GetDescription(), pnpmconfig.GetAIDescription()),
+			HelpName:     corecommon.CreateUsage("pnpm-config", corecommon.ResolveDescription(pnpmconfig.GetDescription(), pnpmconfig.GetAIDescription()), pnpmconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     buildToolsCategory,
@@ -486,8 +486,8 @@ func GetCommands() []cli.Command {
 		{
 			Name:            "pnpm",
 			Flags:           cliutils.GetCommandFlags(cliutils.Pnpm),
-			Usage:           pnpmcommand.GetDescription(),
-			HelpName:        corecommon.CreateUsage("pnpm", pnpmcommand.GetDescription(), pnpmcommand.Usage),
+			Usage:           corecommon.ResolveDescription(pnpmcommand.GetDescription(), pnpmcommand.GetAIDescription()),
+			HelpName:        corecommon.CreateUsage("pnpm", corecommon.ResolveDescription(pnpmcommand.GetDescription(), pnpmcommand.GetAIDescription()), pnpmcommand.Usage),
 			UsageText:       pnpmcommand.GetArguments(),
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc("install", "i", "publish", "p"),
@@ -500,8 +500,8 @@ func GetCommands() []cli.Command {
 		{
 			Name:            "docker",
 			Flags:           cliutils.GetCommandFlags(cliutils.Docker),
-			Usage:           docker.GetDescription(),
-			HelpName:        corecommon.CreateUsage("docker", docker.GetDescription(), docker.Usage),
+			Usage:           corecommon.ResolveDescription(docker.GetDescription(), docker.GetAIDescription()),
+			HelpName:        corecommon.CreateUsage("docker", corecommon.ResolveDescription(docker.GetDescription(), docker.GetAIDescription()), docker.Usage),
 			UsageText:       docker.GetArguments(),
 			SkipFlagParsing: skipFlagParsingForDockerCmd(),
 			BashComplete:    corecommon.CreateBashCompletionFunc("login", "push", "pull", "scan"),
@@ -512,8 +512,8 @@ func GetCommands() []cli.Command {
 			Name:         "terraform-config",
 			Flags:        cliutils.GetCommandFlags(cliutils.TerraformConfig),
 			Aliases:      []string{"tfc"},
-			Usage:        terraformconfig.GetDescription(),
-			HelpName:     corecommon.CreateUsage("terraform-config", terraformconfig.GetDescription(), terraformconfig.Usage),
+			Usage:        corecommon.ResolveDescription(terraformconfig.GetDescription(), terraformconfig.GetAIDescription()),
+			HelpName:     corecommon.CreateUsage("terraform-config", corecommon.ResolveDescription(terraformconfig.GetDescription(), terraformconfig.GetAIDescription()), terraformconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     buildToolsCategory,
@@ -525,8 +525,8 @@ func GetCommands() []cli.Command {
 			Name:            "terraform",
 			Flags:           cliutils.GetCommandFlags(cliutils.Terraform),
 			Aliases:         []string{"tf"},
-			Usage:           terraformdocs.GetDescription(),
-			HelpName:        corecommon.CreateUsage("terraform", terraformdocs.GetDescription(), terraformdocs.Usage),
+			Usage:           corecommon.ResolveDescription(terraformdocs.GetDescription(), terraformdocs.GetAIDescription()),
+			HelpName:        corecommon.CreateUsage("terraform", corecommon.ResolveDescription(terraformdocs.GetDescription(), terraformdocs.GetAIDescription()), terraformdocs.Usage),
 			UsageText:       terraformdocs.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
@@ -537,8 +537,8 @@ func GetCommands() []cli.Command {
 		{
 			Name:            "twine",
 			Flags:           cliutils.GetCommandFlags(cliutils.Twine),
-			Usage:           twinedocs.GetDescription(),
-			HelpName:        corecommon.CreateUsage("twine", twinedocs.GetDescription(), twinedocs.Usage),
+			Usage:           corecommon.ResolveDescription(twinedocs.GetDescription(), twinedocs.GetAIDescription()),
+			HelpName:        corecommon.CreateUsage("twine", corecommon.ResolveDescription(twinedocs.GetDescription(), twinedocs.GetAIDescription()), twinedocs.Usage),
 			UsageText:       twinedocs.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
@@ -549,8 +549,8 @@ func GetCommands() []cli.Command {
 		{
 			Name:        "hugging-face",
 			Aliases:     []string{"hf"},
-			HelpName:    corecommon.CreateUsage("hugging-face", huggingface.GetDescription(), huggingface.Usage),
-			Description: huggingface.GetDescription(),
+			HelpName:    corecommon.CreateUsage("hugging-face", corecommon.ResolveDescription(huggingface.GetDescription(), huggingface.GetAIDescription()), huggingface.Usage),
+			Description: corecommon.ResolveDescription(huggingface.GetDescription(), huggingface.GetAIDescription()),
 			Hidden:      false,
 			Category:    buildToolsCategory,
 			Action: func(c *cli.Context) error {
@@ -564,8 +564,8 @@ func GetCommands() []cli.Command {
 					Name:      "upload",
 					Aliases:   []string{"u"},
 					Flags:     cliutils.GetCommandFlags(cliutils.HuggingFaceUpload),
-					HelpName:  corecommon.CreateUsage("hf upload", huggingfaceuploaddocs.GetDescription(), huggingfaceuploaddocs.Usage),
-					Usage:     huggingfaceuploaddocs.GetDescription(),
+					HelpName:  corecommon.CreateUsage("hf upload", corecommon.ResolveDescription(huggingfaceuploaddocs.GetDescription(), huggingfaceuploaddocs.GetAIDescription()), huggingfaceuploaddocs.Usage),
+					Usage:     corecommon.ResolveDescription(huggingfaceuploaddocs.GetDescription(), huggingfaceuploaddocs.GetAIDescription()),
 					UsageText: huggingfaceuploaddocs.GetArguments(),
 					Action:    huggingFaceUploadCmd,
 				},
@@ -573,8 +573,8 @@ func GetCommands() []cli.Command {
 					Name:      "download",
 					Aliases:   []string{"d"},
 					Flags:     cliutils.GetCommandFlags(cliutils.HuggingFaceDownload),
-					HelpName:  corecommon.CreateUsage("hf download", huggingfacedownloaddocs.GetDescription(), huggingfacedownloaddocs.Usage),
-					Usage:     huggingfacedownloaddocs.GetDescription(),
+					HelpName:  corecommon.CreateUsage("hf download", corecommon.ResolveDescription(huggingfacedownloaddocs.GetDescription(), huggingfacedownloaddocs.GetAIDescription()), huggingfacedownloaddocs.Usage),
+					Usage:     corecommon.ResolveDescription(huggingfacedownloaddocs.GetDescription(), huggingfacedownloaddocs.GetAIDescription()),
 					UsageText: huggingfacedownloaddocs.GetArguments(),
 					Action:    huggingFaceDownloadCmd,
 				},
@@ -680,9 +680,13 @@ func MvnCmd(c *cli.Context) (err error) {
 		if err != nil {
 			return err
 		}
-		// Create Maven command with empty config for FlexPack
-		mvnCmd := mvn.NewMvnCommand().SetConfigPath("").SetGoals(filteredMavenArgs).SetConfiguration(buildConfiguration)
-		return commands.Exec(mvnCmd)
+		// Maven does not accept --server-id; use the default configured server for usage reporting.
+		serverDetails, err := coreConfig.GetDefaultServerConf()
+		if err != nil {
+			return err
+		}
+		mvnCmd := mvn.NewMvnCommand().SetConfigPath("").SetGoals(filteredMavenArgs).SetConfiguration(buildConfiguration).SetServerDetails(serverDetails)
+		return commands.ExecWithPackageManager(mvnCmd, project.Maven.String())
 	}
 
 	// If config file is missing and not in native mode, return the standard missing-config error.
@@ -735,7 +739,7 @@ func MvnCmd(c *cli.Context) (err error) {
 		}
 	}
 	mvnCmd := mvn.NewMvnCommand().SetConfiguration(buildConfiguration).SetConfigPath(configFilePath).SetGoals(filteredMavenArgs).SetThreads(threads).SetInsecureTls(insecureTls).SetDetailedSummary(detailedSummary || printDeploymentView).SetXrayScan(xrayScan).SetScanOutputFormat(scanOutputFormat)
-	err = commands.Exec(mvnCmd)
+	err = commands.ExecWithPackageManager(mvnCmd, project.Maven.String())
 	result := mvnCmd.Result()
 	defer cliutils.CleanupResult(result, &err)
 	err = cliutils.PrintCommandSummary(mvnCmd.Result(), detailedSummary, printDeploymentView, false, err)
@@ -795,7 +799,7 @@ func GradleCmd(c *cli.Context) (err error) {
 
 		// Create Gradle command with FlexPack (no config file needed)
 		gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(filteredGradleArgs).SetConfigPath("").SetServerDetails(serverDetails)
-		return commands.Exec(gradleCmd)
+		return commands.ExecWithPackageManager(gradleCmd, project.Gradle.String())
 	}
 
 	// If config file is missing and not in native mode, return the standard missing-config error.
@@ -847,7 +851,7 @@ func GradleCmd(c *cli.Context) (err error) {
 	}
 	printDeploymentView := log.IsStdErrTerminal()
 	gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(filteredGradleArgs).SetConfigPath(configFilePath).SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetXrayScan(xrayScan).SetScanOutputFormat(scanOutputFormat)
-	err = commands.Exec(gradleCmd)
+	err = commands.ExecWithPackageManager(gradleCmd, project.Gradle.String())
 	result := gradleCmd.Result()
 	defer cliutils.CleanupResult(result, &err)
 	err = cliutils.PrintCommandSummary(gradleCmd.Result(), detailedSummary, printDeploymentView, false, err)
@@ -869,7 +873,7 @@ func YarnCmd(c *cli.Context) error {
 	}
 
 	yarnCmd := yarn.NewYarnCommand().SetConfigFilePath(configFilePath).SetArgs(c.Args())
-	return commands.Exec(yarnCmd)
+	return commands.ExecWithPackageManager(yarnCmd, project.Yarn.String())
 }
 
 func pnpmCmd(c *cli.Context) error {
@@ -895,7 +899,7 @@ func pnpmCmd(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
-		return commands.Exec(pnpmCommand)
+		return commands.ExecWithPackageManager(pnpmCommand, project.Pnpm.String())
 	default:
 		return runNativePackageManagerCmd("pnpm", append([]string{cmdName}, cleanArgs...))
 	}
@@ -970,7 +974,7 @@ func NugetCmd(c *cli.Context) error {
 	if len(filteredNugetArgs) > 1 {
 		nugetCmd.SetArgAndFlags(filteredNugetArgs[1:])
 	}
-	return commands.Exec(nugetCmd)
+	return commands.ExecWithPackageManager(nugetCmd, project.Nuget.String())
 }
 
 func DotnetCmd(c *cli.Context) error {
@@ -1014,7 +1018,7 @@ func DotnetCmd(c *cli.Context) error {
 	if len(filteredDotnetArgs) > 1 {
 		dotnetCmd.SetArgAndFlags(filteredDotnetArgs[1:])
 	}
-	return commands.Exec(dotnetCmd)
+	return commands.ExecWithPackageManager(dotnetCmd, project.Dotnet.String())
 }
 
 func getNugetAndDotnetConfigFields(configFilePath string) (rtDetails *coreConfig.ServerDetails, targetRepo string, useNugetV2 bool, err error) {
@@ -1064,7 +1068,7 @@ func GoCmd(c *cli.Context) error {
 	args := cliutils.ExtractCommand(c)
 	goCommand := golang.NewGoCommand()
 	goCommand.SetConfigFilePath(configFilePath).SetGoArg(args)
-	return commands.Exec(goCommand)
+	return commands.ExecWithPackageManager(goCommand, project.Go.String())
 }
 
 func GoPublishCmd(c *cli.Context) (err error) {
@@ -1083,7 +1087,7 @@ func GoPublishCmd(c *cli.Context) (err error) {
 	printDeploymentView, detailedSummary := log.IsStdErrTerminal(), c.Bool("detailed-summary")
 	goPublishCmd := golang.NewGoPublishCommand()
 	goPublishCmd.SetConfigFilePath(configFilePath).SetBuildConfiguration(buildConfiguration).SetVersion(version).SetDetailedSummary(detailedSummary || printDeploymentView).SetExcludedPatterns(cliutils.GetStringsArrFlagValue(c, "exclusions"))
-	err = commands.Exec(goPublishCmd)
+	err = commands.ExecWithPackageManager(goPublishCmd, project.Go.String())
 	result := goPublishCmd.Result()
 	defer cliutils.CleanupResult(result, &err)
 	err = cliutils.PrintCommandSummary(goPublishCmd.Result(), detailedSummary, printDeploymentView, false, err)
@@ -1172,7 +1176,7 @@ func dockerCmd(c *cli.Context) error {
 	case "push":
 		err = pushCmd(c, cmdArg)
 	case "login":
-		err = loginCmd(c)
+		err = loginCmd(c, true)
 	case "scan":
 		return dockerScanCmd(c, cmdArg)
 	case "build":
@@ -1210,7 +1214,7 @@ func pullCmd(c *cli.Context, image string) error {
 	if !supported {
 		return cliutils.NotSupportedNativeDockerCommand("docker-pull")
 	}
-	return commands.Exec(PullCommand)
+	return commands.ExecWithPackageManager(PullCommand, project.Docker.String())
 }
 
 func pushCmd(c *cli.Context, image string) (err error) {
@@ -1234,7 +1238,7 @@ func pushCmd(c *cli.Context, image string) (err error) {
 	if !supported {
 		return cliutils.NotSupportedNativeDockerCommand("docker-push")
 	}
-	err = commands.Exec(pushCommand)
+	err = commands.ExecWithPackageManager(pushCommand, project.Docker.String())
 	result := pushCommand.Result()
 	defer cliutils.CleanupResult(result, &err)
 	err = cliutils.PrintCommandSummary(pushCommand.Result(), detailedSummary, printDeploymentView, false, err)
@@ -1257,7 +1261,7 @@ func buildCmd(c *cli.Context) error {
 	}
 
 	if !skipLogin {
-		err = loginCmd(c)
+		err = loginCmd(c, false)
 		if err != nil {
 			return err
 		}
@@ -1272,10 +1276,10 @@ func buildCmd(c *cli.Context) error {
 	buildCommand := container.NewBuildCommand(cleanArgs).SetDockerBuildOptions(dockerOptions).SetBuildConfiguration(buildConfiguration)
 	buildCommand.SetServerDetails(rtDetails)
 
-	return commands.Exec(buildCommand)
+	return commands.ExecWithPackageManager(buildCommand, project.Docker.String())
 }
 
-func loginCmd(c *cli.Context) error {
+func loginCmd(c *cli.Context, reportMetrics bool) error {
 	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "dockerloginhelp"); show || err != nil {
 		return err
 	}
@@ -1284,6 +1288,19 @@ func loginCmd(c *cli.Context) error {
 	_, rtDetails, _, _, _, _, _, err := extractDockerOptionsFromArgs(c.Args())
 	if err != nil {
 		return err
+	}
+
+	// Report usage metrics only when invoked as a standalone command.
+	// When called from buildCmd, metrics are already reported for the build itself.
+	if reportMetrics {
+		metricCmdName := "rt_docker_login"
+		commands.SetPackageManagerContext(project.Docker.String())
+		commands.CollectMetrics(metricCmdName, nil)
+		defer func() {
+			if rtDetails != nil {
+				commands.ReportUsage(metricCmdName, rtDetails, nil)
+			}
+		}()
 	}
 
 	// extract login specific options
@@ -1388,7 +1405,7 @@ func huggingFaceUploadCmd(c *cli.Context) error {
 		SetRevision(revision).
 		SetServerDetails(serverDetails).
 		SetBuildConfiguration(buildConfiguration)
-	return commands.Exec(cmd)
+	return commands.ExecWithPackageManager(cmd, "huggingface")
 }
 
 func huggingFaceDownloadCmd(c *cli.Context) error {
@@ -1438,7 +1455,7 @@ func huggingFaceDownloadCmd(c *cli.Context) error {
 		SetEtagTimeout(etagTimeout).
 		SetServerDetails(serverDetails).
 		SetBuildConfiguration(buildConfiguration)
-	return commands.Exec(cmd)
+	return commands.ExecWithPackageManager(cmd, "huggingface")
 }
 
 // validateFolderHasUploadableFiles walks the folder recursively and returns an error
@@ -1736,15 +1753,15 @@ func npmGenericCmd(c *cli.Context, cmdName string, collectBuildInfoIfRequested b
 	// Run generic npm command.
 	npmCmd := npm.NewNpmCommand(cmdName, collectBuildInfoIfRequested)
 
-	configFilePath, args, err := GetNpmConfigAndArgs(c)
+	configFilePath, args, useNative, err := GetNpmConfigAndArgs(c)
 	if err != nil {
 		return err
 	}
-	npmCmd.SetConfigFilePath(configFilePath).SetNpmArgs(args)
+	npmCmd.SetConfigFilePath(configFilePath).SetNpmArgs(args).SetUseNative(useNative)
 	if err = npmCmd.Init(); err != nil {
 		return err
 	}
-	return commands.Exec(npmCmd)
+	return commands.ExecWithPackageManager(npmCmd, project.Npm.String())
 }
 
 func NpmPublishCmd(c *cli.Context) (err error) {
@@ -1752,13 +1769,13 @@ func NpmPublishCmd(c *cli.Context) (err error) {
 		return err
 	}
 
-	configFilePath, args, err := GetNpmConfigAndArgs(c)
+	configFilePath, args, useNative, err := GetNpmConfigAndArgs(c)
 	if err != nil {
 		return err
 	}
 
 	npmCmd := npm.NewNpmPublishCommand()
-	npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
+	npmCmd.SetConfigFilePath(configFilePath).SetArgs(args).SetUseNative(useNative)
 	if err = npmCmd.Init(); err != nil {
 		return err
 	}
@@ -1770,7 +1787,7 @@ func NpmPublishCmd(c *cli.Context) (err error) {
 	if !detailedSummary {
 		npmCmd.SetDetailedSummary(printDeploymentView)
 	}
-	err = commands.Exec(npmCmd)
+	err = commands.ExecWithPackageManager(npmCmd, project.Npm.String())
 	result := npmCmd.Result()
 	defer cliutils.CleanupResult(result, &err)
 	err = cliutils.PrintCommandSummary(npmCmd.Result(), detailedSummary, printDeploymentView, false, err)
@@ -1809,7 +1826,7 @@ func setupCmd(c *cli.Context) (err error) {
 		}
 	}
 	setupCmd.SetServerDetails(artDetails).SetRepoName(repoName).SetProjectKey(cliutils.GetProject(c))
-	return commands.Exec(setupCmd)
+	return commands.ExecWithPackageManager(setupCmd, packageManager.String())
 }
 
 // validateRepoExists checks if the specified repository exists in Artifactory.
@@ -1834,12 +1851,22 @@ func selectPackageManagerInteractively() (selectedPackageManager project.Project
 	return
 }
 
-func GetNpmConfigAndArgs(c *cli.Context) (configFilePath string, args []string, err error) {
-	configFilePath, err = getProjectConfigPathOrThrow(project.Npm, "npm", "npm-config")
+func GetNpmConfigAndArgs(c *cli.Context) (configFilePath string, args []string, useNative bool, err error) {
+	var configExists bool
+	configFilePath, configExists, err = project.GetProjectConfFilePath(project.Npm)
 	if err != nil {
 		return
 	}
 	_, args = getCommandName(c.Args())
+	useNative, args, err = npm.CheckIsNativeAndFetchFilteredArgs(args)
+	if err != nil {
+		return
+	}
+	if !configExists && !useNative {
+		configFilePath, err = getProjectConfigPathOrThrow(project.Npm, "npm", "npm-config")
+	} else if !configExists {
+		configFilePath = ""
+	}
 	return
 }
 
@@ -1899,7 +1926,7 @@ func UvCmd(c *cli.Context) error {
 	if cmdName == "help" || cmdName == "" {
 		return uvCommand.Run()
 	}
-	return commands.Exec(uvCommand)
+	return commands.ExecWithPackageManager(uvCommand, project.UV.String())
 }
 
 // HelmCmd executes Helm commands with build info collection support
@@ -1944,7 +1971,7 @@ func HelmCmd(c *cli.Context) error {
 		SetWorkingDirectory(workingDir).
 		SetHelmCmdName(cmdName)
 
-	return commands.Exec(helmCmd)
+	return commands.ExecWithPackageManager(helmCmd, project.Helm.String())
 }
 
 // extractRepositoryCacheFromArgs extracts the --repository-cache flag value from Helm command arguments
@@ -2017,6 +2044,16 @@ func ConanCmd(c *cli.Context) error {
 
 	args := cliutils.ExtractCommand(c)
 
+	// Extract --server-id (or fall back to default) so usage metrics can be reported.
+	args, serverID, err := coreutils.ExtractServerIdFromCommand(args)
+	if err != nil {
+		return fmt.Errorf("failed to extract server ID: %w", err)
+	}
+	serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, false)
+	if err != nil {
+		return err
+	}
+
 	// Extract build flags (--build-name, --build-number) before passing to Conan
 	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
 	if err != nil {
@@ -2026,9 +2063,9 @@ func ConanCmd(c *cli.Context) error {
 	cmdName, conanArgs := getCommandName(filteredArgs)
 
 	// Use jfrog-cli-artifactory Conan command with build info support
-	conanCommand := conancommand.NewConanCommand().SetCommandName(cmdName).SetArgs(conanArgs).SetBuildConfiguration(buildConfiguration)
+	conanCommand := conancommand.NewConanCommand().SetCommandName(cmdName).SetArgs(conanArgs).SetBuildConfiguration(buildConfiguration).SetServerDetails(serverDetails)
 
-	return commands.Exec(conanCommand)
+	return commands.ExecWithPackageManager(conanCommand, project.Conan.String())
 }
 
 func NixCmd(c *cli.Context) error {
@@ -2075,7 +2112,7 @@ func NixCmd(c *cli.Context) error {
 		cmd.SetServerDetails(serverDetails)
 	}
 
-	return commands.Exec(cmd)
+	return commands.ExecWithPackageManager(cmd, "nix")
 }
 
 func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
@@ -2090,11 +2127,31 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 	if artutils.ShouldRunNative("") && projectType == project.Poetry {
 		log.Debug("Routing to Poetry native implementation")
 		args := cliutils.ExtractCommand(c)
+		// Extract --server-id so usage metrics can be reported in native mode.
+		args, serverID, err := coreutils.ExtractServerIdFromCommand(args)
+		if err != nil {
+			return fmt.Errorf("failed to extract server ID: %w", err)
+		}
+		serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, false)
+		if err != nil {
+			log.Debug("Failed to resolve server for usage reporting:", err.Error())
+		}
 		filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
 		if err != nil {
 			return err
 		}
 		cmdName, poetryArgs := getCommandName(filteredArgs)
+
+		// Tag usage metric with package_manager=poetry and collect.
+		// Defer reporting so metrics are sent even when poetry fails.
+		metricCmdName := "rt_poetry_" + cmdName
+		commands.SetPackageManagerContext(project.Poetry.String())
+		commands.CollectMetrics(metricCmdName, nil)
+		defer func() {
+			if serverDetails != nil {
+				commands.ReportUsage(metricCmdName, serverDetails, nil)
+			}
+		}()
 
 		// Extract --repository flag for artifact collection (if publishing)
 		deployerRepo := ""
@@ -2136,7 +2193,7 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 				workingDir, err := os.Getwd()
 				if err != nil {
 					log.Warn("Failed to get working directory, skipping build info collection: " + err.Error())
-				} else if err := buildinfo.GetPoetryBuildInfo(workingDir, buildConfiguration, deployerRepo); err != nil {
+				} else if err := buildinfo.GetPoetryBuildInfo(workingDir, buildConfiguration, deployerRepo, cmdName, poetryArgs); err != nil {
 					log.Warn("Failed to collect Poetry build info: " + err.Error())
 				} else {
 					buildNumber, err := buildConfiguration.GetBuildNumber()
@@ -2171,15 +2228,15 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 	case project.Pip:
 		pipCommand := python.NewPipCommand()
 		pipCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
-		return commands.Exec(pipCommand)
+		return commands.ExecWithPackageManager(pipCommand, project.Pip.String())
 	case project.Pipenv:
 		pipenvCommand := python.NewPipenvCommand()
 		pipenvCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
-		return commands.Exec(pipenvCommand)
+		return commands.ExecWithPackageManager(pipenvCommand, project.Pipenv.String())
 	case project.Poetry:
 		poetryCommand := python.NewPoetryCommand()
 		poetryCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
-		return commands.Exec(poetryCommand)
+		return commands.ExecWithPackageManager(poetryCommand, project.Poetry.String())
 	default:
 		return errorutils.CheckErrorf("%s is not supported", projectType)
 	}
@@ -2218,7 +2275,7 @@ func terraformPublishCmd(configFilePath string, args []string, c *cli.Context) e
 	if err := terraformCmd.Init(); err != nil {
 		return err
 	}
-	err := commands.Exec(terraformCmd)
+	err := commands.ExecWithPackageManager(terraformCmd, project.Terraform.String())
 	result := terraformCmd.Result()
 	return cliutils.PrintBriefSummaryReport(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
 }

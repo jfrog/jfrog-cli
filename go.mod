@@ -3,6 +3,9 @@ module github.com/jfrog/jfrog-cli
 go 1.26.3
 
 replace (
+	// Should not be updated to 0.11.0+ due to default spec version change (1.6 -> 1.7, https://github.com/CycloneDX/cyclonedx-go/pull/257)
+	// Waiting for JPD to support the new spec version before allowing upgrade
+	github.com/CycloneDX/cyclonedx-go => github.com/CycloneDX/cyclonedx-go v0.10.0
 	// Should not be updated to 0.2.6 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
 	github.com/c-bata/go-prompt => github.com/c-bata/go-prompt v0.2.5
 	// Should not be updated to 0.2.0-beta.2 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
@@ -15,15 +18,15 @@ require (
 	github.com/buger/jsonparser v1.2.0
 	github.com/gocarina/gocsv v0.0.0-20260523204920-c264028e67ea
 	github.com/jfrog/archiver/v3 v3.6.3
-	github.com/jfrog/build-info-go v1.13.1-0.20260526201157-3dd942bd9e1f
+	github.com/jfrog/build-info-go v1.13.1-0.20260609173330-a8a3ed3919af
 	github.com/jfrog/gofrog v1.7.6
-	github.com/jfrog/jfrog-cli-application v1.0.2-0.20260511133105-55a0ab56fd64
-	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260527043943-fdf755c4f4c2
-	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260528061115-b41c87af0194
-	github.com/jfrog/jfrog-cli-evidence v0.9.4
-	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260430094150-ce7d9b371c6f
-	github.com/jfrog/jfrog-cli-security v1.29.2
-	github.com/jfrog/jfrog-client-go v1.55.1-0.20260527095031-a0b759bcd723
+	github.com/jfrog/jfrog-cli-application v1.0.2-0.20260608074325-4de652aef752
+	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260609101705-321f68d15a6d
+	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260609101026-df3091b39d06
+	github.com/jfrog/jfrog-cli-evidence v0.9.5-0.20260601141509-8df6c9a4bc9b
+	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260601140139-4cefb6add7b7
+	github.com/jfrog/jfrog-cli-security v1.29.4-0.20260604062621-664f5215d30a
+	github.com/jfrog/jfrog-client-go v1.55.1-0.20260603130552-af1dd449b994
 	github.com/jszwec/csvutil v1.10.0
 	github.com/moby/moby/api v1.54.2
 	github.com/spf13/viper v1.21.0
@@ -87,15 +90,15 @@ require (
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
-	github.com/go-openapi/analysis v0.25.1 // indirect
+	github.com/go-openapi/analysis v0.25.2 // indirect
 	github.com/go-openapi/errors v0.22.7 // indirect
 	github.com/go-openapi/jsonpointer v0.23.1 // indirect
-	github.com/go-openapi/jsonreference v0.21.5 // indirect
+	github.com/go-openapi/jsonreference v0.21.6 // indirect
 	github.com/go-openapi/loads v0.23.3 // indirect
-	github.com/go-openapi/runtime v0.32.1 // indirect
+	github.com/go-openapi/runtime v0.32.3 // indirect
 	github.com/go-openapi/runtime/server-middleware v0.32.1 // indirect
-	github.com/go-openapi/spec v0.22.4 // indirect
-	github.com/go-openapi/strfmt v0.26.2 // indirect
+	github.com/go-openapi/spec v0.22.5 // indirect
+	github.com/go-openapi/strfmt v0.26.3 // indirect
 	github.com/go-openapi/swag v0.26.0 // indirect
 	github.com/go-openapi/swag/cmdutils v0.26.0 // indirect
 	github.com/go-openapi/swag/conv v0.26.0 // indirect
@@ -108,7 +111,7 @@ require (
 	github.com/go-openapi/swag/stringutils v0.26.0 // indirect
 	github.com/go-openapi/swag/typeutils v0.26.0 // indirect
 	github.com/go-openapi/swag/yamlutils v0.26.0 // indirect
-	github.com/go-openapi/validate v0.25.2 // indirect
+	github.com/go-openapi/validate v0.25.3 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
@@ -183,10 +186,10 @@ require (
 	github.com/shirou/gopsutil/v4 v4.26.4 // indirect
 	github.com/sigstore/protobuf-specs v0.5.1 // indirect
 	github.com/sigstore/rekor v1.5.2 // indirect
-	github.com/sigstore/rekor-tiles/v2 v2.2.1 // indirect
-	github.com/sigstore/sigstore v1.10.6 // indirect
-	github.com/sigstore/sigstore-go v1.1.4 // indirect
-	github.com/sigstore/timestamp-authority/v2 v2.1.0 // indirect
+	github.com/sigstore/rekor-tiles/v2 v2.2.2-0.20260601073857-5d098a2b6443 // indirect
+	github.com/sigstore/sigstore v1.10.8 // indirect
+	github.com/sigstore/sigstore-go v1.2.0 // indirect
+	github.com/sigstore/timestamp-authority/v2 v2.1.2 // indirect
 	github.com/sirupsen/logrus v1.9.4 // indirect
 	github.com/skeema/knownhosts v1.3.2 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
@@ -197,7 +200,7 @@ require (
 	github.com/theupdateframework/go-tuf/v2 v2.4.2 // indirect
 	github.com/tklauser/go-sysconf v0.4.0 // indirect
 	github.com/tklauser/numcpus v0.12.0 // indirect
-	github.com/transparency-dev/formats v0.1.0 // indirect
+	github.com/transparency-dev/formats v0.1.1 // indirect
 	github.com/transparency-dev/merkle v0.0.2 // indirect
 	github.com/ulikunitz/xz v0.5.15 // indirect
 	github.com/vbauerster/mpb/v8 v8.12.1 // indirect
@@ -208,12 +211,13 @@ require (
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
+	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.68.0 // indirect
-	go.opentelemetry.io/otel v1.43.0 // indirect
-	go.opentelemetry.io/otel/metric v1.43.0 // indirect
-	go.opentelemetry.io/otel/trace v1.43.0 // indirect
+	go.opentelemetry.io/otel v1.44.0 // indirect
+	go.opentelemetry.io/otel/metric v1.44.0 // indirect
+	go.opentelemetry.io/otel/trace v1.44.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.52.0 // indirect
@@ -242,10 +246,10 @@ require (
 
 //replace github.com/ktrysmt/go-bitbucket => github.com/ktrysmt/go-bitbucket v0.9.80
 
-// replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260416054314-f941180fccc3
+// replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260608132618-003a2af3b8a3
 
-// replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.13.1-0.20260428071432-1e9d9a1991ad
+// replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.13.1-0.20260603044611-897a097a7031
 
-// replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260518123155-036d9195c4e9
+// replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260604085947-7c110b77b4b4
 
 //replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.54.2-0.20251007084958-5eeaa42c31a6
