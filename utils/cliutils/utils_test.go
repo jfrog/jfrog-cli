@@ -429,3 +429,14 @@ func TestSettingCIFlagRemovesSurvey(t *testing.T) {
 	shouldHide := ShouldHideSurveyLink()
 	assert.True(t, shouldHide, "Expected survey to be hidden when CI flag is set")
 }
+
+func TestLoginCommandFlagsIncludeServerId(t *testing.T) {
+	flags := GetCommandFlags(Login)
+	assert.NotEmpty(t, flags, "Expected login command to have flags")
+
+	var flagNames []string
+	for _, f := range flags {
+		flagNames = append(flagNames, f.GetName())
+	}
+	assert.Contains(t, flagNames, "server-id", "Expected login command flags to include 'server-id'")
+}

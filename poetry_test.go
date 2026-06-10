@@ -711,8 +711,8 @@ func setPoetryHTTPBasicAuth(t *testing.T) func() {
 // `go test` process even when several FlexPack-mode tests invoke
 // buildJfBinaryAndAddToPath sequentially.
 var (
-	jfBinaryOnce    sync.Once
-	jfBinaryDir     string
+	jfBinaryOnce     sync.Once
+	jfBinaryDir      string
 	jfBinaryBuildErr error
 )
 

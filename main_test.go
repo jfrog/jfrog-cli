@@ -18,6 +18,7 @@ import (
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/format"
+	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli-core/v2/common/project"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
@@ -58,6 +59,15 @@ func setupIntegrationTests() {
 	err = os.Setenv("JFROG_CLI_CI_VCS_PROPS_DISABLED", "true")
 	if err != nil {
 		clientlog.Error(fmt.Sprintf("Couldn't set env: JFROG_CLI_CI_VCS_PROPS_DISABLED. Error: %s", err.Error()))
+		os.Exit(1)
+	}
+	// Force AI-help mode off so tests that assert on help-text content are
+	// deterministic regardless of whether the test runner inherits an AI
+	// agent's env (e.g. CLAUDECODE=1 from Claude Code, CURSOR_AGENT=1 from
+	// Cursor) that would otherwise auto-flip JGC-473's AIHelpEnabled to true.
+	err = os.Setenv(corecommon.EnvAIHelp, "false")
+	if err != nil {
+		clientlog.Error(fmt.Sprintf("Couldn't set env: %s. Error: %s", corecommon.EnvAIHelp, err.Error()))
 		os.Exit(1)
 	}
 	flag.Parse()
