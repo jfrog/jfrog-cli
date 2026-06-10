@@ -416,7 +416,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "nix",
-			Hidden:          true,
+			Hidden:          false,
 			Flags:           cliutils.GetCommandFlags(cliutils.Nix),
 			Usage:           nix.GetDescription(),
 			HelpName:        corecommon.CreateUsage("nix", nix.GetDescription(), nix.Usage),
