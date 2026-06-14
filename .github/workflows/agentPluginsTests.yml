@@ -5,6 +5,9 @@ on:
     branches:
       - "master"
   # Triggers the workflow on PRs to master branch only.
+  pull_request:
+    branches:
+      - "master"
   pull_request_target:
     types: [labeled]
     branches:
@@ -18,7 +21,7 @@ concurrency:
 jobs:
   Agent-Plugins-Tests:
     name: agent-plugins ${{ matrix.os.name }}
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'safe to test')
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event_name == 'pull_request' || contains(github.event.pull_request.labels.*.name, 'safe to test')
     strategy:
       fail-fast: false
       matrix:
