@@ -960,3 +960,75 @@ func ValidateCIVcsPropsIfPresent(t *testing.T, resultItems []utils.ResultItem, e
 		}
 	}
 }
+
+// SetupLocalGitVcsEnv enables VCS property collection and clears CI detection
+// so only local git fallback is exercised.
+func SetupLocalGitVcsEnv(t *testing.T) (cleanup func()) {
+	t.Helper()
+	var callbacks []func()
+
+	callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "JFROG_CLI_CI_VCS_PROPS_DISABLED", ""))
+	callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "CI", ""))
+	callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "GITHUB_ACTIONS", ""))
+	callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "GITHUB_WORKFLOW", ""))
+	callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "GITHUB_RUN_ID", ""))
+	callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "GITHUB_REPOSITORY", ""))
+	callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "GITHUB_REPOSITORY_OWNER", ""))
+
+	return func() {
+		for _, cb := range callbacks {
+			cb()
+		}
+	}
+}
+
+// ValidateLocalGitVcsPropsOnArtifacts asserts vcs.url, vcs.revision, vcs.branch on every item.
+func ValidateLocalGitVcsPropsOnArtifacts(t *testing.T, resultItems []utils.ResultItem, expectedURL, expectedRevision, expectedBranch string) {
+	t.Helper()
+	for _, item := range resultItems {
+		propertiesMap := ConvertPropertiesToMap(item.Properties)
+		assertLocalGitProp(t, item.Name, propertiesMap, "vcs.url", expectedURL)
+		assertLocalGitProp(t, item.Name, propertiesMap, "vcs.revision", expectedRevision)
+		if expectedBranch != "" {
+			assertLocalGitProp(t, item.Name, propertiesMap, "vcs.branch", expectedBranch)
+		}
+	}
+}
+
+func assertLocalGitProp(t *testing.T, itemName string, props map[string][]string, key, expected string) {
+	t.Helper()
+	vals, ok := props[key]
+	assert.True(t, ok, "Missing %s on %s", key, itemName)
+	assert.Contains(t, vals, expected, "Wrong %s on %s", key, itemName)
+}
+
+// ValidateNoLocalGitVcsPropsOnArtifacts asserts url/revision/branch are absent.
+func ValidateNoLocalGitVcsPropsOnArtifacts(t *testing.T, resultItems []utils.ResultItem) {
+	t.Helper()
+	for _, item := range resultItems {
+		propertiesMap := ConvertPropertiesToMap(item.Properties)
+		_, hasURL := propertiesMap["vcs.url"]
+		_, hasRev := propertiesMap["vcs.revision"]
+		_, hasBranch := propertiesMap["vcs.branch"]
+		assert.False(t, hasURL, "vcs.url should not be set on %s", item.Name)
+		assert.False(t, hasRev, "vcs.revision should not be set on %s", item.Name)
+		assert.False(t, hasBranch, "vcs.branch should not be set on %s", item.Name)
+	}
+}
+
+// ValidateCIAndLocalGitVcsPropsOnArtifacts asserts CI props plus local git props coexist.
+func ValidateCIAndLocalGitVcsPropsOnArtifacts(t *testing.T, resultItems []utils.ResultItem,
+	expectedProvider, expectedOrg, expectedRepo, expectedURL, expectedRevision, expectedBranch string) {
+	t.Helper()
+	for _, item := range resultItems {
+		propertiesMap := ConvertPropertiesToMap(item.Properties)
+		assertLocalGitProp(t, item.Name, propertiesMap, "vcs.provider", expectedProvider)
+		assertLocalGitProp(t, item.Name, propertiesMap, "vcs.org", expectedOrg)
+		assertLocalGitProp(t, item.Name, propertiesMap, "vcs.repo", expectedRepo)
+		assertLocalGitProp(t, item.Name, propertiesMap, "vcs.url", expectedURL)
+		assertLocalGitProp(t, item.Name, propertiesMap, "vcs.revision", expectedRevision)
+		if expectedBranch != "" {
+			assertLocalGitProp(t, item.Name, propertiesMap, "vcs.branch", expectedBranch)
+		}
+	}
+}
