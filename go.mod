@@ -242,6 +242,9 @@ require (
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
 
+// attiasas:local_git_detection
+replace github.com/jfrog/jfrog-cli-artifactory => github.com/attiasas/jfrog-cli-artifactory v0.0.0-20260610130201-b879889dc96a
+
 //replace github.com/gfleury/go-bitbucket-v1 => github.com/gfleury/go-bitbucket-v1 v0.0.0-20230825095122-9bc1711434ab
 
 //replace github.com/ktrysmt/go-bitbucket => github.com/ktrysmt/go-bitbucket v0.9.80
