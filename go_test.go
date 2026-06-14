@@ -503,3 +503,75 @@ func TestGoBuildPublishWithCIVcsProps(t *testing.T) {
 
 	assert.Greater(t, artifactCount, 0, "No artifacts were validated for CI VCS properties")
 }
+
+// TestGoPublishWithLocalGitVcsProps tests that local git VCS properties are set on Go artifacts
+// when running go-publish followed by build-publish with VCS collection enabled and no CI env.
+func TestGoPublishWithLocalGitVcsProps(t *testing.T) {
+	_, cleanUpFunc := initGoTest(t)
+	defer cleanUpFunc()
+
+	buildName := tests.GoBuildName + "-local-git"
+	buildNumber := "1"
+
+	cleanupEnv := tests.SetupLocalGitVcsEnv(t)
+	defer cleanupEnv()
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+
+	projectPath := prepareGoProject("project1", t, true)
+	tests.CopyGitFixtureIntoProject(t, projectPath)
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	err = execGo(jfrogCli, "go", "build", "--mod=mod", "--build-name="+buildName, "--build-number="+buildNumber)
+	assert.NoError(t, err)
+
+	err = execGo(jfrogCli, "gp", "--build-name="+buildName, "--build-number="+buildNumber, "v1.0.0")
+	assert.NoError(t, err)
+
+	err = execGo(artifactoryCli, "bp", buildName, buildNumber)
+	assert.NoError(t, err)
+
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	assert.NoError(t, err)
+	assert.True(t, found, "Build info was not found")
+
+	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
+	assert.NoError(t, err)
+
+	artifactCount := 0
+	for _, module := range publishedBuildInfo.BuildInfo.Modules {
+		for _, artifact := range module.Artifacts {
+			var fullPath string
+			switch {
+			case artifact.OriginalDeploymentRepo != "":
+				fullPath = artifact.OriginalDeploymentRepo + "/" + artifact.Path
+			case artifact.Path != "":
+				fullPath = artifact.Path
+			default:
+				continue
+			}
+
+			props, err := serviceManager.GetItemProps(fullPath)
+			assert.NoError(t, err, "Failed to get properties for artifact: %s", fullPath)
+			assert.NotNil(t, props, "Properties are nil for artifact: %s", fullPath)
+
+			assert.Contains(t, props.Properties, "vcs.url", "Missing vcs.url on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.url"], tests.VcsFixtureMainURL, "Wrong vcs.url on %s", artifact.Name)
+
+			assert.Contains(t, props.Properties, "vcs.revision", "Missing vcs.revision on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.revision"], tests.VcsFixtureMainRevision, "Wrong vcs.revision on %s", artifact.Name)
+
+			assert.Contains(t, props.Properties, "vcs.branch", "Missing vcs.branch on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.branch"], tests.VcsFixtureMainBranch, "Wrong vcs.branch on %s", artifact.Name)
+
+			artifactCount++
+		}
+	}
+
+	assert.Greater(t, artifactCount, 0, "No artifacts were validated for local git VCS properties")
+}

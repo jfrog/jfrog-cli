@@ -730,3 +730,72 @@ func TestGradleBuildPublishWithCIVcsProps(t *testing.T) {
 
 	cleanGradleTest(t)
 }
+
+// TestGradleBuildPublishWithLocalGitVcsProps tests that local git VCS properties are set on Gradle artifacts
+// when running build-publish with VCS collection enabled and no CI env.
+// This test uses FlexPack mode (JFROG_RUN_NATIVE=true) with native Gradle publish task.
+func TestGradleBuildPublishWithLocalGitVcsProps(t *testing.T) {
+	initGradleTest(t)
+	buildName := "gradle-local-git-test"
+	buildNumber := "1"
+
+	cleanupEnv := tests.SetupLocalGitVcsEnv(t)
+	defer cleanupEnv()
+
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_RUN_NATIVE", "true")
+	defer setEnvCallBack()
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	buildGradlePath := createGradleProject(t, "civcsproject")
+	tests.CopyGitFixtureIntoProject(t, filepath.Dir(buildGradlePath))
+
+	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
+	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
+
+	runJfrogCli(t, "gradle", "clean", "publish", "--build-name="+buildName, "--build-number="+buildNumber)
+
+	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
+
+	var publishedBuildInfo *buildinfo.PublishedBuildInfo
+	var found bool
+	assert.Eventuallyf(t, func() bool {
+		var biErr error
+		publishedBuildInfo, found, biErr = tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+		return biErr == nil && found
+	}, 30*time.Second, 2*time.Second, "Build info was not found for %s/%s", buildName, buildNumber)
+	if !found || publishedBuildInfo == nil {
+		return
+	}
+
+	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
+	assert.NoError(t, err)
+
+	artifactCount := 0
+	for _, module := range publishedBuildInfo.BuildInfo.Modules {
+		for _, artifact := range module.Artifacts {
+			fullPath := artifact.OriginalDeploymentRepo + "/" + artifact.Path
+
+			props, err := serviceManager.GetItemProps(fullPath)
+			assert.NoError(t, err, "Failed to get properties for artifact: %s", fullPath)
+			assert.NotNil(t, props, "Properties are nil for artifact: %s", fullPath)
+
+			assert.Contains(t, props.Properties, "vcs.url", "Missing vcs.url on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.url"], tests.VcsFixtureMainURL, "Wrong vcs.url on %s", artifact.Name)
+
+			assert.Contains(t, props.Properties, "vcs.revision", "Missing vcs.revision on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.revision"], tests.VcsFixtureMainRevision, "Wrong vcs.revision on %s", artifact.Name)
+
+			assert.Contains(t, props.Properties, "vcs.branch", "Missing vcs.branch on %s", artifact.Name)
+			assert.Contains(t, props.Properties["vcs.branch"], tests.VcsFixtureMainBranch, "Wrong vcs.branch on %s", artifact.Name)
+
+			artifactCount++
+		}
+	}
+	assert.Greater(t, artifactCount, 0, "No artifacts in build info")
+
+	cleanGradleTest(t)
+}
