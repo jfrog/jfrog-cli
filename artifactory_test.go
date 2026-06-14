@@ -7193,7 +7193,7 @@ func TestUploadWithLocalGitVcsProps(t *testing.T) {
 	testDir := tests.CopyVcsGitFixture(t, tests.Temp)
 	targetPath := tests.RtRepo1 + "/local-git-vcs/"
 
-	runRt(t, "upload", filepath.Join(testDir, "a*.in"), targetPath, "--flat=true")
+	runRt(t, "upload", filepath.Join(testDir, "*.in"), targetPath, "--flat=true")
 
 	resultItems := searchItemsInArtifactory(t, tests.SearchRepo1ByInSuffix)
 	assert.NotZero(t, len(resultItems))
@@ -7223,7 +7223,7 @@ func TestUploadWithLocalGitVcsPropsNestedRepo(t *testing.T) {
 	testDir := tests.CopyVcsGitFixture(t, tests.Temp)
 	targetPath := tests.RtRepo1 + "/local-git-vcs-nested/"
 
-	runRt(t, "upload", filepath.Join(testDir, "OtherGit", "b*.in"), targetPath, "--flat=true")
+	runRt(t, "upload", filepath.Join(testDir, "OtherGit", "*.in"), targetPath, "--flat=true")
 
 	resultItems := searchItemsInArtifactory(t, tests.SearchRepo1ByInSuffix)
 	var uploaded []rtutils.ResultItem
@@ -7250,7 +7250,7 @@ func TestUploadUserPropsOverrideLocalGitVcs(t *testing.T) {
 	targetPath := tests.RtRepo1 + "/local-git-vcs-user-override/"
 	userProps := "vcs.url=https://example.com/custom.git;vcs.revision=deadbeef;vcs.branch=feature-x"
 
-	runRt(t, "upload", filepath.Join(testDir, "a1.in"), targetPath, "--flat=true", "--props="+userProps)
+	runRt(t, "upload", filepath.Join(testDir, "a1.in"), targetPath, "--flat=true", "--target-props="+userProps)
 
 	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
 	require.NoError(t, err)

@@ -733,7 +733,8 @@ func TestGradleBuildPublishWithCIVcsProps(t *testing.T) {
 
 // TestGradleBuildPublishWithLocalGitVcsProps tests that local git VCS properties are set on Gradle artifacts
 // when running build-publish with VCS collection enabled and no CI env.
-// This test uses FlexPack mode (JFROG_RUN_NATIVE=true) with native Gradle publish task.
+// Uses the traditional Gradle extractor path (not FlexPack) because SetCIVcsPropsToConfig
+// injects local git props into the extractor config; FlexPack only sets build.* props on publish.
 func TestGradleBuildPublishWithLocalGitVcsProps(t *testing.T) {
 	initGradleTest(t)
 	buildName := "gradle-local-git-test"
@@ -742,19 +743,24 @@ func TestGradleBuildPublishWithLocalGitVcsProps(t *testing.T) {
 	cleanupEnv := tests.SetupLocalGitVcsEnv(t)
 	defer cleanupEnv()
 
-	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_RUN_NATIVE", "true")
-	defer setEnvCallBack()
+	_ = os.Unsetenv("JFROG_RUN_NATIVE")
 
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 
-	buildGradlePath := createGradleProject(t, "civcsproject")
-	tests.CopyGitFixtureIntoProject(t, filepath.Dir(buildGradlePath))
+	buildGradlePath := createGradleProject(t, "gradleproject")
+	projectDir := filepath.Dir(buildGradlePath)
+	tests.CopyGitFixtureIntoProject(t, projectDir)
+	require.FileExists(t, filepath.Join(projectDir, ".git", "HEAD"))
 
-	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
+	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.GradleConfig)
+	createConfigFile(filepath.Join(projectDir, ".jfrog", "projects"), configFilePath, t)
+
+	oldHomeDir := changeWD(t, projectDir)
 	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 
-	runJfrogCli(t, "gradle", "clean", "publish", "--build-name="+buildName, "--build-number="+buildNumber)
+	buildGradlePath = strings.ReplaceAll(buildGradlePath, `\`, "/")
+	runJfrogCli(t, "gradle", "clean", "artifactoryPublish", "-b"+buildGradlePath, "--build-name="+buildName, "--build-number="+buildNumber)
 
 	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
 

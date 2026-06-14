@@ -524,6 +524,8 @@ func TestGoPublishWithLocalGitVcsProps(t *testing.T) {
 
 	projectPath := prepareGoProject("project1", t, true)
 	tests.CopyGitFixtureIntoProject(t, projectPath)
+	require.FileExists(t, filepath.Join(projectPath, ".git", "HEAD"))
+	clientTestUtils.ChangeDirAndAssert(t, projectPath)
 	defer clientTestUtils.ChangeDirAndAssert(t, wd)
 
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")

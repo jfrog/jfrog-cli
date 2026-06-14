@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -8,6 +9,7 @@ import (
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -43,10 +45,21 @@ func CopyVcsGitFixture(t *testing.T, destDir string) string {
 	return abs
 }
 
-// CopyGitFixtureIntoProject copies only gitdata from testdata/vcs/gitdata into projectDir/.git.
+// CopyGitFixtureIntoProject installs testdata/vcs/gitdata as projectDir/.git.
 func CopyGitFixtureIntoProject(t *testing.T, projectDir string) {
 	t.Helper()
 	src := filepath.Join(filepath.FromSlash(GetTestResourcesPath()), "vcs", "gitdata")
-	dest := filepath.Join(projectDir, ".git")
-	assert.NoError(t, biutils.CopyDir(src, dest, true, nil))
+	gitDir := filepath.Join(projectDir, ".git")
+	stagingDir := filepath.Join(projectDir, "gitdata-staging")
+
+	if fileutils.IsPathExists(gitDir, false) {
+		require.NoError(t, os.RemoveAll(gitDir))
+	}
+	require.NoError(t, os.RemoveAll(stagingDir))
+
+	require.NoError(t, biutils.CopyDir(src, stagingDir, true, nil))
+	coretests.RenamePath(stagingDir, gitDir, t)
+
+	require.FileExists(t, filepath.Join(gitDir, "HEAD"))
+	require.FileExists(t, filepath.Join(gitDir, "config"))
 }
