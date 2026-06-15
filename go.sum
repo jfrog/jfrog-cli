@@ -67,8 +67,8 @@ github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPd
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
 github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 h1:DklsrG3dyBCFEj5IhUbnKptjxatkF07cF2ak3yi77so=
 github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2/go.mod h1:WaHUgvxTVq04UNunO+XhnAqY/wQc+bxr74GqbsZ/Jqw=
-github.com/attiasas/jfrog-cli-artifactory v0.0.0-20260615065015-5c7cac0b0a98 h1:DaAcgwo8oImmU/n5qFLXnXfHLE2Li2Maa6Bt2oiHsyM=
-github.com/attiasas/jfrog-cli-artifactory v0.0.0-20260615065015-5c7cac0b0a98/go.mod h1:VqV0Bed11HoBlugAEGa3RumbwnDVslEf0gKocTzLs9s=
+github.com/attiasas/jfrog-cli-artifactory v0.0.0-20260615121012-628b7b6f896e h1:LuzFnMNs6Sp1f757MFqKXtyz43YZkteWtZKPKKZJZgo=
+github.com/attiasas/jfrog-cli-artifactory v0.0.0-20260615121012-628b7b6f896e/go.mod h1:VqV0Bed11HoBlugAEGa3RumbwnDVslEf0gKocTzLs9s=
 github.com/aws/aws-sdk-go-v2 v1.41.7 h1:DWpAJt66FmnnaRIOT/8ASTucrvuDPZASqhhLey6tLY8=
 github.com/aws/aws-sdk-go-v2 v1.41.7/go.mod h1:4LAfZOPHNVNQEckOACQx60Y8pSRjIkNZQz1w92xpMJc=
 github.com/aws/aws-sdk-go-v2/config v1.32.17 h1:FpL4/758/diKwqbytU0prpuiu60fgXKUWCpDJtApclU=
