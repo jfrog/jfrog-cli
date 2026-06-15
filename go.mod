@@ -243,7 +243,7 @@ require (
 )
 
 // attiasas:local_git_detection
-replace github.com/jfrog/jfrog-cli-artifactory => github.com/attiasas/jfrog-cli-artifactory v0.0.0-20260614123517-168b70f9ddb3
+replace github.com/jfrog/jfrog-cli-artifactory => github.com/attiasas/jfrog-cli-artifactory v0.0.0-20260615065015-5c7cac0b0a98
 
 //replace github.com/gfleury/go-bitbucket-v1 => github.com/gfleury/go-bitbucket-v1 v0.0.0-20230825095122-9bc1711434ab
 
