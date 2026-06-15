@@ -530,9 +530,12 @@ func TestReleaseBundleFormatFlag(t *testing.T) {
 		getOption(cliutils.IncludeRepos, tests.RtProdRepo1),
 		"--project=default",
 		getOption(cliutils.Format, "table"))
+	// The bundle name column wraps across lines, so assert on stable, non-wrapping
+	// content: the table title, headers, and the environment value.
+	assert.Contains(t, tableOutput, "Promotion Result")
 	assert.Contains(t, tableOutput, "BUNDLE NAME")
 	assert.Contains(t, tableOutput, "ENVIRONMENT")
-	assert.Contains(t, tableOutput, tests.LcRbName1)
+	assert.Contains(t, tableOutput, prodEnvironment)
 	assertStatusCompleted(t, lcManager, tests.LcRbName1, number1, "")
 }
 
