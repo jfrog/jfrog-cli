@@ -707,11 +707,14 @@ func TestGradleBuildPublishWithCIVcsProps(t *testing.T) {
 	artifactCount := 0
 	for _, module := range publishedBuildInfo.BuildInfo.Modules {
 		for _, artifact := range module.Artifacts {
-			fullPath := artifact.OriginalDeploymentRepo + "/" + artifact.Path
+			fullPath := tests.ArtifactFullPath(artifact)
 
 			props, err := serviceManager.GetItemProps(fullPath)
 			assert.NoError(t, err, "Failed to get properties for artifact: %s", fullPath)
 			assert.NotNil(t, props, "Properties are nil for artifact: %s", fullPath)
+			if props == nil {
+				continue
+			}
 
 			// Validate VCS properties
 			assert.Contains(t, props.Properties, "vcs.provider", "Missing vcs.provider on %s", artifact.Name)
@@ -783,11 +786,14 @@ func TestGradleBuildPublishWithLocalGitVcsProps(t *testing.T) {
 	artifactCount := 0
 	for _, module := range publishedBuildInfo.BuildInfo.Modules {
 		for _, artifact := range module.Artifacts {
-			fullPath := artifact.OriginalDeploymentRepo + "/" + artifact.Path
+			fullPath := tests.ArtifactFullPath(artifact)
 
 			props, err := serviceManager.GetItemProps(fullPath)
 			assert.NoError(t, err, "Failed to get properties for artifact: %s", fullPath)
 			assert.NotNil(t, props, "Properties are nil for artifact: %s", fullPath)
+			if props == nil {
+				continue
+			}
 
 			assert.Contains(t, props.Properties, "vcs.url", "Missing vcs.url on %s", artifact.Name)
 			assert.Contains(t, props.Properties["vcs.url"], tests.VcsFixtureMainURL, "Wrong vcs.url on %s", artifact.Name)

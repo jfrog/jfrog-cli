@@ -3,6 +3,7 @@ package tests
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	biutils "github.com/jfrog/build-info-go/utils"
@@ -22,11 +23,37 @@ const (
 	VcsFixtureOtherBranch   = "InnerGit"
 )
 
+// testResourcesDir returns the absolute path to the repo's testdata/ directory.
+// It is resolved from this source file's location, not os.Getwd().
+func testResourcesDir() string {
+	_, filename, _, ok := runtime.Caller(0)
+	if !ok {
+		abs, err := filepath.Abs(filepath.FromSlash(GetTestResourcesPath()))
+		if err != nil {
+			return filepath.FromSlash(GetTestResourcesPath())
+		}
+		return abs
+	}
+	abs, err := filepath.Abs(filepath.Join(filepath.Dir(filename), "..", "..", "testdata"))
+	if err != nil {
+		return filepath.Join(filepath.Dir(filename), "..", "..", "testdata")
+	}
+	return abs
+}
+
+func vcsFixtureSrcDir() string {
+	return filepath.Join(testResourcesDir(), "vcs")
+}
+
+func vcsGitdataSrcDir() string {
+	return filepath.Join(vcsFixtureSrcDir(), "gitdata")
+}
+
 // CopyVcsGitFixture copies testdata/vcs into destDir and renames gitdata -> .git.
 // Returns the absolute path to destDir.
 func CopyVcsGitFixture(t *testing.T, destDir string) string {
 	t.Helper()
-	src := filepath.Join(filepath.FromSlash(GetTestResourcesPath()), "vcs")
+	src := vcsFixtureSrcDir()
 	assert.NoError(t, biutils.CopyDir(src, destDir, true, nil))
 	if found, err := fileutils.IsDirExists(filepath.Join(destDir, "gitdata"), false); found {
 		assert.NoError(t, err)
@@ -48,7 +75,7 @@ func CopyVcsGitFixture(t *testing.T, destDir string) string {
 // CopyGitFixtureIntoProject installs testdata/vcs/gitdata as projectDir/.git.
 func CopyGitFixtureIntoProject(t *testing.T, projectDir string) {
 	t.Helper()
-	src := filepath.Join(filepath.FromSlash(GetTestResourcesPath()), "vcs", "gitdata")
+	src := vcsGitdataSrcDir()
 	gitDir := filepath.Join(projectDir, ".git")
 	stagingDir := filepath.Join(projectDir, "gitdata-staging")
 

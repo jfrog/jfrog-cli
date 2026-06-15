@@ -862,6 +862,31 @@ func SetupGitHubActionsEnv(t *testing.T) (cleanup func(), actualOrg, actualRepo 
 	return cleanup, actualOrg, actualRepo
 }
 
+// SetupGitHubActionsEnvForLocalGitMerge enables CI VCS collection with provider/org/repo
+// but clears url/revision/branch CI env vars so local git fallback is exercised.
+func SetupGitHubActionsEnvForLocalGitMerge(t *testing.T) (cleanup func(), actualOrg, actualRepo string) {
+	t.Helper()
+	cleanupBase, actualOrg, actualRepo := SetupGitHubActionsEnv(t)
+
+	var callbacks []func()
+	for _, key := range []string{
+		"GITHUB_SERVER_URL",
+		"GITHUB_SHA",
+		"GITHUB_REF",
+		"GITHUB_REF_NAME",
+		"GITHUB_HEAD_REF",
+	} {
+		callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, key, ""))
+	}
+
+	return func() {
+		for _, cb := range callbacks {
+			cb()
+		}
+		cleanupBase()
+	}, actualOrg, actualRepo
+}
+
 // ValidateCIVcsPropsOnArtifacts validates that CI VCS properties are set on artifacts.
 func ValidateCIVcsPropsOnArtifacts(t *testing.T, resultItems []utils.ResultItem, expectedProvider, expectedOrg, expectedRepo string) {
 	for _, item := range resultItems {
@@ -967,13 +992,14 @@ func SetupLocalGitVcsEnv(t *testing.T) (cleanup func()) {
 	t.Helper()
 	var callbacks []func()
 
-	callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "JFROG_CLI_CI_VCS_PROPS_DISABLED", ""))
-	callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "CI", ""))
-	callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "GITHUB_ACTIONS", ""))
-	callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "GITHUB_WORKFLOW", ""))
-	callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "GITHUB_RUN_ID", ""))
-	callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "GITHUB_REPOSITORY", ""))
-	callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, "GITHUB_REPOSITORY_OWNER", ""))
+	for _, key := range []string{
+		"JFROG_CLI_CI_VCS_PROPS_DISABLED", // set to "" to enable
+		"CI", "GITHUB_ACTIONS", "GITHUB_WORKFLOW", "GITHUB_RUN_ID",
+		"GITHUB_REPOSITORY", "GITHUB_REPOSITORY_OWNER",
+		"GITHUB_SERVER_URL", "GITHUB_SHA", "GITHUB_REF", "GITHUB_REF_NAME", "GITHUB_HEAD_REF",
+	} {
+		callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, key, ""))
+	}
 
 	return func() {
 		for _, cb := range callbacks {

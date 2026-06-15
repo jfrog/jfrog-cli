@@ -469,23 +469,20 @@ func TestGoBuildPublishWithCIVcsProps(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Verify VCS properties on each artifact from build info
-	// Use same fallback logic as CI VCS: OriginalDeploymentRepo + Path, or Path directly
 	artifactCount := 0
 	for _, module := range publishedBuildInfo.BuildInfo.Modules {
 		for _, artifact := range module.Artifacts {
-			var fullPath string
-			switch {
-			case artifact.OriginalDeploymentRepo != "":
-				fullPath = artifact.OriginalDeploymentRepo + "/" + artifact.Path
-			case artifact.Path != "":
-				fullPath = artifact.Path
-			default:
-				continue // Skip artifacts without any path info
+			fullPath := tests.ArtifactFullPath(artifact)
+			if fullPath == "" {
+				continue
 			}
 
 			props, err := serviceManager.GetItemProps(fullPath)
 			assert.NoError(t, err, "Failed to get properties for artifact: %s", fullPath)
 			assert.NotNil(t, props, "Properties are nil for artifact: %s", fullPath)
+			if props == nil {
+				continue
+			}
 
 			// Validate VCS properties
 			assert.Contains(t, props.Properties, "vcs.provider", "Missing vcs.provider on %s", artifact.Name)
@@ -522,11 +519,19 @@ func TestGoPublishWithLocalGitVcsProps(t *testing.T) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
 
-	projectPath := prepareGoProject("project1", t, true)
+	projectPath := createGoProject(t, "project1", true)
+	testdataTarget := filepath.Join(tests.Out, "testdata")
+	testdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "testdata")
+	require.NoError(t, biutils.CopyDir(testdataSrc, testdataTarget, true, nil))
+	configFileDir := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "project1", ".jfrog", "projects")
+	_, err = tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "go.yaml"), filepath.Join(projectPath, ".jfrog", "projects"))
+	require.NoError(t, err)
+
 	tests.CopyGitFixtureIntoProject(t, projectPath)
 	require.FileExists(t, filepath.Join(projectPath, ".git", "HEAD"))
 	clientTestUtils.ChangeDirAndAssert(t, projectPath)
 	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+	log.Info("Using Go project located at", projectPath)
 
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	err = execGo(jfrogCli, "go", "build", "--mod=mod", "--build-name="+buildName, "--build-number="+buildNumber)
@@ -548,19 +553,17 @@ func TestGoPublishWithLocalGitVcsProps(t *testing.T) {
 	artifactCount := 0
 	for _, module := range publishedBuildInfo.BuildInfo.Modules {
 		for _, artifact := range module.Artifacts {
-			var fullPath string
-			switch {
-			case artifact.OriginalDeploymentRepo != "":
-				fullPath = artifact.OriginalDeploymentRepo + "/" + artifact.Path
-			case artifact.Path != "":
-				fullPath = artifact.Path
-			default:
+			fullPath := tests.ArtifactFullPath(artifact)
+			if fullPath == "" {
 				continue
 			}
 
 			props, err := serviceManager.GetItemProps(fullPath)
 			assert.NoError(t, err, "Failed to get properties for artifact: %s", fullPath)
 			assert.NotNil(t, props, "Properties are nil for artifact: %s", fullPath)
+			if props == nil {
+				continue
+			}
 
 			assert.Contains(t, props.Properties, "vcs.url", "Missing vcs.url on %s", artifact.Name)
 			assert.Contains(t, props.Properties["vcs.url"], tests.VcsFixtureMainURL, "Wrong vcs.url on %s", artifact.Name)

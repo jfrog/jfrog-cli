@@ -7271,7 +7271,7 @@ func TestUploadUserPropsOverrideLocalGitVcs(t *testing.T) {
 func TestUploadCIPlusLocalGitVcsProps(t *testing.T) {
 	initArtifactoryTest(t, "")
 
-	cleanupEnv, actualOrg, actualRepo := tests.SetupGitHubActionsEnv(t)
+	cleanupEnv, actualOrg, actualRepo := tests.SetupGitHubActionsEnvForLocalGitMerge(t)
 	defer cleanupEnv()
 
 	testDir := tests.CopyVcsGitFixture(t, tests.Temp)
