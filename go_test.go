@@ -472,7 +472,7 @@ func TestGoBuildPublishWithCIVcsProps(t *testing.T) {
 	artifactCount := 0
 	for _, module := range publishedBuildInfo.BuildInfo.Modules {
 		for _, artifact := range module.Artifacts {
-			fullPath := tests.ArtifactFullPath(artifact)
+			fullPath := tests.ArtifactFullPath(artifact, tests.GoRepo)
 			if fullPath == "" {
 				continue
 			}
@@ -553,7 +553,7 @@ func TestGoPublishWithLocalGitVcsProps(t *testing.T) {
 	artifactCount := 0
 	for _, module := range publishedBuildInfo.BuildInfo.Modules {
 		for _, artifact := range module.Artifacts {
-			fullPath := tests.ArtifactFullPath(artifact)
+			fullPath := tests.ArtifactFullPath(artifact, tests.GoRepo)
 			if fullPath == "" {
 				continue
 			}

@@ -707,7 +707,7 @@ func TestGradleBuildPublishWithCIVcsProps(t *testing.T) {
 	artifactCount := 0
 	for _, module := range publishedBuildInfo.BuildInfo.Modules {
 		for _, artifact := range module.Artifacts {
-			fullPath := tests.ArtifactFullPath(artifact)
+			fullPath := tests.ArtifactFullPath(artifact, tests.GradleRepo)
 
 			props, err := serviceManager.GetItemProps(fullPath)
 			assert.NoError(t, err, "Failed to get properties for artifact: %s", fullPath)
@@ -786,7 +786,7 @@ func TestGradleBuildPublishWithLocalGitVcsProps(t *testing.T) {
 	artifactCount := 0
 	for _, module := range publishedBuildInfo.BuildInfo.Modules {
 		for _, artifact := range module.Artifacts {
-			fullPath := tests.ArtifactFullPath(artifact)
+			fullPath := tests.ArtifactFullPath(artifact, tests.GradleRepo)
 
 			props, err := serviceManager.GetItemProps(fullPath)
 			assert.NoError(t, err, "Failed to get properties for artifact: %s", fullPath)
