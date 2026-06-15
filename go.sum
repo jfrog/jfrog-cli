@@ -194,6 +194,8 @@ github.com/dsnet/compress v0.0.2-0.20230904184137-39efe44ab707/go.mod h1:qssHWj6
 github.com/dsnet/golib v0.0.0-20171103203638-1ea166775780/go.mod h1:Lj+Z9rebOhdfkVLjJ8T6VcRQv3SXugXy999NBtR9aFY=
 github.com/ebitengine/purego v0.10.1 h1:dewVBCBT2GaMu1SrNTYxQhgQBethzfhiwvZiLGP/qyY=
 github.com/ebitengine/purego v0.10.1/go.mod h1:iIjxzd6CiRiOG0UyXP+V1+jWqUXVjPKLAI0mRfJZTmQ=
+github.com/ehl-jf/jfrog-cli-artifactory v0.0.0-20260615113839-04c78a8cf4fb h1:scGVRkRKWi6wVN2CbM3WPSDIwA35nF6WtyoZgkcMVxc=
+github.com/ehl-jf/jfrog-cli-artifactory v0.0.0-20260615113839-04c78a8cf4fb/go.mod h1:VqV0Bed11HoBlugAEGa3RumbwnDVslEf0gKocTzLs9s=
 github.com/elazarl/goproxy v1.7.2 h1:Y2o6urb7Eule09PjlhQRGNsqRfPmYI3KKQLFpCAV3+o=
 github.com/elazarl/goproxy v1.7.2/go.mod h1:82vkLNir0ALaW14Rc399OTTjyNREgmdL2cVoIbS6XaE=
 github.com/emirpasic/gods v1.18.1 h1:FXtiHYKDGKCW2KzwZKx0iC0PQmdlorYgdFG9jPXJ1Bc=
@@ -406,8 +408,6 @@ github.com/jfrog/jfrog-apps-config v1.0.1 h1:mtv6k7g8A8BVhlHGlSveapqf4mJfonwvXYL
 github.com/jfrog/jfrog-apps-config v1.0.1/go.mod h1:8AIIr1oY9JuH5dylz2S6f8Ym2MaadPLR6noCBO4C22w=
 github.com/jfrog/jfrog-cli-application v1.0.2-0.20260608074325-4de652aef752 h1:Fcb54+kmZjEuBbGstzerLz37Lk6SutfMF7CxLqgXRlE=
 github.com/jfrog/jfrog-cli-application v1.0.2-0.20260608074325-4de652aef752/go.mod h1:EeLKgLeJfKcS7671H52bfCgj1xK8wyJJGBRD5a+vJMc=
-github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260610074911-82ce7d90edbd h1:1AKWhJehl5Z8X69ibX7Azjt70x2L4PnBdnrGiVzdWxY=
-github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260610074911-82ce7d90edbd/go.mod h1:VqV0Bed11HoBlugAEGa3RumbwnDVslEf0gKocTzLs9s=
 github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260609101026-df3091b39d06 h1:A8hWKHyvqzGXfWmh+8lXv3waAkim4xiucBfGhl7ZOeQ=
 github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260609101026-df3091b39d06/go.mod h1:9R90mhbczGXwW5EGlDs7F08ejQU/xdoDhYHMvzBiqgE=
 github.com/jfrog/jfrog-cli-evidence v0.9.5-0.20260601141509-8df6c9a4bc9b h1:V0FxnU3xh29y8yJHWymm6rPr1MrjG1DdPQlr3ckImwk=
