@@ -361,7 +361,10 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action:          PoetryCmd,
+			Action: func(c *cli.Context) error {
+				cmdName, _ := getCommandName(c.Args())
+				return securityCLI.WrapCmdWithCurationPostFailureRun(c, PoetryCmd, techutils.Poetry, cmdName)
+			},
 		},
 		{
 			Name:            "uv",
