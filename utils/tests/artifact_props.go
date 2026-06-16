@@ -25,6 +25,20 @@ func ArtifactFullPath(a buildinfo.Artifact, defaultRepo string) string {
 	return path
 }
 
+// ArtifactItemPath returns the Artifactory item path for GetItemProps.
+// When Name is set and not already part of Path (e.g. UV stores Path as a directory),
+// Name is appended as the filename segment.
+func ArtifactItemPath(a buildinfo.Artifact, defaultRepo string) string {
+	fullPath := ArtifactFullPath(a, defaultRepo)
+	if a.Name == "" {
+		return fullPath
+	}
+	if strings.HasSuffix(fullPath, "/"+a.Name) || strings.HasSuffix(fullPath, a.Name) {
+		return fullPath
+	}
+	return fullPath + "/" + a.Name
+}
+
 // ValidateLocalGitVcsPropsOnBuildInfoArtifacts fetches props for each build-info artifact
 // and asserts local-git VCS fields. Returns the number of artifacts validated.
 func ValidateLocalGitVcsPropsOnBuildInfoArtifacts(
@@ -40,7 +54,7 @@ func ValidateLocalGitVcsPropsOnBuildInfoArtifacts(
 	count := 0
 	for _, module := range publishedBuildInfo.BuildInfo.Modules {
 		for _, artifact := range module.Artifacts {
-			fullPath := ArtifactFullPath(artifact, defaultRepo)
+			fullPath := ArtifactItemPath(artifact, defaultRepo)
 			if fullPath == "" {
 				continue
 			}

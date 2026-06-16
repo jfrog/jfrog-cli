@@ -872,7 +872,7 @@ func TestMavenBuildPublishWithLocalGitVcsProps(t *testing.T) {
 	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
 	require.NoError(t, err)
 
-	count := tests.ValidateLocalGitVcsPropsOnBuildInfoArtifacts(t, serviceManager, publishedBuildInfo, tests.MvnRepo,
+	count := tests.ValidateLocalGitVcsPropsOnBuildInfoArtifacts(t, serviceManager, publishedBuildInfo, tests.MvnRepo1,
 		tests.VcsFixtureMainURL, tests.VcsFixtureMainRevision, tests.VcsFixtureMainBranch)
 	assert.Greater(t, count, 0)
 

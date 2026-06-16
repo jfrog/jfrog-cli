@@ -37,3 +37,21 @@ func TestValidateLocalGitVcsPropsOnBuildInfoArtifacts_UsesArtifactFullPath(t *te
 	}
 	assert.Equal(t, "my-repo/com/foo/1.0/foo.jar", ArtifactFullPath(a, "my-repo"))
 }
+
+func TestArtifactItemPath_AppendsNameForDirectoryPath(t *testing.T) {
+	a := buildinfo.Artifact{
+		OriginalDeploymentRepo: "uv-local",
+		Path:                   "my-pkg/0.1.0",
+		Name:                   "my_pkg-0.1.0-py3-none-any.whl",
+	}
+	assert.Equal(t, "uv-local/my-pkg/0.1.0/my_pkg-0.1.0-py3-none-any.whl", ArtifactItemPath(a, ""))
+}
+
+func TestArtifactItemPath_DoesNotDoubleAppendName(t *testing.T) {
+	a := buildinfo.Artifact{
+		OriginalDeploymentRepo: "mvn-local",
+		Path:                   "com/foo/1.0/foo.jar",
+		Name:                   "foo.jar",
+	}
+	assert.Equal(t, "mvn-local/com/foo/1.0/foo.jar", ArtifactItemPath(a, ""))
+}
