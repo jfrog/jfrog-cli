@@ -1251,7 +1251,7 @@ func TestBuildPublishWithLocalGitVcsProps(t *testing.T) {
 	runRt(t, "upload", filepath.Join(testDir, "a1.in"), tests.RtRepo1+"/local-git-bp/", "--flat=true",
 		"--build-name="+buildName, "--build-number="+buildNumber)
 
-	runRt(t, "build-publish", buildName, buildNumber)
+	runRt(t, "build-publish", buildName, buildNumber, "--dot-git-path", testDir)
 
 	resultItems := getResultItemsFromArtifactory(tests.SearchAllRepo1, t)
 	require.Greater(t, len(resultItems), 0)
