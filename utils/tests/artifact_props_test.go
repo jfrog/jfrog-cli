@@ -28,3 +28,12 @@ func TestArtifactFullPath(t *testing.T) {
 		assert.Equal(t, "cli-gradle-123/minimal-example/1.0/minimal-example-1.0.jar", ArtifactFullPath(a, "cli-gradle-123"))
 	})
 }
+
+func TestValidateLocalGitVcsPropsOnBuildInfoArtifacts_UsesArtifactFullPath(t *testing.T) {
+	// Smoke-test ArtifactFullPath integration used by the helper (no Artifactory call).
+	a := buildinfo.Artifact{
+		OriginalDeploymentRepo: "",
+		Path:                   "/com/foo/1.0/foo.jar",
+	}
+	assert.Equal(t, "my-repo/com/foo/1.0/foo.jar", ArtifactFullPath(a, "my-repo"))
+}

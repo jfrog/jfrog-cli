@@ -550,33 +550,7 @@ func TestGoPublishWithLocalGitVcsProps(t *testing.T) {
 	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
 	assert.NoError(t, err)
 
-	artifactCount := 0
-	for _, module := range publishedBuildInfo.BuildInfo.Modules {
-		for _, artifact := range module.Artifacts {
-			fullPath := tests.ArtifactFullPath(artifact, tests.GoRepo)
-			if fullPath == "" {
-				continue
-			}
-
-			props, err := serviceManager.GetItemProps(fullPath)
-			assert.NoError(t, err, "Failed to get properties for artifact: %s", fullPath)
-			assert.NotNil(t, props, "Properties are nil for artifact: %s", fullPath)
-			if props == nil {
-				continue
-			}
-
-			assert.Contains(t, props.Properties, "vcs.url", "Missing vcs.url on %s", artifact.Name)
-			assert.Contains(t, props.Properties["vcs.url"], tests.VcsFixtureMainURL, "Wrong vcs.url on %s", artifact.Name)
-
-			assert.Contains(t, props.Properties, "vcs.revision", "Missing vcs.revision on %s", artifact.Name)
-			assert.Contains(t, props.Properties["vcs.revision"], tests.VcsFixtureMainRevision, "Wrong vcs.revision on %s", artifact.Name)
-
-			assert.Contains(t, props.Properties, "vcs.branch", "Missing vcs.branch on %s", artifact.Name)
-			assert.Contains(t, props.Properties["vcs.branch"], tests.VcsFixtureMainBranch, "Wrong vcs.branch on %s", artifact.Name)
-
-			artifactCount++
-		}
-	}
-
-	assert.Greater(t, artifactCount, 0, "No artifacts were validated for local git VCS properties")
+	artifactCount := tests.ValidateLocalGitVcsPropsOnBuildInfoArtifacts(t, serviceManager, publishedBuildInfo,
+		tests.GoRepo, tests.VcsFixtureMainURL, tests.VcsFixtureMainRevision, tests.VcsFixtureMainBranch)
+	assert.Greater(t, artifactCount, 0)
 }
