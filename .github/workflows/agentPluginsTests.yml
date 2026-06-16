@@ -53,4 +53,4 @@ jobs:
           RT_CONNECTION_TIMEOUT_SECONDS: ${{ env.RT_CONNECTION_TIMEOUT_SECONDS || '1200' }}
 
       - name: Run agent plugins tests
-        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.agentPlugins
+        run: go test -v github.com/jfrog/jfrog-cli --timeout 45m --test.agentPlugins
