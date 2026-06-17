@@ -1,5 +1,6 @@
 name: Conan Tests
 on:
+  workflow_call:
   workflow_dispatch:
     inputs:
       jfrog_url:
@@ -12,21 +13,10 @@ on:
         type: string
         required: false
         default: ""
-  push:
-    branches:
-      - "master"
-  pull_request_target:
-    types: [labeled]
-    branches:
-      - "master"
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}-${{ github.ref }}
-  cancel-in-progress: true
 jobs:
   Conan-Tests:
     name: Conan tests (${{ matrix.os.name }})
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'safe to test')
     strategy:
       fail-fast: false
       matrix:
