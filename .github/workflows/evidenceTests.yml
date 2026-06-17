@@ -3,10 +3,6 @@ on:
   workflow_call:
   workflow_dispatch:
 
-# Ensures that only the latest commit is running for each PR at a time.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}-${{ github.ref }}
-  cancel-in-progress: true
 jobs:
   Evidence-Tests:
     name: Evidence tests (${{ matrix.os }})
@@ -44,4 +40,3 @@ jobs:
 
       - name: Run Evidence tests
         run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.evidence --jfrog.url=${{ secrets.EPLUS_PLATFORM_URL }} --jfrog.adminToken=${{ secrets.EPLUS_ADMIN_TOKEN }} --jfrog.evidenceToken=${{ secrets.EVIDENCE_USER_TOKEN }} --jfrog.projectKey=${{ secrets.EVIDENCE_PROJECT_KEY }} --jfrog.projectToken=${{ secrets.EVIDENCE_PROJECT_TOKEN }} --ci.runId=${{ runner.os }}-evidence
-

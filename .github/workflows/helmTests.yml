@@ -14,10 +14,6 @@ on:
         required: false
         default: ""
 
-# Ensures that only the latest commit is running for each PR at a time.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}-${{ github.ref }}
-  cancel-in-progress: true
 permissions:
   id-token: write
   contents: read
@@ -102,4 +98,3 @@ jobs:
           go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.helm
           --jfrog.url=${{ env.JFROG_TESTS_URL || 'http://127.0.0.1:8082' }}
           --jfrog.adminToken=${{ env.JFROG_TESTS_LOCAL_ACCESS_TOKEN }}
-

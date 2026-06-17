@@ -3,10 +3,6 @@ on:
   workflow_call:
   workflow_dispatch:
 
-# Ensures that only the latest commit is running for each PR at a time.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}-${{ github.ref }}
-  cancel-in-progress: true
 jobs:
   Ghost-Frog-Tests:
     name: Ghost Frog tests (${{ matrix.os.name }})

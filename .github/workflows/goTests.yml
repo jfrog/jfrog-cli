@@ -6,10 +6,6 @@ on:
   workflow_call:
   workflow_dispatch:
 
-# Ensures that only the latest commit is running for each PR at a time.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}-${{ github.ref }}
-  cancel-in-progress: true
 jobs:
   GO-tests:
     # Go modules doesn't allow passing credentials to a private registry using an HTTP URL. Therefore, the Go tests run against a remote Artifactory server.
