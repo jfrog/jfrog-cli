@@ -39,6 +39,10 @@ jobs:
 
   access:
     needs: gate
+    # OIDC suite: caller must grant id-token so the reusable workflow can request it.
+    permissions:
+      id-token: write
+      contents: read
     uses: ./.github/workflows/accessTests.yml
     secrets: inherit
   artifactory:
@@ -75,10 +79,18 @@ jobs:
     secrets: inherit
   helm:
     needs: gate
+    # OIDC suite: caller must grant id-token so the reusable workflow can request it.
+    permissions:
+      id-token: write
+      contents: read
     uses: ./.github/workflows/helmTests.yml
     secrets: inherit
   huggingface:
     needs: gate
+    # OIDC suite: caller must grant id-token so the reusable workflow can request it.
+    permissions:
+      id-token: write
+      contents: read
     uses: ./.github/workflows/huggingfaceTests.yml
     secrets: inherit
   lifecycle:
@@ -103,6 +115,10 @@ jobs:
     secrets: inherit
   oidc:
     needs: gate
+    # OIDC suite: caller must grant id-token so the reusable workflow can request it.
+    permissions:
+      id-token: write
+      contents: read
     uses: ./.github/workflows/oidcTests.yml
     secrets: inherit
   plugins:
@@ -146,6 +162,7 @@ jobs:
     name: build-gate-success
     if: always()
     needs:
+      - gate
       - frogbot
       - access
       - artifactory
