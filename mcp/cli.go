@@ -25,8 +25,8 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "show",
 			Flags:        cliutils.GetCommandFlags(cliutils.McpShow),
-			Usage:        showDocs.GetDescription(),
-			HelpName:     corecommon.CreateUsage("mcp show", showDocs.GetDescription(), showDocs.Usage),
+			Usage:        corecommon.ResolveDescription(showDocs.GetDescription(), showDocs.GetAIDescription()),
+			HelpName:     corecommon.CreateUsage("mcp show", corecommon.ResolveDescription(showDocs.GetDescription(), showDocs.GetAIDescription()), showDocs.Usage),
 			UsageText:    showDocs.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
@@ -35,8 +35,8 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "install",
 			Flags:        cliutils.GetCommandFlags(cliutils.McpInstall),
-			Usage:        installDocs.GetDescription(),
-			HelpName:     corecommon.CreateUsage("mcp install", installDocs.GetDescription(), installDocs.Usage),
+			Usage:        corecommon.ResolveDescription(installDocs.GetDescription(), installDocs.GetAIDescription()),
+			HelpName:     corecommon.CreateUsage("mcp install", corecommon.ResolveDescription(installDocs.GetDescription(), installDocs.GetAIDescription()), installDocs.Usage),
 			UsageText:    installDocs.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc("cursor", "claude"),
@@ -45,8 +45,8 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "uninstall",
 			Flags:        cliutils.GetCommandFlags(cliutils.McpUninstall),
-			Usage:        uninstallDocs.GetDescription(),
-			HelpName:     corecommon.CreateUsage("mcp uninstall", uninstallDocs.GetDescription(), uninstallDocs.Usage),
+			Usage:        corecommon.ResolveDescription(uninstallDocs.GetDescription(), uninstallDocs.GetAIDescription()),
+			HelpName:     corecommon.CreateUsage("mcp uninstall", corecommon.ResolveDescription(uninstallDocs.GetDescription(), uninstallDocs.GetAIDescription()), uninstallDocs.Usage),
 			UsageText:    uninstallDocs.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc("cursor", "claude"),
