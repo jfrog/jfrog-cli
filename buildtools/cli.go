@@ -366,8 +366,8 @@ func GetCommands() []cli.Command {
 		{
 			Name:            "uv",
 			Flags:           cliutils.GetCommandFlags(cliutils.Uv),
-			Usage:           uvcommand.GetDescription(),
-			HelpName:        corecommon.CreateUsage("uv", uvcommand.GetDescription(), uvcommand.Usage),
+			Usage:           corecommon.ResolveDescription(uvcommand.GetDescription(), uvcommand.GetAIDescription()),
+			HelpName:        corecommon.CreateUsage("uv", corecommon.ResolveDescription(uvcommand.GetDescription(), uvcommand.GetAIDescription()), uvcommand.Usage),
 			UsageText:       uvcommand.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
