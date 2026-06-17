@@ -23,7 +23,7 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - uses: jfrog/frogbot@v2
+      - uses: jfrog/frogbot@v3
         env:
           JFROG_CLI_LOG_LEVEL: "DEBUG"
 
