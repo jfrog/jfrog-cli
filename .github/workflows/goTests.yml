@@ -1,14 +1,10 @@
 name: Go Tests
+# Reusable suite: invoked by build-gate.yml behind the `build-gate` approval.
+# Also runnable standalone via workflow_dispatch. Approval/label gating now lives in the
+# orchestrator, not here.
 on:
+  workflow_call:
   workflow_dispatch:
-  push:
-    branches:
-      - "master"
-  # Triggers the workflow on PRs to master branch only.
-  pull_request_target:
-    types: [labeled]
-    branches:
-      - "master"
 
 # Ensures that only the latest commit is running for each PR at a time.
 concurrency:
@@ -18,7 +14,6 @@ jobs:
   GO-tests:
     # Go modules doesn't allow passing credentials to a private registry using an HTTP URL. Therefore, the Go tests run against a remote Artifactory server.
     name: Go tests (${{ matrix.os }})
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'safe to test')
     strategy:
       fail-fast: false
       matrix:
