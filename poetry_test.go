@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/generic"
-	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"net/http"
 	"os"
 	"os/exec"
@@ -17,7 +15,9 @@ import (
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	biutils "github.com/jfrog/build-info-go/utils"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
@@ -872,21 +872,36 @@ func createMinimalPoetryProject(t *testing.T, outputFolder string) string {
 	// (see createPoetryProject for the rationale).
 	viper.Reset()
 
-	projectSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "poetry", "minimalproject")
 	absOut, err := filepath.Abs(tests.Out)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	projectTarget := filepath.Join(absOut, outputFolder+"-minimalproject")
+	require.NoError(t, os.RemoveAll(projectTarget))
 
-	assert.NoError(t, os.RemoveAll(projectTarget))
-	assert.NoError(t, fileutils.CreateDirIfNotExist(projectTarget))
-	assert.NoError(t, biutils.CopyDir(projectSrc, projectTarget, true, nil))
+	// Write the project files inline so the test is self-contained and doesn't
+	// depend on any checked-in testdata. Minimal hello-world project with NO
+	// [[tool.poetry.source]] — the resolver comes solely from poetry.yaml below.
+	pkgDir := filepath.Join(projectTarget, "hello_world")
+	require.NoError(t, os.MkdirAll(pkgDir, 0700))
+	pyproject := "[tool.poetry]\n" +
+		"name = \"hello-world\"\n" +
+		"version = \"0.1.0\"\n" +
+		"description = \"\"\n" +
+		"authors = []\n" +
+		"packages = [{include = \"hello_world\"}]\n\n" +
+		"[tool.poetry.dependencies]\n" +
+		"python = \"^3.8\"\n\n" +
+		"[build-system]\n" +
+		"requires = [\"poetry-core\"]\n" +
+		"build-backend = \"poetry.core.masonry.api\"\n"
+	require.NoError(t, os.WriteFile(filepath.Join(projectTarget, "pyproject.toml"), []byte(pyproject), 0600))
+	require.NoError(t, os.WriteFile(filepath.Join(pkgDir, "__init__.py"), []byte("__version__ = \"0.1.0\"\n"), 0600))
 
-	// Copy the resolver config into the project's .jfrog dir (template substitutes
-	// ${POETRY_VIRTUAL_REPO}).
-	configSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "poetry", "poetry.yaml")
-	configTarget := filepath.Join(projectTarget, ".jfrog", "projects")
-	_, err = tests.ReplaceTemplateVariables(configSrc, configTarget)
-	assert.NoError(t, err)
+	// Resolver config (.jfrog/projects/poetry.yaml) pointing at the virtual repo —
+	// equivalent to `jf poetry-config --repo-resolve <virtual> --server-id-resolve=default`.
+	projectsDir := filepath.Join(projectTarget, ".jfrog", "projects")
+	require.NoError(t, os.MkdirAll(projectsDir, 0700))
+	poetryYaml := fmt.Sprintf("version: 1\ntype: poetry\nresolver:\n  repo: %s/simple\n  serverId: default\n", tests.PoetryVirtualRepo)
+	require.NoError(t, os.WriteFile(filepath.Join(projectsDir, "poetry.yaml"), []byte(poetryYaml), 0600))
 
 	return projectTarget
 }
