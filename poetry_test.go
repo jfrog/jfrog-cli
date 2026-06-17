@@ -15,9 +15,7 @@ import (
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	biutils "github.com/jfrog/build-info-go/utils"
-	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
@@ -802,8 +800,8 @@ func TestSetupPoetryCommand(t *testing.T) {
 func TestPoetryPublishWithRepositoryFlag(t *testing.T) {
 	initPoetryTest(t)
 
-	// Wrapped/legacy publish path: ensure JFROG_RUN_NATIVE is not set.
-	restoreEnv := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_RUN_NATIVE", "")
+	// Wrapped/legacy publish path: ensure FlexPack native mode is disabled.
+	restoreEnv := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_RUN_NATIVE", "false")
 	defer restoreEnv()
 
 	// Populate cli config with 'default' server (the serverId in poetry.yaml).
@@ -812,9 +810,6 @@ func TestPoetryPublishWithRepositoryFlag(t *testing.T) {
 		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
 		clientTestUtils.RemoveAllAndAssert(t, newHomeDir)
 	}()
-
-	buildName := tests.PoetryBuildName + "-repo-flag"
-	buildNumber := "1"
 
 	// Minimal hello-world project with no [[tool.poetry.source]], plus a
 	// .jfrog/projects/poetry.yaml whose resolver points at the virtual repo —
@@ -829,8 +824,7 @@ func TestPoetryPublishWithRepositoryFlag(t *testing.T) {
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 
 	// Step 1: install (resolves from the resolver repo).
-	assert.NoError(t, jfrogCli.Exec("poetry", "install",
-		"--build-name="+buildName, "--build-number="+buildNumber))
+	assert.NoError(t, jfrogCli.Exec("poetry", "install"))
 
 	// Step 2: build the distributable artifacts (.whl + .tar.gz).
 	buildCmd := exec.Command("poetry", "build")
@@ -839,15 +833,12 @@ func TestPoetryPublishWithRepositoryFlag(t *testing.T) {
 
 	// Step 3 (the fix under test): publish to a DIFFERENT deploy repo via -r.
 	// Pre-fix this returned "Repository  <resolver> is not defined".
-	err = jfrogCli.Exec("poetry", "publish",
-		"-r", tests.PoetryLocalRepo,
-		"--no-interaction",
-		"--build-name="+buildName, "--build-number="+buildNumber)
+	err = jfrogCli.Exec("poetry", "publish", "-r", tests.PoetryLocalRepo, "--no-interaction")
 	assert.NoError(t, err, "wrapped-mode 'jf poetry publish -r <deploy-repo>' should succeed")
 
 	// The artifacts must land in the DEPLOY repo passed via -r (not the resolver
 	// repo) — this proves both the -r flag is honored and the arg is well-formed.
-	paths := searchRepoPaths(t, tests.PoetryLocalRepo+"/*")
+	paths := inttestutils.SearchPathsByPattern(tests.PoetryLocalRepo+"/*", serverDetails, t)
 	hasWhl, hasTar := false, false
 	for _, p := range paths {
 		if strings.HasSuffix(p, ".whl") {
@@ -859,69 +850,33 @@ func TestPoetryPublishWithRepositoryFlag(t *testing.T) {
 	}
 	assert.Truef(t, hasWhl, "expected a .whl published to deploy repo %s, found: %v", tests.PoetryLocalRepo, paths)
 	assert.Truef(t, hasTar, "expected a .tar.gz published to deploy repo %s, found: %v", tests.PoetryLocalRepo, paths)
-
-	// Clean up build info (the repo itself is removed at suite teardown).
-	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 }
 
-// createMinimalPoetryProject lays down the minimal hello-world Poetry project
-// (no [[tool.poetry.source]]) together with a .jfrog/projects/poetry.yaml that
-// points the resolver at the virtual repo. Returns the absolute project path.
+// createMinimalPoetryProject copies the minimal hello-world Poetry project from
+// testdata (no [[tool.poetry.source]]) and lays down a .jfrog/projects/poetry.yaml
+// whose resolver points at the virtual repo. Returns the absolute project path.
 func createMinimalPoetryProject(t *testing.T, outputFolder string) string {
 	// Clear any global viper override left over from a previous Poetry invocation
 	// (see createPoetryProject for the rationale).
 	viper.Reset()
 
+	projectSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "poetry", "minimalproject")
 	absOut, err := filepath.Abs(tests.Out)
 	require.NoError(t, err)
 	projectTarget := filepath.Join(absOut, outputFolder+"-minimalproject")
+
 	require.NoError(t, os.RemoveAll(projectTarget))
+	require.NoError(t, fileutils.CreateDirIfNotExist(projectTarget))
+	require.NoError(t, biutils.CopyDir(projectSrc, projectTarget, true, nil))
 
-	// Write the project files inline so the test is self-contained and doesn't
-	// depend on any checked-in testdata. Minimal hello-world project with NO
-	// [[tool.poetry.source]] — the resolver comes solely from poetry.yaml below.
-	pkgDir := filepath.Join(projectTarget, "hello_world")
-	require.NoError(t, os.MkdirAll(pkgDir, 0700))
-	pyproject := "[tool.poetry]\n" +
-		"name = \"hello-world\"\n" +
-		"version = \"0.1.0\"\n" +
-		"description = \"\"\n" +
-		"authors = []\n" +
-		"packages = [{include = \"hello_world\"}]\n\n" +
-		"[tool.poetry.dependencies]\n" +
-		"python = \"^3.8\"\n\n" +
-		"[build-system]\n" +
-		"requires = [\"poetry-core\"]\n" +
-		"build-backend = \"poetry.core.masonry.api\"\n"
-	require.NoError(t, os.WriteFile(filepath.Join(projectTarget, "pyproject.toml"), []byte(pyproject), 0600))
-	require.NoError(t, os.WriteFile(filepath.Join(pkgDir, "__init__.py"), []byte("__version__ = \"0.1.0\"\n"), 0600))
-
-	// Resolver config (.jfrog/projects/poetry.yaml) pointing at the virtual repo —
-	// equivalent to `jf poetry-config --repo-resolve <virtual> --server-id-resolve=default`.
-	projectsDir := filepath.Join(projectTarget, ".jfrog", "projects")
-	require.NoError(t, os.MkdirAll(projectsDir, 0700))
-	poetryYaml := fmt.Sprintf("version: 1\ntype: poetry\nresolver:\n  repo: %s/simple\n  serverId: default\n", tests.PoetryVirtualRepo)
-	require.NoError(t, os.WriteFile(filepath.Join(projectsDir, "poetry.yaml"), []byte(poetryYaml), 0600))
+	// Lay down the resolver config (.jfrog/projects/poetry.yaml) from the shared
+	// template — equivalent to `jf poetry-config --repo-resolve <virtual>`.
+	configSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "poetry", "poetry.yaml")
+	configTarget := filepath.Join(projectTarget, ".jfrog", "projects")
+	_, err = tests.ReplaceTemplateVariables(configSrc, configTarget)
+	require.NoError(t, err)
 
 	return projectTarget
-}
-
-// searchRepoPaths returns the repo-relative paths of all items matching pattern.
-func searchRepoPaths(t *testing.T, pattern string) []string {
-	searchSpec := spec.NewBuilder().Pattern(pattern).Recursive(true).BuildSpec()
-	searchCmd := generic.NewSearchCommand()
-	searchCmd.SetServerDetails(serverDetails).SetSpec(searchSpec)
-	reader, err := searchCmd.Search()
-	require.NoError(t, err)
-	readerNoDate, err := utils.SearchResultNoDate(reader)
-	require.NoError(t, err)
-	var paths []string
-	for item := new(utils.SearchResult); readerNoDate.NextRecord(item) == nil; item = new(utils.SearchResult) {
-		paths = append(paths, item.Path)
-	}
-	readerGetErrorAndAssert(t, readerNoDate)
-	readerCloseAndAssert(t, readerNoDate)
-	return paths
 }
 
 func TestPoetryFlexPackFeatures(t *testing.T) {
