@@ -14,9 +14,6 @@ on:
         required: false
         default: ""
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}-${{ github.ref }}
-  cancel-in-progress: true
 jobs:
   Conan-Tests:
     name: Conan tests (${{ matrix.os.name }})
