@@ -811,10 +811,10 @@ func TestPoetryPublishWithRepositoryFlag(t *testing.T) {
 		clientTestUtils.RemoveAllAndAssert(t, newHomeDir)
 	}()
 
-	// Minimal hello-world project with no [[tool.poetry.source]], plus a
+	// Reuse the shared poetry test project; createPoetryProject also lays down
 	// .jfrog/projects/poetry.yaml whose resolver points at the virtual repo —
 	// equivalent to `jf poetry-config --repo-resolve <virtual>`.
-	projectPath := createMinimalPoetryProject(t, "publish-repo-flag")
+	projectPath := createPoetryProject(t, "publish-repo-flag", "poetryproject")
 
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
@@ -850,33 +850,6 @@ func TestPoetryPublishWithRepositoryFlag(t *testing.T) {
 	}
 	assert.Truef(t, hasWhl, "expected a .whl published to deploy repo %s, found: %v", tests.PoetryLocalRepo, paths)
 	assert.Truef(t, hasTar, "expected a .tar.gz published to deploy repo %s, found: %v", tests.PoetryLocalRepo, paths)
-}
-
-// createMinimalPoetryProject copies the minimal hello-world Poetry project from
-// testdata (no [[tool.poetry.source]]) and lays down a .jfrog/projects/poetry.yaml
-// whose resolver points at the virtual repo. Returns the absolute project path.
-func createMinimalPoetryProject(t *testing.T, outputFolder string) string {
-	// Clear any global viper override left over from a previous Poetry invocation
-	// (see createPoetryProject for the rationale).
-	viper.Reset()
-
-	projectSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "poetry", "minimalproject")
-	absOut, err := filepath.Abs(tests.Out)
-	require.NoError(t, err)
-	projectTarget := filepath.Join(absOut, outputFolder+"-minimalproject")
-
-	require.NoError(t, os.RemoveAll(projectTarget))
-	require.NoError(t, fileutils.CreateDirIfNotExist(projectTarget))
-	require.NoError(t, biutils.CopyDir(projectSrc, projectTarget, true, nil))
-
-	// Lay down the resolver config (.jfrog/projects/poetry.yaml) from the shared
-	// template — equivalent to `jf poetry-config --repo-resolve <virtual>`.
-	configSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "poetry", "poetry.yaml")
-	configTarget := filepath.Join(projectTarget, ".jfrog", "projects")
-	_, err = tests.ReplaceTemplateVariables(configSrc, configTarget)
-	require.NoError(t, err)
-
-	return projectTarget
 }
 
 func TestPoetryFlexPackFeatures(t *testing.T) {
