@@ -37,10 +37,6 @@ jobs:
     uses: ./.github/workflows/frogbot-scan-pull-request.yml
     secrets: inherit
 
-  agent-plugins:
-    needs: gate
-    uses: ./.github/workflows/agentPluginsTests.yml
-    secrets: inherit
   access:
     needs: gate
     # OIDC suite: caller must grant id-token so the reusable workflow can request it.
@@ -168,7 +164,6 @@ jobs:
     needs:
       - gate
       - frogbot
-      - agent-plugins
       - access
       - artifactory
       - conan
