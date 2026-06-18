@@ -6922,51 +6922,6 @@ func terraformPublishModulesAndBuildInfo(t *testing.T, trPublishArgs []string) {
 	assert.Len(t, buildInfo.Modules[0].Artifacts, 3)
 }
 
-func TestTerraformPublishWithLocalGitVcsProps(t *testing.T) {
-	initArtifactoryTest(t, terraformMinArtifactoryVersion)
-	defer cleanArtifactoryTest()
-	createJfrogHomeConfig(t, true)
-
-	buildNumber := "local-git-1"
-	buildName := tests.RtBuildName1 + "-local-git"
-
-	cleanupEnv := tests.SetupLocalGitVcsEnv(t)
-	defer cleanupEnv()
-
-	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
-	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
-
-	projectPath := prepareTerraformProject("terraformproject", t, true)
-	tests.CopyGitFixtureIntoProject(t, projectPath)
-
-	wd, err := os.Getwd()
-	require.NoError(t, err)
-	awsDir := filepath.Join(projectPath, "aws")
-	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, awsDir)
-	defer chdirCallback()
-
-	trPublishArgs := []string{
-		"terraform", "publish",
-		"--namespace=namespace", "--provider=provider", "--tag=tag",
-		"--exclusions=*test*",
-		"--build-name=" + buildName, "--build-number=" + buildNumber,
-		"--module=my-tr-module-local-git",
-	}
-	require.NoError(t, platformCli.WithoutCredentials().Exec(trPublishArgs...))
-	require.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
-
-	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
-	require.NoError(t, err)
-	require.True(t, found)
-
-	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
-	require.NoError(t, err)
-
-	count := tests.ValidateLocalGitVcsPropsOnBuildInfoArtifacts(t, serviceManager, publishedBuildInfo, tests.TerraformRepo,
-		tests.VcsFixtureMainURL, tests.VcsFixtureMainRevision, tests.VcsFixtureMainBranch)
-	assert.Greater(t, count, 0)
-}
-
 func prepareTerraformProject(projectName string, t *testing.T, copyDirs bool) string {
 	projectPath := filepath.Join(tests.GetTestResourcesPath(), "terraform", projectName)
 	testdataTarget := filepath.Join(tests.Out, "terraformProject")

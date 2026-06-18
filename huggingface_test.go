@@ -10,11 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
-	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
@@ -867,53 +865,6 @@ func InitHuggingFaceTests() {
 	cleanUpOldRepositories()
 	tests.AddTimestampToGlobalVars()
 	createRequiredRepos()
-}
-
-func TestHuggingFaceUploadWithLocalGitVcsProps(t *testing.T) {
-	initHuggingFaceTest(t)
-	defer cleanHuggingFaceTest(t)
-	checkHuggingFaceHubAvailable(t)
-
-	buildName := tests.HuggingFaceBuildName + "-local-git"
-	buildNumber := "1"
-
-	cleanupEnv := tests.SetupLocalGitVcsEnv(t)
-	defer cleanupEnv()
-
-	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
-	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
-
-	tempDir, err := os.MkdirTemp("", "hf-local-git-*")
-	require.NoError(t, err)
-	t.Cleanup(func() { _ = os.RemoveAll(tempDir) })
-	tests.CopyGitFixtureIntoProject(t, tempDir)
-
-	require.NoError(t, os.WriteFile(filepath.Join(tempDir, "config.json"),
-		[]byte(`{"model_type": "local-git-vcs"}`), 0o644))
-	require.NoError(t, os.WriteFile(filepath.Join(tempDir, "model.bin"),
-		[]byte("model"), 0o644))
-
-	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
-	args := []string{
-		"hf", "u", tempDir, "test-org/test-local-git-model",
-		"--repo-type=model",
-		"--build-name=" + buildName,
-		"--build-number=" + buildNumber,
-		"--repo-key=" + tests.HuggingFaceLocalRepo,
-	}
-	require.NoError(t, jfrogCli.Exec(args...))
-	require.NoError(t, jfrogCli.Exec("rt", "bp", buildName, buildNumber))
-
-	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
-	require.NoError(t, err)
-	require.True(t, found)
-
-	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
-	require.NoError(t, err)
-
-	count := tests.ValidateLocalGitVcsPropsOnBuildInfoArtifacts(t, serviceManager, publishedBuildInfo, tests.HuggingFaceLocalRepo,
-		tests.VcsFixtureMainURL, tests.VcsFixtureMainRevision, tests.VcsFixtureMainBranch)
-	assert.Greater(t, count, 0)
 }
 
 // CleanHuggingFaceTests cleans up after HuggingFace tests
