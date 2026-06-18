@@ -1574,6 +1574,55 @@ CMD ["echo", "Hello from CI VCS test"]`, baseImage)
 	assert.Greater(t, artifactCount, 0, "No artifacts in build info")
 }
 
+// TestDockerPushWithLocalGitVcsProps verifies local git VCS props on Docker artifacts
+// when running build-publish with VCS collection enabled and no CI env.
+func TestDockerPushWithLocalGitVcsProps(t *testing.T) {
+	cleanup := initDockerBuildTest(t)
+	defer cleanup()
+
+	buildName := "docker-local-git-test"
+	buildNumber := "1"
+
+	cleanupEnv := tests.SetupLocalGitVcsEnv(t)
+	defer cleanupEnv()
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	registryHost := *tests.ContainerRegistry
+	if parsedURL, err := url.Parse(registryHost); err == nil && parsedURL.Host != "" {
+		registryHost = parsedURL.Host
+	}
+	imageName := path.Join(registryHost, tests.OciLocalRepo, "test-local-git-docker")
+	imageTag := imageName + ":v1"
+
+	workspace, err := filepath.Abs(tests.Out)
+	require.NoError(t, err)
+	require.NoError(t, fileutils.CreateDirIfNotExist(workspace))
+	tests.CopyGitFixtureIntoProject(t, workspace)
+
+	baseImage := path.Join(registryHost, tests.OciRemoteRepo, "alpine:latest")
+	dockerfileContent := fmt.Sprintf("FROM %s\nCMD [\"echo\", \"local git vcs test\"]", baseImage)
+	dockerfilePath := filepath.Join(workspace, "Dockerfile")
+	require.NoError(t, os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0o644)) //#nosec G703 -- test code, path built from test workspace
+
+	runJfrogCli(t, "rt", "bc", buildName, buildNumber)
+	runJfrogCli(t, "docker", "build", "-t", imageTag, "--push", "-f", dockerfilePath,
+		"--build-name="+buildName, "--build-number="+buildNumber, workspace)
+	runRt(t, "build-publish", buildName, buildNumber)
+
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	require.NoError(t, err)
+	require.True(t, found)
+
+	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
+	require.NoError(t, err)
+
+	count := tests.ValidateLocalGitVcsPropsOnBuildInfoArtifacts(t, serviceManager, publishedBuildInfo, tests.OciLocalRepo,
+		tests.VcsFixtureMainURL, tests.VcsFixtureMainRevision, tests.VcsFixtureMainBranch)
+	assert.Greater(t, count, 0)
+}
+
 // TestSetupDockerCommand verifies `jf setup docker --url ...` end-to-end.
 //
 // Guards RTECO-1352: configureContainer (in jfrog-cli-artifactory) used to read
