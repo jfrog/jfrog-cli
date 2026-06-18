@@ -797,6 +797,61 @@ func TestSetupPoetryCommand(t *testing.T) {
 	// require.NoError(t, execGo(jfrogCli, "setup", "poetry", "--repo="+tests.PoetryRemoteRepo))
 }
 
+func TestPoetryPublishWithRepositoryFlag(t *testing.T) {
+	initPoetryTest(t)
+
+	// Wrapped/legacy publish path: ensure FlexPack native mode is disabled.
+	restoreEnv := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_RUN_NATIVE", "false")
+	defer restoreEnv()
+
+	// Populate cli config with 'default' server (the serverId in poetry.yaml).
+	oldHomeDir, newHomeDir := prepareHomeDir(t)
+	defer func() {
+		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
+		clientTestUtils.RemoveAllAndAssert(t, newHomeDir)
+	}()
+
+	// Reuse the shared poetry test project; createPoetryProject also lays down
+	// .jfrog/projects/poetry.yaml whose resolver points at the virtual repo —
+	// equivalent to `jf poetry-config --repo-resolve <virtual>`.
+	projectPath := createPoetryProject(t, "publish-repo-flag", "poetryproject")
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+
+	// Step 1: install (resolves from the resolver repo).
+	assert.NoError(t, jfrogCli.Exec("poetry", "install"))
+
+	// Step 2: build the distributable artifacts (.whl + .tar.gz).
+	buildCmd := exec.Command("poetry", "build")
+	buildCmd.Dir = projectPath
+	assert.NoError(t, buildCmd.Run(), "Failed to build Poetry package")
+
+	// Step 3 (the fix under test): publish to a DIFFERENT deploy repo via -r.
+	// Pre-fix this returned "Repository  <resolver> is not defined".
+	err = jfrogCli.Exec("poetry", "publish", "-r", tests.PoetryLocalRepo, "--no-interaction")
+	assert.NoError(t, err, "wrapped-mode 'jf poetry publish -r <deploy-repo>' should succeed")
+
+	// The artifacts must land in the DEPLOY repo passed via -r (not the resolver
+	// repo) — this proves both the -r flag is honored and the arg is well-formed.
+	paths := inttestutils.SearchPathsByPattern(tests.PoetryLocalRepo+"/*", serverDetails, t)
+	hasWhl, hasTar := false, false
+	for _, p := range paths {
+		if strings.HasSuffix(p, ".whl") {
+			hasWhl = true
+		}
+		if strings.HasSuffix(p, ".tar.gz") {
+			hasTar = true
+		}
+	}
+	assert.Truef(t, hasWhl, "expected a .whl published to deploy repo %s, found: %v", tests.PoetryLocalRepo, paths)
+	assert.Truef(t, hasTar, "expected a .tar.gz published to deploy repo %s, found: %v", tests.PoetryLocalRepo, paths)
+}
+
 func TestPoetryFlexPackFeatures(t *testing.T) {
 	// Test specific FlexPack features for Poetry
 	initPoetryTest(t)
