@@ -1,17 +1,13 @@
 name: Agent Plugins Tests
 on:
-  workflow_dispatch:
   push:
     branches:
-      - "master"
-  # Triggers the workflow on PRs to master branch only.
+      - "**"
+    tags-ignore:
+      - "**"
   pull_request:
-    branches:
-      - "master"
   pull_request_target:
     types: [labeled]
-    branches:
-      - "master"
 
 # Ensures that only the latest commit is running for each PR at a time.
 concurrency:
@@ -20,8 +16,8 @@ concurrency:
 
 jobs:
   Agent-Plugins-Tests:
+    if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
     name: agent-plugins ${{ matrix.os.name }}
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event_name == 'pull_request' || contains(github.event.pull_request.labels.*.name, 'safe to test')
     strategy:
       fail-fast: false
       matrix:
@@ -33,7 +29,7 @@ jobs:
     runs-on: ${{ matrix.os.name }}-${{ matrix.os.version }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
 
