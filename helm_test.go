@@ -958,7 +958,6 @@ func TestHelmBuildPublishWithCIVcsProps(t *testing.T) {
 	assert.Greater(t, artifactCount, 0, "No artifacts were validated for CI VCS properties")
 }
 
-
 // InitHelmTests initializes Helm tests
 func InitHelmTests() {
 	initArtifactoryCli()
