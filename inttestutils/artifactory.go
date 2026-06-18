@@ -36,6 +36,21 @@ func VerifyExistInArtifactory(expected []string, specFile string, serverDetails 
 
 func SearchInArtifactory(specFile string, serverDetails *config.ServerDetails, t *testing.T) ([]utils.SearchResult, error) {
 	searchSpec, _ := spec.CreateSpecFromFile(specFile, nil)
+	return searchBySpec(searchSpec, serverDetails, t)
+}
+
+// SearchPathsByPattern returns the repo-relative paths of all items matching the
+// given pattern (e.g. "my-repo/*"), searched recursively.
+func SearchPathsByPattern(pattern string, serverDetails *config.ServerDetails, t *testing.T) []string {
+	results, _ := searchBySpec(spec.NewBuilder().Pattern(pattern).Recursive(true).BuildSpec(), serverDetails, t)
+	paths := make([]string, 0, len(results))
+	for _, r := range results {
+		paths = append(paths, r.Path)
+	}
+	return paths
+}
+
+func searchBySpec(searchSpec *spec.SpecFiles, serverDetails *config.ServerDetails, t *testing.T) ([]utils.SearchResult, error) {
 	searchCmd := generic.NewSearchCommand()
 	searchCmd.SetServerDetails(serverDetails).SetSpec(searchSpec)
 	reader, err := searchCmd.Search()
