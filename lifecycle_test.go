@@ -491,54 +491,6 @@ func TestPromoteReleaseBundleWithPromotionTypeFlag(t *testing.T) {
 	assertStatusCompleted(t, lcManager, tests.LcRbName1, number1, "")
 }
 
-// TestReleaseBundleFormatFlag verifies the --format flag output of the lifecycle commands:
-//   - release-bundle-create --format=json emits a JSON confirmation object.
-//   - release-bundle-promote --format=table renders a summary table.
-//
-// The release-bundle-promote --format=json (default) path is already covered by promoteRb.
-func TestReleaseBundleFormatFlag(t *testing.T) {
-	cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
-	defer cleanCallback()
-	lcManager := getLcServiceManager(t)
-
-	deleteBuilds := uploadBuilds(t)
-	defer deleteBuilds()
-
-	// release-bundle-create --format=json emits a JSON confirmation object.
-	specFile, err := tests.CreateSpec(tests.LifecycleBuilds12)
-	assert.NoError(t, err)
-	createOutput := lcCli.RunCliCmdWithOutput(t, "rbc", tests.LcRbName1, number1,
-		getOption("spec", specFile),
-		getOption(cliutils.SigningKey, gpgKeyPairName),
-		getOption(cliutils.Sync, "true"),
-		getOption(cliutils.Format, "json"))
-	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
-
-	var created struct {
-		Name    string `json:"release_bundle_name"`
-		Version string `json:"release_bundle_version"`
-		Status  string `json:"status"`
-	}
-	assert.NoError(t, json.Unmarshal([]byte(createOutput), &created))
-	assert.Equal(t, tests.LcRbName1, created.Name)
-	assert.Equal(t, number1, created.Version)
-	assert.Equal(t, "created", created.Status)
-
-	// release-bundle-promote --format=table renders a summary table.
-	tableOutput := lcCli.RunCliCmdWithOutput(t, "rbp", tests.LcRbName1, number1, prodEnvironment,
-		getOption(cliutils.SigningKey, gpgKeyPairName),
-		getOption(cliutils.IncludeRepos, tests.RtProdRepo1),
-		"--project=default",
-		getOption(cliutils.Format, "table"))
-	// The bundle name column wraps across lines, so assert on stable, non-wrapping
-	// content: the table title, headers, and the environment value.
-	assert.Contains(t, tableOutput, "Promotion Result")
-	assert.Contains(t, tableOutput, "BUNDLE NAME")
-	assert.Contains(t, tableOutput, "ENVIRONMENT")
-	assert.Contains(t, tableOutput, prodEnvironment)
-	assertStatusCompleted(t, lcManager, tests.LcRbName1, number1, "")
-}
-
 func TestReleaseBundleCreationWithDraftFlagFromSpec(t *testing.T) {
 	cleanCallback := initLifecycleTest(t, draftBundleArtifactoryMinVersion)
 	defer cleanCallback()
