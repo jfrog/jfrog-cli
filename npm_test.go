@@ -309,7 +309,6 @@ func appendRegistryAuthToNpmrc(t *testing.T, registryURL string) error {
 	return err
 }
 
-
 func readModuleId(t *testing.T, wd string, npmVersion *version.Version) string {
 	packageInfo, err := buildutils.ReadPackageInfoFromPackageJsonIfExists(filepath.Dir(wd), npmVersion)
 	assert.NoError(t, err)
@@ -482,7 +481,6 @@ func initNpmProjectTest(t *testing.T) (npmProjectPath string) {
 	prepareArtifactoryForNpmBuild(t, npmProjectPath)
 	return
 }
-
 
 func initNpmWorkspacesProjectTest(t *testing.T) (npmProjectPath string) {
 	npmProjectPath = filepath.Dir(createNpmProject(t, "npmworkspaces"))

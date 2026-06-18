@@ -11,8 +11,8 @@ import (
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	biutils "github.com/jfrog/build-info-go/utils"
-	coreBuild "github.com/jfrog/jfrog-cli-core/v2/common/build"
 	artUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	coreBuild "github.com/jfrog/jfrog-cli-core/v2/common/build"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
@@ -422,9 +422,9 @@ func TestUvBuildFlags(t *testing.T) {
 		expectErr   bool // jfrog-cli errors if only one of name/number is set
 	}{
 		{"both-set", tests.UvBuildName, "1", true, false},
-		{"name-only", tests.UvBuildName, "", false, true},  // missing number → CLI error
-		{"number-only", "", "1", false, true},              // missing name → CLI error
-		{"neither", "", "", false, false},                  // no flags → runs fine, no BI
+		{"name-only", tests.UvBuildName, "", false, true}, // missing number → CLI error
+		{"number-only", "", "1", false, true},             // missing name → CLI error
+		{"neither", "", "", false, false},                 // no flags → runs fine, no BI
 	}
 
 	projectPath := createUvProject(t, "uv-flags", "uvproject")
@@ -736,7 +736,8 @@ func TestUvNoPyprojectToml(t *testing.T) {
 // the dependencies declared in pyproject.toml — no more, no less.
 //
 // The test project (uvproject) declares one direct dependency:
-//   certifi>=2024.0.0
+//
+//	certifi>=2024.0.0
 //
 // After `jf uv sync` the build info module must contain:
 //   - Exactly 1 dependency (certifi; project itself is excluded)
