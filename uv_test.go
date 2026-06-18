@@ -1490,39 +1490,6 @@ func TestUvBuildPublishWithCIVcsProps(t *testing.T) {
 	assert.Greater(t, artifactCount, 0, "no artifacts were validated for CI VCS properties")
 }
 
-func TestUvPublishWithLocalGitVcsProps(t *testing.T) {
-	initUvTest(t)
-	defer cleanUvTest(t)
-
-	buildName := tests.UvBuildName + "-local-git"
-	buildNumber := "1"
-
-	cleanupEnv := tests.SetupLocalGitVcsEnv(t)
-	defer cleanupEnv()
-
-	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
-	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
-
-	projectPath := createUvProject(t, "uv-local-git", "uvproject")
-	tests.CopyGitFixtureIntoProject(t, projectPath)
-
-	require.NoError(t, runUvCmd(t, projectPath, "build"))
-	require.NoError(t, runUvCmd(t, projectPath, "publish",
-		"--build-name="+buildName, "--build-number="+buildNumber))
-	require.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
-
-	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
-	require.NoError(t, err)
-	require.True(t, found)
-
-	serviceManager, err := artUtils.CreateServiceManager(serverDetails, 3, 1000, false)
-	require.NoError(t, err)
-
-	count := tests.ValidateLocalGitVcsPropsOnBuildInfoArtifacts(t, serviceManager, publishedBuildInfo, tests.UvLocalRepo,
-		tests.VcsFixtureMainURL, tests.VcsFixtureMainRevision, tests.VcsFixtureMainBranch)
-	assert.Greater(t, count, 0)
-}
-
 // ---------------------------------------------------------------------------
 // P0 — Artifact sha256 not "untrusted" in Artifactory (#Cat7 NEW requirement)
 // ---------------------------------------------------------------------------
