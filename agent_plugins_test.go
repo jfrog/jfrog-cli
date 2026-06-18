@@ -2661,7 +2661,6 @@ func TestAgentPluginsListCheckUpdatesCurrent(t *testing.T) {
 		"--global",
 		"--check-updates",
 		"--format=json",
-		"--repo="+tests.AgentPluginsLocalRepo,
 	)
 	require.NoError(t, err, "list --check-updates should succeed")
 
