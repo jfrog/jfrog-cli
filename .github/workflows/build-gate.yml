@@ -3,7 +3,7 @@ name: Build Gate
 # environment deployment once, releasing frogbot and every integration-test suite.
 # Replaces the per-workflow 'safe to test' label mechanism.
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, synchronize, reopened]
     branches:
       - "master"
