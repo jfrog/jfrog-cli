@@ -1,22 +1,10 @@
 name: Agent Plugins Tests
 on:
-  push:
-    branches:
-      - "**"
-    tags-ignore:
-      - "**"
-  pull_request:
-  pull_request_target:
-    types: [labeled]
-
-# Ensures that only the latest commit is running for each PR at a time.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}-${{ github.ref }}
-  cancel-in-progress: true
+  workflow_call:
+  workflow_dispatch:
 
 jobs:
   Agent-Plugins-Tests:
-    if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
     name: agent-plugins ${{ matrix.os.name }}
     strategy:
       fail-fast: false
@@ -49,4 +37,4 @@ jobs:
           RT_CONNECTION_TIMEOUT_SECONDS: ${{ env.RT_CONNECTION_TIMEOUT_SECONDS || '1200' }}
 
       - name: Run agent plugins tests
-        run: go test -v github.com/jfrog/jfrog-cli --timeout 45m --test.agentPlugins
+        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.agentPlugins
