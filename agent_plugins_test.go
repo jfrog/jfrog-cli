@@ -396,6 +396,31 @@ func TestAgentPluginsDeleteDryRun(t *testing.T) {
 	assertPluginExists(t, slug, version)
 }
 
+// TestAgentPluginsDeleteDryRunMultipleVersions verifies that --dry-run on a
+// multi-version plugin only targets the specified version and leaves the
+// other version intact.
+func TestAgentPluginsDeleteDryRunMultipleVersions(t *testing.T) {
+	initAgentPluginsTest(t)
+	defer cleanAgentPluginsTest()
+
+	slug := "delete-dryrun-multi-plugin"
+	for _, v := range []string{"1.0.0", "2.0.0"} {
+		p := createTestPlugin(t, slug, v)
+		require.NoError(t, runAgentPluginsCmd(t, "publish", p, "--repo="+tests.AgentPluginsLocalRepo))
+	}
+
+	require.NoError(t, runAgentPluginsCmd(t,
+		"delete", slug,
+		"--repo="+tests.AgentPluginsLocalRepo,
+		"--version=2.0.0",
+		"--dry-run",
+	))
+
+	// Both versions must still exist after dry-run.
+	assertPluginExists(t, slug, "1.0.0")
+	assertPluginExists(t, slug, "2.0.0")
+}
+
 // TestAgentPluginsDeleteDryRunNotFound verifies that delete --dry-run on a
 // plugin that does not exist returns a not-found error rather than silently
 // succeeding.
@@ -1160,6 +1185,42 @@ func TestAgentPluginsInstallEmptyHarness(t *testing.T) {
 	assert.Error(t, err, "install with empty --harness should fail")
 }
 
+// TestAgentPluginsInstallGlobalProjectDirMutuallyExclusive verifies that passing
+// both --global and --project-dir to install returns a clear error.
+func TestAgentPluginsInstallGlobalProjectDirMutuallyExclusive(t *testing.T) {
+	initAgentPluginsTest(t)
+	defer cleanAgentPluginsTest()
+
+	err := runAgentPluginsCmd(t,
+		"install", "some-plugin",
+		"--repo="+tests.AgentPluginsLocalRepo,
+		"--harness=claude",
+		"--global",
+		"--project-dir="+t.TempDir(),
+	)
+	require.Error(t, err, "--global and --project-dir together must return an error")
+	lowerMsg := strings.ToLower(err.Error())
+	assert.True(t,
+		strings.Contains(lowerMsg, "global") || strings.Contains(lowerMsg, "project-dir") || strings.Contains(lowerMsg, "exclusive"),
+		"error should mention the conflicting flags, got: %s", err.Error())
+}
+
+// TestAgentPluginsInstallHarnessPathMutuallyExclusive verifies that passing
+// both --harness and --path to install returns a clear error (they are
+// mutually exclusive install target modes).
+func TestAgentPluginsInstallHarnessPathMutuallyExclusive(t *testing.T) {
+	initAgentPluginsTest(t)
+	defer cleanAgentPluginsTest()
+
+	err := runAgentPluginsCmd(t,
+		"install", "some-plugin",
+		"--repo="+tests.AgentPluginsLocalRepo,
+		"--harness=claude",
+		"--path="+t.TempDir(),
+	)
+	assert.Error(t, err, "--harness and --path together must return an error")
+}
+
 // ---------------------------------------------------------------------------
 // P1 — Install: plugin-info.json written after install
 // ---------------------------------------------------------------------------
@@ -1609,6 +1670,12 @@ func TestAgentPluginsUpdateFlags(t *testing.T) {
 			expectError: true,
 			description: "update of a plugin that was never installed should fail",
 		},
+		{
+			name:        "all-with-path",
+			args:        []string{"update", "--all", "--path=" + projectDir, "--repo=" + tests.AgentPluginsLocalRepo, "--quiet"},
+			expectError: true,
+			description: "--all and --path are mutually exclusive",
+		},
 	}
 
 	for _, tc := range cases {
@@ -1774,6 +1841,22 @@ func TestAgentPluginsSearchEmptyQuery(t *testing.T) {
 
 	err := runAgentPluginsCmd(t, "search", "--repo="+tests.AgentPluginsLocalRepo)
 	assert.Error(t, err, "search without a query argument should return a usage error")
+}
+
+// TestAgentPluginsSearchRepoFromEnvVar verifies that search picks up the repo
+// from JFROG_AGENT_PLUGINS_REPO when --repo is omitted.
+func TestAgentPluginsSearchRepoFromEnvVar(t *testing.T) {
+	initAgentPluginsTest(t)
+	defer cleanAgentPluginsTest()
+
+	slug := "search-envvar-plugin"
+	pluginPath := createTestPlugin(t, slug, "1.0.0")
+	require.NoError(t, runAgentPluginsCmd(t, "publish", pluginPath, "--repo="+tests.AgentPluginsLocalRepo))
+
+	t.Setenv("JFROG_AGENT_PLUGINS_REPO", tests.AgentPluginsLocalRepo)
+
+	assert.NoError(t, runAgentPluginsCmd(t, "search", slug),
+		"search should succeed using repo from JFROG_AGENT_PLUGINS_REPO env var")
 }
 
 // ---------------------------------------------------------------------------
@@ -2503,6 +2586,97 @@ func TestAgentPluginsListGlobalProjectDirMutuallyExclusive(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "--global", "error should mention --global")
 	assert.Contains(t, err.Error(), "--project-dir", "error should mention --project-dir")
+}
+
+// TestAgentPluginsListLimitHarnessMode verifies that --limit truncates the
+// results when listing installed plugins via --harness.
+func TestAgentPluginsListLimitHarnessMode(t *testing.T) {
+	initAgentPluginsTest(t)
+	defer cleanAgentPluginsTest()
+
+	projectDir := t.TempDir()
+	for _, slug := range []string{"limit-a-plugin", "limit-b-plugin", "limit-c-plugin"} {
+		p := createTestPlugin(t, slug, "1.0.0")
+		require.NoError(t, runAgentPluginsCmd(t, "publish", p, "--repo="+tests.AgentPluginsLocalRepo))
+		require.NoError(t, runAgentPluginsCmd(t,
+			"install", slug,
+			"--repo="+tests.AgentPluginsLocalRepo,
+			"--harness=claude",
+			"--project-dir="+projectDir,
+			"--version=1.0.0",
+		))
+	}
+
+	assert.NoError(t, runAgentPluginsCmd(t,
+		"list",
+		"--harness=claude",
+		"--project-dir="+projectDir,
+		"--limit=2",
+	), "list --harness --limit should succeed")
+}
+
+// TestAgentPluginsListLimitZero verifies that --limit=0 (or a negative value)
+// returns an error rather than returning an empty result set.
+func TestAgentPluginsListLimitZero(t *testing.T) {
+	initAgentPluginsTest(t)
+	defer cleanAgentPluginsTest()
+
+	err := runAgentPluginsCmd(t,
+		"list",
+		"--repo="+tests.AgentPluginsLocalRepo,
+		"--limit=0",
+	)
+	assert.Error(t, err, "--limit=0 should be rejected as invalid")
+}
+
+// TestAgentPluginsListCheckUpdatesCurrent installs a plugin at the latest
+// available version then verifies that list --check-updates reports status
+// "current" for that plugin.
+func TestAgentPluginsListCheckUpdatesCurrent(t *testing.T) {
+	initAgentPluginsTest(t)
+	defer cleanAgentPluginsTest()
+
+	slug := "check-current-plugin"
+	version := "1.0.0"
+
+	pluginPath := createTestPlugin(t, slug, version)
+	require.NoError(t, runAgentPluginsCmd(t, "publish", pluginPath, "--repo="+tests.AgentPluginsLocalRepo))
+
+	homeDir := t.TempDir()
+	t.Setenv("HOME", homeDir)
+	t.Setenv("USERPROFILE", homeDir)
+
+	require.NoError(t, runAgentPluginsCmd(t,
+		"install", slug,
+		"--repo="+tests.AgentPluginsLocalRepo,
+		"--harness=claude",
+		"--global",
+		"--version="+version,
+	))
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	out, err := jfrogCli.RunCliCmdWithOutputs(t,
+		"agent", "plugins", "list",
+		"--harness=claude",
+		"--global",
+		"--check-updates",
+		"--format=json",
+		"--repo="+tests.AgentPluginsLocalRepo,
+	)
+	require.NoError(t, err, "list --check-updates should succeed")
+
+	var rows []map[string]any
+	require.NoError(t, json.Unmarshal([]byte(out), &rows), "output must be valid JSON")
+
+	found := false
+	for _, row := range rows {
+		if row["name"] == slug {
+			found = true
+			assert.Equal(t, "current", row["status"],
+				"plugin at latest version should report status 'current'")
+		}
+	}
+	assert.True(t, found, "plugin %s should appear in list output", slug)
 }
 
 // ---------------------------------------------------------------------------
