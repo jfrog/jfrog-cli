@@ -1574,7 +1574,6 @@ CMD ["echo", "Hello from CI VCS test"]`, baseImage)
 	assert.Greater(t, artifactCount, 0, "No artifacts in build info")
 }
 
-
 // TestSetupDockerCommand verifies `jf setup docker --url ...` end-to-end.
 //
 // Guards RTECO-1352: configureContainer (in jfrog-cli-artifactory) used to read
