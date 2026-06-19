@@ -163,6 +163,7 @@ func TestReleaseBundleCreationFromMultiBundlesUsingCommandFlagWithProject(t *tes
 			}
 		}()
 	}
+	waitForProjectInArtifactory(t, tests.ProjectKey)
 	lcManager := getLcServiceManager(t)
 
 	deleteBuilds := uploadBuildsWithProject(t)
@@ -724,6 +725,7 @@ func TestCreateBundleWithoutSpecAndWithProject(t *testing.T) {
 			}
 		}()
 	}
+	waitForProjectInArtifactory(t, tests.ProjectKey)
 	lcManager := getLcServiceManager(t)
 	deleteBuilds := uploadBuildsWithProject(t)
 	defer deleteBuilds()
@@ -1424,6 +1426,7 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 			}
 		}()
 	}
+	waitForProjectInArtifactory(t, tests.ProjectKey)
 
 	deleteBuildsWithProject := uploadBuildsWithProject(t)
 	defer deleteBuildsWithProject()
@@ -1764,4 +1767,38 @@ type KeyPairPayload struct {
 	Passphrase string `json:"passphrase,omitempty"`
 	PublicKey  string `json:"publicKey,omitempty"`
 	PrivateKey string `json:"privateKey,omitempty"` // #nosec G117 -- test struct, not a real secret
+}
+
+// waitForProjectInArtifactory polls until the project's build-info repository is visible
+// on every Artifactory node behind the load balancer. In HA deployments each node has its
+// own in-memory cache of Access project data; a single 200 only confirms one node is warm.
+// We require consecutiveRequired back-to-back 200 responses (one per poll tick, each
+// potentially hitting a different node in round-robin) before proceeding.
+func waitForProjectInArtifactory(t *testing.T, projectKey string) {
+	const (
+		timeout             = 30 * time.Second
+		pollInterval        = 1 * time.Second
+		consecutiveRequired = 5
+	)
+	client, err := httpclient.ClientBuilder().Build()
+	if !assert.NoError(t, err) {
+		return
+	}
+	// Artifactory auto-creates <projectKey>-build-info when the project is registered.
+	probeURL := serverDetails.ArtifactoryUrl + "api/repositories/" + projectKey + "-build-info"
+	deadline := time.Now().Add(timeout)
+	consecutive := 0
+	for time.Now().Before(deadline) {
+		resp, _, _, probErr := client.SendGet(probeURL, true, artHttpDetails, "")
+		if probErr == nil && resp.StatusCode == http.StatusOK {
+			consecutive++
+			if consecutive >= consecutiveRequired {
+				return
+			}
+		} else {
+			consecutive = 0
+		}
+		time.Sleep(pollInterval)
+	}
+	t.Logf("waitForProjectInArtifactory: project %q did not become fully visible within %s; proceeding anyway", projectKey, timeout)
 }
