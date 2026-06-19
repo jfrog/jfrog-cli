@@ -540,10 +540,13 @@ func validateCsvConflicts(t *testing.T, csvPath string, projectsSupported bool) 
 func createTestProject(t *testing.T) func() error {
 	accessManager, err := rtUtils.CreateAccessServiceManager(serverDetails, false)
 	assert.NoError(t, err)
-	// Delete the project if already exists
-	deleteProjectIfExists(t, accessManager, tests.ProjectKey)
 
-	// Create new project
+	// Do NOT delete the project before creating it. Project keys are unique per test-suite
+	// run (timestamp-based), so pre-emptive deletion only occurs on gotestsum re-runs when
+	// the previous attempt left the project behind. Deleting and immediately recreating the
+	// same key poisons Artifactory's internal project cache with a "not found" entry that
+	// takes minutes to expire on some HA nodes, causing all subsequent project-scoped
+	// operations to fail with 400 "Project was not found" even after retries.
 	adminPrivileges := accessServices.AdminPrivileges{
 		ManageMembers:   utils.Pointer(false),
 		ManageResources: utils.Pointer(false),
@@ -558,12 +561,14 @@ func createTestProject(t *testing.T) func() error {
 		ProjectKey:        tests.ProjectKey,
 	}
 
-	if assert.NoError(t, accessManager.CreateProject(accessServices.ProjectParams{ProjectDetails: projectDetails})) {
-		return func() error {
-			return accessManager.DeleteProject(tests.ProjectKey)
-		}
+	createErr := accessManager.CreateProject(accessServices.ProjectParams{ProjectDetails: projectDetails})
+	if createErr != nil && !strings.Contains(createErr.Error(), "already exists") {
+		assert.NoError(t, createErr)
+		return nil
 	}
-	return nil
+	return func() error {
+		return accessManager.DeleteProject(tests.ProjectKey)
+	}
 }
 
 func updateProjectParams(t *testing.T, projectParams *accessServices.Project, targetAccessManager *access.AccessServicesManager) {
