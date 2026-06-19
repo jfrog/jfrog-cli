@@ -662,28 +662,35 @@ func AddTimestampToGlobalVars() {
 	Password1 += uniqueSuffix + strconv.FormatFloat(randomSequence.Float64(), 'f', 2, 32)
 	Password2 += uniqueSuffix + strconv.FormatFloat(randomSequence.Float64(), 'f', 2, 32)
 
-	/// Projects
-	// Artifactory project keys must be 2-32 lowercase alphanumeric or hyphen
-	// characters and must start with a letter. We always include the sanitized
-	// --ci.runId (when set) so that concurrent runs against a shared JPD don't
-	// clobber each other's project — createTestProject calls
-	// deleteProjectIfExists(tests.ProjectKey) unconditionally, which means a
-	// colliding key from another concurrent suite will silently delete the
-	// project (and every release bundle inside it) out from under us.
-	projectSuffix := timestamp[len(timestamp)-7:]
-	if sanitizedRunId := SanitizedCiRunId(); sanitizedRunId != "" {
-		projectSuffix = sanitizedRunId + "-" + projectSuffix
-	}
-	// ProjectKey starts as "prj" (3 chars), and the total must be <= 32. Trim
-	// from the front so the trailing timestamp (used for visual debuggability)
-	// is preserved and we don't end up with a key that starts with a hyphen.
-	const maxProjectKeyLen = 32
-	if maxSuffixLen := maxProjectKeyLen - len(ProjectKey); len(projectSuffix) > maxSuffixLen {
-		projectSuffix = strings.TrimLeft(projectSuffix[len(projectSuffix)-maxSuffixLen:], "-")
-	}
-	ProjectKey += projectSuffix
+	// Projects. The artifactory and lifecycle suites use distinct base keys
+	// (ProjectKey vs LcProjectKey) so neither can delete the other's project
+	// when run concurrently against a shared JPD.
+	ProjectKey = appendProjectKeySuffix(ProjectKey, timestamp)
+	ProjectKey2 = appendProjectKeySuffix(ProjectKey2, timestamp)
 
 	timestampAdded = true
+}
+
+// appendProjectKeySuffix appends a per-run suffix to an Artifactory project-key
+// base. Project keys must be 2-32 chars, lowercase alphanumeric or hyphen, and
+// start with a letter. We always include the sanitized --ci.runId (when set) so
+// that concurrent runs against a shared JPD don't clobber each other's project —
+// createTestProject calls deleteProjectIfExists(<key>) unconditionally, so a
+// colliding key from another concurrent suite would silently delete the project
+// (and every release bundle inside it) out from under us.
+func appendProjectKeySuffix(base, timestamp string) string {
+	suffix := timestamp[len(timestamp)-7:]
+	if sanitizedRunId := SanitizedCiRunId(); sanitizedRunId != "" {
+		suffix = sanitizedRunId + "-" + suffix
+	}
+	// The total must be <= 32. Trim from the front so the trailing timestamp
+	// (used for visual debuggability) is preserved and we don't end up with a
+	// key that starts with a hyphen.
+	const maxProjectKeyLen = 32
+	if maxSuffixLen := maxProjectKeyLen - len(base); len(suffix) > maxSuffixLen {
+		suffix = strings.TrimLeft(suffix[len(suffix)-maxSuffixLen:], "-")
+	}
+	return base + suffix
 }
 
 // Replace all variables in the form of ${VARIABLE} in the input file, according to the substitution map (see getSubstitutionMap()).
