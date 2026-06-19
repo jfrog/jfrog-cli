@@ -912,9 +912,9 @@ func TestPnpmInstallAndPublishWithProject(t *testing.T) {
 			ProjectKey:  tests.ProjectKey,
 		},
 	}
-	// First delete if exists, ignoring errors since access might not support it
-	_ = accessManager.DeleteProject(tests.ProjectKey)
-	if err = accessManager.CreateProject(projectParams); err != nil {
+	// Create project — silently reuse if it already exists to avoid cache poisoning
+	// from delete+recreate on re-runs.
+	if err = accessManager.CreateProject(projectParams); err != nil && !strings.Contains(err.Error(), "already exists") {
 		t.Skipf("Skipping project test - cannot create project: %v", err)
 	}
 
@@ -964,8 +964,10 @@ func TestPnpmInstallAndPublishWithProject(t *testing.T) {
 		"--build-name="+buildName, "--build-number="+buildNumber,
 		"--project="+tests.ProjectKey)
 
-	// Publish build info with --project flag
-	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber, "--project="+tests.ProjectKey))
+	// Publish build info with --project flag — retry on Artifactory project cache lag
+	assert.NoError(t, retryOnProjectNotFound(func() error {
+		return artifactoryCli.Exec("bp", buildName, buildNumber, "--project="+tests.ProjectKey)
+	}))
 
 	// Restore working directory
 	clientTestUtils.ChangeDirAndAssert(t, wd)
