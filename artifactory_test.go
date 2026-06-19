@@ -3683,8 +3683,10 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownloadWithProject(t *testing.T) 
 	// Upload files with buildName, buildNumber and project flags
 	runRt(t, "upload", "--spec="+specFileB, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumberA, "--project="+tests.ProjectKey)
 
-	// Publish buildInfo with project flag
-	runRt(t, "build-publish", tests.RtBuildName1, buildNumberA, "--project="+tests.ProjectKey)
+	// Publish buildInfo with project flag — retried automatically if project cache not yet warm
+	assert.NoError(t, retryOnProjectNotFound(func() error {
+		return artifactoryCli.Exec("build-publish", tests.RtBuildName1, buildNumberA, "--project="+tests.ProjectKey)
+	}))
 
 	// Download by project, b1 should be downloaded
 	runRt(t, "download", tests.RtRepo1+"/data/b1.in", filepath.Join(tests.Out, "download", "simple_by_build")+fileutils.GetFileSeparator(),
@@ -3740,8 +3742,10 @@ func TestArtifactoryDownloadWithEnvProject(t *testing.T) {
 	// Upload files with buildName, buildNumber and project flags
 	runRt(t, "upload", "--spec="+specFileB)
 
-	// Publish buildInfo with project flag
-	runRt(t, "build-publish")
+	// Publish buildInfo with project flag — retried automatically if project cache not yet warm
+	assert.NoError(t, retryOnProjectNotFound(func() error {
+		return artifactoryCli.Exec("build-publish")
+	}))
 
 	// Download by project, b1 should be downloaded
 	runRt(t, "download", tests.RtRepo1+"/data/b1.in", filepath.Join(tests.Out, "download", "simple_by_build")+fileutils.GetFileSeparator(),
