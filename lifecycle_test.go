@@ -767,7 +767,9 @@ func createRbWithFlags(t *testing.T, specFilePath, sourceOption, buildName, buil
 		argsAndOptions = append(argsAndOptions, getOption(cliutils.Draft, "true"))
 	}
 
-	assert.NoError(t, lcCli.Exec(argsAndOptions...))
+	assert.NoError(t, retryOnProjectNotFound(func() error {
+		return lcCli.Exec(argsAndOptions...)
+	}))
 }
 
 func updateRbWithFlags(t *testing.T, specFilePath, rbName, rbVersion, project, sourceTypeBuilds string, sync bool) {
@@ -1642,7 +1644,9 @@ func uploadBuildWithArtifactsAndProject(t *testing.T, specFileName, buildName, b
 	assert.NoError(t, err)
 
 	runRt(t, "upload", "--spec="+specFile, "--build-name="+buildName, "--build-number="+buildNumber, "--project="+projectKey)
-	runRt(t, "build-publish", buildName, buildNumber, "--project="+projectKey)
+	assert.NoError(t, retryOnProjectNotFound(func() error {
+		return artifactoryCli.Exec("build-publish", buildName, buildNumber, "--project="+projectKey)
+	}))
 }
 
 func uploadBuildWithDepsAndProject(t *testing.T, buildName, buildNumber, projectKey string) {
@@ -1655,7 +1659,9 @@ func uploadBuildWithDepsAndProject(t *testing.T, buildName, buildNumber, project
 	runRt(t, "upload", randFile.Name(), tests.RtDevRepo, "--flat", "--project="+projectKey)
 	assert.NoError(t, lcCli.WithoutCredentials().Exec("rt", "bad", buildName, buildNumber, tests.RtDevRepo+"/dep-file", "--from-rt"))
 
-	runRt(t, "build-publish", buildName, buildNumber, "--project="+projectKey)
+	assert.NoError(t, retryOnProjectNotFound(func() error {
+		return artifactoryCli.Exec("build-publish", buildName, buildNumber, "--project="+projectKey)
+	}))
 }
 
 func initLifecycleTest(t *testing.T, minVersion string) (cleanCallback func()) {
@@ -1765,16 +1771,13 @@ type KeyPairPayload struct {
 	PrivateKey string `json:"privateKey,omitempty"` // #nosec G117 -- test struct, not a real secret
 }
 
-// waitForProjectInArtifactory first confirms the project is visible in the Access service,
-// then waits for Artifactory's internal project cache to sync from Access. The Access API
-// (GET /access/api/v1/projects/<key>) is the correct source of truth for project existence.
-// After Access confirms the project, we sleep briefly to allow Artifactory nodes to pick up
-// the new project before any build-publish or release-bundle calls that scope to the project.
+// waitForProjectInArtifactory polls the Access API until the project is confirmed created.
+// It does NOT sleep for cache propagation — project-scoped operations use retryOnProjectNotFound
+// to handle the Access→Artifactory and Access→Lifecycle cache sync delay at the call site.
 func waitForProjectInArtifactory(t *testing.T, projectKey string) {
 	const (
-		accessTimeout  = 30 * time.Second
-		pollInterval   = 500 * time.Millisecond
-		artifactoryTTL = 30 * time.Second
+		accessTimeout = 30 * time.Second
+		pollInterval  = 500 * time.Millisecond
 	)
 	client, err := httpclient.ClientBuilder().Build()
 	if !assert.NoError(t, err) {
@@ -1785,11 +1788,34 @@ func waitForProjectInArtifactory(t *testing.T, projectKey string) {
 	for time.Now().Before(deadline) {
 		resp, _, _, probErr := client.SendGet(probeURL, true, artHttpDetails, "")
 		if probErr == nil && resp.StatusCode == http.StatusOK {
-			// Project confirmed in Access; give Artifactory time to sync its cache.
-			time.Sleep(artifactoryTTL)
 			return
 		}
 		time.Sleep(pollInterval)
 	}
 	t.Logf("waitForProjectInArtifactory: project %q not visible in Access within %s; proceeding anyway", projectKey, accessTimeout)
+}
+
+// retryOnProjectNotFound retries fn when Artifactory or Lifecycle reports that a project is not
+// yet visible — a transient condition caused by the Access→service cache propagation delay in HA
+// deployments. Up to maxRetries attempts are made with retryInterval between each attempt.
+func retryOnProjectNotFound(fn func() error) error {
+	const (
+		maxRetries    = 12
+		retryInterval = 5 * time.Second
+	)
+	var err error
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		err = fn()
+		if err == nil {
+			return nil
+		}
+		errMsg := err.Error()
+		if !strings.Contains(errMsg, "not found") && !strings.Contains(errMsg, "project key") {
+			return err
+		}
+		if attempt < maxRetries-1 {
+			time.Sleep(retryInterval)
+		}
+	}
+	return err
 }
