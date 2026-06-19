@@ -1771,37 +1771,13 @@ type KeyPairPayload struct {
 	PrivateKey string `json:"privateKey,omitempty"` // #nosec G117 -- test struct, not a real secret
 }
 
-// waitForProjectInArtifactory polls the Access API until the project is confirmed created.
-// It does NOT sleep for cache propagation — project-scoped operations use retryOnProjectNotFound
-// to handle the Access→Artifactory and Access→Lifecycle cache sync delay at the call site.
-func waitForProjectInArtifactory(t *testing.T, projectKey string) {
-	const (
-		accessTimeout = 30 * time.Second
-		pollInterval  = 500 * time.Millisecond
-	)
-	client, err := httpclient.ClientBuilder().Build()
-	if !assert.NoError(t, err) {
-		return
-	}
-	probeURL := *tests.JfrogUrl + "access/api/v1/projects/" + projectKey
-	deadline := time.Now().Add(accessTimeout)
-	for time.Now().Before(deadline) {
-		resp, _, _, probErr := client.SendGet(probeURL, true, artHttpDetails, "")
-		if probErr == nil && resp.StatusCode == http.StatusOK {
-			return
-		}
-		time.Sleep(pollInterval)
-	}
-	t.Logf("waitForProjectInArtifactory: project %q not visible in Access within %s; proceeding anyway", projectKey, accessTimeout)
-}
-
 // retryOnProjectNotFound retries fn when Artifactory or Lifecycle reports that a project is not
 // yet visible — a transient condition caused by the Access→service cache propagation delay in HA
 // deployments. Up to maxRetries attempts are made with retryInterval between each attempt.
 func retryOnProjectNotFound(fn func() error) error {
 	const (
-		maxRetries    = 12
-		retryInterval = 5 * time.Second
+		maxRetries    = 5
+		retryInterval = 30 * time.Second
 	)
 	var err error
 	for attempt := 0; attempt < maxRetries; attempt++ {
