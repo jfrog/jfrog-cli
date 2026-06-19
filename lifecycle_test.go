@@ -163,7 +163,6 @@ func TestReleaseBundleCreationFromMultiBundlesUsingCommandFlagWithProject(t *tes
 			}
 		}()
 	}
-	waitForProjectInArtifactory(t, tests.ProjectKey)
 	lcManager := getLcServiceManager(t)
 
 	deleteBuilds := uploadBuildsWithProject(t)
@@ -725,7 +724,6 @@ func TestCreateBundleWithoutSpecAndWithProject(t *testing.T) {
 			}
 		}()
 	}
-	waitForProjectInArtifactory(t, tests.ProjectKey)
 	lcManager := getLcServiceManager(t)
 	deleteBuilds := uploadBuildsWithProject(t)
 	defer deleteBuilds()
@@ -1426,8 +1424,6 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 			}
 		}()
 	}
-	waitForProjectInArtifactory(t, tests.ProjectKey)
-
 	deleteBuildsWithProject := uploadBuildsWithProject(t)
 	defer deleteBuildsWithProject()
 

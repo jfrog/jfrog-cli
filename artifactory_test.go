@@ -3672,6 +3672,7 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownloadWithProject(t *testing.T) 
 	// Assign the repository to the project
 	err = accessManager.AssignRepoToProject(tests.RtRepo1, tests.ProjectKey, true)
 	assert.NoError(t, err)
+	waitForProjectInArtifactory(t, tests.ProjectKey)
 
 	// Delete the build if exists
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
@@ -3724,6 +3725,7 @@ func TestArtifactoryDownloadWithEnvProject(t *testing.T) {
 	// Assign the repository to the project
 	err = accessManager.AssignRepoToProject(tests.RtRepo1, tests.ProjectKey, true)
 	assert.NoError(t, err)
+	waitForProjectInArtifactory(t, tests.ProjectKey)
 
 	// Delete the build if exists
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)

@@ -559,6 +559,7 @@ func createTestProject(t *testing.T) func() error {
 	}
 
 	if assert.NoError(t, accessManager.CreateProject(accessServices.ProjectParams{ProjectDetails: projectDetails})) {
+		waitForProjectInArtifactory(t, tests.ProjectKey)
 		return func() error {
 			return accessManager.DeleteProject(tests.ProjectKey)
 		}
