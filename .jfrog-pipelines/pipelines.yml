@@ -88,9 +88,9 @@ pipelines:
             default: "14400"
             description: "Maximum total seconds to wait for all dispatched workflow runs (including reruns) to complete. Default 4h to accommodate up to MAX_RUN_RETRIES reruns of slow suites."
             allowCustom: true
-          ARTIFACTORY_URL:
+          JF_URL:
             default: ""
-            description: "Pre-existing Artifactory URL to use when SKIP_ENV_SETUP=true (e.g. https://myinstance.jfrogdev.org). Leave empty to deploy a fresh instance."
+            description: "JFrog Platform base URL of a pre-existing instance to use when SKIP_ENV_SETUP=true (e.g. https://myinstance.jfrogdev.org — no trailing /artifactory). Leave empty to deploy a fresh instance."
             allowCustom: true
           JFROG_ADMIN_TOKEN:
             default: ""
@@ -110,15 +110,15 @@ pipelines:
             - echo "Using RT_VERSION=${RT_VERSION}"
             - |
               if [[ "${SKIP_ENV_SETUP}" == "true" ]]; then
-                echo "SKIP_ENV_SETUP is true — using provided ARTIFACTORY_URL=${ARTIFACTORY_URL}"
-                if [[ -z "${ARTIFACTORY_URL}" ]]; then
-                  echo "ERROR: SKIP_ENV_SETUP=true but ARTIFACTORY_URL is empty. Set ARTIFACTORY_URL to a valid JFrog Platform URL."
+                echo "SKIP_ENV_SETUP is true — using provided JF_URL=${JF_URL}"
+                if [[ -z "${JF_URL}" ]]; then
+                  echo "ERROR: SKIP_ENV_SETUP=true but JF_URL is empty. Set JF_URL to a valid JFrog Platform URL."
                   exit 1
                 fi
                 # Write a placeholder to the resource so downstream steps can read it
                 write_output "cli_coreapps_env_details" "prefix=skip"
                 write_output "cli_coreapps_env_details" "suffix=skip"
-                write_output "cli_coreapps_env_details" "env_url=${ARTIFACTORY_URL}"
+                write_output "cli_coreapps_env_details" "env_url=${JF_URL}"
               else
                 # Generate unique suffix and set variables for a fresh deployment
                 suffix=$(date +%s)
@@ -187,15 +187,15 @@ pipelines:
               # Determine Artifactory URL
               if [[ -n "${ART_URL}" ]]; then
                 echo "Using custom ART_URL=${ART_URL}"
-              elif [[ -n "${ARTIFACTORY_URL}" ]]; then
-                echo "Using pipeline-level ARTIFACTORY_URL=${ARTIFACTORY_URL}"
-                ART_URL="${ARTIFACTORY_URL}"
+              elif [[ -n "${JF_URL}" ]]; then
+                echo "Using pipeline-level JF_URL=${JF_URL}"
+                ART_URL="${JF_URL}"
               elif [[ -n "${res_cli_coreapps_env_details_env_url}" ]]; then
                 echo "ART_URL not set, using env_url from cli_coreapps_env_details resource"
                 ART_URL="${res_cli_coreapps_env_details_env_url}"
                 echo "ART_URL=${ART_URL}"
               else
-                echo "ERROR: Neither ART_URL, ARTIFACTORY_URL, nor cli_coreapps_env_details.env_url is set"
+                echo "ERROR: Neither ART_URL, JF_URL, nor cli_coreapps_env_details.env_url is set"
                 exit 1
               fi
 
