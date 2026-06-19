@@ -618,6 +618,7 @@ func AddTimestampToGlobalVars() {
 	PipBuildName += uniqueSuffix
 	PipenvBuildName += uniqueSuffix
 	PoetryBuildName += uniqueSuffix
+	UvBuildName += uniqueSuffix
 	ConanBuildName += uniqueSuffix
 	HelmBuildName += uniqueSuffix
 	HuggingFaceBuildName += uniqueSuffix
