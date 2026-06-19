@@ -1807,7 +1807,7 @@ func waitForLifecycleProjectVisibility(t *testing.T, projectKey string) {
 // deployments. Up to maxRetries attempts are made with retryInterval between each attempt.
 func retryOnProjectNotFound(fn func() error) error {
 	const (
-		maxRetries    = 5
+		maxRetries    = 10
 		retryInterval = 30 * time.Second
 	)
 	var err error
