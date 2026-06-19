@@ -77,7 +77,7 @@ pipelines:
             description: "Forward Artifactory logs from the deployed ephemeral environment to Kibana (via Coralogix). Maps to the LOGS_TO_KIBANA parameter of the environment_setup_gen2 Jenkins job. Set 'false' to disable."
             allowCustom: true
           DEPLOYMENT_SIZING:
-            default: "common"
+            default: "large"
             description: "Artifactory deployment sizing profile."
             allowCustom: true
           MAX_RUN_RETRIES:
