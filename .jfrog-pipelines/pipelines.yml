@@ -88,6 +88,14 @@ pipelines:
             default: "14400"
             description: "Maximum total seconds to wait for all dispatched workflow runs (including reruns) to complete. Default 4h to accommodate up to MAX_RUN_RETRIES reruns of slow suites."
             allowCustom: true
+          ARTIFACTORY_URL:
+            default: ""
+            description: "Pre-existing Artifactory URL to use when SKIP_ENV_SETUP=true (e.g. https://myinstance.jfrogdev.org). Leave empty to deploy a fresh instance."
+            allowCustom: true
+          JFROG_ADMIN_TOKEN:
+            default: ""
+            description: "Admin access token for the pre-existing instance. Used directly when SKIP_ENV_SETUP=true — skips the OAuth token generation step. Leave empty when deploying a fresh instance."
+            allowCustom: true
     steps:
       - name: setup_cli_test
         type: Bash
@@ -96,45 +104,34 @@ pipelines:
             - name: docker_jfrog_io_reader
           outputResources:
             - name: cli_coreapps_env_details
-          environmentVariables:
-            ARTIFACTORY_URL:
-              default: "https://servername.jfrogdev.org"
-              description: "Artifactory URL to use for tests (required)"
-              allowCustom: true
-            JFROG_ADMIN_TOKEN:
-              default: "${int_jfrog_cli_tests_token}"
-              description: "JFrog admin access token (required for tests)"
-              allowCustom: true
         execution:
           onStart:
             - echo "Starting CLI tests"
             - echo "Using RT_VERSION=${RT_VERSION}"
             - |
-              # Generate unique suffix and set variables
-              suffix=$(date +%s)
-              server_name="cli${suffix}"
-              env_url="https://${server_name}.jfrogdev.org"
-              
-              echo "Generated suffix: ${suffix}"
-              echo "Server name: ${server_name}"
-              echo "Environment URL: ${env_url}"
-              
-              # Write to resource
-              prefix="${server_name%${suffix}}"
-              write_output "cli_coreapps_env_details" "prefix=${prefix}"
-              write_output "cli_coreapps_env_details" "suffix=${suffix}"
-              write_output "cli_coreapps_env_details" "env_url=${env_url}"
-              
-              # Set pipeline variables
-              add_pipeline_variables server_name="${server_name}"
-              
-              # Set ARTIFACTORY_URL based on SKIP_ENV_SETUP
               if [[ "${SKIP_ENV_SETUP}" == "true" ]]; then
-                echo "SKIP_ENV_SETUP is true, using provided ARTIFACTORY_URL"
-                # ARTIFACTORY_URL should already be set via pipeline environment variable
+                echo "SKIP_ENV_SETUP is true — using provided ARTIFACTORY_URL=${ARTIFACTORY_URL}"
+                if [[ -z "${ARTIFACTORY_URL}" ]]; then
+                  echo "ERROR: SKIP_ENV_SETUP=true but ARTIFACTORY_URL is empty. Set ARTIFACTORY_URL to a valid JFrog Platform URL."
+                  exit 1
+                fi
+                # Write a placeholder to the resource so downstream steps can read it
+                write_output "cli_coreapps_env_details" "prefix=skip"
+                write_output "cli_coreapps_env_details" "suffix=skip"
+                write_output "cli_coreapps_env_details" "env_url=${ARTIFACTORY_URL}"
               else
-                echo "Setting ARTIFACTORY_URL to ${env_url}"
-                add_pipeline_variables ARTIFACTORY_URL="${env_url}"
+                # Generate unique suffix and set variables for a fresh deployment
+                suffix=$(date +%s)
+                server_name="cli${suffix}"
+                env_url="https://${server_name}.jfrogdev.org"
+                echo "Generated suffix: ${suffix}"
+                echo "Server name: ${server_name}"
+                echo "Environment URL: ${env_url}"
+                prefix="${server_name%${suffix}}"
+                write_output "cli_coreapps_env_details" "prefix=${prefix}"
+                write_output "cli_coreapps_env_details" "suffix=${suffix}"
+                write_output "cli_coreapps_env_details" "env_url=${env_url}"
+                add_pipeline_variables server_name="${server_name}"
               fi
 
       - name: deploy_environment
@@ -190,13 +187,26 @@ pipelines:
               # Determine Artifactory URL
               if [[ -n "${ART_URL}" ]]; then
                 echo "Using custom ART_URL=${ART_URL}"
+              elif [[ -n "${ARTIFACTORY_URL}" ]]; then
+                echo "Using pipeline-level ARTIFACTORY_URL=${ARTIFACTORY_URL}"
+                ART_URL="${ARTIFACTORY_URL}"
               elif [[ -n "${res_cli_coreapps_env_details_env_url}" ]]; then
                 echo "ART_URL not set, using env_url from cli_coreapps_env_details resource"
                 ART_URL="${res_cli_coreapps_env_details_env_url}"
                 echo "ART_URL=${ART_URL}"
               else
-                echo "ERROR: Neither ART_URL nor cli_coreapps_env_details.env_url is set"
+                echo "ERROR: Neither ART_URL, ARTIFACTORY_URL, nor cli_coreapps_env_details.env_url is set"
                 exit 1
+              fi
+
+              # When skipping env setup and a token is already provided, bypass
+              # the join-key / OAuth token dance and use the token directly.
+              if [[ "${SKIP_ENV_SETUP}" == "true" && -n "${JFROG_ADMIN_TOKEN}" ]]; then
+                echo "SKIP_ENV_SETUP=true and JFROG_ADMIN_TOKEN provided — using token directly, skipping OAuth generation"
+                write_output jfrog_oauth_token "token=${JFROG_ADMIN_TOKEN}"
+                write_output jfrog_oauth_token "url=${ART_URL}"
+                echo "Token and URL written to jfrog_oauth_token resource"
+                exit 0
               fi
               
               # Install JFrog CLI
