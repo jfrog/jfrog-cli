@@ -251,6 +251,75 @@ func TestConanCreateUpload(t *testing.T) {
 	assert.GreaterOrEqual(t, len(buildInfoModules[0].Artifacts), 1, "Expected at least 1 artifact after upload")
 }
 
+// TestConanUploadViaVirtualRepoSetsBuildProperties verifies that uploads through a Conan virtual
+// repository still attach build properties to the actual deployed local-repo artifacts.
+func TestConanUploadViaVirtualRepoSetsBuildProperties(t *testing.T) {
+	initConanTest(t)
+	buildName := tests.ConanBuildName + "-virtual-props"
+	buildNumber := "1"
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	projectPath := createConanProject(t, "conan-virtual-props-test")
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+
+	configureConanRemote(t)
+	defer cleanupConanRemote()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+
+	createArgs := []string{
+		"conan", "create", ".",
+		"--build=missing",
+		"--build-name=" + buildName,
+		"--build-number=" + buildNumber,
+	}
+	require.NoError(t, jfrogCli.Exec(createArgs...))
+
+	uploadArgs := []string{
+		"conan", "upload", "cli-test-package/*",
+		"-r", tests.ConanVirtualRepo,
+		"--confirm",
+		"--build-name=" + buildName,
+		"--build-number=" + buildNumber,
+	}
+	require.NoError(t, jfrogCli.Exec(uploadArgs...))
+
+	require.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	require.NoError(t, err)
+	require.True(t, found, "build info was expected to be found")
+
+	buildInfoModules := publishedBuildInfo.BuildInfo.Modules
+	require.Len(t, buildInfoModules, 1, "Expected 1 module")
+	require.NotEmpty(t, buildInfoModules[0].Artifacts, "Expected uploaded artifacts in build info")
+
+	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
+	require.NoError(t, err)
+
+	var (
+		allErrors          []string
+		validatedArtifacts int
+	)
+	for _, module := range buildInfoModules {
+		for _, artifact := range module.Artifacts {
+			if assert.Equal(t, tests.ConanLocalRepo, artifact.OriginalDeploymentRepo,
+				"Artifact %s should resolve to the local deployment repository after upload via virtual repo", artifact.Name) {
+				validatedArtifacts++
+				allErrors = append(allErrors, verifyBuildProperties(serviceManager, artifact, module.Type, buildName, buildNumber)...)
+			}
+		}
+	}
+
+	assert.Greater(t, validatedArtifacts, 0, "No Conan artifacts were validated")
+	assert.Emptyf(t, allErrors, "Missing build properties for Conan artifacts: %v", allErrors)
+}
+
 // TestConanAutoLogin tests that auto-login works for Artifactory remotes.
 func TestConanAutoLogin(t *testing.T) {
 	initConanTest(t)
