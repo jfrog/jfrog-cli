@@ -1769,36 +1769,31 @@ type KeyPairPayload struct {
 	PrivateKey string `json:"privateKey,omitempty"` // #nosec G117 -- test struct, not a real secret
 }
 
-// waitForProjectInArtifactory polls until the project's build-info repository is visible
-// on every Artifactory node behind the load balancer. In HA deployments each node has its
-// own in-memory cache of Access project data; a single 200 only confirms one node is warm.
-// We require consecutiveRequired back-to-back 200 responses (one per poll tick, each
-// potentially hitting a different node in round-robin) before proceeding.
+// waitForProjectInArtifactory first confirms the project is visible in the Access service,
+// then waits for Artifactory's internal project cache to sync from Access. The Access API
+// (GET /access/api/v1/projects/<key>) is the correct source of truth for project existence.
+// After Access confirms the project, we sleep briefly to allow Artifactory nodes to pick up
+// the new project before any build-publish or release-bundle calls that scope to the project.
 func waitForProjectInArtifactory(t *testing.T, projectKey string) {
 	const (
-		timeout             = 30 * time.Second
-		pollInterval        = 1 * time.Second
-		consecutiveRequired = 5
+		accessTimeout  = 30 * time.Second
+		pollInterval   = 500 * time.Millisecond
+		artifactoryTTL = 5 * time.Second
 	)
 	client, err := httpclient.ClientBuilder().Build()
 	if !assert.NoError(t, err) {
 		return
 	}
-	// Artifactory auto-creates <projectKey>-build-info when the project is registered.
-	probeURL := serverDetails.ArtifactoryUrl + "api/repositories/" + projectKey + "-build-info"
-	deadline := time.Now().Add(timeout)
-	consecutive := 0
+	probeURL := *tests.JfrogUrl + "access/api/v1/projects/" + projectKey
+	deadline := time.Now().Add(accessTimeout)
 	for time.Now().Before(deadline) {
 		resp, _, _, probErr := client.SendGet(probeURL, true, artHttpDetails, "")
 		if probErr == nil && resp.StatusCode == http.StatusOK {
-			consecutive++
-			if consecutive >= consecutiveRequired {
-				return
-			}
-		} else {
-			consecutive = 0
+			// Project confirmed in Access; give Artifactory time to sync its cache.
+			time.Sleep(artifactoryTTL)
+			return
 		}
 		time.Sleep(pollInterval)
 	}
-	t.Logf("waitForProjectInArtifactory: project %q did not become fully visible within %s; proceeding anyway", projectKey, timeout)
+	t.Logf("waitForProjectInArtifactory: project %q not visible in Access within %s; proceeding anyway", projectKey, accessTimeout)
 }
