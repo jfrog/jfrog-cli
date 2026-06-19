@@ -1778,7 +1778,7 @@ func waitForProjectInArtifactory(t *testing.T, projectKey string) {
 	const (
 		accessTimeout  = 30 * time.Second
 		pollInterval   = 500 * time.Millisecond
-		artifactoryTTL = 5 * time.Second
+		artifactoryTTL = 30 * time.Second
 	)
 	client, err := httpclient.ClientBuilder().Build()
 	if !assert.NoError(t, err) {
