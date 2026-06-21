@@ -3,6 +3,7 @@ package buildtools
 import (
 	"errors"
 	"fmt"
+	alpinecommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/alpine"
 	conancommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/conan"
 	nixcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nix"
 	"io/fs"
@@ -68,6 +69,7 @@ import (
 	huggingfaceuploaddocs "github.com/jfrog/jfrog-cli/docs/buildtools/huggingfaceupload"
 	mvndoc "github.com/jfrog/jfrog-cli/docs/buildtools/mvn"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/mvnconfig"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/apkcommand"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/nix"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npmcommand"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npmconfig"
@@ -429,6 +431,18 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
 			Action:          NixCmd,
+		},
+		{
+			Name:            "apk",
+			Flags:           cliutils.GetCommandFlags(cliutils.Apk),
+			Usage:           apkcommand.GetDescription(),
+			HelpName:        corecommon.CreateUsage("apk", apkcommand.GetDescription(), apkcommand.Usage),
+			UsageText:       apkcommand.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc("config", "upload", "add", "upgrade", "update", "fetch", "search", "del", "info"),
+			Category:        buildToolsCategory,
+			Action:          ApkCmd,
 		},
 		{
 			Name:         "ruby-config",
@@ -2116,6 +2130,137 @@ func NixCmd(c *cli.Context) error {
 	}
 
 	return commands.ExecWithPackageManager(cmd, "nix")
+}
+
+// ApkCmd dispatches jf apk subcommands: config, upload, and native apk operations.
+func ApkCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+	if c.NArg() < 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	args := cliutils.ExtractCommand(c)
+	subcmd, remainingArgs := getCommandName(args)
+
+	var (
+		serverID string
+		err      error
+	)
+	remainingArgs, serverID, err = coreutils.ExtractServerIdFromCommand(remainingArgs)
+	if err != nil {
+		return errorutils.CheckErrorf("failed to extract --server-id: %w", err)
+	}
+
+	remainingArgs, repoKey, err := coreutils.ExtractStringOptionFromArgs(remainingArgs, "repo")
+	if err != nil {
+		return errorutils.CheckErrorf("failed to extract --repo: %w", err)
+	}
+	remainingArgs, alpineVersion, err := coreutils.ExtractStringOptionFromArgs(remainingArgs, "alpine-version")
+	if err != nil {
+		return errorutils.CheckErrorf("failed to extract --alpine-version: %w", err)
+	}
+	remainingArgs, username, err := coreutils.ExtractStringOptionFromArgs(remainingArgs, "user")
+	if err != nil {
+		return errorutils.CheckErrorf("failed to extract --user: %w", err)
+	}
+	remainingArgs, password, err := coreutils.ExtractStringOptionFromArgs(remainingArgs, "password")
+	if err != nil {
+		return errorutils.CheckErrorf("failed to extract --password: %w", err)
+	}
+
+	var serverDetails *coreConfig.ServerDetails
+	if serverID != "" {
+		serverDetails, err = coreConfig.GetSpecificConfig(serverID, false, false)
+	} else {
+		serverDetails, err = coreConfig.GetDefaultServerConf()
+	}
+	if err != nil {
+		log.Warn("No JFrog server configured — skipping credential injection. Run: jf c add")
+	}
+
+	switch subcmd {
+	case "config":
+		return apkConfigSubCmd(remainingArgs, serverDetails, repoKey, alpineVersion, username, password)
+	case "upload":
+		return apkUploadSubCmd(c, remainingArgs, serverDetails, repoKey, alpineVersion, username, password)
+	default:
+		filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(remainingArgs)
+		if err != nil {
+			return err
+		}
+		cmd := alpinecommand.NewApkCommand(subcmd).
+			SetArgs(filteredArgs).
+			SetServerDetails(serverDetails).
+			SetBuildConfiguration(buildConfiguration).
+			SetRepo(repoKey).
+			SetAlpineVersion(alpineVersion).
+			SetUsername(username).
+			SetPassword(password)
+		return commands.ExecWithPackageManager(cmd, "apk")
+	}
+}
+
+// apkConfigSubCmd handles jf apk config: downloads the Artifactory RSA public key and
+// optionally writes it to disk.
+func apkConfigSubCmd(args []string, serverDetails *coreConfig.ServerDetails, repoKey, alpineVersion, username, password string) error {
+	args, branch, err := coreutils.ExtractStringOptionFromArgs(args, "branch")
+	if err != nil {
+		return errorutils.CheckErrorf("failed to extract --branch: %w", err)
+	}
+	if branch == "" {
+		branch = "main"
+	}
+	args, applyFlag, err := coreutils.ExtractBoolFlagFromArgs(args, "apply")
+	if err != nil {
+		return errorutils.CheckErrorf("failed to extract --apply: %w", err)
+	}
+	cmd := alpinecommand.NewApkConfigCommand().
+		SetServerDetails(serverDetails).
+		SetRepo(repoKey).
+		SetAlpineVersion(alpineVersion).
+		SetBranch(branch).
+		SetUsername(username).
+		SetPassword(password).
+		SetApply(applyFlag)
+	return commands.ExecWithPackageManager(cmd, "apk")
+}
+
+// apkUploadSubCmd handles jf apk upload: publishes a local .apk file to Artifactory.
+func apkUploadSubCmd(c *cli.Context, args []string, serverDetails *coreConfig.ServerDetails, repoKey, alpineVersion, username, password string) error {
+	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
+	if err != nil {
+		return err
+	}
+
+	filteredArgs, branch, err := coreutils.ExtractStringOptionFromArgs(filteredArgs, "branch")
+	if err != nil {
+		return errorutils.CheckErrorf("failed to extract --branch: %w", err)
+	}
+	if branch == "" {
+		branch = "main"
+	}
+	filteredArgs, arch, err := coreutils.ExtractStringOptionFromArgs(filteredArgs, "arch")
+	if err != nil {
+		return errorutils.CheckErrorf("failed to extract --arch: %w", err)
+	}
+
+	if len(filteredArgs) != 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+	filePath := filteredArgs[0]
+
+	cmd := alpinecommand.NewApkUploadCommand(filePath).
+		SetServerDetails(serverDetails).
+		SetBuildConfiguration(buildConfiguration).
+		SetRepo(repoKey).
+		SetAlpineVersion(alpineVersion).
+		SetBranch(branch).
+		SetArch(arch).
+		SetUsername(username).
+		SetPassword(password)
+	return commands.ExecWithPackageManager(cmd, "apk")
 }
 
 func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
