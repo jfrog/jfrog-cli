@@ -2212,7 +2212,7 @@ func apkConfigSubCmd(args []string, serverDetails *coreConfig.ServerDetails, rep
 	if branch == "" {
 		branch = "main"
 	}
-	args, applyFlag, err := coreutils.ExtractBoolFlagFromArgs(args, "apply")
+	_, applyFlag, err := coreutils.ExtractBoolFlagFromArgs(args, "apply")
 	if err != nil {
 		return errorutils.CheckErrorf("failed to extract --apply: %w", err)
 	}
