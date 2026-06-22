@@ -670,6 +670,10 @@ func uploadBuildsWithProject(t *testing.T) func() {
 	uploadBuildWithArtifactsAndProject(t, tests.UploadDevSpecA, tests.LcBuildName1, number1, tests.ProjectKey)
 	uploadBuildWithArtifactsAndProject(t, tests.UploadDevSpecB, tests.LcBuildName2, number2, tests.ProjectKey)
 	uploadBuildWithDepsAndProject(t, tests.LcBuildName3, number3, tests.ProjectKey)
+	// Wait for the Lifecycle service to register the project before any release-bundle
+	// creation attempts. LC has its own cache separate from Artifactory's; it can take
+	// several minutes to warm in HA deployments running Artifactory draft builds.
+	waitForLifecycleProjectVisibility(t, tests.ProjectKey)
 	return func() {
 		inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.LcBuildName1, artHttpDetails)
 		inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.LcBuildName2, artHttpDetails)
@@ -767,7 +771,9 @@ func createRbWithFlags(t *testing.T, specFilePath, sourceOption, buildName, buil
 		argsAndOptions = append(argsAndOptions, getOption(cliutils.Draft, "true"))
 	}
 
-	assert.NoError(t, lcCli.Exec(argsAndOptions...))
+	assert.NoError(t, retryOnProjectNotFound(func() error {
+		return lcCli.Exec(argsAndOptions...)
+	}))
 }
 
 func updateRbWithFlags(t *testing.T, specFilePath, rbName, rbVersion, project, sourceTypeBuilds string, sync bool) {
@@ -1424,7 +1430,6 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 			}
 		}()
 	}
-
 	deleteBuildsWithProject := uploadBuildsWithProject(t)
 	defer deleteBuildsWithProject()
 
@@ -1643,7 +1648,9 @@ func uploadBuildWithArtifactsAndProject(t *testing.T, specFileName, buildName, b
 	assert.NoError(t, err)
 
 	runRt(t, "upload", "--spec="+specFile, "--build-name="+buildName, "--build-number="+buildNumber, "--project="+projectKey)
-	runRt(t, "build-publish", buildName, buildNumber, "--project="+projectKey)
+	assert.NoError(t, retryOnProjectNotFound(func() error {
+		return artifactoryCli.Exec("build-publish", buildName, buildNumber, "--project="+projectKey)
+	}))
 }
 
 func uploadBuildWithDepsAndProject(t *testing.T, buildName, buildNumber, projectKey string) {
@@ -1656,7 +1663,9 @@ func uploadBuildWithDepsAndProject(t *testing.T, buildName, buildNumber, project
 	runRt(t, "upload", randFile.Name(), tests.RtDevRepo, "--flat", "--project="+projectKey)
 	assert.NoError(t, lcCli.WithoutCredentials().Exec("rt", "bad", buildName, buildNumber, tests.RtDevRepo+"/dep-file", "--from-rt"))
 
-	runRt(t, "build-publish", buildName, buildNumber, "--project="+projectKey)
+	assert.NoError(t, retryOnProjectNotFound(func() error {
+		return artifactoryCli.Exec("build-publish", buildName, buildNumber, "--project="+projectKey)
+	}))
 }
 
 func initLifecycleTest(t *testing.T, minVersion string) (cleanCallback func()) {
@@ -1764,4 +1773,56 @@ type KeyPairPayload struct {
 	Passphrase string `json:"passphrase,omitempty"`
 	PublicKey  string `json:"publicKey,omitempty"`
 	PrivateKey string `json:"privateKey,omitempty"` // #nosec G117 -- test struct, not a real secret
+}
+
+// waitForLifecycleProjectVisibility polls the Lifecycle service until the project is visible
+// to it. LC has a project cache separate from Artifactory's and can take many minutes to warm
+// in HA deployments. Polling a cheap endpoint avoids wasting the retry budget on expensive
+// full CLI commands before LC is actually ready.
+func waitForLifecycleProjectVisibility(t *testing.T, projectKey string) {
+	const (
+		timeout      = 15 * time.Minute
+		pollInterval = 15 * time.Second
+	)
+	client, err := httpclient.ClientBuilder().Build()
+	if !assert.NoError(t, err) {
+		return
+	}
+	// GET on a non-existent RB returns 400 when LC doesn't know the project yet,
+	// and 404 when it does (RB not found, but project is recognised).
+	probeURL := *tests.JfrogUrl + "lifecycle/api/v2/release_bundle/records/non-existing-rb?project=" + projectKey
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		resp, _, _, probErr := client.SendGet(probeURL, true, artHttpDetails, "")
+		if probErr == nil && resp.StatusCode != http.StatusBadRequest {
+			return
+		}
+		time.Sleep(pollInterval)
+	}
+	t.Logf("waitForLifecycleProjectVisibility: LC still not aware of project %q after %s; proceeding anyway", projectKey, timeout)
+}
+
+// retryOnProjectNotFound retries fn when Artifactory or Lifecycle reports that a project is not
+// yet visible — a transient condition caused by the Access→service cache propagation delay in HA
+// deployments. Up to maxRetries attempts are made with retryInterval between each attempt.
+func retryOnProjectNotFound(fn func() error) error {
+	const (
+		maxRetries    = 10
+		retryInterval = 30 * time.Second
+	)
+	var err error
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		err = fn()
+		if err == nil {
+			return nil
+		}
+		errMsg := err.Error()
+		if !strings.Contains(errMsg, "not found") && !strings.Contains(errMsg, "project key") {
+			return err
+		}
+		if attempt < maxRetries-1 {
+			time.Sleep(retryInterval)
+		}
+	}
+	return err
 }

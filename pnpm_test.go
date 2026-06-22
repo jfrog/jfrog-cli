@@ -898,23 +898,18 @@ func TestPnpmBuildPublishWithCIVcsProps(t *testing.T) {
 func TestPnpmInstallAndPublishWithProject(t *testing.T) {
 	initPnpmTest(t)
 
-	// Create Access service manager and project before deferring cleanPnpmTest,
-	// so that t.Skipf doesn't trigger cleanup asserts that override the skip status.
 	accessManager, err := utils.CreateAccessServiceManager(serverDetails, false)
 	if err != nil {
 		t.Skipf("Skipping project test - cannot create access manager: %v", err)
 	}
 
-	// Try creating project first to verify access works before deferring any cleanup
 	projectParams := accessServices.ProjectParams{
 		ProjectDetails: accessServices.Project{
 			DisplayName: "pnpm-project-test " + tests.ProjectKey,
 			ProjectKey:  tests.ProjectKey,
 		},
 	}
-	// First delete if exists, ignoring errors since access might not support it
-	_ = accessManager.DeleteProject(tests.ProjectKey)
-	if err = accessManager.CreateProject(projectParams); err != nil {
+	if err = accessManager.CreateProject(projectParams); err != nil && !strings.Contains(err.Error(), "already exists") {
 		t.Skipf("Skipping project test - cannot create project: %v", err)
 	}
 
@@ -925,7 +920,6 @@ func TestPnpmInstallAndPublishWithProject(t *testing.T) {
 		_ = accessManager.DeleteProject(tests.ProjectKey)
 	}()
 
-	// Assign npm repos to the project
 	err = accessManager.AssignRepoToProject(tests.NpmRepo, tests.ProjectKey, true)
 	assert.NoError(t, err)
 	err = accessManager.AssignRepoToProject(tests.NpmRemoteRepo, tests.ProjectKey, true)
@@ -941,36 +935,30 @@ func TestPnpmInstallAndPublishWithProject(t *testing.T) {
 	buildName := tests.PnpmBuildName + "-project"
 	buildNumber := "800"
 
-	// Clean old build
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 
-	// Setup pnpm project
 	pnpmProjectPath := createPnpmProject(t, "pnpmproject")
 	projectDir := filepath.Dir(pnpmProjectPath)
 	prepareArtifactoryForPnpmBuild(t, projectDir)
-
 	clientTestUtils.ChangeDirAndAssert(t, projectDir)
 
-	// Run pnpm install with --project flag
 	runJfrogCli(t, "pnpm", "install", "--store-dir="+tempCacheDirPath,
 		"--build-name="+buildName, "--build-number="+buildNumber,
 		"--project="+tests.ProjectKey)
 
-	// Run pnpm publish with --project flag
 	cleanupAuth := setupPnpmPublishAuth(t, tests.NpmRepo)
 	defer cleanupAuth()
 	runJfrogCli(t, "pnpm", "publish", "--no-git-checks",
 		"--build-name="+buildName, "--build-number="+buildNumber,
 		"--project="+tests.ProjectKey)
 
-	// Publish build info with --project flag
-	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber, "--project="+tests.ProjectKey))
+	assert.NoError(t, retryOnProjectNotFound(func() error {
+		return artifactoryCli.Exec("bp", buildName, buildNumber, "--project="+tests.ProjectKey)
+	}))
 
-	// Restore working directory
 	clientTestUtils.ChangeDirAndAssert(t, wd)
 
-	// Get the published build info with project key
 	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, 0, false)
 	assert.NoError(t, err)
 	params := artServices.NewBuildInfoParams()
@@ -982,7 +970,6 @@ func TestPnpmInstallAndPublishWithProject(t *testing.T) {
 	assert.True(t, found, "Build info was not found for project %s", tests.ProjectKey)
 
 	bi := publishedBuildInfo.BuildInfo
-	// pnpm install + publish on the same build should produce 1 module with both deps and artifacts
 	if assert.NotEmpty(t, bi.Modules, "Build info should contain modules") {
 		assert.NotEmpty(t, bi.Modules[0].Dependencies, "Module should have dependencies from pnpm install")
 		assert.NotEmpty(t, bi.Modules[0].Artifacts, "Module should have artifacts from pnpm publish")
