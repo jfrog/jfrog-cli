@@ -89,6 +89,9 @@ func setupIntegrationTests() {
 	if *tests.TestPlugins {
 		InitPluginsTests()
 	}
+	if *tests.TestAgentPlugins {
+		InitAgentPluginsTests()
+	}
 	if *tests.TestAccess {
 		InitAccessTests()
 	}
@@ -127,6 +130,9 @@ func tearDownIntegrationTests() {
 	}
 	if *tests.TestPlugins {
 		CleanPluginsTests()
+	}
+	if *tests.TestAgentPlugins {
+		CleanAgentPluginsTests()
 	}
 	if *tests.TestTransfer {
 		CleanTransferTests()
