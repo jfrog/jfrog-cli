@@ -287,8 +287,9 @@ var (
 	Password1 = "A12356789z"
 	UserName2 = "bob"
 	// jfrog-ignore - not a real password
-	Password2  = "1B234578y9"
-	ProjectKey = "prj"
+	Password2   = "1B234578y9"
+	ProjectKey  = "prj"
+	ProjectKey2 = "prjlc"
 )
 
 func GetTxtUploadExpectedRepo1() []string {
