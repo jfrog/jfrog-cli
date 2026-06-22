@@ -155,7 +155,7 @@ func TestReleaseBundleCreationFromMultipleBuildsAndBundlesUsingCommandFlags(t *t
 func TestReleaseBundleCreationFromMultiBundlesUsingCommandFlagWithProject(t *testing.T) {
 	cleanCallback := initLifecycleTest(t, minMultiSourcesArtifactoryVersion)
 	defer cleanCallback()
-	deleteProject := createTestProject(t)
+	deleteProject := createTestProject(t, tests.ProjectKey2)
 	if deleteProject != nil {
 		defer func() {
 			if err := deleteProject(); err != nil {
@@ -169,32 +169,32 @@ func TestReleaseBundleCreationFromMultiBundlesUsingCommandFlagWithProject(t *tes
 	defer deleteBuilds()
 
 	// Create first release bundle from builds with project
-	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, tests.LcRbName1, number1, tests.ProjectKey, true, true, false)
-	defer deleteReleaseBundleWithProject(t, lcManager, tests.LcRbName1, number1, tests.ProjectKey)
-	assertStatusCompletedWithProject(t, lcManager, tests.LcRbName1, number1, "", tests.ProjectKey)
+	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, tests.LcRbName1, number1, tests.ProjectKey2, true, true, false)
+	defer deleteReleaseBundleWithProject(t, lcManager, tests.LcRbName1, number1, tests.ProjectKey2)
+	assertStatusCompletedWithProject(t, lcManager, tests.LcRbName1, number1, "", tests.ProjectKey2)
 
 	// Verify first release bundle exists with project
-	isExist, err := lcManager.IsReleaseBundleExist(tests.LcRbName1, number1, tests.ProjectKey)
+	isExist, err := lcManager.IsReleaseBundleExist(tests.LcRbName1, number1, tests.ProjectKey2)
 	assert.NoError(t, err)
-	assert.True(t, isExist, "Release bundle %s/%s should exist in project %s", tests.LcRbName1, number1, tests.ProjectKey)
+	assert.True(t, isExist, "Release bundle %s/%s should exist in project %s", tests.LcRbName1, number1, tests.ProjectKey2)
 
 	// Create second release bundle from builds with project
-	createRbWithFlags(t, "", "", tests.LcBuildName2, number2, tests.LcRbName2, number2, tests.ProjectKey, true, true, false)
-	defer deleteReleaseBundleWithProject(t, lcManager, tests.LcRbName2, number2, tests.ProjectKey)
-	assertStatusCompletedWithProject(t, lcManager, tests.LcRbName2, number2, "", tests.ProjectKey)
+	createRbWithFlags(t, "", "", tests.LcBuildName2, number2, tests.LcRbName2, number2, tests.ProjectKey2, true, true, false)
+	defer deleteReleaseBundleWithProject(t, lcManager, tests.LcRbName2, number2, tests.ProjectKey2)
+	assertStatusCompletedWithProject(t, lcManager, tests.LcRbName2, number2, "", tests.ProjectKey2)
 
 	// Verify second release bundle exists with project
-	isExist, err = lcManager.IsReleaseBundleExist(tests.LcRbName2, number2, tests.ProjectKey)
+	isExist, err = lcManager.IsReleaseBundleExist(tests.LcRbName2, number2, tests.ProjectKey2)
 	assert.NoError(t, err)
-	assert.True(t, isExist, "Release bundle %s/%s should exist in project %s", tests.LcRbName2, number2, tests.ProjectKey)
+	assert.True(t, isExist, "Release bundle %s/%s should exist in project %s", tests.LcRbName2, number2, tests.ProjectKey2)
 
 	// Wait a bit to ensure release bundles are fully indexed before using them as sources
 	time.Sleep(5 * time.Second)
 
 	// Create release bundle from the two previous release bundles with project
-	createRbFromMultiSourcesUsingCommandFlagsWithProject(t, lcManager, "", createReleaseBundlesSource(), tests.LcRbName3, number3, tests.ProjectKey, true)
-	defer deleteReleaseBundleWithProject(t, lcManager, tests.LcRbName3, number3, tests.ProjectKey)
-	assertStatusCompletedWithProject(t, lcManager, tests.LcRbName3, number3, "", tests.ProjectKey)
+	createRbFromMultiSourcesUsingCommandFlagsWithProject(t, lcManager, "", createReleaseBundlesSource(), tests.LcRbName3, number3, tests.ProjectKey2, true)
+	defer deleteReleaseBundleWithProject(t, lcManager, tests.LcRbName3, number3, tests.ProjectKey2)
+	assertStatusCompletedWithProject(t, lcManager, tests.LcRbName3, number3, "", tests.ProjectKey2)
 }
 
 func TestReleaseBundleCreationFromMultipleSourcesUsingSpec(t *testing.T) {
@@ -667,9 +667,9 @@ func uploadBuilds(t *testing.T) func() {
 }
 
 func uploadBuildsWithProject(t *testing.T) func() {
-	uploadBuildWithArtifactsAndProject(t, tests.UploadDevSpecA, tests.LcBuildName1, number1, tests.ProjectKey)
-	uploadBuildWithArtifactsAndProject(t, tests.UploadDevSpecB, tests.LcBuildName2, number2, tests.ProjectKey)
-	uploadBuildWithDepsAndProject(t, tests.LcBuildName3, number3, tests.ProjectKey)
+	uploadBuildWithArtifactsAndProject(t, tests.UploadDevSpecA, tests.LcBuildName1, number1, tests.ProjectKey2)
+	uploadBuildWithArtifactsAndProject(t, tests.UploadDevSpecB, tests.LcBuildName2, number2, tests.ProjectKey2)
+	uploadBuildWithDepsAndProject(t, tests.LcBuildName3, number3, tests.ProjectKey2)
 	return func() {
 		inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.LcBuildName1, artHttpDetails)
 		inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.LcBuildName2, artHttpDetails)
@@ -716,7 +716,7 @@ func TestCreateBundleWithoutSpec(t *testing.T) {
 func TestCreateBundleWithoutSpecAndWithProject(t *testing.T) {
 	cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
 	defer cleanCallback()
-	deleteProject := createTestProject(t)
+	deleteProject := createTestProject(t, tests.ProjectKey2)
 	if deleteProject != nil {
 		defer func() {
 			if err := deleteProject(); err != nil {
@@ -728,9 +728,9 @@ func TestCreateBundleWithoutSpecAndWithProject(t *testing.T) {
 	deleteBuilds := uploadBuildsWithProject(t)
 	defer deleteBuilds()
 
-	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, tests.LcRbName1, number1, tests.ProjectKey, false, false, false)
-	assertStatusCompletedWithProject(t, lcManager, tests.LcRbName1, number1, "", tests.ProjectKey)
-	defer deleteReleaseBundleWithProject(t, lcManager, tests.LcRbName1, number1, tests.ProjectKey)
+	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, tests.LcRbName1, number1, tests.ProjectKey2, false, false, false)
+	assertStatusCompletedWithProject(t, lcManager, tests.LcRbName1, number1, "", tests.ProjectKey2)
+	defer deleteReleaseBundleWithProject(t, lcManager, tests.LcRbName1, number1, tests.ProjectKey2)
 }
 
 func createRbWithFlags(t *testing.T, specFilePath, sourceOption, buildName, buildNumber, rbName, rbVersion, project string,
@@ -1416,7 +1416,7 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 	projectVersionB := "1.0.1"
 
 	// Setup: Create test project and upload builds with project
-	deleteProject := createTestProject(t)
+	deleteProject := createTestProject(t, tests.ProjectKey2)
 	if deleteProject != nil {
 		defer func() {
 			if err := deleteProject(); err != nil {
@@ -1430,13 +1430,13 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 
 	// Delete existing release bundle versions with project
 	for _, version := range []string{projectVersionA, projectVersionB} {
-		isExist, err := lcManager.IsReleaseBundleExist(projectRbName, version, tests.ProjectKey)
+		isExist, err := lcManager.IsReleaseBundleExist(projectRbName, version, tests.ProjectKey2)
 		if err == nil && isExist {
 			rbDetails := services.ReleaseBundleDetails{
 				ReleaseBundleName:    projectRbName,
 				ReleaseBundleVersion: version,
 			}
-			err := lcManager.DeleteReleaseBundleVersion(rbDetails, services.CommonOptionalQueryParams{Async: false, ProjectKey: tests.ProjectKey})
+			err := lcManager.DeleteReleaseBundleVersion(rbDetails, services.CommonOptionalQueryParams{Async: false, ProjectKey: tests.ProjectKey2})
 			if err != nil {
 				if !strings.Contains(err.Error(), "404") && !strings.Contains(err.Error(), "not found") {
 					t.Logf("Warning: Failed to delete release bundle %s/%s: %v", projectRbName, version, err)
@@ -1448,15 +1448,15 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 	}
 
 	// Create release bundles with project
-	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, projectRbName, projectVersionA, tests.ProjectKey, true, false, false)
-	defer deleteReleaseBundleWithProject(t, lcManager, projectRbName, projectVersionA, tests.ProjectKey)
-	assertStatusCompletedWithProject(t, lcManager, projectRbName, projectVersionA, "", tests.ProjectKey)
+	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, projectRbName, projectVersionA, tests.ProjectKey2, true, false, false)
+	defer deleteReleaseBundleWithProject(t, lcManager, projectRbName, projectVersionA, tests.ProjectKey2)
+	assertStatusCompletedWithProject(t, lcManager, projectRbName, projectVersionA, "", tests.ProjectKey2)
 
 	time.Sleep(1 * time.Second)
 
-	createRbWithFlags(t, "", "", tests.LcBuildName2, number2, projectRbName, projectVersionB, tests.ProjectKey, true, false, false)
-	defer deleteReleaseBundleWithProject(t, lcManager, projectRbName, projectVersionB, tests.ProjectKey)
-	assertStatusCompletedWithProject(t, lcManager, projectRbName, projectVersionB, "", tests.ProjectKey)
+	createRbWithFlags(t, "", "", tests.LcBuildName2, number2, projectRbName, projectVersionB, tests.ProjectKey2, true, false, false)
+	defer deleteReleaseBundleWithProject(t, lcManager, projectRbName, projectVersionB, tests.ProjectKey2)
+	assertStatusCompletedWithProject(t, lcManager, projectRbName, projectVersionB, "", tests.ProjectKey2)
 
 	log.Info("Created two versions for release bundle '%s' with project for search testing.", projectRbName)
 	time.Sleep(3 * time.Second)
@@ -1474,7 +1474,7 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 		name:              "Search with project",
 		releaseBundleName: projectRbName,
 		queryParams: services.GetSearchOptionalQueryParams{
-			Project: tests.ProjectKey,
+			Project: tests.ProjectKey2,
 		},
 		expectedRbVersions: []string{projectVersionA, projectVersionB},
 		expectedTotal:      2,
