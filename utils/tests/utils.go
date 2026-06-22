@@ -609,6 +609,9 @@ func AddTimestampToGlobalVars() {
 	UvLocalRepo += uniqueSuffix
 	UvRemoteRepo += uniqueSuffix
 	UvVirtualRepo += uniqueSuffix
+	NixLocalRepo += uniqueSuffix
+	NixRemoteRepo += uniqueSuffix
+	NixVirtualRepo += uniqueSuffix
 	ConanLocalRepo += uniqueSuffix
 	ConanRemoteRepo += uniqueSuffix
 	ConanVirtualRepo += uniqueSuffix
@@ -641,6 +644,7 @@ func AddTimestampToGlobalVars() {
 	PipenvBuildName += uniqueSuffix
 	PoetryBuildName += uniqueSuffix
 	UvBuildName += uniqueSuffix
+	NixBuildName += uniqueSuffix
 	ConanBuildName += uniqueSuffix
 	HelmBuildName += uniqueSuffix
 	HuggingFaceBuildName += uniqueSuffix
