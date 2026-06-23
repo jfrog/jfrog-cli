@@ -806,7 +806,7 @@ func TestTwinePublishWithLocalGitVcsProps(t *testing.T) {
 	pyproject := filepath.Join(projectPath, "pyproject.toml")
 	content, err := os.ReadFile(pyproject)
 	require.NoError(t, err)
-	patched := strings.ReplaceAll(string(content), `version = "1.0"`, `version = "1.0.1-local-git"`)
+	patched := strings.ReplaceAll(string(content), `version = "1.0"`, `version = "1.0.1+localgit"`)
 	require.NoError(t, os.WriteFile(pyproject, []byte(patched), 0o644)) //#nosec G703 -- test code, path built from createPypiProject temp dir
 
 	distDir := filepath.Join(projectPath, "dist")

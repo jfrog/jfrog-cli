@@ -50,7 +50,7 @@ func cleanUvTest(_ *testing.T) {
 	tests.CleanFileSystem()
 }
 
-const uvLocalGitVersion = "0.1.1-local-git"
+const uvLocalGitVersion = "0.1.1+localgit"
 
 // createUvProject copies a test UV project to a temp dir, injects Artifactory
 // URLs into pyproject.toml, then generates a fresh uv.lock against the test
