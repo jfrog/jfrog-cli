@@ -50,11 +50,17 @@ func cleanUvTest(_ *testing.T) {
 	tests.CleanFileSystem()
 }
 
+const uvLocalGitVersion = "0.1.1-local-git"
+
 // createUvProject copies a test UV project to a temp dir, injects Artifactory
 // URLs into pyproject.toml, then generates a fresh uv.lock against the test
 // Artifactory instance. The lock file is not committed to avoid embedding
 // instance-specific URLs in source.
 func createUvProject(t *testing.T, outputFolder, projectName string) string {
+	return createUvProjectWithVersion(t, outputFolder, projectName, "")
+}
+
+func createUvProjectWithVersion(t *testing.T, outputFolder, projectName, version string) string {
 	projectSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "uv", projectName)
 	tmpDir, cleanup := coretests.CreateTempDirWithCallbackAndAssert(t)
 	t.Cleanup(cleanup)
@@ -71,6 +77,14 @@ func createUvProject(t *testing.T, outputFolder, projectName string) string {
 
 	// Patch pyproject.toml with real Artifactory URLs for this test run
 	patchUvPyprojectToml(t, projectPath)
+
+	if version != "" {
+		pyprojectPath := filepath.Join(projectPath, "pyproject.toml")
+		data, err := os.ReadFile(pyprojectPath)
+		require.NoError(t, err)
+		patched := strings.ReplaceAll(string(data), `version = "0.1.0"`, `version = "`+version+`"`)
+		require.NoError(t, os.WriteFile(filepath.Clean(pyprojectPath), []byte(patched), 0o644)) // #nosec G703 -- path built from filepath.Join, not user input
+	}
 
 	// Generate uv.lock against the patched index so UV resolves through
 	// Artifactory (required for dependency checksum enrichment tests).
@@ -1504,15 +1518,8 @@ func TestUvPublishWithLocalGitVcsProps(t *testing.T) {
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 
-	projectPath := createUvProject(t, "uv-local-git", "uvproject")
+	projectPath := createUvProjectWithVersion(t, "uv-local-git", "uvproject", uvLocalGitVersion)
 	tests.CopyGitFixtureIntoProject(t, projectPath)
-
-	pyproject := filepath.Join(projectPath, "pyproject.toml")
-	data, err := os.ReadFile(pyproject)
-	require.NoError(t, err)
-	patched := strings.ReplaceAll(string(data), `version = "0.1.0"`, `version = "0.1.1-local-git"`)
-	require.NoError(t, os.WriteFile(pyproject, []byte(patched), 0o644))
-	require.NoError(t, runUvCmd(t, projectPath, "lock"))
 
 	require.NoError(t, runUvCmd(t, projectPath, "build"))
 	require.NoError(t, runUvCmd(t, projectPath, "publish",

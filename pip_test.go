@@ -807,11 +807,17 @@ func TestTwinePublishWithLocalGitVcsProps(t *testing.T) {
 	content, err := os.ReadFile(pyproject)
 	require.NoError(t, err)
 	patched := strings.ReplaceAll(string(content), `version = "1.0"`, `version = "1.0.1-local-git"`)
-	require.NoError(t, os.WriteFile(pyproject, []byte(patched), 0o644))
+	require.NoError(t, os.WriteFile(pyproject, []byte(patched), 0o644)) //#nosec G703 -- test code, path built from createPypiProject temp dir
 
 	distDir := filepath.Join(projectPath, "dist")
 	require.NoError(t, os.RemoveAll(distDir))
 	require.NoError(t, os.MkdirAll(distDir, 0o755))
+
+	installBuild := exec.Command("python", "-m", "pip", "install", "build")
+	installBuild.Dir = projectPath
+	installOut, err := installBuild.CombinedOutput()
+	require.NoError(t, err, "pip install build failed: %s", installOut)
+
 	buildCmd := exec.Command("python", "-m", "build", "--outdir", distDir)
 	buildCmd.Dir = projectPath
 	buildOut, err := buildCmd.CombinedOutput()

@@ -1184,7 +1184,7 @@ func TestConanUploadWithLocalGitVcsProps(t *testing.T) {
 	data, err := os.ReadFile(conanfile)
 	require.NoError(t, err)
 	patched := strings.ReplaceAll(string(data), `name = "cli-test-package"`, `name = "cli-test-package-local-git"`)
-	require.NoError(t, os.WriteFile(conanfile, []byte(patched), 0o644))
+	require.NoError(t, os.WriteFile(conanfile, []byte(patched), 0o644)) //#nosec G703 -- test code, path built from createConanProject temp dir
 
 	wd, err := os.Getwd()
 	require.NoError(t, err)

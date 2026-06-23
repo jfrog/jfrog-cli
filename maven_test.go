@@ -853,16 +853,24 @@ func TestMavenBuildPublishWithLocalGitVcsProps(t *testing.T) {
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 
-	createMavenProjectWithGit := func(t *testing.T) string {
-		pomDir := createSimpleMavenProject(t)
-		tests.CopyGitFixtureIntoProject(t, pomDir)
-		return pomDir
-	}
+	pomDir := createSimpleMavenProject(t)
+	tests.CopyGitFixtureIntoProject(t, pomDir)
+	require.FileExists(t, filepath.Join(pomDir, ".git", "HEAD"))
 
-	err := runMaven(t, createMavenProjectWithGit, tests.MavenConfig,
-		"install", "--build-name="+buildName, "--build-number="+buildNumber)
-	require.NoError(t, err)
+	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.MavenConfig)
+	destPath := filepath.Join(pomDir, ".jfrog", "projects")
+	createConfigFile(destPath, configFilePath, t)
+	require.NoError(t, os.Rename(filepath.Join(destPath, tests.MavenConfig), filepath.Join(destPath, "maven.yaml")))
 
+	oldHomeDir := changeWD(t, pomDir)
+	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
+
+	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
+	args := []string{"mvn", "clean", "install", "-B", repoLocalSystemProp,
+		"--build-name=" + buildName, "--build-number=" + buildNumber}
+	require.NoError(t, runJfrogCliWithoutAssertion(args...))
+
+	// Must run build-publish from project dir so GetLocalGitVcsInfo finds the fixture .git
 	runRt(t, "build-publish", buildName, buildNumber)
 
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)

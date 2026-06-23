@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -34,6 +35,11 @@ func ArtifactItemPath(a buildinfo.Artifact, defaultRepo string) string {
 		return fullPath
 	}
 	if strings.HasSuffix(fullPath, "/"+a.Name) || strings.HasSuffix(fullPath, a.Name) {
+		return fullPath
+	}
+	// npm/pypi: Path is the full tarball path (e.g. pkg/-/pkg-1.0.0.tgz)
+	pathPart := strings.TrimPrefix(a.Path, "/")
+	if filepath.Ext(pathPart) != "" {
 		return fullPath
 	}
 	return fullPath + "/" + a.Name
