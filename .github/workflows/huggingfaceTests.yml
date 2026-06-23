@@ -64,7 +64,10 @@ jobs:
       - name: Install HuggingFace Library
         if: matrix.os.name != 'macos'
         run: |
-          pip install huggingface_hub
+          # Pin to 1.19.0: huggingface_hub 1.20.0 made RepoUrl parse the commit
+          # response's commitUrl field strictly as an hf:// URI (PR #4324), which
+          # breaks against Artifactory's placeholder commitUrl value.
+          pip install "huggingface_hub==1.19.0"
         shell: bash
 
       - name: Debug macOS Environment and Set Timeout
