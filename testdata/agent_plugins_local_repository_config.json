@@ -1,0 +1,5 @@
+{
+  "key": "${AGENT_PLUGINS_LOCAL_REPO}",
+  "rclass": "local",
+  "packageType": "agentplugins"
+}

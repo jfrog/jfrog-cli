@@ -114,6 +114,7 @@ const (
 	UvLocalRepositoryConfig                               = "uv_local_repository_config.json"
 	UvRemoteRepositoryConfig                              = "uv_remote_repository_config.json"
 	UvVirtualRepositoryConfig                             = "uv_virtual_repository_config.json"
+	AgentPluginsLocalRepositoryConfig                     = "agent_plugins_local_repository_config.json"
 	ConanLocalRepositoryConfig                            = "conan_local_repository_config.json"
 	ConanRemoteRepositoryConfig                           = "conan_remote_repository_config.json"
 	ConanVirtualRepositoryConfig                          = "conan_virtual_repository_config.json"
@@ -222,6 +223,7 @@ var (
 	UvLocalRepo                    = "cli-uv-local"
 	UvRemoteRepo                   = "cli-uv-remote"
 	UvVirtualRepo                  = "cli-uv-virtual"
+	AgentPluginsLocalRepo          = "cli-agent-plugins-local"
 	ConanLocalRepo                 = "cli-conan-local"
 	ConanRemoteRepo                = "cli-conan-remote"
 	ConanVirtualRepo               = "cli-conan-virtual"
@@ -262,6 +264,7 @@ var (
 	PipenvBuildName             = "cli-pipenv-build"
 	PoetryBuildName             = "cli-poetry-build"
 	UvBuildName                 = "cli-uv-build"
+	AgentPluginsBuildName       = "cli-agent-plugins-build"
 	NixBuildName                = "cli-nix-build"
 	ConanBuildName              = "cli-conan-build"
 	HelmBuildName               = "cli-helm-build"
@@ -284,8 +287,9 @@ var (
 	Password1 = "A12356789z"
 	UserName2 = "bob"
 	// jfrog-ignore - not a real password
-	Password2  = "1B234578y9"
-	ProjectKey = "prj"
+	Password2   = "1B234578y9"
+	ProjectKey  = "prj"
+	ProjectKey2 = "prjlc"
 )
 
 func GetTxtUploadExpectedRepo1() []string {
