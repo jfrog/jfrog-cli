@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
@@ -1179,6 +1180,12 @@ func TestConanUploadWithLocalGitVcsProps(t *testing.T) {
 	projectPath := createConanProject(t, "conan-local-git")
 	tests.CopyGitFixtureIntoProject(t, projectPath)
 
+	conanfile := filepath.Join(projectPath, "conanfile.py")
+	data, err := os.ReadFile(conanfile)
+	require.NoError(t, err)
+	patched := strings.ReplaceAll(string(data), `name = "cli-test-package"`, `name = "cli-test-package-local-git"`)
+	require.NoError(t, os.WriteFile(conanfile, []byte(patched), 0o644))
+
 	wd, err := os.Getwd()
 	require.NoError(t, err)
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
@@ -1190,7 +1197,7 @@ func TestConanUploadWithLocalGitVcsProps(t *testing.T) {
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	require.NoError(t, jfrogCli.Exec("conan", "create", ".", "--build=missing",
 		"--build-name="+buildName, "--build-number="+buildNumber))
-	require.NoError(t, jfrogCli.Exec("conan", "upload", "cli-test-package/*",
+	require.NoError(t, jfrogCli.Exec("conan", "upload", "cli-test-package-local-git/*",
 		"-r", tests.ConanLocalRepo, "--confirm",
 		"--build-name="+buildName, "--build-number="+buildNumber))
 

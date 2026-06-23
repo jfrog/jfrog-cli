@@ -853,13 +853,13 @@ func TestMavenBuildPublishWithLocalGitVcsProps(t *testing.T) {
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 
-	pomDir := createSimpleMavenProject(t)
-	tests.CopyGitFixtureIntoProject(t, pomDir)
+	createMavenProjectWithGit := func(t *testing.T) string {
+		pomDir := createSimpleMavenProject(t)
+		tests.CopyGitFixtureIntoProject(t, pomDir)
+		return pomDir
+	}
 
-	oldHomeDir := changeWD(t, pomDir)
-	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
-
-	err := runMaven(t, func(t *testing.T) string { return pomDir }, tests.MavenConfig,
+	err := runMaven(t, createMavenProjectWithGit, tests.MavenConfig,
 		"install", "--build-name="+buildName, "--build-number="+buildNumber)
 	require.NoError(t, err)
 

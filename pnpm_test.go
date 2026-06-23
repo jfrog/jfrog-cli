@@ -910,7 +910,7 @@ func TestPnpmPublishWithLocalGitVcsProps(t *testing.T) {
 	assert.NoError(t, err)
 	defer clientTestUtils.ChangeDirAndAssert(t, wd)
 
-	pnpmProjectPath := createPnpmProject(t, "pnpm-local-git")
+	pnpmProjectPath := createPnpmProject(t, "pnpmproject")
 	projectDir := filepath.Dir(pnpmProjectPath)
 	tests.CopyGitFixtureIntoProject(t, projectDir)
 	prepareArtifactoryForPnpmBuild(t, projectDir)

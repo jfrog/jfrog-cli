@@ -803,6 +803,20 @@ func TestTwinePublishWithLocalGitVcsProps(t *testing.T) {
 	projectPath := createPypiProject(t, "twine-local-git", "pyproject", "twine")
 	tests.CopyGitFixtureIntoProject(t, projectPath)
 
+	pyproject := filepath.Join(projectPath, "pyproject.toml")
+	content, err := os.ReadFile(pyproject)
+	require.NoError(t, err)
+	patched := strings.ReplaceAll(string(content), `version = "1.0"`, `version = "1.0.1-local-git"`)
+	require.NoError(t, os.WriteFile(pyproject, []byte(patched), 0o644))
+
+	distDir := filepath.Join(projectPath, "dist")
+	require.NoError(t, os.RemoveAll(distDir))
+	require.NoError(t, os.MkdirAll(distDir, 0o755))
+	buildCmd := exec.Command("python", "-m", "build", "--outdir", distDir)
+	buildCmd.Dir = projectPath
+	buildOut, err := buildCmd.CombinedOutput()
+	require.NoError(t, err, "python build failed: %s", buildOut)
+
 	wd, err := os.Getwd()
 	require.NoError(t, err)
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)

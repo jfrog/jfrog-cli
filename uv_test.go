@@ -1507,6 +1507,13 @@ func TestUvPublishWithLocalGitVcsProps(t *testing.T) {
 	projectPath := createUvProject(t, "uv-local-git", "uvproject")
 	tests.CopyGitFixtureIntoProject(t, projectPath)
 
+	pyproject := filepath.Join(projectPath, "pyproject.toml")
+	data, err := os.ReadFile(pyproject)
+	require.NoError(t, err)
+	patched := strings.ReplaceAll(string(data), `version = "0.1.0"`, `version = "0.1.1-local-git"`)
+	require.NoError(t, os.WriteFile(pyproject, []byte(patched), 0o644))
+	require.NoError(t, runUvCmd(t, projectPath, "lock"))
+
 	require.NoError(t, runUvCmd(t, projectPath, "build"))
 	require.NoError(t, runUvCmd(t, projectPath, "publish",
 		"--build-name="+buildName, "--build-number="+buildNumber))
