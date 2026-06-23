@@ -25,10 +25,10 @@ require (
 	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260615072209-8ccac4f0072e
 	github.com/jfrog/jfrog-cli-evidence v0.9.5-0.20260601141509-8df6c9a4bc9b
 	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260601140139-4cefb6add7b7
-	github.com/jfrog/jfrog-cli-security v1.30.0
+	github.com/jfrog/jfrog-cli-security v1.31.0
 	github.com/jfrog/jfrog-client-go v1.55.1-0.20260603130552-af1dd449b994
 	github.com/jszwec/csvutil v1.10.0
-	github.com/moby/moby/api v1.54.2
+	github.com/moby/moby/api v1.55.0
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.42.0
