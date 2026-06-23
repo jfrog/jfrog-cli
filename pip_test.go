@@ -818,10 +818,15 @@ func TestTwinePublishWithLocalGitVcsProps(t *testing.T) {
 	installOut, err := installBuild.CombinedOutput()
 	require.NoError(t, err, "pip install build failed: %s", installOut)
 
-	buildCmd := exec.Command("python", "-m", "build", "--outdir", distDir)
+	// --outdir is relative to buildCmd.Dir (projectPath), not the process CWD.
+	buildCmd := exec.Command("python", "-m", "build", "--outdir", "dist")
 	buildCmd.Dir = projectPath
 	buildOut, err := buildCmd.CombinedOutput()
 	require.NoError(t, err, "python build failed: %s", buildOut)
+
+	entries, err := os.ReadDir(distDir)
+	require.NoError(t, err)
+	require.NotEmpty(t, entries, "dist must contain built artifacts after python -m build")
 
 	wd, err := os.Getwd()
 	require.NoError(t, err)
