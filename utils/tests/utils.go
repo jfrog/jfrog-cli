@@ -71,6 +71,7 @@ var (
 	TestPoetry                *bool
 	TestUv                    *bool
 	TestNix                   *bool
+	TestAgentPlugins          *bool
 	TestConan                 *bool
 	TestHelm                  *bool
 	TestHuggingFace           *bool
@@ -87,6 +88,28 @@ var (
 	InstallDataTransferPlugin *bool
 	timestampAdded            bool
 )
+
+// nonProjectKeyCharsRegex matches any character that isn't allowed in an Artifactory
+// project key (project keys allow only lowercase alphanumeric characters and hyphens).
+// We use this to sanitize the --ci.runId value before splicing it into resource names
+// whose format is constrained (project keys, GPG keypair names, etc.). Project-key
+// charset is a strict subset of the GPG keypair charset, so a single sanitization is
+// safe for both.
+var nonProjectKeyCharsRegex = regexp.MustCompile(`[^a-z0-9-]+`)
+
+// SanitizedCiRunId returns the --ci.runId flag value lowercased with any characters
+// outside [a-z0-9-] collapsed to a single hyphen and surrounding hyphens trimmed.
+// Returns "" if the flag wasn't set. Callers that need a per-runId suffix on
+// resources whose name format is constrained (e.g. Artifactory project keys, GPG
+// keypair names) should use this so concurrent runs against a shared JPD don't
+// clobber each other.
+func SanitizedCiRunId() string {
+	if ciRunId == nil || *ciRunId == "" {
+		return ""
+	}
+	sanitized := nonProjectKeyCharsRegex.ReplaceAllString(strings.ToLower(*ciRunId), "-")
+	return strings.Trim(sanitized, "-")
+}
 
 func init() {
 	JfrogUrl = flag.String("jfrog.url", "http://localhost:8081/", "JFrog platform url")
@@ -116,6 +139,7 @@ func init() {
 	TestPoetry = flag.Bool("test.poetry", false, "Test Poetry")
 	TestUv = flag.Bool("test.uv", false, "Test UV")
 	TestNix = flag.Bool("test.nix", false, "Test Nix")
+	TestAgentPlugins = flag.Bool("test.agentPlugins", false, "Test Agent Plugins")
 	TestConan = flag.Bool("test.conan", false, "Test Conan")
 	TestHelm = flag.Bool("test.helm", false, "Test Helm")
 	TestHuggingFace = flag.Bool("test.huggingface", false, "Test HuggingFace")
@@ -298,6 +322,7 @@ var reposConfigMap = map[*string]string{
 	&UvLocalRepo:                    UvLocalRepositoryConfig,
 	&UvRemoteRepo:                   UvRemoteRepositoryConfig,
 	&UvVirtualRepo:                  UvVirtualRepositoryConfig,
+	&AgentPluginsLocalRepo:          AgentPluginsLocalRepositoryConfig,
 	&NixLocalRepo:                   NixLocalRepositoryConfig,
 	&NixRemoteRepo:                  NixRemoteRepositoryConfig,
 	&NixVirtualRepo:                 NixVirtualRepositoryConfig,
@@ -373,6 +398,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestPoetry:             {&PoetryLocalRepo, &PoetryRemoteRepo},
 		TestUv:                 {&UvLocalRepo, &UvRemoteRepo},
 		TestNix:                {&NixLocalRepo, &NixRemoteRepo},
+		TestAgentPlugins:       {&AgentPluginsLocalRepo},
 		TestConan:              {&ConanLocalRepo, &ConanRemoteRepo},
 		TestHelm:               {&HelmLocalRepo},
 		TestHuggingFace:        {&HuggingFaceLocalRepo},
@@ -405,6 +431,7 @@ func GetVirtualRepositories() map[*string]string {
 		TestPoetry:       {&PoetryVirtualRepo},
 		TestUv:           {&UvVirtualRepo},
 		TestNix:          {&NixVirtualRepo},
+		TestAgentPlugins: {},
 		TestConan:        {&ConanVirtualRepo},
 		TestHelm:         {},
 		TestHuggingFace:  {},
@@ -448,6 +475,7 @@ func GetBuildNames() []string {
 		TestPoetry:       {&PoetryBuildName},
 		TestUv:           {&UvBuildName},
 		TestNix:          {&NixBuildName},
+		TestAgentPlugins: {&AgentPluginsBuildName},
 		TestConan:        {&ConanBuildName},
 		TestHelm:         {&HelmBuildName},
 		TestHuggingFace:  {&HuggingFaceBuildName},
@@ -511,6 +539,7 @@ func getSubstitutionMap() map[string]string {
 		"${UV_LOCAL_REPO}":             UvLocalRepo,
 		"${UV_REMOTE_REPO}":            UvRemoteRepo,
 		"${UV_VIRTUAL_REPO}":           UvVirtualRepo,
+		"${AGENT_PLUGINS_LOCAL_REPO}":  AgentPluginsLocalRepo,
 		"${NIX_LOCAL_REPO}":            NixLocalRepo,
 		"${NIX_REMOTE_REPO}":           NixRemoteRepo,
 		"${NIX_VIRTUAL_REPO}":          NixVirtualRepo,
@@ -587,6 +616,10 @@ func AddTimestampToGlobalVars() {
 	UvLocalRepo += uniqueSuffix
 	UvRemoteRepo += uniqueSuffix
 	UvVirtualRepo += uniqueSuffix
+	AgentPluginsLocalRepo += uniqueSuffix
+	NixLocalRepo += uniqueSuffix
+	NixRemoteRepo += uniqueSuffix
+	NixVirtualRepo += uniqueSuffix
 	ConanLocalRepo += uniqueSuffix
 	ConanRemoteRepo += uniqueSuffix
 	ConanVirtualRepo += uniqueSuffix
@@ -618,6 +651,9 @@ func AddTimestampToGlobalVars() {
 	PipBuildName += uniqueSuffix
 	PipenvBuildName += uniqueSuffix
 	PoetryBuildName += uniqueSuffix
+	AgentPluginsBuildName += uniqueSuffix
+	UvBuildName += uniqueSuffix
+	NixBuildName += uniqueSuffix
 	ConanBuildName += uniqueSuffix
 	HelmBuildName += uniqueSuffix
 	HuggingFaceBuildName += uniqueSuffix
@@ -640,10 +676,35 @@ func AddTimestampToGlobalVars() {
 	Password1 += uniqueSuffix + strconv.FormatFloat(randomSequence.Float64(), 'f', 2, 32)
 	Password2 += uniqueSuffix + strconv.FormatFloat(randomSequence.Float64(), 'f', 2, 32)
 
-	// Projects
-	ProjectKey += timestamp[len(timestamp)-7:]
+	// Projects. The artifactory and lifecycle suites use distinct base keys
+	// (ProjectKey vs LcProjectKey) so neither can delete the other's project
+	// when run concurrently against a shared JPD.
+	ProjectKey = appendProjectKeySuffix(ProjectKey, timestamp)
+	ProjectKey2 = appendProjectKeySuffix(ProjectKey2, timestamp)
 
 	timestampAdded = true
+}
+
+// appendProjectKeySuffix appends a per-run suffix to an Artifactory project-key
+// base. Project keys must be 2-32 chars, lowercase alphanumeric or hyphen, and
+// start with a letter. We always include the sanitized --ci.runId (when set) so
+// that concurrent runs against a shared JPD don't clobber each other's project —
+// createTestProject calls deleteProjectIfExists(<key>) unconditionally, so a
+// colliding key from another concurrent suite would silently delete the project
+// (and every release bundle inside it) out from under us.
+func appendProjectKeySuffix(base, timestamp string) string {
+	suffix := timestamp[len(timestamp)-7:]
+	if sanitizedRunId := SanitizedCiRunId(); sanitizedRunId != "" {
+		suffix = sanitizedRunId + "-" + suffix
+	}
+	// The total must be <= 32. Trim from the front so the trailing timestamp
+	// (used for visual debuggability) is preserved and we don't end up with a
+	// key that starts with a hyphen.
+	const maxProjectKeyLen = 32
+	if maxSuffixLen := maxProjectKeyLen - len(base); len(suffix) > maxSuffixLen {
+		suffix = strings.TrimLeft(suffix[len(suffix)-maxSuffixLen:], "-")
+	}
+	return base + suffix
 }
 
 // Replace all variables in the form of ${VARIABLE} in the input file, according to the substitution map (see getSubstitutionMap()).
