@@ -51,3 +51,11 @@ func TestRubyNoArgsErrors(t *testing.T) {
 	err := jfrogCli.Exec("ruby")
 	assert.Error(t, err)
 }
+
+func TestRubyRepoFlagPassthrough(t *testing.T) {
+	rubyToolAvailable(t, "gem")
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	// --repo is consumed by jf and should not be passed to gem.
+	// `gem help` should still work fine with --repo being stripped.
+	assert.NoError(t, jfrogCli.Exec("ruby", "gem", "help", "--repo", "gems-virtual"))
+}

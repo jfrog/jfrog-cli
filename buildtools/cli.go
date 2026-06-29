@@ -2158,6 +2158,10 @@ func RubyCmd(c *cli.Context) error {
 		return fmt.Errorf("failed to extract server ID: %w", err)
 	}
 
+	// Extract --repo (Artifactory repository name for URL construction).
+	var repo string
+	remainingArgs, repo = extractRubyRepoFromArgs(remainingArgs)
+
 	// Extract build flags (--build-name, --build-number, --module, --project).
 	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(remainingArgs)
 	if err != nil {
@@ -2168,9 +2172,25 @@ func RubyCmd(c *cli.Context) error {
 		SetNativeTool(nativeTool).
 		SetArgs(filteredArgs).
 		SetServerID(serverID).
+		SetRepo(repo).
 		SetBuildConfiguration(buildConfiguration)
 
 	return commands.ExecWithPackageManager(cmd, project.Ruby.String())
+}
+
+// extractRubyRepoFromArgs extracts and consumes --repo <name> from the args slice.
+func extractRubyRepoFromArgs(args []string) (cleanArgs []string, repo string) {
+	for i := 0; i < len(args); i++ {
+		if args[i] == "--repo" && i+1 < len(args) {
+			repo = args[i+1]
+			i++ // skip the value
+		} else if strings.HasPrefix(args[i], "--repo=") {
+			repo = strings.TrimPrefix(args[i], "--repo=")
+		} else {
+			cleanArgs = append(cleanArgs, args[i])
+		}
+	}
+	return cleanArgs, repo
 }
 
 func pythonCmd(c *cli.Context, projectType project.ProjectType) error {

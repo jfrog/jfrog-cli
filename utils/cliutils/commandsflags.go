@@ -2245,7 +2245,7 @@ var commandFlags = map[string][]string{
 		BuildName, BuildNumber, module, Project, serverId,
 	},
 	Ruby: {
-		BuildName, BuildNumber, module, Project, serverId,
+		BuildName, BuildNumber, module, Project, serverId, repo,
 	},
 	Stats: {
 		XrFormat, accessToken, serverId,
