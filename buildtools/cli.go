@@ -5,6 +5,7 @@ import (
 	"fmt"
 	conancommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/conan"
 	nixcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nix"
+	rubycommandexec "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/ruby"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -81,6 +82,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pnpmconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/poetry"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/poetryconfig"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/rubycommand"
 	uvcommand "github.com/jfrog/jfrog-cli/docs/buildtools/uvcommand"
 	yarndocs "github.com/jfrog/jfrog-cli/docs/buildtools/yarn"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/yarnconfig"
@@ -442,6 +444,19 @@ func GetCommands() []cli.Command {
 			Action: func(c *cli.Context) error {
 				return cliutils.CreateConfigCmd(c, project.Ruby)
 			},
+		},
+		{
+			Name:            "ruby",
+			Hidden:          false,
+			Flags:           cliutils.GetCommandFlags(cliutils.Ruby),
+			Usage:           rubycommand.GetDescription(),
+			HelpName:        corecommon.CreateUsage("ruby", rubycommand.GetDescription(), rubycommand.Usage),
+			UsageText:       rubycommand.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Category:        buildToolsCategory,
+			Action:          RubyCmd,
 		},
 		{
 			Name:         "npm-config",
@@ -2116,6 +2131,46 @@ func NixCmd(c *cli.Context) error {
 	}
 
 	return commands.ExecWithPackageManager(cmd, "nix")
+}
+
+// RubyCmd wraps the native 'gem' and 'bundle' tools with Artifactory auth and
+// build-info support. The first argument selects the native tool (gem/bundle);
+// the remainder is passed through. Only --server-id and the build flags are
+// interpreted by jf (config-less native flow, like 'jf uv').
+func RubyCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+	if c.NArg() < 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	args := cliutils.ExtractCommand(c)
+
+	// First arg selects the native tool: "gem" or "bundle".
+	nativeTool, remainingArgs := getCommandName(args)
+
+	// Extract --server-id before passing args to the native tool.
+	var serverID string
+	var err error
+	remainingArgs, serverID, err = coreutils.ExtractServerIdFromCommand(remainingArgs)
+	if err != nil {
+		return fmt.Errorf("failed to extract server ID: %w", err)
+	}
+
+	// Extract build flags (--build-name, --build-number, --module, --project).
+	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(remainingArgs)
+	if err != nil {
+		return err
+	}
+
+	cmd := rubycommandexec.NewRubyCommand().
+		SetNativeTool(nativeTool).
+		SetArgs(filteredArgs).
+		SetServerID(serverID).
+		SetBuildConfiguration(buildConfiguration)
+
+	return commands.ExecWithPackageManager(cmd, project.Ruby.String())
 }
 
 func pythonCmd(c *cli.Context, projectType project.ProjectType) error {

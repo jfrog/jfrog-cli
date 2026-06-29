@@ -89,6 +89,7 @@ const (
 	ConanConfig            = "conan-config"
 	Conan                  = "conan"
 	Nix                    = "nix"
+	Ruby                   = "ruby"
 	Ping                   = "ping"
 	RtCurl                 = "rt-curl"
 	TemplateConsumer       = "template-consumer"
@@ -2241,6 +2242,9 @@ var commandFlags = map[string][]string{
 		BuildName, BuildNumber, module, Project,
 	},
 	Nix: {
+		BuildName, BuildNumber, module, Project, serverId,
+	},
+	Ruby: {
 		BuildName, BuildNumber, module, Project, serverId,
 	},
 	Stats: {
