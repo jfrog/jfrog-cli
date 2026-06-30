@@ -6,9 +6,6 @@ on:
 jobs:
   Evidence-Tests:
     name: Evidence tests (${{ matrix.os }})
-    # TODO: Evidence tests are temporarily disabled due to test failures caused by the Evidence team's dependencies.
-    # Re-enable once the Evidence team resolves the underlying issues.
-    if: false
     strategy:
       fail-fast: false
       matrix:
