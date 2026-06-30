@@ -6,9 +6,6 @@ on:
 jobs:
   Ghost-Frog-Tests:
     name: Ghost Frog tests (${{ matrix.os.name }})
-    # TODO: Ghost Frog tests are temporarily disabled due to failures caused by missing --test.ghostFrog flag definition.
-    # Re-enable once the Ghost Frog team fixes the test infrastructure.
-    if: false
     strategy:
       fail-fast: false
       matrix:
