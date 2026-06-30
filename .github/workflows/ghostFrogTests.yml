@@ -92,7 +92,7 @@ jobs:
           download-repository: ghost-frog-cli
           version: ${{ env.JF_CLI_VERSION }}
           enable-package-alias: true
-          package-alias-tools: npm,mvn,go,pip
+          package-alias-tools: npm,mvn,pip
         env:
           JF_URL: ${{ secrets.PLATFORM_URL }}
           JF_ACCESS_TOKEN: ${{ secrets.PLATFORM_ADMIN_TOKEN }}
