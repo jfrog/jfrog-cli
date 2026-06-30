@@ -3,6 +3,7 @@ package buildtools
 import (
 	"errors"
 	"fmt"
+	cargocommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/cargo"
 	conancommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/conan"
 	nixcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nix"
 	"io/fs"
@@ -53,6 +54,7 @@ import (
 	terraformdocs "github.com/jfrog/jfrog-cli/docs/artifactory/terraform"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/terraformconfig"
 	twinedocs "github.com/jfrog/jfrog-cli/docs/artifactory/twine"
+	cargo "github.com/jfrog/jfrog-cli/docs/buildtools/cargo"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/conan"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/conanconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/docker"
@@ -416,6 +418,19 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
 			Action:          ConanCmd,
+		},
+		{
+			Name:            "cargo",
+			Hidden:          false,
+			Flags:           cliutils.GetCommandFlags(cliutils.Cargo),
+			Usage:           corecommon.ResolveDescription(cargo.GetDescription(), cargo.GetAIDescription()),
+			HelpName:        corecommon.CreateUsage("cargo", corecommon.ResolveDescription(cargo.GetDescription(), cargo.GetAIDescription()), cargo.Usage),
+			UsageText:       cargo.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Category:        buildToolsCategory,
+			Action:          CargoCmd,
 		},
 		{
 			Name:            "nix",
@@ -2069,6 +2084,39 @@ func ConanCmd(c *cli.Context) error {
 	conanCommand := conancommand.NewConanCommand().SetCommandName(cmdName).SetArgs(conanArgs).SetBuildConfiguration(buildConfiguration).SetServerDetails(serverDetails)
 
 	return commands.ExecWithPackageManager(conanCommand, project.Conan.String())
+}
+
+func CargoCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+	if c.NArg() < 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	args := cliutils.ExtractCommand(c)
+
+	args, serverID, err := coreutils.ExtractServerIdFromCommand(args)
+	if err != nil {
+		return fmt.Errorf("failed to extract server ID: %w", err)
+	}
+	serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, false)
+	if err != nil {
+		return err
+	}
+
+	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
+	if err != nil {
+		return err
+	}
+
+	cmdName, cargoArgs := getCommandName(filteredArgs)
+
+	cargoCommand := cargocommand.NewCargoCommand().
+		SetCommandName(cmdName).SetArgs(cargoArgs).
+		SetBuildConfiguration(buildConfiguration).SetServerDetails(serverDetails)
+
+	return commands.ExecWithPackageManager(cargoCommand, "cargo")
 }
 
 func NixCmd(c *cli.Context) error {
