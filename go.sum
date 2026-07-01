@@ -398,8 +398,8 @@ github.com/jfrog/archiver/v3 v3.6.3 h1:hkAmPjBw393tPmQ07JknLNWFNZjXdy2xFEnOW9wwO
 github.com/jfrog/archiver/v3 v3.6.3/go.mod h1:5V9l+Fte30Y4qe9dUOAd3yNTf8lmtVNuhKNrvI8PMhg=
 github.com/jfrog/build-info-go v1.13.1-0.20260615080618-42488b58c305 h1:q7/hTPm6ibQf45CztScTgPb8cAmKIeQ9im0ClISsq7Y=
 github.com/jfrog/build-info-go v1.13.1-0.20260615080618-42488b58c305/go.mod h1:CYRUCvLKfyARjoJXLWAxce1qNUxTEtbRKAARkV42vpE=
-github.com/jfrog/froggit-go v1.22.0 h1:eeN5F8sOUo+h2cXkzArAu4nvSdjkDTAZtgqwrct70qg=
-github.com/jfrog/froggit-go v1.22.0/go.mod h1:wRDryqyp3oe+eHgME2mpnEQmO8XBECIPagFwj0nHmdI=
+github.com/jfrog/froggit-go v1.23.0 h1:HGNIP9ZqoXKXHQONazhCENqIrFLfc8J3aX/F0QelQ2s=
+github.com/jfrog/froggit-go v1.23.0/go.mod h1:wRDryqyp3oe+eHgME2mpnEQmO8XBECIPagFwj0nHmdI=
 github.com/jfrog/go-mockhttp v0.3.1 h1:/wac8v4GMZx62viZmv4wazB5GNKs+GxawuS1u3maJH8=
 github.com/jfrog/go-mockhttp v0.3.1/go.mod h1:LmKHex73SUZswM8ANS8kPxLihTOvtq44HVcCoTJKuqc=
 github.com/jfrog/gofrog v1.7.6 h1:QmfAiRzVyaI7JYGsB7cxfAJePAZTzFz0gRWZSE27c6s=
@@ -416,8 +416,8 @@ github.com/jfrog/jfrog-cli-evidence v0.9.5-0.20260618135203-4d2bdd4ee35f h1:MV4B
 github.com/jfrog/jfrog-cli-evidence v0.9.5-0.20260618135203-4d2bdd4ee35f/go.mod h1:t2luv7YHtrKe/Yf1xLZgLOkkiPtk1DsKj0OLXL2GwYo=
 github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260618062042-6053ab368cab h1:Zn/qB8LYhSu82YDtbqXwErN1RPHTHe/a3gQY6Ti/OBE=
 github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260618062042-6053ab368cab/go.mod h1:lVUeZtlvrLKJRsoSu8OPN9mJ+bfeq9zSESNYao2Jgo8=
-github.com/jfrog/jfrog-cli-security v1.31.0 h1:YvFzfX29k0jonh2HrgQYqoje+nfyv36dR5ED/9rSZHY=
-github.com/jfrog/jfrog-cli-security v1.31.0/go.mod h1:TVQqBGnvVqCO6+CebV+JkOM/LgisdHv4oK3gCFDkKg8=
+github.com/jfrog/jfrog-cli-security v1.31.1 h1:rsUznIddC6NnQxBF8nBRTrnwP0MbsETjqpUbYDfl4Vw=
+github.com/jfrog/jfrog-cli-security v1.31.1/go.mod h1:XbeN5hFnbn/cj9YQ2ym2uxKgnRqj0HNfq6haJIYupdk=
 github.com/jfrog/jfrog-client-go v1.55.1-0.20260624085832-de0c68a23c43 h1:akoiWauP27YxVXcRkCC8ahgDLxqiARUAVEB+KUPO2OE=
 github.com/jfrog/jfrog-client-go v1.55.1-0.20260624085832-de0c68a23c43/go.mod h1:FHpjN1nTDoj96xd6obe27EOgGErqzU0rQgC96L3Ch9E=
 github.com/jhump/protoreflect v1.17.0 h1:qOEr613fac2lOuTgWN4tPAtLL7fUSbuJL5X5XumQh94=
