@@ -1609,7 +1609,7 @@ func TestDockerPushWithLocalGitVcsProps(t *testing.T) {
 	runJfrogCli(t, "rt", "bc", buildName, buildNumber)
 	runJfrogCli(t, "docker", "build", "-t", imageTag, "--push", "-f", dockerfilePath,
 		"--build-name="+buildName, "--build-number="+buildNumber, workspace)
-	runRt(t, "build-publish", buildName, buildNumber)
+	runRt(t, "build-publish", buildName, buildNumber, "--dot-git-path", workspace)
 
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
 	require.NoError(t, err)

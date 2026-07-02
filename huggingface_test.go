@@ -902,7 +902,7 @@ func TestHuggingFaceUploadWithLocalGitVcsProps(t *testing.T) {
 		"--repo-key=" + tests.HuggingFaceLocalRepo,
 	}
 	require.NoError(t, jfrogCli.Exec(args...))
-	require.NoError(t, jfrogCli.Exec("rt", "bp", buildName, buildNumber))
+	require.NoError(t, jfrogCli.Exec("rt", "bp", buildName, buildNumber, "--dot-git-path", tempDir))
 
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
 	require.NoError(t, err)
