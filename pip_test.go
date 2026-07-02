@@ -777,3 +777,75 @@ func TestTwineBuildPublishWithCIVcsProps(t *testing.T) {
 
 	assert.Greater(t, artifactCount, 0, "No artifacts were validated for CI VCS properties")
 }
+
+func TestTwinePublishWithLocalGitVcsProps(t *testing.T) {
+	initPipTest(t)
+
+	buildName := tests.PipBuildName + "-local-git"
+	buildNumber := "1"
+
+	cleanupEnv := tests.SetupLocalGitVcsEnv(t)
+	defer cleanupEnv()
+
+	oldHomeDir, newHomeDir := prepareHomeDir(t)
+	defer func() {
+		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
+		clientTestUtils.RemoveAllAndAssert(t, newHomeDir)
+	}()
+
+	cleanVirtualEnv, err := prepareVirtualEnv(t)
+	require.NoError(t, err)
+	defer cleanVirtualEnv()
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	projectPath := createPypiProject(t, "twine-local-git", "pyproject", "twine")
+	tests.CopyGitFixtureIntoProject(t, projectPath)
+
+	pyproject := filepath.Join(projectPath, "pyproject.toml")
+	content, err := os.ReadFile(pyproject)
+	require.NoError(t, err)
+	patched := strings.ReplaceAll(string(content), `version = "1.0"`, `version = "1.0.1+localgit"`)
+	require.NoError(t, os.WriteFile(pyproject, []byte(patched), 0o644)) //#nosec G703 -- test code, path built from createPypiProject temp dir
+
+	distDir := filepath.Join(projectPath, "dist")
+	require.NoError(t, os.RemoveAll(distDir))
+	require.NoError(t, os.MkdirAll(distDir, 0o755))
+
+	installBuild := exec.Command("python", "-m", "pip", "install", "build")
+	installBuild.Dir = projectPath
+	installOut, err := installBuild.CombinedOutput()
+	require.NoError(t, err, "pip install build failed: %s", installOut)
+
+	// --outdir is relative to buildCmd.Dir (projectPath), not the process CWD.
+	buildCmd := exec.Command("python", "-m", "build", "--outdir", "dist")
+	buildCmd.Dir = projectPath
+	buildOut, err := buildCmd.CombinedOutput()
+	require.NoError(t, err, "python build failed: %s", buildOut)
+
+	entries, err := os.ReadDir(distDir)
+	require.NoError(t, err)
+	require.NotEmpty(t, entries, "dist must contain built artifacts after python -m build")
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	require.NoError(t, jfrogCli.Exec("twine", "upload", "dist/*",
+		"--build-name="+buildName, "--build-number="+buildNumber))
+	require.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	require.NoError(t, err)
+	require.True(t, found)
+
+	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
+	require.NoError(t, err)
+
+	count := tests.ValidateLocalGitVcsPropsOnBuildInfoArtifacts(t, serviceManager, publishedBuildInfo, tests.PypiVirtualRepo,
+		tests.VcsFixtureMainURL, tests.VcsFixtureMainRevision, tests.VcsFixtureMainBranch)
+	assert.Greater(t, count, 0)
+}
