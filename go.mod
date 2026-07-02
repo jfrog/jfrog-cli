@@ -21,7 +21,7 @@ require (
 	github.com/jfrog/build-info-go v1.13.1-0.20260615080618-42488b58c305
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-application v1.0.2-0.20260621072921-cadb78770a3e
-	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260701085637-6ba50cd3676f
+	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260702071632-62c27c48b207
 	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260624085155-5ba797de2616
 	github.com/jfrog/jfrog-cli-evidence v0.9.5-0.20260618135203-4d2bdd4ee35f
 	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260618062042-6053ab368cab
@@ -242,8 +242,7 @@ require (
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
 
-// attiasas:expend_vsc_detection
-replace github.com/jfrog/jfrog-cli-artifactory => github.com/attiasas/jfrog-cli-artifactory v0.0.0-20260701102442-59ed24167b6c
+// replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory main
 
 //replace github.com/gfleury/go-bitbucket-v1 => github.com/gfleury/go-bitbucket-v1 v0.0.0-20230825095122-9bc1711434ab
 
