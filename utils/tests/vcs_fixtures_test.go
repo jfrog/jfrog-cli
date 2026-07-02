@@ -16,8 +16,7 @@ func TestCopyGitFixtureIntoProject_WorksAfterChdir(t *testing.T) {
 	subDir := filepath.Join(projectDir, "nested")
 	require.NoError(t, os.MkdirAll(subDir, 0o755))
 
-	// Simulate prepareGoProject
-	// Leaving cwd inside the project tree.
+	// Simulate prepareGoProject leaving cwd inside the project tree.
 	require.NoError(t, os.Chdir(subDir))
 	t.Cleanup(func() { _ = os.Chdir(repoRoot) })
 
