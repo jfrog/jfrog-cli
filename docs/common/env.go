@@ -65,7 +65,9 @@ const (
 		Configured Artifactory repository name from which to download the jar needed by the mvn/gradle command.
 		This environment variable's value format should be <server ID configured by the 'jf c add' command>/<repo name>.
 
-		The repository should proxy https://releases.jfrog.io.
+		The repository must be a remote generic repository that proxies the root of https://releases.jfrog.io (not a sub-path).
+		JFrog CLI automatically appends 'artifactory/oss-release-local/<path>' to the download URL, so the resulting request is:
+		    <artifactory-url>/<repo name>/artifactory/oss-release-local/<path>
 		This environment variable is used by the 'jf mvn' and 'jf gradle' commands, and also by the 'jf audit' command, when used for maven or gradle projects.`
 
 	JfrogCliDependenciesDir = `	JFROG_CLI_DEPENDENCIES_DIR
