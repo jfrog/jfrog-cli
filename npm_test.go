@@ -309,7 +309,6 @@ func appendRegistryAuthToNpmrc(t *testing.T, registryURL string) error {
 	return err
 }
 
-
 func readModuleId(t *testing.T, wd string, npmVersion *version.Version) string {
 	packageInfo, err := buildutils.ReadPackageInfoFromPackageJsonIfExists(filepath.Dir(wd), npmVersion)
 	assert.NoError(t, err)
@@ -482,7 +481,6 @@ func initNpmProjectTest(t *testing.T) (npmProjectPath string) {
 	prepareArtifactoryForNpmBuild(t, npmProjectPath)
 	return
 }
-
 
 func initNpmWorkspacesProjectTest(t *testing.T) (npmProjectPath string) {
 	npmProjectPath = filepath.Dir(createNpmProject(t, "npmworkspaces"))
@@ -1647,4 +1645,44 @@ func TestNpmBuildPublishWithCIVcsProps(t *testing.T) {
 		}
 	}
 	assert.Greater(t, artifactCount, 0, "No artifacts in build info")
+}
+
+// TestNpmPublishWithLocalGitVcsProps verifies local git VCS props on npm artifacts
+// when running publish followed by build-publish with VCS collection enabled and no CI env.
+func TestNpmPublishWithLocalGitVcsProps(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+
+	buildName := "npm-local-git-test"
+	buildNumber := "1"
+
+	cleanupEnv := tests.SetupLocalGitVcsEnv(t)
+	defer cleanupEnv()
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+
+	npmPath := initNpmProjectTest(t)
+	tests.CopyGitFixtureIntoProject(t, npmPath)
+	chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, npmPath)
+	defer chdirCallBack()
+
+	runJfrogCli(t, "npm", "publish", "--build-name="+buildName, "--build-number="+buildNumber)
+	require.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	require.NoError(t, err)
+	require.True(t, found)
+
+	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
+	require.NoError(t, err)
+
+	count := tests.ValidateLocalGitVcsPropsOnBuildInfoArtifacts(t, serviceManager, publishedBuildInfo, tests.NpmRepo,
+		tests.VcsFixtureMainURL, tests.VcsFixtureMainRevision, tests.VcsFixtureMainBranch)
+	assert.Greater(t, count, 0)
 }
