@@ -1234,6 +1234,42 @@ func TestBuildPublishWithCIVcsProps(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+// TestBuildPublishWithLocalGitVcsProps verifies build-publish sets local git VCS props
+// when CI env is absent but VCS collection is enabled.
+func TestBuildPublishWithLocalGitVcsProps(t *testing.T) {
+	initArtifactoryTest(t, "")
+	buildName := tests.RtBuildName1 + "-local-git"
+	buildNumber := "1"
+
+	cleanupEnv := tests.SetupLocalGitVcsEnv(t)
+	defer cleanupEnv()
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	testDir := tests.CopyVcsGitFixture(t, tests.Temp)
+	runRt(t, "upload", filepath.Join(testDir, "a1.in"), tests.RtRepo1+"/local-git-bp/", "--flat=true",
+		"--build-name="+buildName, "--build-number="+buildNumber)
+
+	runRt(t, "build-publish", buildName, buildNumber, "--dot-git-path", testDir)
+
+	resultItems := getResultItemsFromArtifactory(tests.SearchAllRepo1, t)
+	require.Greater(t, len(resultItems), 0)
+
+	var uploaded []rtutils.ResultItem
+	for _, item := range resultItems {
+		if item.Name == "a1.in" {
+			uploaded = append(uploaded, item)
+		}
+	}
+	require.NotEmpty(t, uploaded)
+
+	tests.ValidateLocalGitVcsPropsOnArtifacts(t, uploaded,
+		tests.VcsFixtureMainURL, tests.VcsFixtureMainRevision, tests.VcsFixtureMainBranch)
+
+	cleanArtifactoryTest()
+}
+
 // TestBuildPublishWithoutCI tests that CI VCS properties are NOT set on artifacts
 // when running build-publish outside of a CI environment.
 func TestBuildPublishWithoutCI(t *testing.T) {
