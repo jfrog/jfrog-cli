@@ -28,36 +28,13 @@ on:
 jobs:
   Apk-Tests:
     name: Alpine APK tests
-    # The entire job runs inside golang:alpine so `apk` is natively on PATH —
-    # no explicit `docker run` step needed.
-    # Artifactory runs as a service container alongside the job and is reachable
-    # at http://artifactory:8081 from within the job container.
+    # Runs on Ubuntu so install-local-artifactory (which needs Docker) works
+    # exactly like every other test suite.
+    # The actual `go test` step runs inside golang:alpine so `apk` is natively
+    # on PATH — the only place Docker is used in this workflow.
     runs-on: ubuntu-24.04
-    container:
-      image: golang:alpine
-      options: --user root
-
-    services:
-      artifactory:
-        image: releases-docker.jfrog.io/jfrog/artifactory-oss:latest
-        env:
-          # Skips the initial setup wizard so the instance is ready immediately.
-          ARTIFACTORY_HOME: /var/opt/jfrog/artifactory
-        ports:
-          - 8081:8081
-          - 8082:8082
-        options: >-
-          --health-cmd "curl -sf http://localhost:8081/artifactory/api/system/ping || exit 1"
-          --health-interval 15s
-          --health-timeout 10s
-          --health-retries 40
-          --health-start-period 90s
 
     steps:
-      # golang:alpine is minimal — install the tools required by checkout and the tests.
-      - name: Install prerequisites
-        run: apk add --no-cache git curl bash
-
       - name: Checkout code
         uses: actions/checkout@v6
         with:
@@ -69,51 +46,33 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           fastci_otel_token: ${{ secrets.FASTCI_TOKEN }}
 
-      # When an external JFrog platform is supplied via inputs, use it directly.
-      # Otherwise bootstrap the local Artifactory service container.
-      - name: Set Artifactory URL and token (external platform)
-        if: inputs.jfrog_url != ''
-        run: |
-          echo "RT_URL=${{ inputs.jfrog_url }}" >> $GITHUB_ENV
-          echo "RT_TOKEN=${{ inputs.jfrog_admin_token }}" >> $GITHUB_ENV
+      - name: Setup Go with cache
+        uses: jfrog/.github/actions/install-go-with-cache@main
 
-      - name: Wait for local Artifactory to be ready
-        if: inputs.jfrog_url == ''
-        run: |
-          echo "Waiting for Artifactory service container..."
-          until curl -sf http://artifactory:8081/artifactory/api/system/ping; do
-            echo "  still starting, retrying in 10s..."
-            sleep 10
-          done
-          echo "Artifactory is up."
-
-      - name: Bootstrap local Artifactory (set admin password + create access token)
-        if: inputs.jfrog_url == ''
-        env:
+      - name: Install local Artifactory
+        uses: jfrog/.github/actions/install-local-artifactory@main
+        with:
           RTLIC: ${{ secrets.RTLIC }}
-        run: |
-          # Install the license if supplied (required for Pro/Enterprise features).
-          if [ -n "$RTLIC" ]; then
-            curl -sf -u admin:password \
-              -X POST "http://artifactory:8081/artifactory/api/system/licenses" \
-              -H "Content-Type: application/json" \
-              -d "{\"licenseKey\":\"$RTLIC\"}" || true
-          fi
-
-          # Generate a scoped admin access token.
-          TOKEN=$(curl -sf -u admin:password \
-            -X POST "http://artifactory:8081/access/api/v1/tokens" \
-            -H "Content-Type: application/json" \
-            -d '{"username":"admin","scope":"applied-permissions/admin","expires_in":7200}' \
-            | grep -o '"access_token":"[^"]*"' | cut -d'"' -f4)
-
-          echo "RT_URL=http://artifactory:8081/artifactory/" >> $GITHUB_ENV
-          echo "RT_TOKEN=${TOKEN}" >> $GITHUB_ENV
+          JFROG_URL: ${{ inputs.jfrog_url }}
+          JFROG_ADMIN_TOKEN: ${{ inputs.jfrog_admin_token }}
+          RT_CONNECTION_TIMEOUT_SECONDS: '1200'
 
       - name: Run Alpine APK tests
+        # golang:alpine provides the native `apk` binary.
+        # --network host lets the container reach the Artifactory instance on localhost:8081.
+        # The Go module and build caches are mounted so the image reuses what
+        # install-go-with-cache already downloaded — no duplicate downloads.
         run: |
-          go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.apk \
-            --jfrog.url="${RT_URL}" \
-            --jfrog.adminToken="${RT_TOKEN}"
-        env:
-          CGO_ENABLED: "0"
+          docker run --rm \
+            --network host \
+            --user root \
+            -v "${{ github.workspace }}:/workspace" \
+            -v "${{ env.GOPATH }}/pkg/mod:/root/go/pkg/mod" \
+            -v "${{ env.GOCACHE }}:/root/.cache/go-build" \
+            -w /workspace \
+            -e CGO_ENABLED=0 \
+            -e GOPATH=/root/go \
+            -e GOCACHE=/root/.cache/go-build \
+            golang:alpine \
+            go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.apk \
+              ${{ env.JFROG_TESTS_IS_EXTERNAL == 'true' && format('--jfrog.url={0} --jfrog.adminToken={1}', env.JFROG_TESTS_URL, env.JFROG_TESTS_LOCAL_ACCESS_TOKEN) || '' }}
