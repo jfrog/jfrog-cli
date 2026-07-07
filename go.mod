@@ -242,8 +242,7 @@ require (
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
 
-// attiasas:expend_vsc_detection_for_container
-replace github.com/jfrog/jfrog-cli-artifactory => github.com/attiasas/jfrog-cli-artifactory v0.0.0-20260702092235-dd9a29acd55e
+// replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory main
 
 //replace github.com/gfleury/go-bitbucket-v1 => github.com/gfleury/go-bitbucket-v1 v0.0.0-20230825095122-9bc1711434ab
 
