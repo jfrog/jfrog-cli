@@ -109,7 +109,7 @@ jobs:
     needs: gate
     uses: ./.github/workflows/nixTests.yml
     secrets: inherit
-  apk:
+  alpine:
     needs: gate
     uses: ./.github/workflows/apkTests.yml
     secrets: inherit
@@ -187,7 +187,7 @@ jobs:
       - lifecycle
       - maven
       - nix
-      - apk
+      - alpine
       - npm
       - nuget
       - oidc

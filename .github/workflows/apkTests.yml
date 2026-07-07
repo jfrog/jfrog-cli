@@ -47,12 +47,16 @@ on:
 
 jobs:
   Apk-Tests:
-    name: Alpine APK tests
-    # Runs on Ubuntu so install-local-artifactory (which needs Docker) works
-    # exactly like every other test suite.
-    # jirutka/setup-alpine creates an Alpine chroot on the Ubuntu runner so
-    # `apk` is natively available in the test step — no Docker commands needed.
+    name: Alpine APK tests (${{ matrix.alpine-version }})
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        alpine-version:
+          - v3.18
+          - v3.19
+          - v3.20
+          - v3.21
 
     steps:
       - name: Checkout code
@@ -69,17 +73,14 @@ jobs:
       - name: Setup Go with cache
         uses: jfrog/.github/actions/install-go-with-cache@main
 
-      # install-local-artifactory handles both cases:
-      #   • JFROG_URL empty  → starts a local Artifactory Docker container
-      #   • JFROG_URL set    → skips starting a container, exports
-      #                         JFROG_TESTS_IS_EXTERNAL=true + JFROG_TESTS_URL
-      #                         + JFROG_TESTS_LOCAL_ACCESS_TOKEN for the test step
+      # Only start a local Artifactory when no external platform is supplied.
+      # When jfrog_url is provided the tests point directly at that instance
+      # and there is no need to spin up Docker.
       - name: Install local Artifactory
+        if: inputs.jfrog_url == ''
         uses: jfrog/.github/actions/install-local-artifactory@main
         with:
           RTLIC: ${{ secrets.RTLIC }}
-          JFROG_URL: ${{ inputs.jfrog_url }}
-          JFROG_ADMIN_TOKEN: ${{ inputs.jfrog_admin_token }}
           RT_CONNECTION_TIMEOUT_SECONDS: '1200'
 
       # Set up an Alpine Linux chroot on the Ubuntu runner.
@@ -88,18 +89,16 @@ jobs:
       - name: Setup Alpine environment
         uses: jirutka/setup-alpine@v1
         with:
+          branch: ${{ matrix.alpine-version }}
           # go  — required to compile and run the test suite inside Alpine
           # git — required by the Go toolchain for module downloads
           packages: go git
 
       - name: Run Alpine APK tests
         shell: alpine.sh {0}
-        # ${{ env.X }} expressions are evaluated by the Actions runner before
-        # the shell executes, so env-vars set by install-local-artifactory are
-        # inlined as literal strings — they don't need explicit -e flags.
         run: |
           go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.alpine \
-            ${{ env.JFROG_TESTS_IS_EXTERNAL == 'true' && format('--jfrog.url={0} --jfrog.adminToken={1}', env.JFROG_TESTS_URL, env.JFROG_TESTS_LOCAL_ACCESS_TOKEN) || '' }} \
+            ${{ inputs.jfrog_url != '' && format('--jfrog.url={0} --jfrog.adminToken={1}', inputs.jfrog_url, inputs.jfrog_admin_token) || '' }} \
             ${{ inputs.jfrog_user != '' && format('--jfrog.user={0}', inputs.jfrog_user) || '' }} \
             ${{ inputs.jfrog_password != '' && format('--jfrog.password={0}', inputs.jfrog_password) || '' }}
         env:
