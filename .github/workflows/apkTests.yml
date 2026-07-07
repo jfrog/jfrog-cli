@@ -1,0 +1,86 @@
+name: Alpine APK Tests
+on:
+  workflow_call:
+    inputs:
+      jfrog_url:
+        description: "External JFrog Platform URL. Leave empty for local Artifactory."
+        type: string
+        required: false
+        default: ""
+      jfrog_admin_token:
+        description: "Admin token for external JFrog Platform."
+        type: string
+        required: false
+        default: ""
+  workflow_dispatch:
+    inputs:
+      jfrog_url:
+        description: "External JFrog Platform URL. Leave empty for local Artifactory."
+        type: string
+        required: false
+        default: ""
+      jfrog_admin_token:
+        description: "Admin token for external JFrog Platform."
+        type: string
+        required: false
+        default: ""
+
+jobs:
+  Apk-Tests:
+    name: Alpine APK tests
+    # APK tests require the `apk` binary, which is only available on Alpine Linux.
+    # The job runs on Ubuntu (for Docker + Artifactory support), then executes
+    # `go test` inside a golang:alpine container that has `apk` natively.
+    # The container shares the host network so it can reach the local Artifactory
+    # instance started by install-local-artifactory.
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
+
+      - name: Setup FastCI
+        uses: jfrog-fastci/fastci@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          fastci_otel_token: ${{ secrets.FASTCI_TOKEN }}
+
+      - name: Setup Go with cache
+        uses: jfrog/.github/actions/install-go-with-cache@main
+
+      - name: Install local Artifactory
+        uses: jfrog/.github/actions/install-local-artifactory@main
+        with:
+          RTLIC: ${{ secrets.RTLIC }}
+          JFROG_URL: ${{ inputs.jfrog_url }}
+          JFROG_ADMIN_TOKEN: ${{ inputs.jfrog_admin_token }}
+          RT_CONNECTION_TIMEOUT_SECONDS: '1200'
+
+      # Pull the Alpine image ahead of the test step so the pull time is visible
+      # separately in the workflow log and does not inflate the test duration.
+      - name: Pull golang:alpine image
+        run: docker pull golang:alpine
+
+      - name: Run Alpine APK tests
+        # Run `go test` inside a golang:alpine container so that the `apk` binary
+        # is present on PATH.  Key flags:
+        #   --network host      — lets the container reach localhost:8081 (Artifactory)
+        #   -v …:/workspace     — mounts the checked-out source tree
+        #   CGO_ENABLED=0       — ensures a fully static binary (no musl/glibc mismatch)
+        #   GOPATH/GOCACHE      — reuse the Go cache populated by install-go-with-cache
+        run: |
+          docker run --rm \
+            --network host \
+            --user root \
+            -v "${{ github.workspace }}:/workspace" \
+            -v "${{ env.GOPATH }}/pkg/mod:/root/go/pkg/mod" \
+            -v "${{ env.GOCACHE }}:/root/.cache/go-build" \
+            -w /workspace \
+            -e CGO_ENABLED=0 \
+            -e GOPATH=/root/go \
+            -e GOCACHE=/root/.cache/go-build \
+            golang:alpine \
+            go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.apk \
+              ${{ env.JFROG_TESTS_IS_EXTERNAL == 'true' && format('--jfrog.url={0} --jfrog.adminToken={1}', env.JFROG_TESTS_URL, env.JFROG_TESTS_LOCAL_ACCESS_TOKEN) || '' }}
