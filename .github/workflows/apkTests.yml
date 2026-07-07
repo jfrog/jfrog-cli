@@ -12,6 +12,16 @@ on:
         type: string
         required: false
         default: ""
+      jfrog_user:
+        description: "Username for external JFrog Platform."
+        type: string
+        required: false
+        default: ""
+      jfrog_password:
+        description: "Password for external JFrog Platform."
+        type: string
+        required: false
+        default: ""
   workflow_dispatch:
     inputs:
       jfrog_url:
@@ -24,14 +34,24 @@ on:
         type: string
         required: false
         default: ""
+      jfrog_user:
+        description: "Username for external JFrog Platform."
+        type: string
+        required: false
+        default: ""
+      jfrog_password:
+        description: "Password for external JFrog Platform."
+        type: string
+        required: false
+        default: ""
 
 jobs:
   Apk-Tests:
     name: Alpine APK tests
     # Runs on Ubuntu so install-local-artifactory (which needs Docker) works
     # exactly like every other test suite.
-    # The actual `go test` step runs inside golang:alpine so `apk` is natively
-    # on PATH — the only place Docker is used in this workflow.
+    # jirutka/setup-alpine creates an Alpine chroot on the Ubuntu runner so
+    # `apk` is natively available in the test step — no Docker commands needed.
     runs-on: ubuntu-24.04
 
     steps:
@@ -49,6 +69,11 @@ jobs:
       - name: Setup Go with cache
         uses: jfrog/.github/actions/install-go-with-cache@main
 
+      # install-local-artifactory handles both cases:
+      #   • JFROG_URL empty  → starts a local Artifactory Docker container
+      #   • JFROG_URL set    → skips starting a container, exports
+      #                         JFROG_TESTS_IS_EXTERNAL=true + JFROG_TESTS_URL
+      #                         + JFROG_TESTS_LOCAL_ACCESS_TOKEN for the test step
       - name: Install local Artifactory
         uses: jfrog/.github/actions/install-local-artifactory@main
         with:
@@ -57,22 +82,25 @@ jobs:
           JFROG_ADMIN_TOKEN: ${{ inputs.jfrog_admin_token }}
           RT_CONNECTION_TIMEOUT_SECONDS: '1200'
 
+      # Set up an Alpine Linux chroot on the Ubuntu runner.
+      # Steps that use `shell: alpine.sh {0}` run inside this chroot,
+      # giving native access to the `apk` binary without a Docker container.
+      - name: Setup Alpine environment
+        uses: jirutka/setup-alpine@v1
+        with:
+          # go  — required to compile and run the test suite inside Alpine
+          # git — required by the Go toolchain for module downloads
+          packages: go git
+
       - name: Run Alpine APK tests
-        # golang:alpine provides the native `apk` binary.
-        # --network host lets the container reach the Artifactory instance on localhost:8081.
-        # The Go module and build caches are mounted so the image reuses what
-        # install-go-with-cache already downloaded — no duplicate downloads.
+        shell: alpine.sh {0}
+        # ${{ env.X }} expressions are evaluated by the Actions runner before
+        # the shell executes, so env-vars set by install-local-artifactory are
+        # inlined as literal strings — they don't need explicit -e flags.
         run: |
-          docker run --rm \
-            --network host \
-            --user root \
-            -v "${{ github.workspace }}:/workspace" \
-            -v "${{ env.GOPATH }}/pkg/mod:/root/go/pkg/mod" \
-            -v "${{ env.GOCACHE }}:/root/.cache/go-build" \
-            -w /workspace \
-            -e CGO_ENABLED=0 \
-            -e GOPATH=/root/go \
-            -e GOCACHE=/root/.cache/go-build \
-            golang:alpine \
-            go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.apk \
-              ${{ env.JFROG_TESTS_IS_EXTERNAL == 'true' && format('--jfrog.url={0} --jfrog.adminToken={1}', env.JFROG_TESTS_URL, env.JFROG_TESTS_LOCAL_ACCESS_TOKEN) || '' }}
+          go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.alpine \
+            ${{ env.JFROG_TESTS_IS_EXTERNAL == 'true' && format('--jfrog.url={0} --jfrog.adminToken={1}', env.JFROG_TESTS_URL, env.JFROG_TESTS_LOCAL_ACCESS_TOKEN) || '' }} \
+            ${{ inputs.jfrog_user != '' && format('--jfrog.user={0}', inputs.jfrog_user) || '' }} \
+            ${{ inputs.jfrog_password != '' && format('--jfrog.password={0}', inputs.jfrog_password) || '' }}
+        env:
+          CGO_ENABLED: "0"

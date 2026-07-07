@@ -71,7 +71,7 @@ var (
 	TestPoetry                *bool
 	TestUv                    *bool
 	TestNix                   *bool
-	TestApk                   *bool
+	TestAlpine                *bool
 	TestAgentPlugins          *bool
 	TestConan                 *bool
 	TestHelm                  *bool
@@ -140,7 +140,7 @@ func init() {
 	TestPoetry = flag.Bool("test.poetry", false, "Test Poetry")
 	TestUv = flag.Bool("test.uv", false, "Test UV")
 	TestNix = flag.Bool("test.nix", false, "Test Nix")
-	TestApk = flag.Bool("test.apk", false, "Test Alpine APK")
+	TestAlpine = flag.Bool("test.alpine", false, "Test Alpine APK")
 	TestAgentPlugins = flag.Bool("test.agentPlugins", false, "Test Agent Plugins")
 	TestConan = flag.Bool("test.conan", false, "Test Conan")
 	TestHelm = flag.Bool("test.helm", false, "Test Helm")
@@ -403,7 +403,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestPoetry:             {&PoetryLocalRepo, &PoetryRemoteRepo},
 		TestUv:                 {&UvLocalRepo, &UvRemoteRepo},
 		TestNix:                {&NixLocalRepo, &NixRemoteRepo},
-		TestApk:                {&AlpineLocalRepo, &AlpineRemoteRepo},
+		TestAlpine:             {&AlpineLocalRepo, &AlpineRemoteRepo},
 		TestAgentPlugins:       {&AgentPluginsLocalRepo},
 		TestConan:              {&ConanLocalRepo, &ConanRemoteRepo},
 		TestHelm:               {&HelmLocalRepo},
@@ -437,7 +437,7 @@ func GetVirtualRepositories() map[*string]string {
 		TestPoetry:       {&PoetryVirtualRepo},
 		TestUv:           {&UvVirtualRepo},
 		TestNix:          {&NixVirtualRepo},
-		TestApk:          {&AlpineVirtualRepo},
+		TestAlpine:       {&AlpineVirtualRepo},
 		TestAgentPlugins: {},
 		TestConan:        {&ConanVirtualRepo},
 		TestHelm:         {},
@@ -482,7 +482,7 @@ func GetBuildNames() []string {
 		TestPoetry:       {&PoetryBuildName},
 		TestUv:           {&UvBuildName},
 		TestNix:          {&NixBuildName},
-		TestApk:          {&ApkBuildName},
+		TestAlpine:       {&AlpineBuildName},
 		TestAgentPlugins: {&AgentPluginsBuildName},
 		TestConan:        {&ConanBuildName},
 		TestHelm:         {&HelmBuildName},
@@ -668,7 +668,7 @@ func AddTimestampToGlobalVars() {
 	AgentPluginsBuildName += uniqueSuffix
 	UvBuildName += uniqueSuffix
 	NixBuildName += uniqueSuffix
-	ApkBuildName += uniqueSuffix
+	AlpineBuildName += uniqueSuffix
 	ConanBuildName += uniqueSuffix
 	HelmBuildName += uniqueSuffix
 	HuggingFaceBuildName += uniqueSuffix

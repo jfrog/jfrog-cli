@@ -272,7 +272,7 @@ var (
 	UvBuildName                 = "cli-uv-build"
 	AgentPluginsBuildName       = "cli-agent-plugins-build"
 	NixBuildName                = "cli-nix-build"
-	ApkBuildName                = "cli-apk-build"
+	AlpineBuildName             = "cli-alpine-build"
 	ConanBuildName              = "cli-conan-build"
 	HelmBuildName               = "cli-helm-build"
 	HuggingFaceBuildName        = "cli-huggingface-build"
