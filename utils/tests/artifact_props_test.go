@@ -65,3 +65,12 @@ func TestArtifactItemPath_EmptyPathDoesNotDoubleSlash(t *testing.T) {
 	a := buildinfo.Artifact{Path: "", Name: "config.json"}
 	assert.Equal(t, "my-repo/config.json", ArtifactItemPath(a, "my-repo"))
 }
+
+func TestArtifactItemPath_NpmTarballPathDoesNotAppendName(t *testing.T) {
+	a := buildinfo.Artifact{
+		OriginalDeploymentRepo: "cli-npm-123",
+		Path:                   "jfrog-cli-tests/-/jfrog-cli-tests-1.0.0.tgz",
+		Name:                   "jfrog-cli-tests-v1.0.0.tgz",
+	}
+	assert.Equal(t, "cli-npm-123/jfrog-cli-tests/-/jfrog-cli-tests-1.0.0.tgz", ArtifactItemPath(a, ""))
+}

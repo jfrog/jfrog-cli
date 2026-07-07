@@ -11,8 +11,8 @@ import (
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	biutils "github.com/jfrog/build-info-go/utils"
-	coreBuild "github.com/jfrog/jfrog-cli-core/v2/common/build"
 	artUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	coreBuild "github.com/jfrog/jfrog-cli-core/v2/common/build"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
@@ -50,11 +50,17 @@ func cleanUvTest(_ *testing.T) {
 	tests.CleanFileSystem()
 }
 
+const uvLocalGitVersion = "0.1.1+localgit"
+
 // createUvProject copies a test UV project to a temp dir, injects Artifactory
 // URLs into pyproject.toml, then generates a fresh uv.lock against the test
 // Artifactory instance. The lock file is not committed to avoid embedding
 // instance-specific URLs in source.
 func createUvProject(t *testing.T, outputFolder, projectName string) string {
+	return createUvProjectWithVersion(t, outputFolder, projectName, "")
+}
+
+func createUvProjectWithVersion(t *testing.T, outputFolder, projectName, version string) string {
 	projectSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "uv", projectName)
 	tmpDir, cleanup := coretests.CreateTempDirWithCallbackAndAssert(t)
 	t.Cleanup(cleanup)
@@ -71,6 +77,14 @@ func createUvProject(t *testing.T, outputFolder, projectName string) string {
 
 	// Patch pyproject.toml with real Artifactory URLs for this test run
 	patchUvPyprojectToml(t, projectPath)
+
+	if version != "" {
+		pyprojectPath := filepath.Join(projectPath, "pyproject.toml")
+		data, err := os.ReadFile(pyprojectPath)
+		require.NoError(t, err)
+		patched := strings.ReplaceAll(string(data), `version = "0.1.0"`, `version = "`+version+`"`)
+		require.NoError(t, os.WriteFile(filepath.Clean(pyprojectPath), []byte(patched), 0o644)) // #nosec G703 -- path built from filepath.Join, not user input
+	}
 
 	// Generate uv.lock against the patched index so UV resolves through
 	// Artifactory (required for dependency checksum enrichment tests).
@@ -422,9 +436,9 @@ func TestUvBuildFlags(t *testing.T) {
 		expectErr   bool // jfrog-cli errors if only one of name/number is set
 	}{
 		{"both-set", tests.UvBuildName, "1", true, false},
-		{"name-only", tests.UvBuildName, "", false, true},  // missing number → CLI error
-		{"number-only", "", "1", false, true},              // missing name → CLI error
-		{"neither", "", "", false, false},                  // no flags → runs fine, no BI
+		{"name-only", tests.UvBuildName, "", false, true}, // missing number → CLI error
+		{"number-only", "", "1", false, true},             // missing name → CLI error
+		{"neither", "", "", false, false},                 // no flags → runs fine, no BI
 	}
 
 	projectPath := createUvProject(t, "uv-flags", "uvproject")
@@ -736,7 +750,8 @@ func TestUvNoPyprojectToml(t *testing.T) {
 // the dependencies declared in pyproject.toml — no more, no less.
 //
 // The test project (uvproject) declares one direct dependency:
-//   certifi>=2024.0.0
+//
+//	certifi>=2024.0.0
 //
 // After `jf uv sync` the build info module must contain:
 //   - Exactly 1 dependency (certifi; project itself is excluded)
@@ -1488,6 +1503,39 @@ func TestUvBuildPublishWithCIVcsProps(t *testing.T) {
 	}
 
 	assert.Greater(t, artifactCount, 0, "no artifacts were validated for CI VCS properties")
+}
+
+func TestUvPublishWithLocalGitVcsProps(t *testing.T) {
+	initUvTest(t)
+	defer cleanUvTest(t)
+
+	buildName := tests.UvBuildName + "-local-git"
+	buildNumber := "1"
+
+	cleanupEnv := tests.SetupLocalGitVcsEnv(t)
+	defer cleanupEnv()
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	projectPath := createUvProjectWithVersion(t, "uv-local-git", "uvproject", uvLocalGitVersion)
+	tests.CopyGitFixtureIntoProject(t, projectPath)
+
+	require.NoError(t, runUvCmd(t, projectPath, "build"))
+	require.NoError(t, runUvCmd(t, projectPath, "publish",
+		"--build-name="+buildName, "--build-number="+buildNumber))
+	require.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	require.NoError(t, err)
+	require.True(t, found)
+
+	serviceManager, err := artUtils.CreateServiceManager(serverDetails, 3, 1000, false)
+	require.NoError(t, err)
+
+	count := tests.ValidateLocalGitVcsPropsOnBuildInfoArtifacts(t, serviceManager, publishedBuildInfo, tests.UvLocalRepo,
+		tests.VcsFixtureMainURL, tests.VcsFixtureMainRevision, tests.VcsFixtureMainBranch)
+	assert.Greater(t, count, 0)
 }
 
 // ---------------------------------------------------------------------------
