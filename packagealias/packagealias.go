@@ -34,6 +34,7 @@ var SupportedTools = []string{
 	"gem",
 	"bundle",
 	"apk",
+	"helm",
 }
 
 // AliasMode represents how a tool should be handled
