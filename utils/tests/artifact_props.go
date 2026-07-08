@@ -20,6 +20,12 @@ func ArtifactFullPath(a buildinfo.Artifact, defaultRepo string) string {
 	if repo == "" {
 		repo = defaultRepo
 	}
+	if path == "" {
+		if repo != "" {
+			return repo
+		}
+		return ""
+	}
 	if repo != "" {
 		return repo + "/" + path
 	}

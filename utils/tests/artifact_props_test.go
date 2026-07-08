@@ -56,6 +56,16 @@ func TestArtifactItemPath_DoesNotDoubleAppendName(t *testing.T) {
 	assert.Equal(t, "mvn-local/com/foo/1.0/foo.jar", ArtifactItemPath(a, ""))
 }
 
+func TestArtifactFullPath_EmptyPathReturnsRepoOnly(t *testing.T) {
+	a := buildinfo.Artifact{Path: "", Name: "config.json"}
+	assert.Equal(t, "my-repo", ArtifactFullPath(a, "my-repo"))
+}
+
+func TestArtifactItemPath_EmptyPathDoesNotDoubleSlash(t *testing.T) {
+	a := buildinfo.Artifact{Path: "", Name: "config.json"}
+	assert.Equal(t, "my-repo/config.json", ArtifactItemPath(a, "my-repo"))
+}
+
 func TestArtifactItemPath_NpmTarballPathDoesNotAppendName(t *testing.T) {
 	a := buildinfo.Artifact{
 		OriginalDeploymentRepo: "cli-npm-123",

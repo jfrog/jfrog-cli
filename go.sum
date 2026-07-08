@@ -67,8 +67,6 @@ github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPd
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
 github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 h1:DklsrG3dyBCFEj5IhUbnKptjxatkF07cF2ak3yi77so=
 github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2/go.mod h1:WaHUgvxTVq04UNunO+XhnAqY/wQc+bxr74GqbsZ/Jqw=
-github.com/attiasas/jfrog-cli-artifactory v0.0.0-20260701102442-59ed24167b6c h1:oyOqDGLhx7Mqf3zr0K/TkCyAM/kBtMvW/yjdoujTWGs=
-github.com/attiasas/jfrog-cli-artifactory v0.0.0-20260701102442-59ed24167b6c/go.mod h1:VqV0Bed11HoBlugAEGa3RumbwnDVslEf0gKocTzLs9s=
 github.com/aws/aws-sdk-go-v2 v1.41.7 h1:DWpAJt66FmnnaRIOT/8ASTucrvuDPZASqhhLey6tLY8=
 github.com/aws/aws-sdk-go-v2 v1.41.7/go.mod h1:4LAfZOPHNVNQEckOACQx60Y8pSRjIkNZQz1w92xpMJc=
 github.com/aws/aws-sdk-go-v2/config v1.32.17 h1:FpL4/758/diKwqbytU0prpuiu60fgXKUWCpDJtApclU=
@@ -410,6 +408,8 @@ github.com/jfrog/jfrog-cli-application v1.0.2-0.20260621072921-cadb78770a3e h1:j
 github.com/jfrog/jfrog-cli-application v1.0.2-0.20260621072921-cadb78770a3e/go.mod h1:p8yLtbmCxxQucIbLZKnWu0F+EDtj6NLXbRQCEK/nb6o=
 github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260702071632-62c27c48b207 h1:RbqWYCj0Iw1IGO9gW7ghEHV8L2xnMjDUulDnNHOstVM=
 github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260702071632-62c27c48b207/go.mod h1:VqV0Bed11HoBlugAEGa3RumbwnDVslEf0gKocTzLs9s=
+github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260707101914-5f6d052c3b99 h1:V9AtxtEshzsnMUn78mPhTzMqZUJx/2DF7ELnj+URzPM=
+github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260707101914-5f6d052c3b99/go.mod h1:VqV0Bed11HoBlugAEGa3RumbwnDVslEf0gKocTzLs9s=
 github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260624085155-5ba797de2616 h1:bioFXGzf3pF2qnC3LZD1S1saWiHSekL4vdsDSWksj/4=
 github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260624085155-5ba797de2616/go.mod h1:9R90mhbczGXwW5EGlDs7F08ejQU/xdoDhYHMvzBiqgE=
 github.com/jfrog/jfrog-cli-evidence v0.9.5-0.20260618135203-4d2bdd4ee35f h1:MV4BATdkEoUYJmdPDvaB9EBb8JQZg28n/K4X7dcmyAY=
