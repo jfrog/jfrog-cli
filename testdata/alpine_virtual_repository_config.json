@@ -1,0 +1,6 @@
+{
+  "key": "${ALPINE_VIRTUAL_REPO}",
+  "rclass": "virtual",
+  "packageType": "alpine",
+  "repositories": ["${ALPINE_LOCAL_REPO}", "${ALPINE_REMOTE_REPO}"]
+}
