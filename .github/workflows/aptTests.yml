@@ -92,14 +92,28 @@ jobs:
       - name: Wait for Artifactory to be fully ready
         if: env.JFROG_TESTS_IS_EXTERNAL != 'true'
         run: |
-          echo "Polling Artifactory system ping..."
-          for i in $(seq 1 60); do
-            status=$(curl -sf -o /dev/null -w "%{http_code}" http://localhost:8081/artifactory/api/system/ping 2>/dev/null || echo "000")
+          echo "Waiting until Artifactory can serve the repositories API..."
+          # system/ping returns 200 from the router while the platform is still
+          # initializing, but repository APIs still respond with "Artifactory is
+          # not in a ready state". Gate on the exact endpoint the tests hit, and
+          # require several consecutive successes to ride out the startup flap.
+          required_streak=5
+          streak=0
+          for i in $(seq 1 120); do
+            status=$(curl -s -o /dev/null -w "%{http_code}" \
+              -H "Authorization: Bearer ${JFROG_TESTS_LOCAL_ACCESS_TOKEN}" \
+              http://localhost:8081/artifactory/api/repositories 2>/dev/null || echo "000")
             if [ "$status" = "200" ]; then
-              echo "Artifactory ready after ${i} attempts."
-              exit 0
+              streak=$((streak + 1))
+              echo "Attempt $i: repositories API ready (${streak}/${required_streak})."
+              if [ "$streak" -ge "$required_streak" ]; then
+                echo "Artifactory fully ready."
+                exit 0
+              fi
+            else
+              streak=0
+              echo "Attempt $i: status=$status — not ready, retrying in 5s..."
             fi
-            echo "Attempt $i: status=$status — retrying in 5s..."
             sleep 5
           done
           echo "Artifactory did not become ready in time." && exit 1
