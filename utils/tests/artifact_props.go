@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -19,10 +20,28 @@ func ArtifactFullPath(a buildinfo.Artifact, defaultRepo string) string {
 	if repo == "" {
 		repo = defaultRepo
 	}
+	if path == "" {
+		if repo != "" {
+			return repo
+		}
+		return ""
+	}
 	if repo != "" {
 		return repo + "/" + path
 	}
 	return path
+}
+
+// pathBasenameLooksLikeArchive reports whether the last segment of path is a
+// deployable archive file (npm .tgz, Python .whl, Java .jar, etc.).
+func pathBasenameLooksLikeArchive(path string) bool {
+	base := filepath.Base(strings.TrimSuffix(path, "/"))
+	for _, ext := range []string{".tgz", ".tar.gz", ".whl", ".jar", ".pom", ".zip", ".tar", ".tar.bz2"} {
+		if strings.HasSuffix(base, ext) {
+			return true
+		}
+	}
+	return false
 }
 
 // ArtifactItemPath returns the Artifactory item path for GetItemProps.
@@ -34,6 +53,11 @@ func ArtifactItemPath(a buildinfo.Artifact, defaultRepo string) string {
 		return fullPath
 	}
 	if strings.HasSuffix(fullPath, "/"+a.Name) || strings.HasSuffix(fullPath, a.Name) {
+		return fullPath
+	}
+	// npm/pypi: Path is the full tarball path (e.g. pkg/-/pkg-1.0.0.tgz)
+	pathPart := strings.TrimPrefix(a.Path, "/")
+	if pathBasenameLooksLikeArchive(pathPart) {
 		return fullPath
 	}
 	return fullPath + "/" + a.Name

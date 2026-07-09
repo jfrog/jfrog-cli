@@ -777,8 +777,9 @@ func GetJFrogApplicationKey(c *cli.Context) string {
 	return applicationKey
 }
 
-// ShouldHideSurveyLink checks if the survey should be hidden based on the JFROG_CLI_HIDE_SURVEY and CI environment variables
+// ShouldHideSurveyLink checks if the survey should be hidden based on the JFROG_CLI_HIDE_SURVEY
+// and CI environment variables, or when the CLI is invoked by an AI agent.
 // Returns true if the survey should be hidden, false otherwise
 func ShouldHideSurveyLink() bool {
-	return getCiValue() || os.Getenv(JfrogCliHideSurvey) == "true"
+	return getCiValue() || os.Getenv(JfrogCliHideSurvey) == "true" || commonCommands.DetectExecutionContext().IsAgent
 }

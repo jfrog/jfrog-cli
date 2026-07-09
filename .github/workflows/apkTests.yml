@@ -1,0 +1,95 @@
+name: Alpine APK Tests
+on:
+  workflow_call:
+    inputs:
+      jfrog_url:
+        description: "External JFrog Platform URL. Leave empty for local Artifactory."
+        type: string
+        required: false
+        default: ""
+      jfrog_admin_token:
+        description: "Admin token for external JFrog Platform."
+        type: string
+        required: false
+        default: ""
+      jfrog_user:
+        description: "Username for external JFrog Platform."
+        type: string
+        required: false
+        default: ""
+      jfrog_password:
+        description: "Password for external JFrog Platform."
+        type: string
+        required: false
+        default: ""
+  workflow_dispatch:
+    inputs:
+      jfrog_url:
+        description: "External JFrog Platform URL. Leave empty for local Artifactory."
+        type: string
+        required: false
+        default: ""
+      jfrog_admin_token:
+        description: "Admin token for external JFrog Platform."
+        type: string
+        required: false
+        default: ""
+      jfrog_user:
+        description: "Username for external JFrog Platform."
+        type: string
+        required: false
+        default: ""
+      jfrog_password:
+        description: "Password for external JFrog Platform."
+        type: string
+        required: false
+        default: ""
+
+jobs:
+  Apk-Tests:
+    name: Alpine APK tests (${{ matrix.alpine-version }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        alpine-version:
+          - v3.18
+          - v3.19
+          - v3.20
+          - v3.21
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
+
+      - name: Setup FastCI
+        uses: jfrog-fastci/fastci@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          fastci_otel_token: ${{ secrets.FASTCI_TOKEN }}
+
+      - name: Setup Go with cache
+        uses: jfrog/.github/actions/install-go-with-cache@main
+
+      - name: Install local Artifactory
+        if: inputs.jfrog_url == ''
+        uses: jfrog/.github/actions/install-local-artifactory@main
+        with:
+          RTLIC: ${{ secrets.RTLIC }}
+          RT_CONNECTION_TIMEOUT_SECONDS: '1200'
+
+      # Run on the host runner with the host Go toolchain (1.26+).
+      # Tests that require the native `apk` binary skip themselves via
+      # apkAvailable() when apk is not on PATH (Ubuntu runner).
+      # The Alpine chroot approach will be re-enabled once the Go version
+      # constraint in go.mod aligns with Alpine's packaged Go release.
+      - name: Run Alpine APK tests
+        run: |
+          go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.alpine \
+            ${{ inputs.jfrog_url != '' && format('--jfrog.url={0} --jfrog.adminToken={1}', inputs.jfrog_url, inputs.jfrog_admin_token) || '' }} \
+            ${{ inputs.jfrog_user != '' && format('--jfrog.user={0}', inputs.jfrog_user) || '' }} \
+            ${{ inputs.jfrog_password != '' && format('--jfrog.password={0}', inputs.jfrog_password) || '' }}
+        env:
+          CGO_ENABLED: "0"
