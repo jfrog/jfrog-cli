@@ -89,6 +89,21 @@ jobs:
           JFROG_ADMIN_TOKEN: ${{ inputs.jfrog_admin_token }}
           RT_CONNECTION_TIMEOUT_SECONDS: '1200'
 
+      - name: Wait for Artifactory to be fully ready
+        if: env.JFROG_TESTS_IS_EXTERNAL != 'true'
+        run: |
+          echo "Polling Artifactory system ping..."
+          for i in $(seq 1 60); do
+            status=$(curl -sf -o /dev/null -w "%{http_code}" http://localhost:8081/artifactory/api/system/ping 2>/dev/null || echo "000")
+            if [ "$status" = "200" ]; then
+              echo "Artifactory ready after ${i} attempts."
+              exit 0
+            fi
+            echo "Attempt $i: status=$status — retrying in 5s..."
+            sleep 5
+          done
+          echo "Artifactory did not become ready in time." && exit 1
+
       - name: Run apt tests (root)
         if: matrix.user_mode == 'root'
         run: >-
