@@ -1,0 +1,8 @@
+{
+  "key": "${APT_VIRTUAL_REPO}",
+  "rclass": "virtual",
+  "packageType": "debian",
+  "repositories": ["${APT_LOCAL_REPO}", "${APT_REMOTE_REPO}"],
+  "repoLayoutRef": "simple-default",
+  "defaultDeploymentRepo": "${APT_LOCAL_REPO}"
+}

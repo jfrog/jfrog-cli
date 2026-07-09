@@ -1,0 +1,113 @@
+name: apt Tests
+
+on:
+  workflow_call:
+  workflow_dispatch:
+    inputs:
+      jfrog_url:
+        description: "External JFrog Platform URL. Leave empty for local Artifactory."
+        type: string
+        required: false
+        default: ""
+      jfrog_admin_token:
+        description: "Admin token for external JFrog Platform."
+        type: string
+        required: false
+        default: ""
+
+jobs:
+  apt-Tests:
+    name: apt tests (${{ matrix.distro.image }}, ${{ matrix.user_mode }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        distro:
+          - image: ubuntu:20.04
+            name: ubuntu-focal
+            dist: focal
+          - image: ubuntu:22.04
+            name: ubuntu-jammy
+            dist: jammy
+          - image: ubuntu:24.04
+            name: ubuntu-noble
+            dist: noble
+          - image: debian:11
+            name: debian-bullseye
+            dist: bullseye
+          - image: debian:12
+            name: debian-bookworm
+            dist: bookworm
+        user_mode:
+          - root
+          - nonroot
+
+    container:
+      image: ${{ matrix.distro.image }}
+      options: --user root --privileged
+
+    steps:
+      - name: Install prerequisites
+        run: |
+          apt-get update -y
+          apt-get install -y --no-install-recommends \
+            git curl ca-certificates sudo wget gnupg
+
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
+
+      - name: Setup FastCI
+        uses: jfrog-fastci/fastci@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          fastci_otel_token: ${{ secrets.FASTCI_TOKEN }}
+
+      - name: Setup Go with cache
+        uses: jfrog/.github/actions/install-go-with-cache@main
+
+      - name: Create non-root test user
+        if: matrix.user_mode == 'nonroot'
+        run: |
+          useradd -m -u 1001 -s /bin/bash testuser
+          echo "testuser ALL=(root) NOPASSWD: /usr/bin/apt-get, /usr/bin/apt" >> /etc/sudoers.d/testuser-apt
+          chmod 0440 /etc/sudoers.d/testuser-apt
+          chown -R testuser:testuser /etc/apt/sources.list.d
+          chown -R testuser:testuser /etc/apt/preferences.d
+          mkdir -p /etc/apt/keyrings
+          chown -R testuser:testuser /etc/apt/keyrings
+          chown -R testuser:testuser "$GITHUB_WORKSPACE"
+
+      - name: Install local Artifactory
+        uses: jfrog/.github/actions/install-local-artifactory@main
+        with:
+          RTLIC: ${{ secrets.RTLIC }}
+          JFROG_URL: ${{ inputs.jfrog_url }}
+          JFROG_ADMIN_TOKEN: ${{ inputs.jfrog_admin_token }}
+          RT_CONNECTION_TIMEOUT_SECONDS: '1200'
+
+      - name: Run apt tests (root)
+        if: matrix.user_mode == 'root'
+        run: >-
+          go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.apt
+          ${{ env.JFROG_TESTS_IS_EXTERNAL == 'true' && format('--jfrog.url={0} --jfrog.adminToken={1}', env.JFROG_TESTS_URL, env.JFROG_TESTS_LOCAL_ACCESS_TOKEN) || '' }}
+          --run "TestApt"
+        env:
+          APT_TEST_DIST: ${{ matrix.distro.dist }}
+
+      - name: Run apt tests (non-root with dir perms)
+        if: matrix.user_mode == 'nonroot'
+        run: |
+          su -c "go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.apt \
+            ${{ env.JFROG_TESTS_IS_EXTERNAL == 'true' && format('--jfrog.url={0} --jfrog.adminToken={1}', env.JFROG_TESTS_URL, env.JFROG_TESTS_LOCAL_ACCESS_TOKEN) || '' }} \
+            --run 'TestApt'" testuser
+        env:
+          APT_TEST_DIST: ${{ matrix.distro.dist }}
+
+      - name: Cleanup apt configuration
+        if: always()
+        run: |
+          rm -f /etc/apt/sources.list.d/jfrog-*.list
+          rm -f /etc/apt/preferences.d/jfrog-*.pref
+          rm -f /etc/apt/keyrings/jfrog-*.asc

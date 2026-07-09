@@ -72,6 +72,7 @@ var (
 	TestUv                    *bool
 	TestNix                   *bool
 	TestAlpine                *bool
+	TestApt                   *bool
 	TestAgentPlugins          *bool
 	TestConan                 *bool
 	TestHelm                  *bool
@@ -141,6 +142,7 @@ func init() {
 	TestUv = flag.Bool("test.uv", false, "Test UV")
 	TestNix = flag.Bool("test.nix", false, "Test Nix")
 	TestAlpine = flag.Bool("test.alpine", false, "Test Alpine APK")
+	TestApt = flag.Bool("test.apt", false, "Test apt (Debian/Ubuntu package manager)")
 	TestAgentPlugins = flag.Bool("test.agentPlugins", false, "Test Agent Plugins")
 	TestConan = flag.Bool("test.conan", false, "Test Conan")
 	TestHelm = flag.Bool("test.helm", false, "Test Helm")
@@ -331,6 +333,9 @@ var reposConfigMap = map[*string]string{
 	&AlpineLocalRepo:                AlpineLocalRepositoryConfig,
 	&AlpineRemoteRepo:               AlpineRemoteRepositoryConfig,
 	&AlpineVirtualRepo:              AlpineVirtualRepositoryConfig,
+	&AptLocalRepo:                   AptLocalRepositoryConfig,
+	&AptRemoteRepo:                  AptRemoteRepositoryConfig,
+	&AptVirtualRepo:                 AptVirtualRepositoryConfig,
 	&ConanLocalRepo:                 ConanLocalRepositoryConfig,
 	&ConanRemoteRepo:                ConanRemoteRepositoryConfig,
 	&ConanVirtualRepo:               ConanVirtualRepositoryConfig,
@@ -404,6 +409,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestUv:                 {&UvLocalRepo, &UvRemoteRepo},
 		TestNix:                {&NixLocalRepo, &NixRemoteRepo},
 		TestAlpine:             {&AlpineLocalRepo, &AlpineRemoteRepo},
+		TestApt:                {&AptLocalRepo, &AptRemoteRepo},
 		TestAgentPlugins:       {&AgentPluginsLocalRepo},
 		TestConan:              {&ConanLocalRepo, &ConanRemoteRepo},
 		TestHelm:               {&HelmLocalRepo},
@@ -438,6 +444,7 @@ func GetVirtualRepositories() map[*string]string {
 		TestUv:           {&UvVirtualRepo},
 		TestNix:          {&NixVirtualRepo},
 		TestAlpine:       {&AlpineVirtualRepo},
+		TestApt:          {&AptVirtualRepo},
 		TestAgentPlugins: {},
 		TestConan:        {&ConanVirtualRepo},
 		TestHelm:         {},
@@ -554,6 +561,9 @@ func getSubstitutionMap() map[string]string {
 		"${ALPINE_LOCAL_REPO}":         AlpineLocalRepo,
 		"${ALPINE_REMOTE_REPO}":        AlpineRemoteRepo,
 		"${ALPINE_VIRTUAL_REPO}":       AlpineVirtualRepo,
+		"${APT_LOCAL_REPO}":            AptLocalRepo,
+		"${APT_REMOTE_REPO}":           AptRemoteRepo,
+		"${APT_VIRTUAL_REPO}":          AptVirtualRepo,
 		"${CONAN_LOCAL_REPO}":          ConanLocalRepo,
 		"${CONAN_REMOTE_REPO}":         ConanRemoteRepo,
 		"${CONAN_VIRTUAL_REPO}":        ConanVirtualRepo,
@@ -634,6 +644,9 @@ func AddTimestampToGlobalVars() {
 	AlpineLocalRepo += uniqueSuffix
 	AlpineRemoteRepo += uniqueSuffix
 	AlpineVirtualRepo += uniqueSuffix
+	AptLocalRepo += uniqueSuffix
+	AptRemoteRepo += uniqueSuffix
+	AptVirtualRepo += uniqueSuffix
 	ConanLocalRepo += uniqueSuffix
 	ConanRemoteRepo += uniqueSuffix
 	ConanVirtualRepo += uniqueSuffix
