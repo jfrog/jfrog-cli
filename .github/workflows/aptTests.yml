@@ -116,7 +116,7 @@ jobs:
       - name: Run apt tests (non-root with dir perms)
         if: matrix.user_mode == 'nonroot'
         run: |
-          su -c "go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.apt \
+          su -c "PATH='$PATH' go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.apt \
             ${{ env.JFROG_TESTS_IS_EXTERNAL == 'true' && format('--jfrog.url={0} --jfrog.adminToken={1}', env.JFROG_TESTS_URL, env.JFROG_TESTS_LOCAL_ACCESS_TOKEN) || '' }} \
             --run 'TestApt'" testuser
         env:

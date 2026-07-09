@@ -309,7 +309,9 @@ func TestAptSetupRemove_DistFilteredRemoval(t *testing.T) {
 	runJfrogCli(t, "setup", "apt", "--remove", "--dist=noble")
 
 	assert.NoFileExists(t, sourcesListPath(repo, "noble"), "noble must be removed")
+	assert.NoFileExists(t, prefPath(repo, "noble"), "noble pref must be removed")
 	assert.FileExists(t, sourcesListPath(repo, "jammy"), "jammy must survive")
+	assert.FileExists(t, prefPath(repo, "jammy"), "jammy pref must survive")
 }
 
 // TestAptSetupRemove_Idempotent verifies --remove on empty dir does not error.
