@@ -335,6 +335,7 @@ var reposConfigMap = map[*string]string{
 	&AlpineVirtualRepo:              AlpineVirtualRepositoryConfig,
 	&AptLocalRepo:                   AptLocalRepositoryConfig,
 	&AptRemoteRepo:                  AptRemoteRepositoryConfig,
+	&AptDebianRemoteRepo:            AptDebianRemoteRepositoryConfig,
 	&AptVirtualRepo:                 AptVirtualRepositoryConfig,
 	&ConanLocalRepo:                 ConanLocalRepositoryConfig,
 	&ConanRemoteRepo:                ConanRemoteRepositoryConfig,
@@ -409,7 +410,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestUv:                 {&UvLocalRepo, &UvRemoteRepo},
 		TestNix:                {&NixLocalRepo, &NixRemoteRepo},
 		TestAlpine:             {&AlpineLocalRepo, &AlpineRemoteRepo},
-		TestApt:                {&AptLocalRepo, &AptRemoteRepo},
+		TestApt:                {&AptLocalRepo, &AptRemoteRepo, &AptDebianRemoteRepo},
 		TestAgentPlugins:       {&AgentPluginsLocalRepo},
 		TestConan:              {&ConanLocalRepo, &ConanRemoteRepo},
 		TestHelm:               {&HelmLocalRepo},
@@ -563,6 +564,7 @@ func getSubstitutionMap() map[string]string {
 		"${ALPINE_VIRTUAL_REPO}":       AlpineVirtualRepo,
 		"${APT_LOCAL_REPO}":            AptLocalRepo,
 		"${APT_REMOTE_REPO}":           AptRemoteRepo,
+		"${APT_DEBIAN_REMOTE_REPO}":    AptDebianRemoteRepo,
 		"${APT_VIRTUAL_REPO}":          AptVirtualRepo,
 		"${CONAN_LOCAL_REPO}":          ConanLocalRepo,
 		"${CONAN_REMOTE_REPO}":         ConanRemoteRepo,
@@ -646,6 +648,7 @@ func AddTimestampToGlobalVars() {
 	AlpineVirtualRepo += uniqueSuffix
 	AptLocalRepo += uniqueSuffix
 	AptRemoteRepo += uniqueSuffix
+	AptDebianRemoteRepo += uniqueSuffix
 	AptVirtualRepo += uniqueSuffix
 	ConanLocalRepo += uniqueSuffix
 	ConanRemoteRepo += uniqueSuffix

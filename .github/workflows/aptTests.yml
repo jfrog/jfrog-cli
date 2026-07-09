@@ -5,17 +5,6 @@ on:
     branches: [RTECO-1564]
   workflow_call:
   workflow_dispatch:
-    inputs:
-      jfrog_url:
-        description: "External JFrog Platform URL. Leave empty for local Artifactory."
-        type: string
-        required: false
-        default: ""
-      jfrog_admin_token:
-        description: "Admin token for external JFrog Platform."
-        type: string
-        required: false
-        default: ""
 
 jobs:
   apt-Tests:
@@ -81,48 +70,14 @@ jobs:
           chown -R testuser:testuser /etc/apt/keyrings
           chown -R testuser:testuser "$GITHUB_WORKSPACE"
 
-      - name: Install local Artifactory
-        uses: jfrog/.github/actions/install-local-artifactory@main
-        with:
-          RTLIC: ${{ secrets.RTLIC }}
-          JFROG_URL: ${{ inputs.jfrog_url }}
-          JFROG_ADMIN_TOKEN: ${{ inputs.jfrog_admin_token }}
-          RT_CONNECTION_TIMEOUT_SECONDS: '1200'
-
-      - name: Wait for Artifactory to be fully ready
-        if: env.JFROG_TESTS_IS_EXTERNAL != 'true'
-        run: |
-          echo "Waiting until Artifactory can serve the repositories API..."
-          # system/ping returns 200 from the router while the platform is still
-          # initializing, but repository APIs still respond with "Artifactory is
-          # not in a ready state". Gate on the exact endpoint the tests hit, and
-          # require several consecutive successes to ride out the startup flap.
-          required_streak=5
-          streak=0
-          for i in $(seq 1 120); do
-            status=$(curl -s -o /dev/null -w "%{http_code}" \
-              -H "Authorization: Bearer ${JFROG_TESTS_LOCAL_ACCESS_TOKEN}" \
-              http://localhost:8081/artifactory/api/repositories 2>/dev/null || echo "000")
-            if [ "$status" = "200" ]; then
-              streak=$((streak + 1))
-              echo "Attempt $i: repositories API ready (${streak}/${required_streak})."
-              if [ "$streak" -ge "$required_streak" ]; then
-                echo "Artifactory fully ready."
-                exit 0
-              fi
-            else
-              streak=0
-              echo "Attempt $i: status=$status — not ready, retrying in 5s..."
-            fi
-            sleep 5
-          done
-          echo "Artifactory did not become ready in time." && exit 1
-
       - name: Run apt tests (root)
         if: matrix.user_mode == 'root'
         run: >-
           go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.apt
-          ${{ env.JFROG_TESTS_IS_EXTERNAL == 'true' && format('--jfrog.url={0} --jfrog.adminToken={1}', env.JFROG_TESTS_URL, env.JFROG_TESTS_LOCAL_ACCESS_TOKEN) || '' }}
+          --jfrog.url=${{ secrets.PLATFORM_URL }}
+          --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }}
+          --jfrog.user=${{ secrets.PLATFORM_USER }}
+          --ci.runId=${{ matrix.distro.name }}-root
           --run "TestApt"
         env:
           APT_TEST_DIST: ${{ matrix.distro.dist }}
@@ -131,7 +86,10 @@ jobs:
         if: matrix.user_mode == 'nonroot'
         run: |
           su -c "PATH='$PATH' go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.apt \
-            ${{ env.JFROG_TESTS_IS_EXTERNAL == 'true' && format('--jfrog.url={0} --jfrog.adminToken={1}', env.JFROG_TESTS_URL, env.JFROG_TESTS_LOCAL_ACCESS_TOKEN) || '' }} \
+            --jfrog.url='${{ secrets.PLATFORM_URL }}' \
+            --jfrog.adminToken='${{ secrets.PLATFORM_ADMIN_TOKEN }}' \
+            --jfrog.user='${{ secrets.PLATFORM_USER }}' \
+            --ci.runId='${{ matrix.distro.name }}-nonroot' \
             --run 'TestApt'" testuser
         env:
           APT_TEST_DIST: ${{ matrix.distro.dist }}
