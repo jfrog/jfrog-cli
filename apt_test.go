@@ -357,7 +357,10 @@ func TestAptInstall_OnTheFlyInstall(t *testing.T) {
 	// Use bzip2: small, available in all Ubuntu/Debian distros via Artifactory
 	// remote, and not pre-installed by the workflow prereq step — so apt always
 	// performs a real install and writes a Commandline entry to history.log.
-	runJfrogCli(t, "apt", "install", "-y", "bzip2",
+	// --allow-downgrades: Artifactory's cached remote can trail the live base image
+	// (e.g. bzip2's exact-pinned libbz2-1.0 dep vs a security-updated build already
+	// in the container) — same allowance TestAptSetupThenNativeInstall already uses.
+	runJfrogCli(t, "apt", "install", "-y", "--allow-downgrades", "bzip2",
 		"--repo="+aptRepo(),
 		"--dist="+dist,
 		"--trusted",
@@ -691,6 +694,7 @@ Expire-Date: 1d
 	type keypairReq struct {
 		PairName   string `json:"pairName"`
 		PairType   string `json:"pairType"`
+		Alias      string `json:"alias"`
 		PassPhrase string `json:"passPhrase"`
 		PublicKey  string `json:"publicKey"`
 		PrivateKey string `json:"privateKey"`
@@ -698,6 +702,7 @@ Expire-Date: 1d
 	body, err := json.Marshal(keypairReq{
 		PairName:   pairName,
 		PairType:   "GPG",
+		Alias:      pairName,
 		PassPhrase: "",
 		PublicKey:  string(pubKey),
 		PrivateKey: string(privKey),
