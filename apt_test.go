@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -353,7 +354,9 @@ func TestAptInstall_OnTheFlyInstall(t *testing.T) {
 	logOffset := aptHistoryLogSize()
 
 	dist := testDist()
-	runJfrogCli(t, "apt", "install", "-y", "curl",
+	// --reinstall ensures apt writes a history.log entry even when curl is
+	// already at the latest version (it is pre-installed by the workflow).
+	runJfrogCli(t, "apt", "install", "-y", "--reinstall", "curl",
 		"--repo="+aptRepo(),
 		"--dist="+dist,
 		"--trusted",
@@ -494,7 +497,7 @@ func TestAptSetup_DistributionMatrix(t *testing.T) {
 	initAptTest(t)
 	requireRoot(t)
 
-	dists := []string{"noble", "jammy", "focal", "bookworm", "bullseye"}
+	dists := []string{"noble", "jammy", "focal", "trixie", "bookworm", "bullseye"}
 	for _, dist := range dists {
 		dist := dist
 		t.Run(dist, func(t *testing.T) {
@@ -675,8 +678,10 @@ Expire-Date: 1d
 	pubKey, err := gpgArgs("--armor", "--export", "jfrog-apt-test@example.com").Output()
 	require.NoError(t, err, "gpg export public key failed")
 
-	privKey, err := gpgArgs("--armor", "--batch", "--passphrase", "", "--export-secret-keys", "jfrog-apt-test@example.com").Output()
+	privKeyCmd := gpgArgs("--armor", "--batch", "--yes", "--pinentry-mode", "loopback", "--passphrase", "", "--export-secret-keys", "jfrog-apt-test@example.com")
+	privKey, err := privKeyCmd.Output()
 	require.NoError(t, err, "gpg export private key failed")
+	require.NotEmpty(t, privKey, "gpg exported empty private key — check GnuPG version and pinentry mode")
 
 	pairName = fmt.Sprintf("jfrog-apt-test-%d", time.Now().UnixNano())
 	artURL := strings.TrimSuffix(*tests.JfrogUrl+tests.ArtifactoryEndpoint, "/")
@@ -729,8 +734,9 @@ func doArtRequest(t *testing.T, method, url string, body []byte, wantStatus int)
 	setArtAuth(req)
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
+	respBody, _ := io.ReadAll(resp.Body)
 	_ = resp.Body.Close()
-	require.Equal(t, wantStatus, resp.StatusCode, "%s %s", method, url)
+	require.Equal(t, wantStatus, resp.StatusCode, "%s %s\nresponse: %s", method, url, respBody)
 }
 
 // setArtAuth attaches admin credentials to a request using the test flags.
