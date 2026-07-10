@@ -13,7 +13,6 @@ import (
 	"github.com/agnivade/levenshtein"
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	coreformat "github.com/jfrog/jfrog-cli-core/v2/common/format"
-	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	apispec "github.com/jfrog/jfrog-cli/docs/api-spec"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
@@ -128,11 +127,9 @@ func runSearchCmd(c *cli.Context, stdOut io.Writer) error {
 			result.SpecBundle, query)
 	}
 
-	defaultFormat := coreformat.Table
-	if corecommon.AIHelpEnabled() {
-		defaultFormat = coreformat.Json
-	}
-	outputFormat, err := commonCliUtils.GetOutputFormat(c, defaultFormat)
+	// JSON is the default output format -- this command exists primarily for
+	// agent consumption; --format table is available for humans who want it.
+	outputFormat, err := commonCliUtils.GetOutputFormat(c, coreformat.Json)
 	if err != nil {
 		return err
 	}
