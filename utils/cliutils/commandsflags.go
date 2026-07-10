@@ -136,6 +136,7 @@ const (
 	AccessTokenCreate = "access-token-create"
 	ExchangeOidcToken = "exchange-oidc-token"
 	Api               = "api"
+	ApiDocsSearch     = "api-docs-search"
 
 	// MCP commands keys
 	McpShow      = "mcp-show"
@@ -659,6 +660,12 @@ const (
 	apiVerbose = "api-verbose"
 	apiTimeout = "api-timeout"
 
+	// API docs search command flags
+	apiDocsSearchTag    = "api-docs-search-tag"
+	apiDocsSearchMethod = "api-docs-search-method"
+	apiDocsSearchLimit  = "api-docs-search-limit"
+	apiDocsSearchFormat = "api-docs-search-format"
+
 	// MCP command flags
 	mcpUrl        = "mcp-url"
 	mcpAgent      = "mcp-agent"
@@ -808,6 +815,23 @@ var flagsMap = map[string]cli.Flag{
 	apiTimeout: cli.IntFlag{
 		Name:  "timeout",
 		Usage: "[Default: 0] Overall HTTP request timeout in seconds. 0 means no timeout.` `",
+	},
+	apiDocsSearchTag: cli.StringFlag{
+		Name:  "tag",
+		Usage: "[Optional] Filter results to operations whose tags include this product/tag (case-insensitive).` `",
+	},
+	apiDocsSearchMethod: cli.StringFlag{
+		Name:  "method",
+		Usage: "[Optional] Filter results to this HTTP method (GET, POST, PUT, DELETE, ...).` `",
+	},
+	apiDocsSearchLimit: cli.IntFlag{
+		Name:  "limit",
+		Value: 10,
+		Usage: "[Default: 10] Maximum number of ranked matches to return.` `",
+	},
+	apiDocsSearchFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + components.GetFormatFlagDescription([]format.OutputFormat{format.Json, format.Table}) + "` `",
 	},
 	mcpShowFormat: cli.StringFlag{
 		Name:  Format,
@@ -2250,6 +2274,9 @@ var commandFlags = map[string][]string{
 		platformUrl, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
 		ClientCertKeyPath, InsecureTls, configDisableRefreshAccessToken,
 		apiHeader, apiInput, apiData, apiMethod, apiVerbose, apiTimeout,
+	},
+	ApiDocsSearch: {
+		apiDocsSearchTag, apiDocsSearchMethod, apiDocsSearchLimit, apiDocsSearchFormat,
 	},
 	McpShow: {
 		platformUrl, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,

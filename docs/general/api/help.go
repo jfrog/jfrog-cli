@@ -70,6 +70,8 @@ When to use:
 - Scripting platform admin tasks where 'jf rt' or 'jf c' don't cover the operation.
 - Debugging API responses with full visibility into status code and body.
 
+Before guessing at a path: if you don't already know the exact endpoint/method, run 'jf api docs search <query>' first (e.g. 'jf api docs search user') — it's a local, offline lookup over this binary's embedded OpenAPI spec that returns ranked matches with a ready-to-run 'jf api' command for each.
+
 Prerequisites:
 - A configured server (jf c add or jf login) or explicit --url / --access-token / --server-id.
 - The caller's identity must have the privileges the target endpoint requires.
@@ -85,6 +87,7 @@ Gotchas:
 - -d/--data and --input are mutually exclusive.
 - HTTP status goes to stderr (one line), body to stdout. Non-2xx exits with status 1 but still prints the body.
 - Some APIs require trailing slashes or specific Accept headers; check the API reference before scripting.
+- The bare, slash-less path 'docs' (e.g. 'jf api docs') routes to 'jf api docs search' instead of issuing an HTTP call. This does not affect the leading-slash form: 'jf api -X GET /docs' still reaches the platform normally, since no real JFrog REST path is bare '/docs'.
 
-Related: jf c add, jf rt, jf c show`
+Related: jf api docs search, jf c add, jf rt, jf c show`
 }

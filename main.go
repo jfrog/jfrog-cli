@@ -30,6 +30,8 @@ import (
 	"github.com/jfrog/jfrog-cli/config"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	apiDocs "github.com/jfrog/jfrog-cli/docs/general/api"
+	apiDocsNodeDocs "github.com/jfrog/jfrog-cli/docs/general/apidocs"
+	apiDocsSearchDocs "github.com/jfrog/jfrog-cli/docs/general/apidocssearch"
 	loginDocs "github.com/jfrog/jfrog-cli/docs/general/login"
 	oidcDocs "github.com/jfrog/jfrog-cli/docs/general/oidc"
 	summaryDocs "github.com/jfrog/jfrog-cli/docs/general/summary"
@@ -387,6 +389,25 @@ func getCommands() ([]cli.Command, error) {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     otherCategory,
 			Action:       api.Command,
+			Subcommands: []cli.Command{
+				{
+					Name:     "docs",
+					Usage:    corecommon.ResolveDescription(apiDocsNodeDocs.GetDescription(), apiDocsNodeDocs.GetAIDescription()),
+					HelpName: corecommon.CreateUsage("api docs", corecommon.ResolveDescription(apiDocsNodeDocs.GetDescription(), apiDocsNodeDocs.GetAIDescription()), apiDocsNodeDocs.Usage),
+					Action:   api.DocsCommand,
+					Subcommands: []cli.Command{
+						{
+							Name:         "search",
+							Flags:        cliutils.GetCommandFlags(cliutils.ApiDocsSearch),
+							Usage:        corecommon.ResolveDescription(apiDocsSearchDocs.GetDescription(), apiDocsSearchDocs.GetAIDescription()),
+							HelpName:     corecommon.CreateUsage("api docs search", corecommon.ResolveDescription(apiDocsSearchDocs.GetDescription(), apiDocsSearchDocs.GetAIDescription()), apiDocsSearchDocs.Usage),
+							UsageText:    apiDocsSearchDocs.GetArguments(),
+							BashComplete: corecommon.CreateBashCompletionFunc(),
+							Action:       api.SearchCommand,
+						},
+					},
+				},
+			},
 		},
 		{
 			Name:         "exchange-oidc-token",

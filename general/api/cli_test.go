@@ -536,6 +536,71 @@ func TestApiTimeoutExpired(t *testing.T) {
 	assert.Error(t, err, "expected a timeout error")
 }
 
+// TestApiDispatch_LeadingSlashDocsPathReachesParentAction is a permanent guard
+// for the "jf api docs search" dispatch design: urfave/cli v1.22.17 matches a
+// subcommand against the leftover positional arg *string*, not against path
+// semantics, so a leading-slash path like "/docs" must fall through to api's
+// own Action rather than being swallowed by the "docs" subcommand. This drives
+// the real vendored urfave/cli library (not a mock), so a future dependency
+// bump that changes this behavior would fail here.
+func TestApiDispatch_LeadingSlashDocsPathReachesParentAction(t *testing.T) {
+	var gotArgs []string
+	app := cli.NewApp()
+	app.Commands = []cli.Command{
+		{
+			Name:  "api",
+			Flags: []cli.Flag{cli.StringFlag{Name: "method, X"}},
+			Action: func(c *cli.Context) error {
+				gotArgs = c.Args()
+				return nil
+			},
+			Subcommands: []cli.Command{
+				{
+					Name: "docs",
+					Action: func(c *cli.Context) error {
+						t.Fatal("docs subcommand must not be invoked for a leading-slash path")
+						return nil
+					},
+				},
+			},
+		},
+	}
+
+	require.NoError(t, app.Run([]string{"jf", "api", "-X", "GET", "/docs"}))
+	require.Equal(t, []string{"/docs"}, gotArgs)
+}
+
+// TestApiDispatch_BareDocsRoutesToSubcommand is the mirror image: the bare,
+// slash-less literal "docs" is the one case that *is* intercepted by the new
+// subcommand. Documented as an accepted caveat, not a bug.
+func TestApiDispatch_BareDocsRoutesToSubcommand(t *testing.T) {
+	var parentCalled, docsCalled bool
+	app := cli.NewApp()
+	app.Commands = []cli.Command{
+		{
+			Name:  "api",
+			Flags: []cli.Flag{cli.StringFlag{Name: "method, X"}},
+			Action: func(c *cli.Context) error {
+				parentCalled = true
+				return nil
+			},
+			Subcommands: []cli.Command{
+				{
+					Name: "docs",
+					Action: func(c *cli.Context) error {
+						docsCalled = true
+						return nil
+					},
+				},
+			},
+		},
+	}
+
+	require.NoError(t, app.Run([]string{"jf", "api", "docs"}))
+	assert.True(t, docsCalled, "bare 'docs' literal should route to the docs subcommand")
+	assert.False(t, parentCalled, "api's own Action should not run when 'docs' subcommand matches")
+}
+
 type commandArgs struct {
 	path    string
 	method  string
