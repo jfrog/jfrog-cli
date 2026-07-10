@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"text/tabwriter"
 
@@ -26,18 +27,32 @@ const (
 	flagLimit = "limit"
 )
 
+// envFuzzySimilarityMin overrides fuzzySimilarityMin for experimentation --
+// accepts any value parseable as a float64 in [0, 1]. Unset or invalid falls
+// back to the default, same convention as corecommon.AIHelpEnabled's handling
+// of JFROG_CLI_AI_HELP.
+const envFuzzySimilarityMin = "JFROG_CLI_API_DOCS_SEARCH_FUZZY_MIN"
+
 // Per-field contains-match weights. They sum (an operation matching in two
 // fields ranks above one matching in only its strongest field) and are capped
 // at 100. Fuzzy-fallback scores are confined to fuzzyScoreMax and below, so an
 // exact/substring hit on even the weakest field (tag) always outranks a pure
 // fuzzy hit.
 const (
-	weightOperationId  = 40
-	weightPath         = 30
-	weightSummary      = 20
-	weightTag          = 10
-	fuzzyScoreMax      = 9
-	fuzzySimilarityMin = 0.4
+	weightOperationId = 40
+	weightPath        = 30
+	weightSummary     = 20
+	weightTag         = 10
+	fuzzyScoreMax     = 9
+	// fuzzySimilarityMin is deliberately high: whole-string Levenshtein
+	// similarity between two semantically unrelated but coincidentally
+	// similar-length words (e.g. "evidence" vs "environments", 0.42) crosses a
+	// low bar easily, flooding results with false positives that also mask a
+	// legitimate empty-result response. 0.6 still catches real typos
+	// ("usres"->"users" 0.6, "workrs"->"workers" 0.86) while rejecting
+	// unrelated words of similar length ("evidence"->"environments" 0.42,
+	// "token"->"worker" 0.5, "scan"->"scim" 0.5).
+	fuzzySimilarityMin = 0.6
 	defaultLimit       = 10
 )
 
@@ -217,10 +232,25 @@ func fuzzyScore(op apispec.Operation, q string) int {
 			best = sim
 		}
 	}
-	if best < fuzzySimilarityMin {
+	if best < fuzzySimilarityThreshold() {
 		return 0
 	}
 	return min(max(int(best*fuzzyScoreMax), 1), fuzzyScoreMax)
+}
+
+// fuzzySimilarityThreshold resolves the effective fuzzy-match floor: the
+// JFROG_CLI_API_DOCS_SEARCH_FUZZY_MIN env var when it parses as a float64 in
+// [0, 1], otherwise fuzzySimilarityMin.
+func fuzzySimilarityThreshold() float64 {
+	v := strings.TrimSpace(os.Getenv(envFuzzySimilarityMin))
+	if v == "" {
+		return fuzzySimilarityMin
+	}
+	parsed, err := strconv.ParseFloat(v, 64)
+	if err != nil || parsed < 0 || parsed > 1 {
+		return fuzzySimilarityMin
+	}
+	return parsed
 }
 
 // similarity is a normalized Levenshtein similarity in [0, 1]; 1 means

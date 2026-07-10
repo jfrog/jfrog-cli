@@ -48,6 +48,7 @@ Gotchas:
 - The embedded spec bundle may be a small "stub" subset in this build, not the full JFrog REST API surface. An empty match list includes spec_bundle so you know whether that's the likely cause.
 - Output is JSON by default when --ai-help/$JFROG_CLI_AI_HELP=true is set, table otherwise; --format overrides either way.
 - Filters (--tag, --method) are hard excludes, applied before ranking/scoring.
+- A query with no contains-match anywhere falls back to fuzzy (typo-tolerant) matching, gated by a similarity floor to avoid coincidental false positives (e.g. "evidence" vs "environments"). Advanced: override the floor (0-1, default 0.6) with $JFROG_CLI_API_DOCS_SEARCH_FUZZY_MIN.
 
 Related: jf api, jf api --ai-help`
 }

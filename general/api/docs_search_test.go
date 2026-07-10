@@ -109,6 +109,53 @@ func TestScoreOperation_DissimilarQueryScoresZero(t *testing.T) {
 	assert.Equal(t, 0, scoreOperation(op, "zzzznotreal"))
 }
 
+// TestScoreOperation_UnrelatedSimilarLengthWordDoesNotFuzzyMatch guards a real
+// false positive found against the full bundle: "evidence" has no contains-match
+// anywhere, but its whole-string Levenshtein similarity to "Environments" (0.42)
+// used to clear the old, too-low fuzzy threshold, flooding "jf api docs search
+// evidence" with unrelated Environments-tagged operations instead of correctly
+// reporting no match.
+func TestScoreOperation_UnrelatedSimilarLengthWordDoesNotFuzzyMatch(t *testing.T) {
+	op := apispec.Operation{OperationId: "getGlobalEnvironments", Path: "/access/api/v1/environments", Summary: "Get Global Environments", Tags: []string{"Environments"}}
+	assert.Equal(t, 0, scoreOperation(op, "evidence"))
+}
+
+// TestScoreOperation_RealTypoStillFuzzyMatches is the flip side of the above:
+// the raised fuzzy threshold must still tolerate genuine near-typos.
+func TestScoreOperation_RealTypoStillFuzzyMatches(t *testing.T) {
+	op := apispec.Operation{OperationId: "getWorkers", Path: "/worker/api/v1/workers", Summary: "Get Workers", Tags: []string{"Workers"}}
+	assert.Greater(t, scoreOperation(op, "workrs"), 0, "a one-letter-dropped typo of 'workers' should still fuzzy-match")
+}
+
+func TestFuzzySimilarityThreshold_DefaultAndOverride(t *testing.T) {
+	t.Run("unset uses default", func(t *testing.T) {
+		t.Setenv(envFuzzySimilarityMin, "")
+		assert.Equal(t, fuzzySimilarityMin, fuzzySimilarityThreshold())
+	})
+	t.Run("valid override wins", func(t *testing.T) {
+		t.Setenv(envFuzzySimilarityMin, "0.2")
+		assert.Equal(t, 0.2, fuzzySimilarityThreshold())
+	})
+	for _, invalid := range []string{"not-a-number", "-0.1", "1.5"} {
+		t.Run("invalid falls back: "+invalid, func(t *testing.T) {
+			t.Setenv(envFuzzySimilarityMin, invalid)
+			assert.Equal(t, fuzzySimilarityMin, fuzzySimilarityThreshold())
+		})
+	}
+}
+
+func TestFuzzyScore_RespectsEnvOverride(t *testing.T) {
+	// "evidence" vs "environments" sits at ~0.42 similarity -- below the 0.6
+	// default (excluded) but above a permissive 0.3 override (included).
+	op := apispec.Operation{OperationId: "getGlobalEnvironments", Path: "/access/api/v1/environments", Summary: "Get Global Environments", Tags: []string{"Environments"}}
+
+	t.Setenv(envFuzzySimilarityMin, "")
+	assert.Equal(t, 0, scoreOperation(op, "evidence"), "default threshold should reject this coincidental match")
+
+	t.Setenv(envFuzzySimilarityMin, "0.3")
+	assert.Greater(t, scoreOperation(op, "evidence"), 0, "a lowered override should admit it")
+}
+
 func TestJfApiOneLiner(t *testing.T) {
 	assert.Equal(t, "jf api /access/api/v2/users", jfApiOneLiner(apispec.Operation{Method: "GET", Path: "/access/api/v2/users"}))
 	assert.Equal(t, "jf api /access/api/v2/users -X POST", jfApiOneLiner(apispec.Operation{Method: "POST", Path: "/access/api/v2/users"}))
