@@ -14,7 +14,7 @@ jobs:
       fail-fast: false
       # Throttle concurrency: all jobs share one external JFrog platform, and
       # 10 parallel jobs creating/deleting repos overload it (nginx 502s).
-      max-parallel: 5
+      max-parallel: 4
       matrix:
         distro:
           - image: ubuntu:20.04
