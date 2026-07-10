@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"sort"
 	"strconv"
@@ -286,7 +287,7 @@ func jfApiOneLiner(op apispec.Operation) string {
 	var b strings.Builder
 	b.WriteString("jf api ")
 	b.WriteString(op.Path)
-	if op.Method != "GET" {
+	if op.Method != http.MethodGet {
 		b.WriteString(" -X ")
 		b.WriteString(op.Method)
 	}
