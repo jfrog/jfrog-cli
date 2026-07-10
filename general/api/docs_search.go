@@ -64,6 +64,11 @@ type match struct {
 	Tags    []string `json:"tags"`
 	Score   int      `json:"score"`
 	JfApi   string   `json:"jf_api"`
+	// Parameters and RequestBody are the payload/parameter data an agent needs
+	// to actually call this operation, not just find it -- omitted when absent
+	// (e.g. Parameters for a path with none, RequestBody for GET/DELETE).
+	Parameters  []apispec.Parameter  `json:"parameters,omitempty"`
+	RequestBody *apispec.RequestBody `json:"request_body,omitempty"`
 }
 
 // searchResult is the JSON/table rendering payload for `jf api docs search`.
@@ -163,12 +168,14 @@ func filterAndScore(ops []apispec.Operation, query, tag, method string) []match 
 			continue
 		}
 		matches = append(matches, match{
-			Method:  op.Method,
-			Path:    op.Path,
-			Summary: op.Summary,
-			Tags:    op.Tags,
-			Score:   score,
-			JfApi:   jfApiOneLiner(op),
+			Method:      op.Method,
+			Path:        op.Path,
+			Summary:     op.Summary,
+			Tags:        op.Tags,
+			Score:       score,
+			JfApi:       jfApiOneLiner(op),
+			Parameters:  op.Parameters,
+			RequestBody: op.RequestBody,
 		})
 	}
 
@@ -273,13 +280,64 @@ func hasTag(tags []string, tagFilter string) bool {
 	return false
 }
 
-// jfApiOneliner is a ready-to-run `jf api` invocation for op: the method is
-// omitted for GET, since that's runApiCmd's own default.
+// jfApiOneLiner is a ready-to-run `jf api` invocation for op: the method is
+// omitted for GET, since that's runApiCmd's own default. When op has a
+// request body with required fields, a minimal placeholder JSON payload is
+// appended via -d so the command is runnable (after filling in real values),
+// not just a bare skeleton the caller has to guess the shape of.
 func jfApiOneLiner(op apispec.Operation) string {
-	if op.Method == "GET" {
-		return fmt.Sprintf("jf api %s", op.Path)
+	var b strings.Builder
+	b.WriteString("jf api ")
+	b.WriteString(op.Path)
+	if op.Method != "GET" {
+		b.WriteString(" -X ")
+		b.WriteString(op.Method)
 	}
-	return fmt.Sprintf("jf api %s -X %s", op.Path, op.Method)
+	if skeleton := requestBodySkeleton(op.RequestBody); skeleton != "" {
+		b.WriteString(` -H "Content-Type: application/json" -d '`)
+		b.WriteString(skeleton)
+		b.WriteString(`'`)
+	}
+	return b.String()
+}
+
+// requestBodySkeleton renders a minimal JSON object covering just rb's
+// required fields with type-appropriate placeholder values, or "" when rb is
+// nil or has no required fields (an all-optional body isn't worth guessing at
+// in a one-liner -- the full field list is still in the match's request_body).
+func requestBodySkeleton(rb *apispec.RequestBody) string {
+	if rb == nil {
+		return ""
+	}
+	var fields []string
+	for _, p := range rb.Properties {
+		if p.Required {
+			fields = append(fields, fmt.Sprintf("%q:%s", p.Name, placeholderJSONValue(p.Type)))
+		}
+	}
+	if len(fields) == 0 {
+		return ""
+	}
+	return "{" + strings.Join(fields, ",") + "}"
+}
+
+// placeholderJSONValue returns a type-appropriate placeholder JSON literal.
+// A referenced schema name (e.g. "BuildTarget") isn't a JSON-schema
+// primitive, so it falls back to the empty-string placeholder like any other
+// unrecognized type.
+func placeholderJSONValue(propType string) string {
+	switch {
+	case propType == "boolean":
+		return "false"
+	case propType == "integer" || propType == "number":
+		return "0"
+	case propType == "array" || strings.HasPrefix(propType, "array<"):
+		return "[]"
+	case propType == "object":
+		return "{}"
+	default:
+		return `""`
+	}
 }
 
 // renderJSON writes result as indented JSON via the shared client logger --
@@ -302,9 +360,43 @@ func renderTable(result searchResult, w io.Writer) error {
 	}
 
 	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
-	_, _ = fmt.Fprintln(tw, "METHOD\tPATH\tSUMMARY\tTAGS\tSCORE\tJF API")
+	_, _ = fmt.Fprintln(tw, "METHOD\tPATH\tSUMMARY\tTAGS\tSCORE\tPARAMS\tBODY\tJF API")
 	for _, m := range result.Matches {
-		_, _ = fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%d\t%s\n", m.Method, m.Path, m.Summary, strings.Join(m.Tags, ","), m.Score, m.JfApi)
+		_, _ = fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n",
+			m.Method, m.Path, m.Summary, strings.Join(m.Tags, ","), m.Score,
+			formatParams(m.Parameters), formatRequestBody(m.RequestBody), m.JfApi)
 	}
 	return tw.Flush()
+}
+
+// formatParams and formatRequestBody render a compact, single-line summary of
+// field names for the table view (a "*" suffix marks a required field) --
+// the JSON view carries the full type/description/default detail instead.
+func formatParams(params []apispec.Parameter) string {
+	if len(params) == 0 {
+		return "-"
+	}
+	names := make([]string, len(params))
+	for i, p := range params {
+		names[i] = requiredMark(p.Name, p.Required)
+	}
+	return strings.Join(names, ",")
+}
+
+func formatRequestBody(rb *apispec.RequestBody) string {
+	if rb == nil || len(rb.Properties) == 0 {
+		return "-"
+	}
+	names := make([]string, len(rb.Properties))
+	for i, p := range rb.Properties {
+		names[i] = requiredMark(p.Name, p.Required)
+	}
+	return strings.Join(names, ",")
+}
+
+func requiredMark(name string, required bool) string {
+	if required {
+		return name + "*"
+	}
+	return name
 }
