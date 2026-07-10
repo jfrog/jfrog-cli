@@ -230,8 +230,10 @@ func TestAptSetup_ImportKey(t *testing.T) {
 		"--flat=true",
 	)
 
-	// Artifactory calculates the Debian index asynchronously; wait for the
-	// signed InRelease to appear before pointing apt at it.
+	// local-rt-setup's Artifactory does not auto-calculate the Debian index on
+	// deploy, so trigger it explicitly, then wait for the signed InRelease to
+	// appear before pointing apt at it.
+	reindexDebianRepo(t, localRepo)
 	waitForSignedInRelease(t, localRepo, dist)
 
 	err := runJfrogCliWithoutAssertion("setup", "apt",
@@ -811,15 +813,37 @@ func buildMinimalDeb(t *testing.T) string {
 	return debPath
 }
 
+// reindexDebianRepo triggers Artifactory's Debian metadata calculation for the
+// repo. local-rt-setup's Artifactory does not index automatically on deploy, so
+// the dists/<dist>/{Release,InRelease,Packages} files only exist after this call.
+func reindexDebianRepo(t *testing.T, repo string) {
+	t.Helper()
+	artURL := strings.TrimSuffix(*tests.JfrogUrl+tests.ArtifactoryEndpoint, "/")
+	req, err := http.NewRequest(http.MethodPost, artURL+"/api/deb/reindex/"+repo, nil)
+	require.NoError(t, err)
+	setArtAuth(req)
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	body, _ := io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+	// 200 OK or 202 Accepted (async) are both fine; calculation still completes
+	// after the response, so the caller must poll for the generated index.
+	require.Truef(t, resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusAccepted,
+		"reindex %s returned %d: %s", repo, resp.StatusCode, body)
+}
+
 // waitForSignedInRelease polls the local repo's dists/<dist>/InRelease until
 // Artifactory has generated a GPG-signed index (async), or fails after a timeout.
+// It re-triggers reindex periodically in case the first calculation missed the
+// freshly uploaded package.
 func waitForSignedInRelease(t *testing.T, repo, dist string) {
 	t.Helper()
 	artURL := strings.TrimSuffix(*tests.JfrogUrl+tests.ArtifactoryEndpoint, "/")
 	inReleaseURL := fmt.Sprintf("%s/%s/dists/%s/InRelease", artURL, repo, dist)
 
-	deadline := time.Now().Add(120 * time.Second)
+	deadline := time.Now().Add(180 * time.Second)
 	var lastStatus int
+	attempts := 0
 	for time.Now().Before(deadline) {
 		req, err := http.NewRequest(http.MethodGet, inReleaseURL, nil)
 		require.NoError(t, err)
@@ -834,6 +858,11 @@ func waitForSignedInRelease(t *testing.T, repo, dist string) {
 			if resp.StatusCode == http.StatusOK && strings.Contains(string(body), "BEGIN PGP SIGNED MESSAGE") {
 				return
 			}
+		}
+		attempts++
+		// Nudge the calculation again every ~30s while waiting.
+		if attempts%15 == 0 {
+			reindexDebianRepo(t, repo)
 		}
 		time.Sleep(2 * time.Second)
 	}
