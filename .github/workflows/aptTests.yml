@@ -8,13 +8,10 @@ on:
 
 jobs:
   apt-Tests:
-    name: apt tests (${{ matrix.distro.image }}, ${{ matrix.user_mode }})
+    name: apt tests (${{ matrix.distro.name }}, ${{ matrix.user_mode }})
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
-      # Throttle concurrency: all jobs share one external JFrog platform, and
-      # 10 parallel jobs creating/deleting repos overload it (nginx 502s).
-      max-parallel: 4
       matrix:
         distro:
           - image: ubuntu:20.04
@@ -39,17 +36,7 @@ jobs:
           - root
           - nonroot
 
-    container:
-      image: ${{ matrix.distro.image }}
-      options: --user root --privileged
-
     steps:
-      - name: Install prerequisites
-        run: |
-          apt-get update -y
-          apt-get install -y --no-install-recommends \
-            git curl ca-certificates sudo wget gnupg
-
       - name: Checkout code
         uses: actions/checkout@v7
         with:
@@ -64,45 +51,52 @@ jobs:
       - name: Setup Go with cache
         uses: jfrog/.github/actions/install-go-with-cache@main
 
-      - name: Create non-root test user
-        if: matrix.user_mode == 'nonroot'
-        run: |
-          useradd -m -u 1001 -s /bin/bash testuser
-          echo "testuser ALL=(root) NOPASSWD: /usr/bin/apt-get, /usr/bin/apt" >> /etc/sudoers.d/testuser-apt
-          chmod 0440 /etc/sudoers.d/testuser-apt
-          chown -R testuser:testuser /etc/apt/sources.list.d
-          chown -R testuser:testuser /etc/apt/preferences.d
-          mkdir -p /etc/apt/keyrings
-          chown -R testuser:testuser /etc/apt/keyrings
-          chown -R testuser:testuser "$GITHUB_WORKSPACE"
+      # Runs on the host runner, not inside a distro container - stable, no OOM.
+      - name: Install local Artifactory
+        uses: jfrog/.github/actions/install-local-artifactory@main
+        with:
+          RTLIC: ${{ secrets.RTLIC }}
+          RT_CONNECTION_TIMEOUT_SECONDS: '1200'
 
-      - name: Run apt tests (root)
-        if: matrix.user_mode == 'root'
-        run: >-
-          go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.apt
-          --jfrog.url=${{ secrets.PLATFORM_URL }}
-          --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }}
-          --jfrog.user=${{ secrets.PLATFORM_USER }}
-          --ci.runId=${{ matrix.distro.name }}-root
-          --run "TestApt"
+      # Compiled once on the host, then bind-mounted into every distro container below.
+      # CGO_ENABLED=0 keeps the binary statically linked so it runs unchanged across
+      # glibc versions from Ubuntu 20.04 through Debian 13.
+      - name: Compile apt test binary
+        run: go test -c -o apt.test .
         env:
-          APT_TEST_DIST: ${{ matrix.distro.dist }}
+          CGO_ENABLED: "0"
 
-      - name: Run apt tests (non-root with dir perms)
-        if: matrix.user_mode == 'nonroot'
+      # --network host puts the container on the runner's network namespace, so
+      # localhost:8081 inside the container reaches the Artifactory started above.
+      # exec.Command("apt-get", ...) and /etc/apt/, /var/log/apt/ inside apt.test
+      # all hit this container's native environment, not the host's.
+      - name: Run apt tests (${{ matrix.distro.image }}, ${{ matrix.user_mode }})
         run: |
-          su -c "PATH='$PATH' go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.apt \
-            --jfrog.url='${{ secrets.PLATFORM_URL }}' \
-            --jfrog.adminToken='${{ secrets.PLATFORM_ADMIN_TOKEN }}' \
-            --jfrog.user='${{ secrets.PLATFORM_USER }}' \
-            --ci.runId='${{ matrix.distro.name }}-nonroot' \
-            --run 'TestApt'" testuser
-        env:
-          APT_TEST_DIST: ${{ matrix.distro.dist }}
+          docker run --rm --network host \
+            -v "$GITHUB_WORKSPACE:/workspace" \
+            -w /workspace \
+            -e JFROG_TESTS_LOCAL_ACCESS_TOKEN \
+            -e APT_TEST_DIST="${{ matrix.distro.dist }}" \
+            -e USER_MODE="${{ matrix.user_mode }}" \
+            -e CI_RUN_ID="${{ matrix.distro.name }}-${{ matrix.user_mode }}" \
+            "${{ matrix.distro.image }}" \
+            bash -c '
+              set -eu
+              apt-get update -y
+              apt-get install -y --no-install-recommends gnupg sudo
 
-      - name: Cleanup apt configuration
-        if: always()
-        run: |
-          rm -f /etc/apt/sources.list.d/jfrog-*.list
-          rm -f /etc/apt/preferences.d/jfrog-*.pref
-          rm -f /etc/apt/keyrings/jfrog-*.asc
+              if [ "$USER_MODE" = "nonroot" ]; then
+                useradd -m -u 1001 -s /bin/bash testuser
+                echo "testuser ALL=(root) NOPASSWD: /usr/bin/apt-get, /usr/bin/apt" > /etc/sudoers.d/testuser-apt
+                chmod 0440 /etc/sudoers.d/testuser-apt
+                mkdir -p /etc/apt/keyrings
+                chown -R testuser:testuser \
+                  /etc/apt/sources.list.d /etc/apt/preferences.d /etc/apt/keyrings /workspace
+
+                su -c "/workspace/apt.test -test.v -test.timeout=0 -test.run=TestApt \
+                  --test.apt --ci.runId=$CI_RUN_ID" testuser
+              else
+                /workspace/apt.test -test.v -test.timeout=0 -test.run=TestApt \
+                  --test.apt --ci.runId="$CI_RUN_ID"
+              fi
+            '
