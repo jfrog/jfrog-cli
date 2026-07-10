@@ -194,59 +194,43 @@ func TestAptSetup_TrustedFlag(t *testing.T) {
 // TestAptSetup_ImportKey verifies --import-key fetches and installs the GPG key
 // and that apt can then verify the repo's signature end-to-end.
 //
-// This must run against the *local* Debian repo, not the virtual repo: only a
-// local repo's generated index is signed by Artifactory with the repo's
-// primaryKeyPairRef. The virtual repo proxies upstream dists (e.g. Ubuntu
-// "noble") whose InRelease is signed by the distro's own key, which the
-// throwaway keypair we import can never verify.
+// This runs against a *remote* Debian repo. When a Debian remote repo has a
+// primaryKeyPairRef, Artifactory strips the upstream signature and re-signs the
+// proxied metadata with that keypair, so the key we import can verify it. (The
+// virtual repo proxies the upstream signature through unchanged, so the imported
+// key would never match.)
 //
-// So we: set our keypair on the local repo, upload a real .deb under a
-// local-only distribution, wait for Artifactory to generate a signed InRelease,
-// then run setup --import-key and let its apt-get update verify against it.
+// The re-sign happens on the first fetch after the key is attached. Earlier
+// tests in this suite fetch the "noble" dist, caching it upstream-signed, so we
+// deliberately use a different codename ("jammy") that is still fresh here.
 func TestAptSetup_ImportKey(t *testing.T) {
 	initAptTest(t)
 	requireRoot(t)
 	defer cleanAptTest(t)
 
-	if _, err := exec.LookPath("dpkg-deb"); err != nil {
-		t.Skip("dpkg-deb not found — cannot build test .deb")
-	}
-
-	localRepo := tests.AptLocalRepo
-	// A codename served only by the local repo, so apt fetches the
-	// Artifactory-signed index rather than an upstream-proxied one.
-	const dist = "jfrogtest"
+	// Ubuntu remote (archive.ubuntu.com). "jammy" (22.04 LTS) is always available
+	// and is not fetched by earlier tests, so its index is first pulled — and thus
+	// re-signed with our key — after we attach the keypair below.
+	repo := tests.AptRemoteRepo
+	const dist = "jammy"
 	const component = "main"
 
 	pairName, cleanupKeypair := createArtifactoryGPGKeypair(t)
 	defer cleanupKeypair()
-	// Sign the local repo (not the virtual) so its generated index carries our key.
-	setRepoPrimaryKeyPairRef(t, localRepo, pairName)
-	defer setRepoPrimaryKeyPairRef(t, localRepo, "")
-
-	debPath := buildMinimalDeb(t)
-	runJfrogCli(t, "rt", "upload", debPath, localRepo+"/pool/",
-		"--deb="+dist+"/"+component+"/amd64",
-		"--flat=true",
-	)
-
-	// local-rt-setup's Artifactory does not auto-calculate the Debian index on
-	// deploy, so trigger it explicitly, then wait for the signed InRelease to
-	// appear before pointing apt at it.
-	reindexDebianRepo(t, localRepo)
-	waitForSignedInRelease(t, localRepo, dist)
+	setRepoPrimaryKeyPairRef(t, repo, pairName)
+	defer setRepoPrimaryKeyPairRef(t, repo, "")
 
 	err := runJfrogCliWithoutAssertion("setup", "apt",
-		"--repo="+localRepo,
+		"--repo="+repo,
 		"--dist="+dist,
 		"--component="+component,
 		"--import-key",
 	)
 	require.NoError(t, err)
 
-	assert.FileExists(t, keyringPath(localRepo, dist))
+	assert.FileExists(t, keyringPath(repo, dist))
 
-	content, err := os.ReadFile(sourcesListPath(localRepo, dist))
+	content, err := os.ReadFile(sourcesListPath(repo, dist))
 	require.NoError(t, err)
 	assert.Contains(t, string(content), "signed-by=")
 	assert.NotContains(t, string(content), "trusted=yes")
@@ -788,85 +772,6 @@ func setArtAuth(req *http.Request) {
 	} else {
 		req.SetBasicAuth(*tests.JfrogUser, *tests.JfrogPassword)
 	}
-}
-
-// buildMinimalDeb builds a tiny valid .deb via dpkg-deb and returns its path.
-// The package content is irrelevant — it exists only so Artifactory generates a
-// Debian index for the target distribution.
-func buildMinimalDeb(t *testing.T) string {
-	t.Helper()
-	root := t.TempDir()
-	pkgDir := filepath.Join(root, "pkg")
-	debianDir := filepath.Join(pkgDir, "DEBIAN")
-	require.NoError(t, os.MkdirAll(debianDir, 0755))
-
-	control := "Package: jfrog-apt-test-pkg\n" +
-		"Version: 1.0.0\n" +
-		"Architecture: amd64\n" +
-		"Maintainer: JFrog Apt Test <jfrog-apt-test@example.com>\n" +
-		"Description: throwaway package for the apt import-key test\n"
-	require.NoError(t, os.WriteFile(filepath.Join(debianDir, "control"), []byte(control), 0644))
-
-	debPath := filepath.Join(root, "jfrog-apt-test-pkg_1.0.0_amd64.deb")
-	out, err := exec.Command("dpkg-deb", "--build", "--root-owner-group", pkgDir, debPath).CombinedOutput()
-	require.NoError(t, err, "dpkg-deb build failed: %s", out)
-	return debPath
-}
-
-// reindexDebianRepo triggers Artifactory's Debian metadata calculation for the
-// repo. local-rt-setup's Artifactory does not index automatically on deploy, so
-// the dists/<dist>/{Release,InRelease,Packages} files only exist after this call.
-func reindexDebianRepo(t *testing.T, repo string) {
-	t.Helper()
-	artURL := strings.TrimSuffix(*tests.JfrogUrl+tests.ArtifactoryEndpoint, "/")
-	req, err := http.NewRequest(http.MethodPost, artURL+"/api/deb/reindex/"+repo, nil)
-	require.NoError(t, err)
-	setArtAuth(req)
-	resp, err := http.DefaultClient.Do(req)
-	require.NoError(t, err)
-	body, _ := io.ReadAll(resp.Body)
-	_ = resp.Body.Close()
-	// 200 OK or 202 Accepted (async) are both fine; calculation still completes
-	// after the response, so the caller must poll for the generated index.
-	require.Truef(t, resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusAccepted,
-		"reindex %s returned %d: %s", repo, resp.StatusCode, body)
-}
-
-// waitForSignedInRelease polls the local repo's dists/<dist>/InRelease until
-// Artifactory has generated a GPG-signed index (async), or fails after a timeout.
-// It re-triggers reindex periodically in case the first calculation missed the
-// freshly uploaded package.
-func waitForSignedInRelease(t *testing.T, repo, dist string) {
-	t.Helper()
-	artURL := strings.TrimSuffix(*tests.JfrogUrl+tests.ArtifactoryEndpoint, "/")
-	inReleaseURL := fmt.Sprintf("%s/%s/dists/%s/InRelease", artURL, repo, dist)
-
-	deadline := time.Now().Add(180 * time.Second)
-	var lastStatus int
-	attempts := 0
-	for time.Now().Before(deadline) {
-		req, err := http.NewRequest(http.MethodGet, inReleaseURL, nil)
-		require.NoError(t, err)
-		setArtAuth(req)
-		resp, err := http.DefaultClient.Do(req)
-		if err == nil {
-			body, _ := io.ReadAll(resp.Body)
-			_ = resp.Body.Close()
-			lastStatus = resp.StatusCode
-			// InRelease is the inline-signed variant; presence of the PGP header
-			// confirms Artifactory signed it with the repo's primaryKeyPairRef.
-			if resp.StatusCode == http.StatusOK && strings.Contains(string(body), "BEGIN PGP SIGNED MESSAGE") {
-				return
-			}
-		}
-		attempts++
-		// Nudge the calculation again every ~30s while waiting.
-		if attempts%15 == 0 {
-			reindexDebianRepo(t, repo)
-		}
-		time.Sleep(2 * time.Second)
-	}
-	t.Fatalf("timed out waiting for signed InRelease at %s (last status %d)", inReleaseURL, lastStatus)
 }
 
 func isWritable(info os.FileInfo) bool {
