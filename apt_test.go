@@ -1,7 +1,10 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
@@ -49,6 +52,16 @@ func cleanAptTest(t *testing.T) {
 
 // aptRepo returns the virtual repo name used across apt integration tests.
 func aptRepo() string { return tests.AptVirtualRepo }
+
+// testDist returns the apt distribution codename for the current container,
+// driven by the APT_TEST_DIST env var set in aptTests.yml. Falls back to
+// "noble" so local runs without the env still work.
+func testDist() string {
+	if d := os.Getenv("APT_TEST_DIST"); d != "" {
+		return d
+	}
+	return "noble"
+}
 
 // sourcesListPath returns the expected path for a given repo+dist.
 func sourcesListPath(repo, dist string) string {
@@ -178,22 +191,25 @@ func TestAptSetup_TrustedFlag(t *testing.T) {
 }
 
 // TestAptSetup_ImportKey verifies --import-key fetches and installs the GPG key.
-// Skipped when the Artifactory repo has no GPG key configured.
+// Creates a throwaway GPG keypair in Artifactory at test runtime so the test
+// is not skipped when the platform has no key pre-configured.
 func TestAptSetup_ImportKey(t *testing.T) {
 	initAptTest(t)
 	requireRoot(t)
 	defer cleanAptTest(t)
 
 	repo := aptRepo()
-	err := runJfrogCliWithoutAssertion("setup", "apt", "--repo="+repo, "--dist=noble", "--import-key")
-	if err != nil {
-		t.Skipf("Skipping: Artifactory repo %q has no GPG key configured: %v", repo, err)
-	}
 
-	// keyring file written
+	pairName, cleanupKeypair := createArtifactoryGPGKeypair(t)
+	defer cleanupKeypair()
+	setRepoPrimaryKeyPairRef(t, repo, pairName)
+	defer setRepoPrimaryKeyPairRef(t, repo, "")
+
+	err := runJfrogCliWithoutAssertion("setup", "apt", "--repo="+repo, "--dist=noble", "--import-key")
+	require.NoError(t, err)
+
 	assert.FileExists(t, keyringPath(repo, "noble"))
 
-	// sources line uses signed-by, not trusted=yes
 	content, err := os.ReadFile(sourcesListPath(repo, "noble"))
 	require.NoError(t, err)
 	assert.Contains(t, string(content), "signed-by=")
@@ -325,23 +341,28 @@ func TestAptSetupRemove_Idempotent(t *testing.T) {
 
 // ── jf apt install (on-the-fly) ───────────────────────────────────────────────
 
-// TestAptInstall_OnTheFlyInstall verifies curl can be installed via on-the-fly auth
-// and that the install came from Artifactory (not a system source).
+// TestAptInstall_OnTheFlyInstall verifies a package can be installed via
+// on-the-fly auth and that the install came from Artifactory.
 func TestAptInstall_OnTheFlyInstall(t *testing.T) {
 	initAptTest(t)
 	requireRoot(t)
 	defer cleanAptTest(t)
 
+	// Snapshot history.log size before installing so assertInstalledFromArtifactory
+	// reads only the entry written by this test, not the workflow's prereq step.
+	logOffset := aptHistoryLogSize()
+
+	dist := testDist()
 	runJfrogCli(t, "apt", "install", "-y", "curl",
 		"--repo="+aptRepo(),
-		"--dist=noble",
+		"--dist="+dist,
 		"--trusted",
 	)
 
 	_, err := os.Stat("/usr/bin/curl")
 	assert.NoError(t, err, "curl must be installed after jf apt install")
 
-	assertInstalledFromArtifactory(t)
+	assertInstalledFromArtifactory(t, logOffset)
 }
 
 // TestAptInstall_SkipLoginUsesSystemConfig verifies --skip-login bypasses auth injection:
@@ -445,7 +466,7 @@ func TestAptSetupThenNativeInstall(t *testing.T) {
 	defer cleanAptTest(t)
 
 	repo := aptRepo()
-	dist := "noble"
+	dist := testDist()
 
 	// Persistent setup — writes sources.list + Pin-Priority: 1001 pinning file.
 	runJfrogCli(t, "setup", "apt",
@@ -544,23 +565,44 @@ func captureTempSourcesList(t *testing.T) (<-chan string, func()) {
 	return ch, func() { close(done) }
 }
 
-// assertInstalledFromArtifactory reads /var/log/apt/history.log and verifies the
-// most recent apt commandline used on-the-fly Artifactory auth (Dir::Etc::sourcelist=
-// pointing to a jfrog temp file and Dir::Etc::sourceparts=- to block other sources).
-func assertInstalledFromArtifactory(t *testing.T) {
+// aptHistoryLogSize returns the current byte length of /var/log/apt/history.log.
+// Call before an install to get an offset; pass to assertInstalledFromArtifactory
+// so it only inspects lines written during the test, not earlier workflow steps.
+func aptHistoryLogSize() int64 {
+	info, err := os.Stat("/var/log/apt/history.log")
+	if err != nil {
+		return 0
+	}
+	return info.Size()
+}
+
+// assertInstalledFromArtifactory reads /var/log/apt/history.log from offset and
+// verifies the first apt commandline entry uses on-the-fly Artifactory auth
+// (Dir::Etc::sourcelist= pointing to a jfrog temp file, Dir::Etc::sourceparts=-
+// to suppress other sources). offset should be from aptHistoryLogSize() before
+// the install; pass 0 to search the full log.
+func assertInstalledFromArtifactory(t *testing.T, offset int64) {
 	t.Helper()
-	data, err := os.ReadFile("/var/log/apt/history.log")
+	f, err := os.Open("/var/log/apt/history.log")
 	if err != nil {
 		t.Logf("Warning: cannot read /var/log/apt/history.log: %v — skipping Artifactory source check", err)
 		return
 	}
-	s := string(data)
-	idx := strings.LastIndex(s, "\nCommandline:")
-	if idx == -1 {
-		idx = strings.Index(s, "Commandline:")
+	defer f.Close()
+	if offset > 0 {
+		if _, err = f.Seek(offset, 0); err != nil {
+			t.Logf("Warning: seek history.log to %d: %v", offset, err)
+		}
 	}
-	require.NotEqual(t, -1, idx, "no Commandline entry found in apt history log")
-	line := s[idx+1:]
+	data, err := os.ReadFile("/var/log/apt/history.log")
+	if err != nil {
+		t.Logf("Warning: read history.log: %v", err)
+		return
+	}
+	s := string(data[min(offset, int64(len(data))):])
+	idx := strings.Index(s, "Commandline:")
+	require.NotEqual(t, -1, idx, "no Commandline entry found in apt history log after test install")
+	line := s[idx:]
 	if end := strings.IndexByte(line, '\n'); end != -1 {
 		line = line[:end]
 	}
@@ -594,6 +636,110 @@ func assertPersistentInstallFromArtifactory(t *testing.T, pkg, artURL string) {
 		}
 	}
 	t.Errorf("%q does not appear to be installed; apt-cache policy output:\n%s", pkg, out)
+}
+
+// createArtifactoryGPGKeypair generates a throwaway GPG keypair and uploads it
+// to Artifactory via the REST API. Returns the pair name and a cleanup func that
+// deletes it from Artifactory. The caller must defer the cleanup.
+// Skips the test if gpg is not available.
+func createArtifactoryGPGKeypair(t *testing.T) (pairName string, cleanup func()) {
+	t.Helper()
+	if _, err := exec.LookPath("gpg"); err != nil {
+		t.Skip("gpg not found — cannot create test GPG keypair")
+	}
+
+	// Isolated GPG home so we don't pollute the system keyring.
+	gpgHome := t.TempDir()
+	require.NoError(t, os.Chmod(gpgHome, 0700))
+
+	keyParams := `%no-protection
+Key-Type: RSA
+Key-Length: 2048
+Name-Real: JFrog Apt Test
+Name-Email: jfrog-apt-test@example.com
+Expire-Date: 1d
+%commit
+`
+	paramFile := filepath.Join(gpgHome, "keygen.conf")
+	require.NoError(t, os.WriteFile(paramFile, []byte(keyParams), 0600))
+
+	gpgArgs := func(args ...string) *exec.Cmd {
+		cmd := exec.Command("gpg", args...)
+		cmd.Env = append(os.Environ(), "GNUPGHOME="+gpgHome)
+		return cmd
+	}
+
+	out, err := gpgArgs("--batch", "--gen-key", paramFile).CombinedOutput()
+	require.NoError(t, err, "gpg key generation failed: %s", out)
+
+	pubKey, err := gpgArgs("--armor", "--export", "jfrog-apt-test@example.com").Output()
+	require.NoError(t, err, "gpg export public key failed")
+
+	privKey, err := gpgArgs("--armor", "--batch", "--passphrase", "", "--export-secret-keys", "jfrog-apt-test@example.com").Output()
+	require.NoError(t, err, "gpg export private key failed")
+
+	pairName = fmt.Sprintf("jfrog-apt-test-%d", time.Now().UnixNano())
+	artURL := strings.TrimSuffix(*tests.JfrogUrl+tests.ArtifactoryEndpoint, "/")
+
+	type keypairReq struct {
+		PairName   string `json:"pairName"`
+		PairType   string `json:"pairType"`
+		PassPhrase string `json:"passPhrase"`
+		PublicKey  string `json:"publicKey"`
+		PrivateKey string `json:"privateKey"`
+	}
+	body, err := json.Marshal(keypairReq{
+		PairName:   pairName,
+		PairType:   "GPG",
+		PassPhrase: "",
+		PublicKey:  string(pubKey),
+		PrivateKey: string(privKey),
+	})
+	require.NoError(t, err)
+
+	doArtRequest(t, http.MethodPost, artURL+"/api/security/keypair", body, http.StatusCreated)
+
+	cleanup = func() {
+		req, _ := http.NewRequest(http.MethodDelete, artURL+"/api/security/keypair/"+pairName, nil)
+		setArtAuth(req)
+		resp, err := http.DefaultClient.Do(req)
+		if err == nil {
+			_ = resp.Body.Close()
+		}
+	}
+	return pairName, cleanup
+}
+
+// setRepoPrimaryKeyPairRef updates the repo's primaryKeyPairRef in Artifactory.
+// Pass an empty pairName to clear the field.
+func setRepoPrimaryKeyPairRef(t *testing.T, repoName, pairName string) {
+	t.Helper()
+	artURL := strings.TrimSuffix(*tests.JfrogUrl+tests.ArtifactoryEndpoint, "/")
+	body, err := json.Marshal(map[string]string{"primaryKeyPairRef": pairName})
+	require.NoError(t, err)
+	doArtRequest(t, http.MethodPost, artURL+"/api/repositories/"+repoName, body, http.StatusOK)
+}
+
+// doArtRequest performs an authenticated Artifactory REST call and asserts the status.
+func doArtRequest(t *testing.T, method, url string, body []byte, wantStatus int) {
+	t.Helper()
+	req, err := http.NewRequest(method, url, bytes.NewReader(body))
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+	setArtAuth(req)
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	_ = resp.Body.Close()
+	require.Equal(t, wantStatus, resp.StatusCode, "%s %s", method, url)
+}
+
+// setArtAuth attaches admin credentials to a request using the test flags.
+func setArtAuth(req *http.Request) {
+	if *tests.JfrogAccessToken != "" {
+		req.Header.Set("Authorization", "Bearer "+*tests.JfrogAccessToken)
+	} else {
+		req.SetBasicAuth(*tests.JfrogUser, *tests.JfrogPassword)
+	}
 }
 
 func isWritable(info os.FileInfo) bool {
