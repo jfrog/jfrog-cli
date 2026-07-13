@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/formats"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
@@ -658,6 +659,37 @@ func TestArtifactoryBuildCollectEnv(t *testing.T) {
 
 	// Make sure a new module was not created.
 	assert.Empty(t, buildInfo.Modules, "Env collection should not add a new module to the build info")
+
+	// Cleanup
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryBuildPublishRecordsDuration(t *testing.T) {
+	initArtifactoryTest(t, "")
+	// Use a unique build number to avoid clashing with other tests that reuse RtBuildName1.
+	buildNumber := strconv.FormatInt(time.Now().Unix(), 10)
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+
+	// First build command - records the build's start time.
+	uploadFiles(t, "upload", "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber)
+	// Collect environment, mirroring the reported scenario (upload -> bce -> bp).
+	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("bce", tests.RtBuildName1, buildNumber))
+	runRt(t, "bp", tests.RtBuildName1, buildNumber)
+
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.RtBuildName1, buildNumber)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
+
+	assert.NotEmpty(t, buildInfo.Started, "build info should have a 'started' timestamp")
+	assert.Greater(t, buildInfo.DurationMillis, int64(0), "build duration should not be published as 0")
 
 	// Cleanup
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
