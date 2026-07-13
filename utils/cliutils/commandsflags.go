@@ -89,6 +89,8 @@ const (
 	ConanConfig            = "conan-config"
 	Conan                  = "conan"
 	Nix                    = "nix"
+	Apt                    = "apt"
+	AptSetup               = "apt-setup"
 	Ping                   = "ping"
 	RtCurl                 = "rt-curl"
 	TemplateConsumer       = "template-consumer"
@@ -382,6 +384,13 @@ const (
 	deploymentThreads = "deployment-threads"
 	skipLogin         = "skip-login"
 	validateSha       = "validate-sha"
+
+	// Apt-specific flags
+	aptDistribution = "dist"
+	aptComponent    = "component"
+	aptTrusted      = "trusted"
+	aptImportKey    = "import-key"
+	aptRemove       = "remove"
 
 	// Unique docker promote flags
 	dockerPromotePrefix = "docker-promote-"
@@ -1388,6 +1397,27 @@ var flagsMap = map[string]cli.Flag{
 		Name:  skipLogin,
 		Usage: "[Default: false] Set to true if you'd like the command to skip performing docker login.` `",
 	},
+	aptDistribution: cli.StringFlag{
+		Name:  aptDistribution,
+		Usage: "[apt only] [Required for apt setup] Debian distribution name (e.g. noble, jammy).` `",
+	},
+	aptComponent: cli.StringFlag{
+		Name:  aptComponent,
+		Value: "main",
+		Usage: "[apt only] [Default: main] Debian component (e.g. main, contrib, non-free). Multiple components: --component \"main contrib non-free\".` `",
+	},
+	aptTrusted: cli.BoolFlag{
+		Name:  aptTrusted,
+		Usage: "[apt only] [Default: false] Skip GPG signature verification. Use only for testing when the repository has no GPG key configured. Mutually exclusive with --import-key.` `",
+	},
+	aptImportKey: cli.BoolFlag{
+		Name:  aptImportKey,
+		Usage: "[apt only] [Default: false] Fetch the Artifactory repository's GPG public key and install it to /etc/apt/keyrings/. Uses signed-by= in the sources entry for scoped trust. Mutually exclusive with --trusted.` `",
+	},
+	aptRemove: cli.BoolFlag{
+		Name:  aptRemove,
+		Usage: "[apt only] [Default: false] Remove all JFrog-managed apt source and pinning files. Combine with --dist to limit to a specific distribution.` `",
+	},
 	npmDetailedSummary: cli.BoolFlag{
 		Name:  detailedSummary,
 		Usage: "[Default: false] Set to true to include a list of the affected files in the command summary.` `",
@@ -2243,6 +2273,12 @@ var commandFlags = map[string][]string{
 	Nix: {
 		BuildName, BuildNumber, module, Project, serverId,
 	},
+	Apt: {
+		BuildName, BuildNumber, module, Project, serverId, skipLogin, setupRepo, aptDistribution, aptComponent, aptTrusted,
+	},
+	AptSetup: {
+		serverId, setupRepo, aptDistribution, aptComponent, aptTrusted, aptImportKey, aptRemove,
+	},
 	Stats: {
 		XrFormat, accessToken, serverId,
 	},
@@ -2387,6 +2423,7 @@ var commandFlags = map[string][]string{
 	},
 	Setup: {
 		serverId, url, user, password, accessToken, sshPassphrase, sshKeyPath, ClientCertPath, ClientCertKeyPath, Project, setupRepo,
+		aptDistribution, aptComponent, aptTrusted, aptImportKey, aptRemove,
 	},
 	Login: {
 		serverId,
