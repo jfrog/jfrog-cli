@@ -191,32 +191,35 @@ func TestAptSetup_TrustedFlag(t *testing.T) {
 	assert.Contains(t, string(content), "[trusted=yes]", "trusted flag must produce [trusted=yes] in sources line")
 }
 
-// TestAptSetup_ImportKey verifies --import-key fetches and installs the GPG key
-// and that apt can then verify the repo's signature end-to-end.
+// TestAptSetup_ImportKey verifies the full --import-key handshake end to end:
+// setup fetches the repo's GPG public key from Artifactory, installs it into the
+// apt keyring, writes a sources.list entry scoped to that key via signed-by=,
+// and the trailing apt-get update verifies the repo index against that key.
 //
-// This runs against a *remote* Debian repo. When a Debian remote repo has a
-// primaryKeyPairRef, Artifactory strips the upstream signature and re-signs the
-// proxied metadata with that keypair, so the key we import can verify it. (The
-// virtual repo proxies the upstream signature through unchanged, so the imported
-// key would never match.)
+// The key detail is which repo type can serve metadata signed with our throwaway
+// keypair. A virtual Debian repo re-signs its aggregated index with its own
+// primaryKeyPairRef — including dists it proxies from upstream remote members.
+// (Remote repos reject a keypair outright with "Remote repository doesn't
+// support Primary KeyPair"; a bare virtual with no keypair passes the upstream
+// signature through and apt fails with NO_PUBKEY for the upstream key.)
 //
-// The re-sign happens on the first fetch after the key is attached. Earlier
-// tests in this suite fetch the "noble" dist, caching it upstream-signed, so we
-// deliberately use a different codename ("jammy") that is still fresh here.
+// So we attach the keypair to the virtual repo, point setup at dist=noble
+// (served by its ubuntu remote member), and the virtual re-signs
+// dists/noble/InRelease with our key so apt-get update verifies successfully.
 func TestAptSetup_ImportKey(t *testing.T) {
 	initAptTest(t)
 	requireRoot(t)
 	defer cleanAptTest(t)
 
-	// Ubuntu remote (archive.ubuntu.com). "jammy" (22.04 LTS) is always available
-	// and is not fetched by earlier tests, so its index is first pulled — and thus
-	// re-signed with our key — after we attach the keypair below.
-	repo := tests.AptRemoteRepo
-	const dist = "jammy"
+	repo := tests.AptVirtualRepo
+	const dist = "noble"
 	const component = "main"
 
 	pairName, cleanupKeypair := createArtifactoryGPGKeypair(t)
 	defer cleanupKeypair()
+	// Virtual Debian repos accept a primaryKeyPairRef and re-sign their aggregated
+	// index with it; FetchAndInstallPublicKey reads this ref to locate the key to
+	// install, and the re-signed index is what apt-get update verifies against.
 	setRepoPrimaryKeyPairRef(t, repo, pairName)
 	defer setRepoPrimaryKeyPairRef(t, repo, "")
 
@@ -226,7 +229,7 @@ func TestAptSetup_ImportKey(t *testing.T) {
 		"--component="+component,
 		"--import-key",
 	)
-	require.NoError(t, err)
+	require.NoError(t, err, "setup --import-key should complete: the virtual repo re-signs its index with the imported key")
 
 	assert.FileExists(t, keyringPath(repo, dist))
 

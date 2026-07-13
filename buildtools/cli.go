@@ -2249,12 +2249,17 @@ func aptSetupCmd(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
+		// Let the user confirm or override (handles silent auto-selection of a single match).
+		ioutils.ScanFromConsole("Repository name", &repoName, repoName)
 	} else {
 		// Fail fast on a bad repo name instead of writing an unusable source (matches setupCmd).
 		if err = validateRepoExists(repoName, artDetails); err != nil {
 			return err
 		}
 	}
+
+	// Track whether user is in interactive mode (dist not supplied via flag).
+	interactive := c.String("dist") == "" && log.IsStdOutTerminal()
 
 	dist := c.String("dist")
 	if dist == "" {
@@ -2264,13 +2269,36 @@ func aptSetupCmd(c *cli.Context) error {
 		dist = ioutils.AskString("", "Distribution name (e.g. noble, jammy, bookworm):", false, false)
 	}
 
+	component := c.String("component")
+	importKey := c.Bool("import-key")
+	trusted := c.Bool("trusted")
+
+	// Interactive fallback: prompt for component and GPG mode when dist was not
+	// supplied as a flag (i.e., the user is in an interactive session and hasn't
+	// pre-scripted all flags).
+	if interactive {
+		if component == "" {
+			ioutils.ScanFromConsole("Component (e.g. main, contrib, non-free — leave empty for 'main')", &component, "main")
+		}
+		if !importKey && !trusted {
+			var gpgChoice string
+			ioutils.ScanFromConsole("GPG mode — 'import' (auto-fetch key), 'trusted' (skip GPG, for testing), or leave empty to skip", &gpgChoice, "")
+			switch gpgChoice {
+			case "import":
+				importKey = true
+			case "trusted":
+				trusted = true
+			}
+		}
+	}
+
 	cmd := aptcommand.NewAptSetupCommand().
 		SetServerDetails(artDetails).
 		SetRepoName(repoName).
 		SetDist(dist).
-		SetComponent(c.String("component")).
-		SetTrusted(c.Bool("trusted")).
-		SetImportKey(c.Bool("import-key"))
+		SetComponent(component).
+		SetTrusted(trusted).
+		SetImportKey(importKey)
 
 	return commands.ExecWithPackageManager(cmd, "apt")
 }
