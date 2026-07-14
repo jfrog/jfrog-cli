@@ -1,0 +1,6 @@
+{
+  "key": "${RUBY_REMOTE_REPO}",
+  "rclass": "remote",
+  "packageType": "gems",
+  "url": "https://rubygems.org"
+}

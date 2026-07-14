@@ -1,0 +1,11 @@
+source "ARTIFACTORY_GEMS_URL"
+
+gem "rake", "~> 13.0"
+
+group :development do
+  gem "minitest", "~> 5.0"
+end
+
+group :test do
+  gem "simplecov", "~> 0.22"
+end

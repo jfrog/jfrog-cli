@@ -1,0 +1,3 @@
+source "ARTIFACTORY_GEMS_URL"
+
+gem "rake", "~> 13.0"
