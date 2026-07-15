@@ -12,6 +12,7 @@ import (
 	biutils "github.com/jfrog/build-info-go/utils"
 	coreBuild "github.com/jfrog/jfrog-cli-core/v2/common/build"
 	artUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
@@ -32,6 +33,12 @@ func initRubyTest(t *testing.T) {
 	require.True(t, isRepoExist(tests.RubyLocalRepo), "Ruby local repo does not exist: "+tests.RubyLocalRepo)
 	require.True(t, isRepoExist(tests.RubyRemoteRepo), "Ruby remote repo does not exist: "+tests.RubyRemoteRepo)
 	require.True(t, isRepoExist(tests.RubyVirtualRepo), "Ruby virtual repo does not exist: "+tests.RubyVirtualRepo)
+
+	oldHomeDir, newHomeDir := prepareHomeDir(t)
+	t.Cleanup(func() {
+		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
+		clientTestUtils.RemoveAllAndAssert(t, newHomeDir)
+	})
 }
 
 func cleanRubyTest(_ *testing.T) {
@@ -55,8 +62,6 @@ func createRubyProject(t *testing.T, projectName string) string {
 
 	projectPath := filepath.Join(tmpDir, projectName)
 	assert.NoError(t, biutils.CopyDir(projectSrc, projectPath, true, nil))
-
-	createJfrogHomeConfig(t, false)
 
 	patchRubyGemfile(t, projectPath)
 	return projectPath
