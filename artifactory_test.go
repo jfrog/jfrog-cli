@@ -6922,6 +6922,51 @@ func terraformPublishModulesAndBuildInfo(t *testing.T, trPublishArgs []string) {
 	assert.Len(t, buildInfo.Modules[0].Artifacts, 3)
 }
 
+func TestTerraformPublishWithLocalGitVcsProps(t *testing.T) {
+	initArtifactoryTest(t, terraformMinArtifactoryVersion)
+	defer cleanArtifactoryTest()
+	createJfrogHomeConfig(t, true)
+
+	buildNumber := "local-git-1"
+	buildName := tests.RtBuildName1 + "-local-git"
+
+	cleanupEnv := tests.SetupLocalGitVcsEnv(t)
+	defer cleanupEnv()
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	projectPath := prepareTerraformProject("terraformproject", t, true)
+	tests.CopyGitFixtureIntoProject(t, projectPath)
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	awsDir := filepath.Join(projectPath, "aws")
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, awsDir)
+	defer chdirCallback()
+
+	trPublishArgs := []string{
+		"terraform", "publish",
+		"--namespace=namespace", "--provider=provider", "--tag=tag",
+		"--exclusions=*test*",
+		"--build-name=" + buildName, "--build-number=" + buildNumber,
+		"--module=my-tr-module-local-git",
+	}
+	require.NoError(t, platformCli.WithoutCredentials().Exec(trPublishArgs...))
+	require.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	require.NoError(t, err)
+	require.True(t, found)
+
+	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
+	require.NoError(t, err)
+
+	count := tests.ValidateLocalGitVcsPropsOnBuildInfoArtifacts(t, serviceManager, publishedBuildInfo, tests.TerraformRepo,
+		tests.VcsFixtureMainURL, tests.VcsFixtureMainRevision, tests.VcsFixtureMainBranch)
+	assert.Greater(t, count, 0)
+}
+
 func prepareTerraformProject(projectName string, t *testing.T, copyDirs bool) string {
 	projectPath := filepath.Join(tests.GetTestResourcesPath(), "terraform", projectName)
 	testdataTarget := filepath.Join(tests.Out, "terraformProject")
@@ -7178,6 +7223,147 @@ func TestUploadMultipleFilesWithCIVcsProps(t *testing.T) {
 		"Expected to validate %d files, but validated %d", numFiles, validatedCount)
 
 	t.Logf("Successfully validated CI VCS properties on all %d files", validatedCount)
+
+	cleanArtifactoryTest()
+}
+
+// TestUploadWithLocalGitVcsProps verifies civcs local git fallback on rt upload
+// when CI VCS env vars are absent but VCS collection is enabled.
+func TestUploadWithLocalGitVcsProps(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	cleanupEnv := tests.SetupLocalGitVcsEnv(t)
+	defer cleanupEnv()
+
+	testDir := tests.CopyVcsGitFixture(t, tests.Temp)
+	targetPath := tests.RtRepo1 + "/local-git-vcs/"
+
+	runRt(t, "upload", filepath.Join(testDir, "*.in"), targetPath, "--flat=true")
+
+	resultItems := searchItemsInArtifactory(t, tests.SearchRepo1ByInSuffix)
+	assert.NotZero(t, len(resultItems))
+
+	var uploaded []rtutils.ResultItem
+	for _, item := range resultItems {
+		if item.Name == "a1.in" || item.Name == "a2.in" {
+			uploaded = append(uploaded, item)
+		}
+	}
+	assert.Len(t, uploaded, 2)
+
+	tests.ValidateLocalGitVcsPropsOnArtifacts(t, uploaded,
+		tests.VcsFixtureMainURL, tests.VcsFixtureMainRevision, tests.VcsFixtureMainBranch)
+
+	cleanArtifactoryTest()
+}
+
+// TestUploadWithLocalGitVcsPropsNestedRepo verifies upload from a subdirectory
+// resolves the nearest .git (OtherGit), not the parent repo.
+func TestUploadWithLocalGitVcsPropsNestedRepo(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	cleanupEnv := tests.SetupLocalGitVcsEnv(t)
+	defer cleanupEnv()
+
+	testDir := tests.CopyVcsGitFixture(t, tests.Temp)
+	targetPath := tests.RtRepo1 + "/local-git-vcs-nested/"
+
+	runRt(t, "upload", filepath.Join(testDir, "OtherGit", "*.in"), targetPath, "--flat=true")
+
+	resultItems := searchItemsInArtifactory(t, tests.SearchRepo1ByInSuffix)
+	var uploaded []rtutils.ResultItem
+	for _, item := range resultItems {
+		if item.Name == "b1.in" || item.Name == "b2.in" {
+			uploaded = append(uploaded, item)
+		}
+	}
+	assert.Len(t, uploaded, 2)
+
+	tests.ValidateLocalGitVcsPropsOnArtifacts(t, uploaded,
+		tests.VcsFixtureOtherURL, tests.VcsFixtureOtherRevision, tests.VcsFixtureOtherBranch)
+
+	cleanArtifactoryTest()
+}
+
+func TestUploadUserPropsOverrideLocalGitVcs(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	cleanupEnv := tests.SetupLocalGitVcsEnv(t)
+	defer cleanupEnv()
+
+	testDir := tests.CopyVcsGitFixture(t, tests.Temp)
+	targetPath := tests.RtRepo1 + "/local-git-vcs-user-override/"
+	userProps := "vcs.url=https://example.com/custom.git;vcs.revision=deadbeef;vcs.branch=feature-x"
+
+	runRt(t, "upload", filepath.Join(testDir, "a1.in"), targetPath, "--flat=true", "--target-props="+userProps)
+
+	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
+	require.NoError(t, err)
+
+	props, err := serviceManager.GetItemProps(targetPath + "a1.in")
+	require.NoError(t, err)
+	require.Contains(t, props.Properties["vcs.url"], "https://example.com/custom.git")
+	require.Contains(t, props.Properties["vcs.revision"], "deadbeef")
+	require.Contains(t, props.Properties["vcs.branch"], "feature-x")
+	require.NotContains(t, props.Properties["vcs.url"], tests.VcsFixtureMainURL)
+	require.NotContains(t, props.Properties["vcs.revision"], tests.VcsFixtureMainRevision)
+
+	cleanArtifactoryTest()
+}
+
+// TestUploadCIPlusLocalGitVcsProps verifies CI provides provider/org/repo
+// while local git fills url/revision/branch when CI env lacks them.
+func TestUploadCIPlusLocalGitVcsProps(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	cleanupEnv, actualOrg, actualRepo := tests.SetupGitHubActionsEnvForLocalGitMerge(t)
+	defer cleanupEnv()
+
+	testDir := tests.CopyVcsGitFixture(t, tests.Temp)
+	targetPath := tests.RtRepo1 + "/local-git-vcs-ci-merge/"
+
+	runRt(t, "upload", filepath.Join(testDir, "a1.in"), targetPath, "--flat=true")
+
+	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
+	require.NoError(t, err)
+
+	props, err := serviceManager.GetItemProps(targetPath + "a1.in")
+	require.NoError(t, err)
+
+	require.Contains(t, props.Properties["vcs.provider"], "github")
+	require.Contains(t, props.Properties["vcs.org"], actualOrg)
+	require.Contains(t, props.Properties["vcs.repo"], actualRepo)
+	require.Contains(t, props.Properties["vcs.url"], tests.VcsFixtureMainURL)
+	require.Contains(t, props.Properties["vcs.revision"], tests.VcsFixtureMainRevision)
+	require.Contains(t, props.Properties["vcs.branch"], tests.VcsFixtureMainBranch)
+
+	cleanArtifactoryTest()
+}
+
+func TestUploadNoLocalGitVcsWhenNoGitRepo(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	cleanupEnv := tests.SetupLocalGitVcsEnv(t)
+	defer cleanupEnv()
+
+	tmpDir, cleanupTmp := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer cleanupTmp()
+
+	filePath := filepath.Join(tmpDir, "no-git.txt")
+	require.NoError(t, os.WriteFile(filePath, []byte("no git here"), 0644))
+
+	targetPath := tests.RtRepo1 + "/local-git-vcs-none/"
+	runRt(t, "upload", filePath, targetPath, "--flat=true")
+
+	resultItems := searchItemsInArtifactory(t, tests.SearchAllRepo1)
+	var uploaded []rtutils.ResultItem
+	for _, item := range resultItems {
+		if item.Name == "no-git.txt" {
+			uploaded = append(uploaded, item)
+		}
+	}
+	require.Len(t, uploaded, 1)
+	tests.ValidateNoLocalGitVcsPropsOnArtifacts(t, uploaded)
 
 	cleanArtifactoryTest()
 }

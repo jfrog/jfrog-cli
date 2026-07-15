@@ -839,3 +839,50 @@ func TestMavenBuildPublishWithCIVcsProps(t *testing.T) {
 
 	cleanMavenTest(t)
 }
+
+// TestMavenBuildPublishWithLocalGitVcsProps verifies local git VCS props on Maven artifacts
+// when running build-publish with VCS collection enabled and no CI env.
+func TestMavenBuildPublishWithLocalGitVcsProps(t *testing.T) {
+	initMavenTest(t, false)
+	buildName := tests.MvnBuildName + "-local-git"
+	buildNumber := "1"
+
+	cleanupEnv := tests.SetupLocalGitVcsEnv(t)
+	defer cleanupEnv()
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	pomDir := createSimpleMavenProject(t)
+	tests.CopyGitFixtureIntoProject(t, pomDir)
+	require.FileExists(t, filepath.Join(pomDir, ".git", "HEAD"))
+
+	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.MavenConfig)
+	destPath := filepath.Join(pomDir, ".jfrog", "projects")
+	createConfigFile(destPath, configFilePath, t)
+	require.NoError(t, os.Rename(filepath.Join(destPath, tests.MavenConfig), filepath.Join(destPath, "maven.yaml")))
+
+	oldHomeDir := changeWD(t, pomDir)
+	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
+
+	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
+	args := []string{"mvn", "clean", "install", "-B", repoLocalSystemProp,
+		"--build-name=" + buildName, "--build-number=" + buildNumber}
+	require.NoError(t, runJfrogCliWithoutAssertion(args...))
+
+	// Must run build-publish from project dir so GetLocalGitVcsInfo finds the fixture .git
+	runRt(t, "build-publish", buildName, buildNumber)
+
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	require.NoError(t, err)
+	require.True(t, found, "Build info was not found")
+
+	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
+	require.NoError(t, err)
+
+	count := tests.ValidateLocalGitVcsPropsOnBuildInfoArtifacts(t, serviceManager, publishedBuildInfo, tests.MvnRepo1,
+		tests.VcsFixtureMainURL, tests.VcsFixtureMainRevision, tests.VcsFixtureMainBranch)
+	assert.Greater(t, count, 0)
+
+	cleanMavenTest(t)
+}

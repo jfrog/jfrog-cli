@@ -71,6 +71,7 @@ var (
 	TestPoetry                *bool
 	TestUv                    *bool
 	TestNix                   *bool
+	TestAlpine                *bool
 	TestRuby                  *bool
 	TestAgentPlugins          *bool
 	TestConan                 *bool
@@ -140,6 +141,7 @@ func init() {
 	TestPoetry = flag.Bool("test.poetry", false, "Test Poetry")
 	TestUv = flag.Bool("test.uv", false, "Test UV")
 	TestNix = flag.Bool("test.nix", false, "Test Nix")
+	TestAlpine = flag.Bool("test.alpine", false, "Test Alpine APK")
 	TestRuby = flag.Bool("test.ruby", false, "Test Ruby")
 	TestAgentPlugins = flag.Bool("test.agentPlugins", false, "Test Agent Plugins")
 	TestConan = flag.Bool("test.conan", false, "Test Conan")
@@ -328,6 +330,9 @@ var reposConfigMap = map[*string]string{
 	&NixLocalRepo:                   NixLocalRepositoryConfig,
 	&NixRemoteRepo:                  NixRemoteRepositoryConfig,
 	&NixVirtualRepo:                 NixVirtualRepositoryConfig,
+	&AlpineLocalRepo:                AlpineLocalRepositoryConfig,
+	&AlpineRemoteRepo:               AlpineRemoteRepositoryConfig,
+	&AlpineVirtualRepo:              AlpineVirtualRepositoryConfig,
 	&RubyLocalRepo:                  RubyLocalRepositoryConfig,
 	&RubyRemoteRepo:                 RubyRemoteRepositoryConfig,
 	&RubyVirtualRepo:                RubyVirtualRepositoryConfig,
@@ -403,6 +408,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestPoetry:             {&PoetryLocalRepo, &PoetryRemoteRepo},
 		TestUv:                 {&UvLocalRepo, &UvRemoteRepo},
 		TestNix:                {&NixLocalRepo, &NixRemoteRepo},
+		TestAlpine:             {&AlpineLocalRepo, &AlpineRemoteRepo},
 		TestRuby:               {&RubyLocalRepo, &RubyRemoteRepo},
 		TestAgentPlugins:       {&AgentPluginsLocalRepo},
 		TestConan:              {&ConanLocalRepo, &ConanRemoteRepo},
@@ -437,6 +443,7 @@ func GetVirtualRepositories() map[*string]string {
 		TestPoetry:       {&PoetryVirtualRepo},
 		TestUv:           {&UvVirtualRepo},
 		TestNix:          {&NixVirtualRepo},
+		TestAlpine:       {&AlpineVirtualRepo},
 		TestRuby:         {&RubyVirtualRepo},
 		TestAgentPlugins: {},
 		TestConan:        {&ConanVirtualRepo},
@@ -482,6 +489,7 @@ func GetBuildNames() []string {
 		TestPoetry:       {&PoetryBuildName},
 		TestUv:           {&UvBuildName},
 		TestNix:          {&NixBuildName},
+		TestAlpine:       {&AlpineBuildName},
 		TestRuby:         {&RubyBuildName},
 		TestAgentPlugins: {&AgentPluginsBuildName},
 		TestConan:        {&ConanBuildName},
@@ -551,6 +559,9 @@ func getSubstitutionMap() map[string]string {
 		"${NIX_LOCAL_REPO}":            NixLocalRepo,
 		"${NIX_REMOTE_REPO}":           NixRemoteRepo,
 		"${NIX_VIRTUAL_REPO}":          NixVirtualRepo,
+		"${ALPINE_LOCAL_REPO}":         AlpineLocalRepo,
+		"${ALPINE_REMOTE_REPO}":        AlpineRemoteRepo,
+		"${ALPINE_VIRTUAL_REPO}":       AlpineVirtualRepo,
 		"${RUBY_LOCAL_REPO}":           RubyLocalRepo,
 		"${RUBY_REMOTE_REPO}":          RubyRemoteRepo,
 		"${RUBY_VIRTUAL_REPO}":         RubyVirtualRepo,
@@ -631,6 +642,9 @@ func AddTimestampToGlobalVars() {
 	NixLocalRepo += uniqueSuffix
 	NixRemoteRepo += uniqueSuffix
 	NixVirtualRepo += uniqueSuffix
+	AlpineLocalRepo += uniqueSuffix
+	AlpineRemoteRepo += uniqueSuffix
+	AlpineVirtualRepo += uniqueSuffix
 	ConanLocalRepo += uniqueSuffix
 	ConanRemoteRepo += uniqueSuffix
 	ConanVirtualRepo += uniqueSuffix
@@ -665,6 +679,7 @@ func AddTimestampToGlobalVars() {
 	AgentPluginsBuildName += uniqueSuffix
 	UvBuildName += uniqueSuffix
 	NixBuildName += uniqueSuffix
+	AlpineBuildName += uniqueSuffix
 	ConanBuildName += uniqueSuffix
 	HelmBuildName += uniqueSuffix
 	HuggingFaceBuildName += uniqueSuffix
@@ -934,6 +949,31 @@ func SetupGitHubActionsEnv(t *testing.T) (cleanup func(), actualOrg, actualRepo 
 	return cleanup, actualOrg, actualRepo
 }
 
+// SetupGitHubActionsEnvForLocalGitMerge enables CI VCS collection with provider/org/repo
+// but clears url/revision/branch CI env vars so local git fallback is exercised.
+func SetupGitHubActionsEnvForLocalGitMerge(t *testing.T) (cleanup func(), actualOrg, actualRepo string) {
+	t.Helper()
+	cleanupBase, actualOrg, actualRepo := SetupGitHubActionsEnv(t)
+
+	var callbacks []func()
+	for _, key := range []string{
+		"GITHUB_SERVER_URL",
+		"GITHUB_SHA",
+		"GITHUB_REF",
+		"GITHUB_REF_NAME",
+		"GITHUB_HEAD_REF",
+	} {
+		callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, key, ""))
+	}
+
+	return func() {
+		for _, cb := range callbacks {
+			cb()
+		}
+		cleanupBase()
+	}, actualOrg, actualRepo
+}
+
 // ValidateCIVcsPropsOnArtifacts validates that CI VCS properties are set on artifacts.
 func ValidateCIVcsPropsOnArtifacts(t *testing.T, resultItems []utils.ResultItem, expectedProvider, expectedOrg, expectedRepo string) {
 	for _, item := range resultItems {
@@ -1029,6 +1069,79 @@ func ValidateCIVcsPropsIfPresent(t *testing.T, resultItems []utils.ResultItem, e
 			vals, ok := propertiesMap["vcs.repo"]
 			assert.True(t, ok, "Missing vcs.repo on %s", item.Name)
 			assert.Contains(t, vals, expectedRepo, "Wrong vcs.repo on %s", item.Name)
+		}
+	}
+}
+
+// SetupLocalGitVcsEnv enables VCS property collection and clears CI detection
+// so only local git fallback is exercised.
+func SetupLocalGitVcsEnv(t *testing.T) (cleanup func()) {
+	t.Helper()
+	var callbacks []func()
+
+	for _, key := range []string{
+		"JFROG_CLI_CI_VCS_PROPS_DISABLED", // set to "" to enable
+		"CI", "GITHUB_ACTIONS", "GITHUB_WORKFLOW", "GITHUB_RUN_ID",
+		"GITHUB_REPOSITORY", "GITHUB_REPOSITORY_OWNER",
+		"GITHUB_SERVER_URL", "GITHUB_SHA", "GITHUB_REF", "GITHUB_REF_NAME", "GITHUB_HEAD_REF",
+	} {
+		callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, key, ""))
+	}
+
+	return func() {
+		for _, cb := range callbacks {
+			cb()
+		}
+	}
+}
+
+// ValidateLocalGitVcsPropsOnArtifacts asserts vcs.url, vcs.revision, vcs.branch on every item.
+func ValidateLocalGitVcsPropsOnArtifacts(t *testing.T, resultItems []utils.ResultItem, expectedURL, expectedRevision, expectedBranch string) {
+	t.Helper()
+	for _, item := range resultItems {
+		propertiesMap := ConvertPropertiesToMap(item.Properties)
+		assertLocalGitProp(t, item.Name, propertiesMap, "vcs.url", expectedURL)
+		assertLocalGitProp(t, item.Name, propertiesMap, "vcs.revision", expectedRevision)
+		if expectedBranch != "" {
+			assertLocalGitProp(t, item.Name, propertiesMap, "vcs.branch", expectedBranch)
+		}
+	}
+}
+
+func assertLocalGitProp(t *testing.T, itemName string, props map[string][]string, key, expected string) {
+	t.Helper()
+	vals, ok := props[key]
+	assert.True(t, ok, "Missing %s on %s", key, itemName)
+	assert.Contains(t, vals, expected, "Wrong %s on %s", key, itemName)
+}
+
+// ValidateNoLocalGitVcsPropsOnArtifacts asserts url/revision/branch are absent.
+func ValidateNoLocalGitVcsPropsOnArtifacts(t *testing.T, resultItems []utils.ResultItem) {
+	t.Helper()
+	for _, item := range resultItems {
+		propertiesMap := ConvertPropertiesToMap(item.Properties)
+		_, hasURL := propertiesMap["vcs.url"]
+		_, hasRev := propertiesMap["vcs.revision"]
+		_, hasBranch := propertiesMap["vcs.branch"]
+		assert.False(t, hasURL, "vcs.url should not be set on %s", item.Name)
+		assert.False(t, hasRev, "vcs.revision should not be set on %s", item.Name)
+		assert.False(t, hasBranch, "vcs.branch should not be set on %s", item.Name)
+	}
+}
+
+// ValidateCIAndLocalGitVcsPropsOnArtifacts asserts CI props plus local git props coexist.
+func ValidateCIAndLocalGitVcsPropsOnArtifacts(t *testing.T, resultItems []utils.ResultItem,
+	expectedProvider, expectedOrg, expectedRepo, expectedURL, expectedRevision, expectedBranch string) {
+	t.Helper()
+	for _, item := range resultItems {
+		propertiesMap := ConvertPropertiesToMap(item.Properties)
+		assertLocalGitProp(t, item.Name, propertiesMap, "vcs.provider", expectedProvider)
+		assertLocalGitProp(t, item.Name, propertiesMap, "vcs.org", expectedOrg)
+		assertLocalGitProp(t, item.Name, propertiesMap, "vcs.repo", expectedRepo)
+		assertLocalGitProp(t, item.Name, propertiesMap, "vcs.url", expectedURL)
+		assertLocalGitProp(t, item.Name, propertiesMap, "vcs.revision", expectedRevision)
+		if expectedBranch != "" {
+			assertLocalGitProp(t, item.Name, propertiesMap, "vcs.branch", expectedBranch)
 		}
 	}
 }
