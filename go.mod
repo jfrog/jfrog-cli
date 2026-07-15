@@ -9,7 +9,7 @@ replace (
 	// Should not be updated to 0.2.6 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
 	github.com/c-bata/go-prompt => github.com/c-bata/go-prompt v0.2.5
 	github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.13.1-0.20260715194847-6e04c9b133c8
-	github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260715214646-f04a79d1bbc9
+	github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260715215659-f58023de2dd2
 	// Should not be updated to 0.2.0-beta.2 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
 	github.com/pkg/term => github.com/pkg/term v1.1.0
 )
@@ -23,7 +23,7 @@ require (
 	github.com/jfrog/build-info-go v1.13.1-0.20260713073853-4f3044bf0940
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-application v1.0.2-0.20260713081138-6df6041db819
-	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260715214646-f04a79d1bbc9
+	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260715215659-f58023de2dd2
 	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260624085155-5ba797de2616
 	github.com/jfrog/jfrog-cli-evidence v0.9.5-0.20260618135203-4d2bdd4ee35f
 	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260618062042-6053ab368cab
