@@ -73,7 +73,7 @@ func patchRubyGemfile(t *testing.T, projectPath string) {
 	}
 	gemsURL := serverDetails.ArtifactoryUrl + "api/gems/" + tests.RubyVirtualRepo
 	content := strings.ReplaceAll(string(data), "ARTIFACTORY_GEMS_URL", gemsURL)
-	require.NoError(t, os.WriteFile(filepath.Clean(gemfilePath), []byte(content), 0644))
+	require.NoError(t, os.WriteFile(gemfilePath, []byte(content), 0600)) // #nosec G703 -- test-only path from CreateTempDir
 }
 
 // runRubyCmd changes to projectPath and runs `jf ruby <args...>`.

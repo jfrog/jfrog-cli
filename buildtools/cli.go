@@ -2181,12 +2181,13 @@ func RubyCmd(c *cli.Context) error {
 // extractRubyRepoFromArgs extracts and consumes --repo <name> from the args slice.
 func extractRubyRepoFromArgs(args []string) (cleanArgs []string, repo string) {
 	for i := 0; i < len(args); i++ {
-		if args[i] == "--repo" && i+1 < len(args) {
+		switch {
+		case args[i] == "--repo" && i+1 < len(args):
 			repo = args[i+1]
-			i++ // skip the value
-		} else if strings.HasPrefix(args[i], "--repo=") {
+			i++
+		case strings.HasPrefix(args[i], "--repo="):
 			repo = strings.TrimPrefix(args[i], "--repo=")
-		} else {
+		default:
 			cleanArgs = append(cleanArgs, args[i])
 		}
 	}
