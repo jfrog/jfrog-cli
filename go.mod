@@ -20,8 +20,8 @@ require (
 	github.com/jfrog/archiver/v3 v3.6.3
 	github.com/jfrog/build-info-go v1.13.1-0.20260713073853-4f3044bf0940
 	github.com/jfrog/gofrog v1.7.6
-	github.com/jfrog/jfrog-cli-application v1.0.2-0.20260707110954-b31a04f5ce6c
-	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260708065639-7c53c506fbcf
+	github.com/jfrog/jfrog-cli-application v1.0.2-0.20260713081138-6df6041db819
+	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260714082320-4fd5a71b4b4a
 	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260624085155-5ba797de2616
 	github.com/jfrog/jfrog-cli-evidence v0.9.5-0.20260618135203-4d2bdd4ee35f
 	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260618062042-6053ab368cab
@@ -224,7 +224,7 @@ require (
 	golang.org/x/mod v0.36.0 // indirect
 	golang.org/x/net v0.56.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
-	golang.org/x/sync v0.21.0 // indirect
+	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/sys v0.46.0 // indirect
 	golang.org/x/term v0.44.0 // indirect
 	golang.org/x/text v0.38.0 // indirect
@@ -238,7 +238,7 @@ require (
 	helm.sh/helm/v3 v3.21.0 // indirect
 	k8s.io/client-go v0.36.1 // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
-	oras.land/oras-go/v2 v2.6.0 // indirect
+	oras.land/oras-go/v2 v2.6.2 // indirect
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
 
