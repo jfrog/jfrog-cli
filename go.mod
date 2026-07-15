@@ -8,8 +8,8 @@ replace (
 	github.com/CycloneDX/cyclonedx-go => github.com/CycloneDX/cyclonedx-go v0.10.0
 	// Should not be updated to 0.2.6 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
 	github.com/c-bata/go-prompt => github.com/c-bata/go-prompt v0.2.5
-	github.com/jfrog/build-info-go => ../build-info-go
-	github.com/jfrog/jfrog-cli-artifactory => ../jfrog-cli-artifactory
+	github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.13.1-0.20260715194847-6e04c9b133c8
+	github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory v0.6.1-0.20260715195433-85f31d8e1a0d
 	// Should not be updated to 0.2.0-beta.2 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
 	github.com/pkg/term => github.com/pkg/term v1.1.0
 )
