@@ -1,0 +1,31 @@
+name: Ruby Tests (Branch Trigger)
+on:
+  push:
+    branches:
+      - "feature/rubygems-test-trigger"
+
+jobs:
+  Ruby-Tests:
+    name: Ruby tests (ubuntu)
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Go with cache
+        uses: jfrog/.github/actions/install-go-with-cache@main
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
+          bundler-cache: false
+
+      - name: Install local Artifactory
+        uses: jfrog/.github/actions/install-local-artifactory@main
+        with:
+          RTLIC: ${{ secrets.RTLIC }}
+          RT_CONNECTION_TIMEOUT_SECONDS: '1200'
+
+      - name: Run Ruby tests
+        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.ruby
