@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -76,9 +77,28 @@ func patchRubyGemfile(t *testing.T, projectPath string) {
 	if err != nil {
 		return
 	}
-	gemsURL := serverDetails.ArtifactoryUrl + "api/gems/" + tests.RubyVirtualRepo
+	// Embed credentials in the source URL for reliable Bundler auth in CI.
+	// Bundler's env-var credential matching varies across versions; URL-embedded
+	// credentials work universally.
+	gemsURL := rubyGemsURLWithCreds(t)
 	content := strings.ReplaceAll(string(data), "ARTIFACTORY_GEMS_URL", gemsURL)
 	require.NoError(t, os.WriteFile(gemfilePath, []byte(content), 0600)) // #nosec G703 -- test-only path from CreateTempDir
+}
+
+func rubyGemsURLWithCreds(t *testing.T) string {
+	t.Helper()
+	base := serverDetails.ArtifactoryUrl + "api/gems/" + tests.RubyVirtualRepo
+	parsed, err := url.Parse(base)
+	require.NoError(t, err)
+	user := serverDetails.User
+	pass := serverDetails.Password
+	if serverDetails.AccessToken != "" {
+		pass = serverDetails.AccessToken
+	}
+	if pass != "" {
+		parsed.User = url.UserPassword(user, pass)
+	}
+	return parsed.String()
 }
 
 // runRubyCmd changes to projectPath and runs `jf ruby <args...>`.
