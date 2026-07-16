@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
@@ -56,9 +57,10 @@ func rubyToolRequired(t *testing.T, tool string) {
 }
 
 // warmUpRubyVirtualRepo ensures the virtual repo has a gem index available.
-// On a fresh Artifactory, specs.4.8.gz (needed by Bundler) does not exist until
-// a gem is pushed via the RubyGems API (not generic upload). We build a minimal
-// gem and push it through the API endpoint to trigger index generation.
+// On a fresh Artifactory, specs.4.8.gz (needed by Bundler) does not exist until:
+// 1. A gem is pushed via the RubyGems API to the local repo
+// 2. The remote repo fetches its index from rubygems.org (lazy on first access)
+// We do both and poll until the virtual repo's specs.4.8.gz returns 200.
 func warmUpRubyVirtualRepo(t *testing.T) {
 	t.Helper()
 	tmpDir, cleanup := coretests.CreateTempDirWithCallbackAndAssert(t)
@@ -83,7 +85,7 @@ end`
 		return
 	}
 
-	// Push via jf ruby gem push (uses RubyGems API which triggers index generation).
+	// Push via jf ruby gem push to trigger local repo index generation.
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	gemFile := filepath.Join(tmpDir, "warmup-0.0.1.gem")
 	if err := jfrogCli.Exec("ruby", "gem", "push", gemFile,
@@ -92,9 +94,28 @@ end`
 		t.Logf("warm-up gem push failed (non-fatal): %v", err)
 	}
 
-	// Artifactory generates specs.4.8.gz asynchronously after gem push.
-	// Wait for the index to be ready before bundle tests proceed.
-	time.Sleep(10 * time.Second)
+	// Poll virtual repo's specs.4.8.gz until available (up to 60s).
+	// The remote repo lazily syncs from rubygems.org on first access.
+	specsURL := serverDetails.ArtifactoryUrl + "api/gems/" + tests.RubyVirtualRepo + "/specs.4.8.gz"
+	t.Logf("warm-up: polling %s for index availability", specsURL)
+	user, pass := rubyTestCredentials()
+	for i := 0; i < 12; i++ {
+		req, _ := http.NewRequest("GET", specsURL, nil)
+		req.SetBasicAuth(user, pass)
+		resp, err := http.DefaultClient.Do(req)
+		if err == nil {
+			resp.Body.Close()
+			if resp.StatusCode == 200 {
+				t.Logf("warm-up: specs.4.8.gz available after %ds", i*5)
+				return
+			}
+			t.Logf("warm-up: specs.4.8.gz returned %d, retrying...", resp.StatusCode)
+		} else {
+			t.Logf("warm-up: specs request error: %v, retrying...", err)
+		}
+		time.Sleep(5 * time.Second)
+	}
+	t.Log("warm-up: specs.4.8.gz not available after 60s, bundle tests may fail")
 }
 
 // createRubyProject copies a test Ruby project to a temp dir and patches the
@@ -134,6 +155,15 @@ func rubyGemsURLWithCreds(t *testing.T) string {
 	base := serverDetails.ArtifactoryUrl + "api/gems/" + tests.RubyVirtualRepo
 	parsed, err := url.Parse(base)
 	require.NoError(t, err)
+	user, pass := rubyTestCredentials()
+	if user != "" && pass != "" {
+		parsed.User = url.UserPassword(user, pass)
+	}
+	return parsed.String()
+}
+
+// rubyTestCredentials returns user/password for authenticating against Artifactory in tests.
+func rubyTestCredentials() (string, string) {
 	user := serverDetails.User
 	pass := serverDetails.Password
 	if serverDetails.AccessToken != "" {
@@ -142,10 +172,7 @@ func rubyGemsURLWithCreds(t *testing.T) string {
 			user = *tests.JfrogUser
 		}
 	}
-	if user != "" && pass != "" {
-		parsed.User = url.UserPassword(user, pass)
-	}
-	return parsed.String()
+	return user, pass
 }
 
 // runRubyCmd changes to projectPath and runs `jf ruby <args...>`.
