@@ -56,14 +56,13 @@ func rubyToolRequired(t *testing.T, tool string) {
 
 // warmUpRubyVirtualRepo ensures the virtual repo has a gem index available.
 // On a fresh Artifactory, specs.4.8.gz (needed by Bundler) does not exist until
-// a gem is present in the local repo. We build and deploy a minimal gem to trigger
-// index generation.
+// a gem is pushed via the RubyGems API (not generic upload). We build a minimal
+// gem and push it through the API endpoint to trigger index generation.
 func warmUpRubyVirtualRepo(t *testing.T) {
 	t.Helper()
 	tmpDir, cleanup := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer cleanup()
 
-	// Build a minimal gem.
 	specContent := `Gem::Specification.new do |s|
   s.name    = "warmup"
   s.version = "0.0.1"
@@ -75,19 +74,21 @@ end`
 	require.NoError(t, os.MkdirAll(libDir, 0755))
 	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "warmup.gemspec"), []byte(specContent), 0600))
 	require.NoError(t, os.WriteFile(filepath.Join(libDir, "warmup.rb"), []byte(""), 0600))
-	cmd := exec.Command("gem", "build", "warmup.gemspec")
-	cmd.Dir = tmpDir
-	out, err := cmd.CombinedOutput()
-	if err != nil {
+
+	buildCmd := exec.Command("gem", "build", "warmup.gemspec")
+	buildCmd.Dir = tmpDir
+	if out, err := buildCmd.CombinedOutput(); err != nil {
 		t.Logf("warm-up gem build failed (non-fatal): %v\n%s", err, out)
 		return
 	}
 
-	// Deploy via jf rt upload to the local gems repo.
-	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog rt", "")
+	// Push via jf ruby gem push (uses RubyGems API which triggers index generation).
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	gemFile := filepath.Join(tmpDir, "warmup-0.0.1.gem")
-	if err := jfrogCli.Exec("upload", gemFile, tests.RubyLocalRepo+"/gems/warmup-0.0.1.gem"); err != nil {
-		t.Logf("warm-up upload failed (non-fatal): %v", err)
+	if err := jfrogCli.Exec("ruby", "gem", "push", gemFile,
+		"--repo", tests.RubyLocalRepo,
+		"--server-id=default"); err != nil {
+		t.Logf("warm-up gem push failed (non-fatal): %v", err)
 	}
 }
 
