@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -56,12 +57,19 @@ func rubyToolRequired(t *testing.T, tool string) {
 	}
 }
 
+var warmUpOnce sync.Once
+
 // warmUpRubyVirtualRepo ensures the virtual repo has a gem index available.
 // On a fresh Artifactory, specs.4.8.gz (needed by Bundler) does not exist until:
 // 1. A gem is pushed via the RubyGems API to the local repo
 // 2. The remote repo fetches its index from rubygems.org (lazy on first access)
 // We do both and poll until the virtual repo's specs.4.8.gz returns 200.
+// Uses sync.Once so the expensive warm-up only runs on the first call.
 func warmUpRubyVirtualRepo(t *testing.T) {
+	warmUpOnce.Do(func() { doWarmUpRubyVirtualRepo(t) })
+}
+
+func doWarmUpRubyVirtualRepo(t *testing.T) {
 	t.Helper()
 	tmpDir, cleanup := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer cleanup()
@@ -94,12 +102,13 @@ end`
 		t.Logf("warm-up gem push failed (non-fatal): %v", err)
 	}
 
-	// Poll virtual repo's specs.4.8.gz until available (up to 60s).
-	// The remote repo lazily syncs from rubygems.org on first access.
+	// Poll virtual repo's specs.4.8.gz until available (up to 120s).
+	// The remote repo lazily syncs from rubygems.org on first access and
+	// can take significant time on a fresh Artifactory CI instance.
 	specsURL := serverDetails.ArtifactoryUrl + "api/gems/" + tests.RubyVirtualRepo + "/specs.4.8.gz"
 	t.Logf("warm-up: polling %s for index availability", specsURL)
 	user, pass := rubyTestCredentials()
-	for i := 0; i < 12; i++ {
+	for i := 0; i < 24; i++ {
 		req, _ := http.NewRequest("GET", specsURL, nil)
 		req.SetBasicAuth(user, pass)
 		resp, err := http.DefaultClient.Do(req)
@@ -115,7 +124,7 @@ end`
 		}
 		time.Sleep(5 * time.Second)
 	}
-	t.Log("warm-up: specs.4.8.gz not available after 60s, bundle tests may fail")
+	t.Log("warm-up: specs.4.8.gz not available after 120s, bundle tests may fail")
 }
 
 // createRubyProject copies a test Ruby project to a temp dir and patches the
@@ -601,11 +610,12 @@ func TestRubyBuildFlags(t *testing.T) {
 		buildName   string
 		buildNumber string
 		expectBI    bool
+		expectErr   bool
 	}{
-		{"both-set", tests.RubyBuildName, "1", true},
-		{"name-only", tests.RubyBuildName, "", false},
-		{"number-only", "", "1", false},
-		{"neither", "", "", false},
+		{"both-set", tests.RubyBuildName, "1", true, false},
+		{"name-only", tests.RubyBuildName, "", false, true},
+		{"number-only", "", "1", false, true},
+		{"neither", "", "", false, false},
 	}
 
 	for _, tc := range cases {
@@ -620,6 +630,10 @@ func TestRubyBuildFlags(t *testing.T) {
 			}
 
 			err := runRubyCmd(t, projectPath, args...)
+			if tc.expectErr {
+				assert.Error(t, err)
+				return
+			}
 			assert.NoError(t, err)
 
 			if tc.expectBI && tc.buildName != "" && tc.buildNumber != "" {
