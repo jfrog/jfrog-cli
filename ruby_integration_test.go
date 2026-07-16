@@ -54,21 +54,40 @@ func rubyToolRequired(t *testing.T, tool string) {
 	}
 }
 
-// warmUpRubyVirtualRepo ensures the virtual repo has a cached gem index.
-// Artifactory only generates specs.4.8.gz (needed by Bundler) after at least
-// one gem is fetched through the remote. We use `gem fetch` via compact index
-// (which always works) to trigger this.
+// warmUpRubyVirtualRepo ensures the virtual repo has a gem index available.
+// On a fresh Artifactory, specs.4.8.gz (needed by Bundler) does not exist until
+// a gem is present in the local repo. We build and deploy a minimal gem to trigger
+// index generation.
 func warmUpRubyVirtualRepo(t *testing.T) {
 	t.Helper()
-	gemsURL := rubyGemsURLWithCreds(t)
 	tmpDir, cleanup := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer cleanup()
-	cmd := exec.Command("gem", "fetch", "rake", "-v", "13.0.6", "--source", gemsURL)
+
+	// Build a minimal gem.
+	specContent := `Gem::Specification.new do |s|
+  s.name    = "warmup"
+  s.version = "0.0.1"
+  s.summary = "warmup"
+  s.authors = ["test"]
+  s.files   = ["lib/warmup.rb"]
+end`
+	libDir := filepath.Join(tmpDir, "lib")
+	require.NoError(t, os.MkdirAll(libDir, 0755))
+	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "warmup.gemspec"), []byte(specContent), 0600))
+	require.NoError(t, os.WriteFile(filepath.Join(libDir, "warmup.rb"), []byte(""), 0600))
+	cmd := exec.Command("gem", "build", "warmup.gemspec")
 	cmd.Dir = tmpDir
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		t.Logf("warm-up gem fetch failed (non-fatal): %v", err)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Logf("warm-up gem build failed (non-fatal): %v\n%s", err, out)
+		return
+	}
+
+	// Deploy via jf rt upload to the local gems repo.
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog rt", "")
+	gemFile := filepath.Join(tmpDir, "warmup-0.0.1.gem")
+	if err := jfrogCli.Exec("upload", gemFile, tests.RubyLocalRepo+"/gems/warmup-0.0.1.gem"); err != nil {
+		t.Logf("warm-up upload failed (non-fatal): %v", err)
 	}
 }
 
