@@ -54,6 +54,24 @@ func rubyToolRequired(t *testing.T, tool string) {
 	}
 }
 
+// warmUpRubyVirtualRepo ensures the virtual repo has a cached gem index.
+// Artifactory only generates specs.4.8.gz (needed by Bundler) after at least
+// one gem is fetched through the remote. We use `gem fetch` via compact index
+// (which always works) to trigger this.
+func warmUpRubyVirtualRepo(t *testing.T) {
+	t.Helper()
+	gemsURL := rubyGemsURLWithCreds(t)
+	tmpDir, cleanup := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer cleanup()
+	cmd := exec.Command("gem", "fetch", "rake", "-v", "13.0.6", "--source", gemsURL)
+	cmd.Dir = tmpDir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		t.Logf("warm-up gem fetch failed (non-fatal): %v", err)
+	}
+}
+
 // createRubyProject copies a test Ruby project to a temp dir and patches the
 // Gemfile source to point at the test Artifactory instance.
 func createRubyProject(t *testing.T, projectName string) string {
@@ -65,6 +83,7 @@ func createRubyProject(t *testing.T, projectName string) string {
 	assert.NoError(t, biutils.CopyDir(projectSrc, projectPath, true, nil))
 
 	patchRubyGemfile(t, projectPath)
+	warmUpRubyVirtualRepo(t)
 	return projectPath
 }
 
