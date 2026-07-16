@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	biutils "github.com/jfrog/build-info-go/utils"
@@ -90,6 +91,10 @@ end`
 		"--server-id=default"); err != nil {
 		t.Logf("warm-up gem push failed (non-fatal): %v", err)
 	}
+
+	// Artifactory generates specs.4.8.gz asynchronously after gem push.
+	// Wait for the index to be ready before bundle tests proceed.
+	time.Sleep(10 * time.Second)
 }
 
 // createRubyProject copies a test Ruby project to a temp dir and patches the
