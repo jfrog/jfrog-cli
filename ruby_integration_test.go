@@ -94,8 +94,11 @@ func rubyGemsURLWithCreds(t *testing.T) string {
 	pass := serverDetails.Password
 	if serverDetails.AccessToken != "" {
 		pass = serverDetails.AccessToken
+		if user == "" {
+			user = *tests.JfrogUser
+		}
 	}
-	if pass != "" {
+	if user != "" && pass != "" {
 		parsed.User = url.UserPassword(user, pass)
 	}
 	return parsed.String()
