@@ -2,12 +2,15 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	biutils "github.com/jfrog/build-info-go/utils"
@@ -54,11 +57,17 @@ func rubyToolRequired(t *testing.T, tool string) {
 	}
 }
 
-// warmUpRubyVirtualRepo ensures the virtual repo has a gem index available.
-// On a fresh Artifactory, specs.4.8.gz (needed by Bundler) does not exist until
-// a gem is pushed via the RubyGems API (not generic upload). We build a minimal
-// gem and push it through the API endpoint to trigger index generation.
-func warmUpRubyVirtualRepo(t *testing.T) {
+var warmUpOnce sync.Once
+
+// warmUpRubyLocalRepo pushes a self-contained gem to the local repo so that
+// Bundler tests can resolve it. Uses the LOCAL repo directly (not virtual)
+// because CI Artifactory instances don't reliably generate specs.4.8.gz on
+// virtual repos. The local repo generates specs immediately on gem push.
+func warmUpRubyLocalRepo(t *testing.T) {
+	warmUpOnce.Do(func() { doWarmUpRubyLocalRepo(t) })
+}
+
+func doWarmUpRubyLocalRepo(t *testing.T) {
 	t.Helper()
 	tmpDir, cleanup := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer cleanup()
@@ -77,23 +86,39 @@ end`
 
 	buildCmd := exec.Command("gem", "build", "warmup.gemspec")
 	buildCmd.Dir = tmpDir
-	if out, err := buildCmd.CombinedOutput(); err != nil {
-		t.Logf("warm-up gem build failed (non-fatal): %v\n%s", err, out)
-		return
+	out, err := buildCmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("warm-up gem build failed: %v\n%s", err, out)
 	}
 
-	// Push via jf ruby gem push (uses RubyGems API which triggers index generation).
+	// Push via jf ruby gem push — this triggers specs.4.8.gz generation on the local repo.
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	gemFile := filepath.Join(tmpDir, "warmup-0.0.1.gem")
-	if err := jfrogCli.Exec("ruby", "gem", "push", gemFile,
+	require.NoError(t, jfrogCli.Exec("ruby", "gem", "push", gemFile,
 		"--repo", tests.RubyLocalRepo,
-		"--server-id=default"); err != nil {
-		t.Logf("warm-up gem push failed (non-fatal): %v", err)
+		"--server-id=default"))
+
+	// Poll local repo specs to confirm index is ready (should be near-instant).
+	specsURL := serverDetails.ArtifactoryUrl + "api/gems/" + tests.RubyLocalRepo + "/specs.4.8.gz"
+	user, pass := rubyTestCredentials()
+	for i := 0; i < 12; i++ {
+		req, _ := http.NewRequest("GET", specsURL, nil)
+		req.SetBasicAuth(user, pass)
+		resp, httpErr := http.DefaultClient.Do(req)
+		if httpErr == nil {
+			resp.Body.Close()
+			if resp.StatusCode == 200 {
+				t.Logf("warm-up: local repo specs.4.8.gz available after %ds", i*2)
+				return
+			}
+		}
+		time.Sleep(2 * time.Second)
 	}
+	t.Fatal("warm-up: local repo specs.4.8.gz not available after 24s")
 }
 
 // createRubyProject copies a test Ruby project to a temp dir and patches the
-// Gemfile source to point at the test Artifactory instance.
+// Gemfile source to point at the test Artifactory local repo.
 func createRubyProject(t *testing.T, projectName string) string {
 	projectSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "ruby", projectName)
 	tmpDir, cleanup := coretests.CreateTempDirWithCallbackAndAssert(t)
@@ -102,8 +127,8 @@ func createRubyProject(t *testing.T, projectName string) string {
 	projectPath := filepath.Join(tmpDir, projectName)
 	assert.NoError(t, biutils.CopyDir(projectSrc, projectPath, true, nil))
 
+	warmUpRubyLocalRepo(t)
 	patchRubyGemfile(t, projectPath)
-	warmUpRubyVirtualRepo(t)
 	return projectPath
 }
 
@@ -126,9 +151,18 @@ func patchRubyGemfile(t *testing.T, projectPath string) {
 
 func rubyGemsURLWithCreds(t *testing.T) string {
 	t.Helper()
-	base := serverDetails.ArtifactoryUrl + "api/gems/" + tests.RubyVirtualRepo
+	base := serverDetails.ArtifactoryUrl + "api/gems/" + tests.RubyLocalRepo
 	parsed, err := url.Parse(base)
 	require.NoError(t, err)
+	user, pass := rubyTestCredentials()
+	if user != "" && pass != "" {
+		parsed.User = url.UserPassword(user, pass)
+	}
+	return parsed.String()
+}
+
+// rubyTestCredentials returns user/password for authenticating against Artifactory in tests.
+func rubyTestCredentials() (string, string) {
 	user := serverDetails.User
 	pass := serverDetails.Password
 	if serverDetails.AccessToken != "" {
@@ -137,10 +171,7 @@ func rubyGemsURLWithCreds(t *testing.T) string {
 			user = *tests.JfrogUser
 		}
 	}
-	if user != "" && pass != "" {
-		parsed.User = url.UserPassword(user, pass)
-	}
-	return parsed.String()
+	return user, pass
 }
 
 // runRubyCmd changes to projectPath and runs `jf ruby <args...>`.
@@ -569,11 +600,12 @@ func TestRubyBuildFlags(t *testing.T) {
 		buildName   string
 		buildNumber string
 		expectBI    bool
+		expectErr   bool
 	}{
-		{"both-set", tests.RubyBuildName, "1", true},
-		{"name-only", tests.RubyBuildName, "", false},
-		{"number-only", "", "1", false},
-		{"neither", "", "", false},
+		{"both-set", tests.RubyBuildName, "1", true, false},
+		{"name-only", tests.RubyBuildName, "", false, true},
+		{"number-only", "", "1", false, true},
+		{"neither", "", "", false, false},
 	}
 
 	for _, tc := range cases {
@@ -588,6 +620,10 @@ func TestRubyBuildFlags(t *testing.T) {
 			}
 
 			err := runRubyCmd(t, projectPath, args...)
+			if tc.expectErr {
+				assert.Error(t, err)
+				return
+			}
 			assert.NoError(t, err)
 
 			if tc.expectBI && tc.buildName != "" && tc.buildNumber != "" {
