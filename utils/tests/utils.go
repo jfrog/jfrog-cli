@@ -72,6 +72,7 @@ var (
 	TestUv                    *bool
 	TestNix                   *bool
 	TestAlpine                *bool
+	TestRuby                  *bool
 	TestAgentPlugins          *bool
 	TestConan                 *bool
 	TestHelm                  *bool
@@ -141,6 +142,7 @@ func init() {
 	TestUv = flag.Bool("test.uv", false, "Test UV")
 	TestNix = flag.Bool("test.nix", false, "Test Nix")
 	TestAlpine = flag.Bool("test.alpine", false, "Test Alpine APK")
+	TestRuby = flag.Bool("test.ruby", false, "Test Ruby")
 	TestAgentPlugins = flag.Bool("test.agentPlugins", false, "Test Agent Plugins")
 	TestConan = flag.Bool("test.conan", false, "Test Conan")
 	TestHelm = flag.Bool("test.helm", false, "Test Helm")
@@ -331,6 +333,9 @@ var reposConfigMap = map[*string]string{
 	&AlpineLocalRepo:                AlpineLocalRepositoryConfig,
 	&AlpineRemoteRepo:               AlpineRemoteRepositoryConfig,
 	&AlpineVirtualRepo:              AlpineVirtualRepositoryConfig,
+	&RubyLocalRepo:                  RubyLocalRepositoryConfig,
+	&RubyRemoteRepo:                 RubyRemoteRepositoryConfig,
+	&RubyVirtualRepo:                RubyVirtualRepositoryConfig,
 	&ConanLocalRepo:                 ConanLocalRepositoryConfig,
 	&ConanRemoteRepo:                ConanRemoteRepositoryConfig,
 	&ConanVirtualRepo:               ConanVirtualRepositoryConfig,
@@ -404,6 +409,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestUv:                 {&UvLocalRepo, &UvRemoteRepo},
 		TestNix:                {&NixLocalRepo, &NixRemoteRepo},
 		TestAlpine:             {&AlpineLocalRepo, &AlpineRemoteRepo},
+		TestRuby:               {&RubyLocalRepo, &RubyRemoteRepo},
 		TestAgentPlugins:       {&AgentPluginsLocalRepo},
 		TestConan:              {&ConanLocalRepo, &ConanRemoteRepo},
 		TestHelm:               {&HelmLocalRepo},
@@ -438,6 +444,7 @@ func GetVirtualRepositories() map[*string]string {
 		TestUv:           {&UvVirtualRepo},
 		TestNix:          {&NixVirtualRepo},
 		TestAlpine:       {&AlpineVirtualRepo},
+		TestRuby:         {&RubyVirtualRepo},
 		TestAgentPlugins: {},
 		TestConan:        {&ConanVirtualRepo},
 		TestHelm:         {},
@@ -483,6 +490,7 @@ func GetBuildNames() []string {
 		TestUv:           {&UvBuildName},
 		TestNix:          {&NixBuildName},
 		TestAlpine:       {&AlpineBuildName},
+		TestRuby:         {&RubyBuildName},
 		TestAgentPlugins: {&AgentPluginsBuildName},
 		TestConan:        {&ConanBuildName},
 		TestHelm:         {&HelmBuildName},
@@ -554,6 +562,9 @@ func getSubstitutionMap() map[string]string {
 		"${ALPINE_LOCAL_REPO}":         AlpineLocalRepo,
 		"${ALPINE_REMOTE_REPO}":        AlpineRemoteRepo,
 		"${ALPINE_VIRTUAL_REPO}":       AlpineVirtualRepo,
+		"${RUBY_LOCAL_REPO}":           RubyLocalRepo,
+		"${RUBY_REMOTE_REPO}":          RubyRemoteRepo,
+		"${RUBY_VIRTUAL_REPO}":         RubyVirtualRepo,
 		"${CONAN_LOCAL_REPO}":          ConanLocalRepo,
 		"${CONAN_REMOTE_REPO}":         ConanRemoteRepo,
 		"${CONAN_VIRTUAL_REPO}":        ConanVirtualRepo,
