@@ -13,6 +13,7 @@ import (
 	"time"
 
 	biutils "github.com/jfrog/build-info-go/utils"
+	corecommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	configtests "github.com/jfrog/jfrog-cli-core/v2/utils/config/tests"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
@@ -385,6 +386,31 @@ func (t *redirectingTransport) RoundTrip(req *http.Request) (*http.Response, err
 	return t.baseTransport.RoundTrip(req)
 }
 
+// agentDetectorEnvVars lists every env var jfrog-cli-core's agent detector consults
+// (see ExecutionContext in jfrog-cli-core/common/commands). Tests clear these so
+// ShouldHideSurveyLink's agent check is deterministic regardless of the shell
+// running `go test` (e.g. running inside Claude Code, Cursor, etc.).
+var agentDetectorEnvVars = []string{
+	"CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT",
+	"GEMINI_CLI",
+	"GOOSE_TERMINAL",
+	"CURSOR_AGENT", "CURSOR_CLI", "CURSOR_TRACE_ID",
+	"COPILOT_CLI",
+	"KILO_IPC_SOCKET_PATH", "KILO_SERVER_PASSWORD",
+	"ROO_CODE_IPC_SOCKET_PATH",
+	"CODEX_CI",
+	"AGENT",
+}
+
+func clearAgentEnvVarsForTest(t *testing.T) {
+	t.Helper()
+	for _, e := range agentDetectorEnvVars {
+		t.Setenv(e, "")
+	}
+	corecommands.ResetExecutionContextForTest()
+	t.Cleanup(corecommands.ResetExecutionContextForTest)
+}
+
 // TestGetHasDisplayedSurveyLink tests the survey link environment variable check with parametrized test cases
 func TestGetHasDisplayedSurveyLink(t *testing.T) {
 	testCases := []struct {
@@ -411,6 +437,7 @@ func TestGetHasDisplayedSurveyLink(t *testing.T) {
 	t.Setenv(coreutils.CI, "")
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			clearAgentEnvVarsForTest(t)
 			t.Setenv(JfrogCliHideSurvey, tc.envValue)
 
 			shouldHide := ShouldHideSurveyLink()
@@ -428,4 +455,25 @@ func TestSettingCIFlagRemovesSurvey(t *testing.T) {
 	t.Setenv(coreutils.CI, "true")
 	shouldHide := ShouldHideSurveyLink()
 	assert.True(t, shouldHide, "Expected survey to be hidden when CI flag is set")
+}
+
+func TestSurveyHiddenForAgent(t *testing.T) {
+	t.Setenv(coreutils.CI, "")
+	t.Setenv(JfrogCliHideSurvey, "")
+	clearAgentEnvVarsForTest(t)
+	t.Setenv("CLAUDECODE", "true")
+	corecommands.ResetExecutionContextForTest()
+
+	assert.True(t, ShouldHideSurveyLink(), "Expected survey to be hidden when invoked by an agent")
+}
+
+func TestLoginCommandFlagsIncludeServerId(t *testing.T) {
+	flags := GetCommandFlags(Login)
+	assert.NotEmpty(t, flags, "Expected login command to have flags")
+
+	var flagNames []string
+	for _, f := range flags {
+		flagNames = append(flagNames, f.GetName())
+	}
+	assert.Contains(t, flagNames, "server-id", "Expected login command flags to include 'server-id'")
 }

@@ -1,0 +1,108 @@
+# Trimmed excerpt of JFrog's public Platform Workers API reference, kept as an
+# OSS test fixture for the jfrog-cli apispec package (JGC-525). Not the full spec —
+# see docs/api-spec/full/ (populated only in JFrog's internal release build).
+openapi: 3.1.0
+info:
+  title: JFrog Platform - Workers API
+  description: >
+    Worker service management APIs for the JFrog Platform.
+
+
+    **Authentication:** Access Tokens as bearer token in authorization header
+    (Authorization: Bearer `<token>`)
+
+
+    **Security:** Unless otherwise specified, all APIs require Platform Admin
+    privileges.
+  version: 1.0.0
+  contact:
+    name: JFrog Support
+servers:
+  - url: https://{jfrog_url}
+tags:
+  - name: Workers
+    description: Manage worker services, actions, and executions on the JFrog Platform.
+security:
+  - BearerAuth: []
+paths:
+  /worker/api/v1/workers:
+    get:
+      tags:
+        - Workers
+      summary: Get Workers
+      description: |
+        Returns a list of all workers.
+
+
+        **Security:** Requires Platform Admin privileges.
+      operationId: getWorkers
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Worker'
+        '401':
+          description: Bad Credentials - Invalid credentials
+        '403':
+          description: Permission Denied - Insufficient permissions
+  /worker/api/v1/workers/{workerKey}:
+    delete:
+      tags:
+        - Workers
+      summary: Delete Worker
+      description: |
+        Deletes a worker.
+
+
+        **Security:** Requires Platform Admin privileges.
+      operationId: deleteWorker
+      parameters:
+        - name: workerKey
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The worker key
+      responses:
+        '204':
+          description: Worker deleted
+        '401':
+          description: Bad Credentials - Invalid credentials
+        '403':
+          description: Permission Denied - Insufficient permissions
+        '404':
+          description: Not Found - Worker not found
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: Access Token as bearer token
+  schemas:
+    Worker:
+      type: object
+      properties:
+        key:
+          type: string
+          description: Worker key
+        description:
+          type: string
+          description: Worker description
+        enabled:
+          type: boolean
+          description: Whether the worker is enabled
+        sourceCode:
+          type: string
+          description: Worker source code (TypeScript/JavaScript)
+        action:
+          type: string
+          description: Worker action
+        filterCriteria:
+          type: object
+          description: Filter criteria for the worker
+x-readme:
+  explorer-enabled: false

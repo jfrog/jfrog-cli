@@ -1,23 +1,11 @@
 name: Distribution Tests
 on:
+  workflow_call:
   workflow_dispatch:
-  push:
-    branches:
-      - "master"
-  # Triggers the workflow on PRs to master branch only.
-  pull_request_target:
-    types: [labeled]
-    branches:
-      - "master"
 
-# Ensures that only the latest commit is running for each PR at a time.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}-${{ github.ref }}
-  cancel-in-progress: true
 jobs:
   Distribution-Tests:
     name: Distribution tests (${{ matrix.os }})
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'safe to test')
     strategy:
       fail-fast: false
       matrix:
@@ -25,7 +13,7 @@ jobs:
     runs-on: ${{ matrix.os }}-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
           

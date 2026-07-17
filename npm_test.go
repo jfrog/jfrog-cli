@@ -171,26 +171,24 @@ func testNpmPublishWithNpmrc(t *testing.T, validationFunc func(t *testing.T, npm
 		return
 	}
 
-	// Init npm project & npmp command for testing
-	npmProjectPath := initNpmPublishRcProjectTest(t, projectName)
-	configFilePath := filepath.Join(npmProjectPath, ".jfrog", "projects", "npm.yaml")
+	// Create project without a JFrog config file — native mode must not require it.
+	// npm publish does not require node_modules, so no prepareArtifactoryForNpmBuild needed.
+	npmProjectPath := filepath.Dir(createNpmProject(t, projectName))
+	clientTestUtils.ChangeDirAndAssert(t, npmProjectPath)
 
 	// fetch module id
-	packageJsonPath := npmProjectPath + "/package.json"
+	packageJsonPath := filepath.Join(npmProjectPath, "package.json")
 	moduleName := readModuleId(t, packageJsonPath, npmVersion)
 
-	err = createNpmrcForTesting(t, configFilePath)
-	assert.NoError(t, err)
+	// Write .npmrc directly — no npm.yaml config file.
+	assert.NoError(t, writeNpmrcForNativeMode(t, tests.NpmRepo))
 
 	if isScoped {
 		addNpmScopeRegistryToNpmRc(t, npmProjectPath, packageJsonPath, npmVersion)
 	}
 
-	npmpCmd, err := publishUsingNpmrc(configFilePath, buildNumber)
-	assert.NoError(t, err)
-
-	result := npmpCmd.Result()
-	assert.NotNil(t, result)
+	// Use deprecated --run-native flag to exercise backward-compat path through the CLI layer.
+	runJfrogCli(t, "npm", "publish", "--run-native=true", "--build-name="+tests.NpmBuildName, "--build-number="+buildNumber)
 
 	validateNpmLocalBuildInfo(t, tests.NpmBuildName, buildNumber, moduleName)
 	assert.NoError(t, artifactoryCli.Exec("bp", tests.NpmBuildName, buildNumber))
@@ -208,9 +206,15 @@ func testNpmPublishWithNpmrc(t *testing.T, validationFunc func(t *testing.T, npm
 	validationFunc(t, testParams, false)
 }
 
+// TestNpmInstallClientNative verifies that in native mode the user's .npmrc is
+// never modified — no backup/restore, no temp file, mod-time unchanged.
+// The test intentionally has no JFrog config file so it exercises the no-config
+// native path introduced alongside JFROG_RUN_NATIVE support.
 func TestNpmInstallClientNative(t *testing.T) {
 	initNpmTest(t)
 	defer cleanNpmTest(t)
+	defer enableNativeMode(t)()
+
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
 	defer clientTestUtils.ChangeDirAndAssert(t, wd)
@@ -222,22 +226,18 @@ func TestNpmInstallClientNative(t *testing.T) {
 	}
 	buildNumber := "1"
 
-	npmProjectDirectory := initNpmProjectTest(t)
-	configFilePath := filepath.Join(npmProjectDirectory, ".jfrog", "projects", "npm.yaml")
-	err = createNpmrcForTesting(t, configFilePath)
+	// Create project without a JFrog config file — native mode must not require it.
+	npmProjectDirectory := filepath.Dir(createNpmProject(t, "npmproject"))
+	prepareArtifactoryForNpmBuild(t, npmProjectDirectory)
+	clientTestUtils.ChangeDirAndAssert(t, npmProjectDirectory)
+
+	// Write .npmrc directly; this is the file native mode must leave untouched.
+	assert.NoError(t, writeNpmrcForNativeMode(t, tests.NpmRemoteRepo))
+	npmrcFileInfo, err := os.Stat(".npmrc")
 	assert.NoError(t, err)
 
-	clientTestUtils.ChangeDirAndAssert(t, npmProjectDirectory)
-	npmrcFileInfo, err := os.Stat(".npmrc")
-	if err != nil && os.IsNotExist(err) {
-		assert.Fail(t, err.Error())
-	}
-
-	packageJsonPath := npmProjectDirectory + "/package.json"
+	packageJsonPath := filepath.Join(npmProjectDirectory, "package.json")
 	moduleName := readModuleId(t, packageJsonPath, npmVersion)
-	// Set JFROG_RUN_NATIVE=true for native npm mode
-	clientTestUtils.SetEnvAndAssert(t, "JFROG_RUN_NATIVE", "true")
-	defer clientTestUtils.UnSetEnvAndAssert(t, "JFROG_RUN_NATIVE")
 
 	runJfrogCli(t, "npm", "i", "--build-name="+tests.NpmBuildName, "--build-number="+buildNumber)
 	validateNpmLocalBuildInfo(t, tests.NpmBuildName, buildNumber, moduleName)
@@ -246,7 +246,6 @@ func TestNpmInstallClientNative(t *testing.T) {
 	npmTest := npmTestParams{
 		testName:    "npm with run-native (JFROG_RUN_NATIVE=true)",
 		buildNumber: buildNumber,
-		npmArgs:     "",
 	}
 
 	validateNpmInstall(t, npmTest, isNpm7(npmVersion))
@@ -255,30 +254,27 @@ func TestNpmInstallClientNative(t *testing.T) {
 	validateIfFileWasEverModified(t, npmrcFileInfo, postTestFileInfo)
 }
 
-func createNpmrcForTesting(t *testing.T, configFilePath string) (err error) {
-	npmCommand := npm.NewNpmCommand("install", true)
-	npmCommand.SetConfigFilePath(configFilePath)
-	npmCommand.SetServerDetails(serverDetails)
-	err = npmCommand.Init()
-	assert.NoError(t, err)
-	err = npmCommand.PreparePrerequisites(tests.NpmRepo)
-	assert.NoError(t, err)
-	err = npmCommand.CreateTempNpmrc()
-	if err != nil {
-		return
+// writeNpmrcForNativeMode creates a .npmrc in the current directory pointing to
+// the given Artifactory npm repo, using serverDetails for auth.
+// This simulates a project configured for Artifactory without a JFrog CLI config file.
+func writeNpmrcForNativeMode(t *testing.T, repo string) error {
+	repoURL := utils2.GetNpmRepositoryUrl(repo, serverDetails.ArtifactoryUrl)
+	// Ensure trailing slash so GetNpmAuthKeyValue produces "//host/path/:_auth",
+	// matching what npm's nerfDart() generates when looking up credentials.
+	if !strings.HasSuffix(repoURL, "/") {
+		repoURL += "/"
 	}
-	return appendRegistryAuthToNpmrc(t, "")
+	key, value := utils2.GetNpmAuthKeyValue(serverDetails, repoURL)
+	require.NotEmpty(t, key, "no auth credentials available in serverDetails")
+	content := fmt.Sprintf("registry = %s\n%s=%s\n", repoURL, key, value)
+	return os.WriteFile(".npmrc", []byte(content), 0644)
 }
 
-// appendRegistryAuthToNpmrc writes a file-based _authToken entry directly into the
-// project .npmrc. npm 10 lowercases env-var config keys (_authToken → _authtoken),
-// which breaks the scoped auth env var that CreateTempNpmrc sets.
+// appendRegistryAuthToNpmrc appends auth credentials for registryURL to the current .npmrc.
 // If registryURL is empty, reads it from the "registry = " line in the current .npmrc.
+// Handles both access token and user/password auth. Ensures trailing slash in the registry
+// URL so the nerf-dart key matches what npm's nerfDart() generates during credential lookup.
 func appendRegistryAuthToNpmrc(t *testing.T, registryURL string) error {
-	token := serverDetails.AccessToken
-	if token == "" {
-		return nil
-	}
 	if registryURL == "" {
 		data, err := os.ReadFile(".npmrc")
 		if err != nil {
@@ -294,16 +290,14 @@ func appendRegistryAuthToNpmrc(t *testing.T, registryURL string) error {
 	if registryURL == "" {
 		return nil
 	}
-	protocolIdx := strings.Index(registryURL, "://")
-	if protocolIdx == -1 {
+	// Ensure trailing slash so the nerf-dart key matches npm's nerfDart() output.
+	if !strings.HasSuffix(registryURL, "/") {
+		registryURL += "/"
+	}
+	key, value := utils2.GetNpmAuthKeyValue(serverDetails, registryURL)
+	if key == "" {
 		return nil
 	}
-	nerfDart := registryURL[protocolIdx+1:]
-	if !strings.HasSuffix(nerfDart, "/") {
-		nerfDart += "/"
-	}
-	authLine := fmt.Sprintf("%s:_authToken=%s\nalways-auth=true\n", nerfDart, token)
-
 	f, err := os.OpenFile(".npmrc", os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
@@ -311,24 +305,8 @@ func appendRegistryAuthToNpmrc(t *testing.T, registryURL string) error {
 	defer func() {
 		assert.NoError(t, f.Close())
 	}()
-	_, err = f.WriteString(authLine)
+	_, err = fmt.Fprintf(f, "%s=%s\n", key, value)
 	return err
-}
-
-func publishUsingNpmrc(configFilePath string, buildNumber string) (npm.NpmPublishCommand, error) {
-	// Use deprecated --run-native flag to test backward compatibility (shows deprecation warning)
-	args := []string{"--run-native=true", "--build-name=" + tests.NpmBuildName, "--build-number=" + buildNumber}
-	npmpCmd := npm.NewNpmPublishCommand()
-	npmpCmd.SetConfigFilePath(configFilePath).SetArgs(args)
-	err := npmpCmd.Init()
-	if err != nil {
-		return *npmpCmd, err
-	}
-	err = commands.Exec(npmpCmd)
-	if err != nil {
-		return *npmpCmd, err
-	}
-	return *npmpCmd, err
 }
 
 func readModuleId(t *testing.T, wd string, npmVersion *version.Version) string {
@@ -343,6 +321,10 @@ func addNpmScopeRegistryToNpmRc(t *testing.T, projectPath string, packageJsonPat
 	assert.NoError(t, err)
 	_, registry, err := utils2.GetArtifactoryNpmRepoDetails(tests.NpmScopedRepo, authConfig, false)
 	assert.NoError(t, err)
+	// Ensure trailing slash so npm's nerfDart() finds the matching auth key.
+	if !strings.HasSuffix(registry, "/") {
+		registry += "/"
+	}
 	scopedRegistry := scope + ":registry=" + registry
 	npmrcFilePath := filepath.Join(projectPath, ".npmrc")
 	func() {
@@ -494,14 +476,6 @@ func initNpmFilesTest(t *testing.T) (npmProjectPath, npmScopedProjectPath, npmNp
 
 func initNpmProjectTest(t *testing.T) (npmProjectPath string) {
 	npmProjectPath = filepath.Dir(createNpmProject(t, "npmproject"))
-	err := createConfigFileForTest([]string{npmProjectPath}, tests.NpmRemoteRepo, tests.NpmRepo, t, project.Npm, false)
-	assert.NoError(t, err)
-	prepareArtifactoryForNpmBuild(t, npmProjectPath)
-	return
-}
-
-func initNpmPublishRcProjectTest(t *testing.T, projectName string) (npmProjectPath string) {
-	npmProjectPath = filepath.Dir(createNpmProject(t, projectName))
 	err := createConfigFileForTest([]string{npmProjectPath}, tests.NpmRemoteRepo, tests.NpmRepo, t, project.Npm, false)
 	assert.NoError(t, err)
 	prepareArtifactoryForNpmBuild(t, npmProjectPath)
@@ -909,21 +883,21 @@ func TestNpmPublishWithWorkspacesRunNative(t *testing.T) {
 
 	initNpmTest(t)
 	defer cleanNpmTest(t)
+	defer enableNativeMode(t)()
+
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
 	defer clientTestUtils.ChangeDirAndAssert(t, wd)
 
-	// Init npm project & npmp command for testing
-	npmProjectPath := initNpmWorkspacesProjectTest(t)
-	configFilePath := filepath.Join(npmProjectPath, ".jfrog", "projects", "npm.yaml")
+	// Init npm workspaces project without a JFrog config file — native mode must not require it.
+	npmProjectPath := filepath.Dir(createNpmProject(t, "npmworkspaces"))
+	testFolder := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "npm", "npmworkspaces")
+	assert.NoError(t, biutils.CopyDir(testFolder, npmProjectPath, true, []string{}))
+	prepareArtifactoryForNpmBuild(t, npmProjectPath)
+	clientTestUtils.ChangeDirAndAssert(t, npmProjectPath)
 
-	// Create npmrc for native functionality
-	err = createNpmrcForTesting(t, configFilePath)
-	assert.NoError(t, err)
-
-	// Set JFROG_RUN_NATIVE=true for native npm mode
-	clientTestUtils.SetEnvAndAssert(t, "JFROG_RUN_NATIVE", "true")
-	defer clientTestUtils.UnSetEnvAndAssert(t, "JFROG_RUN_NATIVE")
+	// Write .npmrc directly — no npm.yaml config file.
+	assert.NoError(t, writeNpmrcForNativeMode(t, tests.NpmRepo))
 
 	// Add build info parameters
 	buildName := tests.NpmBuildName + "-workspaces-native"
@@ -931,7 +905,7 @@ func TestNpmPublishWithWorkspacesRunNative(t *testing.T) {
 	args := []string{"--workspaces", "--build-name=" + buildName, "--build-number=" + buildNumber}
 
 	npmpCmd := npm.NewNpmPublishCommand()
-	npmpCmd.SetConfigFilePath(configFilePath).SetArgs(args)
+	npmpCmd.SetArgs(args).SetUseNative(true)
 	assert.NoError(t, npmpCmd.Init())
 	err = commands.Exec(npmpCmd)
 	assert.NoError(t, err)
@@ -1671,4 +1645,44 @@ func TestNpmBuildPublishWithCIVcsProps(t *testing.T) {
 		}
 	}
 	assert.Greater(t, artifactCount, 0, "No artifacts in build info")
+}
+
+// TestNpmPublishWithLocalGitVcsProps verifies local git VCS props on npm artifacts
+// when running publish followed by build-publish with VCS collection enabled and no CI env.
+func TestNpmPublishWithLocalGitVcsProps(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+
+	buildName := "npm-local-git-test"
+	buildNumber := "1"
+
+	cleanupEnv := tests.SetupLocalGitVcsEnv(t)
+	defer cleanupEnv()
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+
+	npmPath := initNpmProjectTest(t)
+	tests.CopyGitFixtureIntoProject(t, npmPath)
+	chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, npmPath)
+	defer chdirCallBack()
+
+	runJfrogCli(t, "npm", "publish", "--build-name="+buildName, "--build-number="+buildNumber)
+	require.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	require.NoError(t, err)
+	require.True(t, found)
+
+	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
+	require.NoError(t, err)
+
+	count := tests.ValidateLocalGitVcsPropsOnBuildInfoArtifacts(t, serviceManager, publishedBuildInfo, tests.NpmRepo,
+		tests.VcsFixtureMainURL, tests.VcsFixtureMainRevision, tests.VcsFixtureMainBranch)
+	assert.Greater(t, count, 0)
 }

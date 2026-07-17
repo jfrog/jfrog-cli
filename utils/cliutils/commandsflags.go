@@ -8,8 +8,8 @@ import (
 	"github.com/jfrog/jfrog-cli-artifactory/cliutils/flagkit"
 
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
-	"github.com/jfrog/jfrog-cli-core/v2/plugins/components"
 	"github.com/jfrog/jfrog-cli-core/v2/common/format"
+	"github.com/jfrog/jfrog-cli-core/v2/plugins/components"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -88,6 +88,7 @@ const (
 	RubyConfig             = "ruby-config"
 	ConanConfig            = "conan-config"
 	Conan                  = "conan"
+	Nix                    = "nix"
 	Ping                   = "ping"
 	RtCurl                 = "rt-curl"
 	TemplateConsumer       = "template-consumer"
@@ -136,9 +137,17 @@ const (
 	ExchangeOidcToken = "exchange-oidc-token"
 	Api               = "api"
 
+	// MCP commands keys
+	McpShow      = "mcp-show"
+	McpInstall   = "mcp-install"
+	McpUninstall = "mcp-uninstall"
+
 	// Plugin commands keys
 	PluginInstall = "plugin-install"
 	PluginPublish = "plugin-publish"
+
+	// Login command key
+	Login = "login"
 
 	// *** Artifactory Commands' flags ***
 	// Base flags
@@ -149,6 +158,7 @@ const (
 	accessToken         = "access-token"
 	serverId            = "server-id"
 	serverIdYarn        = "server-id-yarn"
+	serverIdNpm         = "server-id-npm"
 	disableTokenRefresh = "disable-token-refresh"
 
 	passwordStdin    = "password-stdin"
@@ -509,17 +519,17 @@ const (
 
 	// Per-command format flag map keys. All share Name: "format" but restrict
 	// the description to the formats that command actually supports.
-	configShowFormat          = "config-show-format"
-	accessTokenCreateFormat   = "access-token-create-format"
-	exchangeOidcTokenFormat   = "exchange-oidc-token-format"
-	licenseAcquireFormat      = "license-acquire-format"
-	licenseDeployFormat       = "license-deploy-format"
-	jpdAddFormat              = "jpd-add-format"
-	pluginInstallFormat       = "plugin-install-format"
-	pluginPublishFormat       = "plugin-publish-format"
-	plStatusFormat            = "pl-status-format"
-	plTriggerFormat           = "pl-trigger-format"
-	plSyncFormat              = "pl-sync-format"
+	configShowFormat             = "config-show-format"
+	accessTokenCreateFormat      = "access-token-create-format"
+	exchangeOidcTokenFormat      = "exchange-oidc-token-format"
+	licenseAcquireFormat         = "license-acquire-format"
+	licenseDeployFormat          = "license-deploy-format"
+	jpdAddFormat                 = "jpd-add-format"
+	pluginInstallFormat          = "plugin-install-format"
+	pluginPublishFormat          = "plugin-publish-format"
+	plStatusFormat               = "pl-status-format"
+	plTriggerFormat              = "pl-trigger-format"
+	plSyncFormat                 = "pl-sync-format"
 	plSyncStatusFormat           = "pl-sync-status-format"
 	permissionTargetCreateFormat = "permission-target-create-format"
 	permissionTargetUpdateFormat = "permission-target-update-format"
@@ -642,12 +652,22 @@ const (
 	RepoKey              = "repo-key"
 
 	// API command flags
-	apiHeader   = "api-header"
-	apiInput    = "api-input"
-	apiData     = "api-data"
-	apiMethod   = "api-method"
-	apiVerbose  = "api-verbose"
-	apiTimeout  = "api-timeout"
+	apiHeader  = "api-header"
+	apiInput   = "api-input"
+	apiData    = "api-data"
+	apiMethod  = "api-method"
+	apiVerbose = "api-verbose"
+	apiTimeout = "api-timeout"
+
+	// MCP command flags
+	mcpUrl        = "mcp-url"
+	mcpAgent      = "mcp-agent"
+	mcpGlobal     = "mcp-global"
+	mcpProjectDir = "mcp-project-dir"
+	mcpName       = "mcp-name"
+	mcpDryRun     = "mcp-dry-run"
+	mcpSkipCheck  = "mcp-skip-check"
+	mcpShowFormat = "mcp-show-format"
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -752,6 +772,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  serverId,
 		Usage: "[Optional] Server ID configured using the 'jf config' command. Supported from yarn v4+ in native mode (JFROG_RUN_NATIVE=true).` `",
 	},
+	serverIdNpm: cli.StringFlag{
+		Name:  serverId,
+		Usage: "[Optional] Server ID configured using the 'jf config' command. Used in native mode (JFROG_RUN_NATIVE=true) to identify the JFrog server for usage reporting.` `",
+	},
 	passwordStdin: cli.BoolFlag{
 		Name:  passwordStdin,
 		Usage: "[Default: false] Set to true to provide the password via stdin.` `",
@@ -784,6 +808,38 @@ var flagsMap = map[string]cli.Flag{
 	apiTimeout: cli.IntFlag{
 		Name:  "timeout",
 		Usage: "[Default: 0] Overall HTTP request timeout in seconds. 0 means no timeout.` `",
+	},
+	mcpShowFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + components.GetFormatFlagDescription([]format.OutputFormat{format.Table, format.Json}) + "` `",
+	},
+	mcpUrl: cli.StringFlag{
+		Name:  "mcp-url",
+		Usage: "[Optional] Remote MCP server endpoint. Overrides the value derived from the platform URL (<platform-url>/mcp) and the " + JfrogCliMcpUrl + " environment variable.` `",
+	},
+	mcpAgent: cli.StringFlag{
+		Name:  "agent",
+		Usage: "[Optional] Target AI agent to configure: 'cursor' or 'claude'.` `",
+	},
+	mcpGlobal: cli.BoolFlag{
+		Name:  "global",
+		Usage: "[Default: false] Configure the MCP server in the agent's global (user-level) configuration instead of the current project.` `",
+	},
+	mcpProjectDir: cli.StringFlag{
+		Name:  "project-dir",
+		Usage: "[Default: current directory] Project directory whose agent configuration should be updated. Ignored when --global is set.` `",
+	},
+	mcpName: cli.StringFlag{
+		Name:  "name",
+		Usage: "[Default: jfrog] Name of the MCP server entry written to the agent configuration.` `",
+	},
+	mcpDryRun: cli.BoolFlag{
+		Name:  "dry-run",
+		Usage: "[Default: false] Print the resulting agent configuration without writing it to disk.` `",
+	},
+	mcpSkipCheck: cli.BoolFlag{
+		Name:  "skip-check",
+		Usage: "[Default: false] Skip the readiness check that verifies the MCP server is reachable before configuring the agent.` `",
 	},
 	// Artifactory's commands flags
 	url: cli.StringFlag{
@@ -2081,10 +2137,10 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	NpmInstallCi: {
-		BuildName, BuildNumber, module, Project, runNative,
+		BuildName, BuildNumber, module, Project, runNative, serverIdNpm,
 	},
 	NpmPublish: {
-		BuildName, BuildNumber, module, Project, npmDetailedSummary, xrayScan, XrFormat, runNative, npmWorkspaces,
+		BuildName, BuildNumber, module, Project, npmDetailedSummary, xrayScan, XrFormat, runNative, npmWorkspaces, serverIdNpm,
 	},
 	PnpmConfig: {
 		global, serverIdResolve, repoResolve,
@@ -2184,6 +2240,9 @@ var commandFlags = map[string][]string{
 	Conan: {
 		BuildName, BuildNumber, module, Project,
 	},
+	Nix: {
+		BuildName, BuildNumber, module, Project, serverId,
+	},
 	Stats: {
 		XrFormat, accessToken, serverId,
 	},
@@ -2191,6 +2250,21 @@ var commandFlags = map[string][]string{
 		platformUrl, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
 		ClientCertKeyPath, InsecureTls, configDisableRefreshAccessToken,
 		apiHeader, apiInput, apiData, apiMethod, apiVerbose, apiTimeout,
+	},
+	McpShow: {
+		platformUrl, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
+		ClientCertKeyPath, InsecureTls, configDisableRefreshAccessToken,
+		mcpUrl, mcpShowFormat,
+	},
+	McpInstall: {
+		platformUrl, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
+		ClientCertKeyPath, InsecureTls, configDisableRefreshAccessToken,
+		mcpUrl, mcpAgent, mcpGlobal, mcpProjectDir, mcpName, mcpDryRun, mcpSkipCheck,
+	},
+	McpUninstall: {
+		platformUrl, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
+		ClientCertKeyPath, InsecureTls, configDisableRefreshAccessToken,
+		mcpAgent, mcpGlobal, mcpProjectDir, mcpName, mcpDryRun,
 	},
 	TemplateConsumer: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
@@ -2313,6 +2387,9 @@ var commandFlags = map[string][]string{
 	},
 	Setup: {
 		serverId, url, user, password, accessToken, sshPassphrase, sshKeyPath, ClientCertPath, ClientCertKeyPath, Project, setupRepo,
+	},
+	Login: {
+		serverId,
 	},
 }
 

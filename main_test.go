@@ -18,6 +18,7 @@ import (
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/format"
+	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli-core/v2/common/project"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
@@ -60,6 +61,15 @@ func setupIntegrationTests() {
 		clientlog.Error(fmt.Sprintf("Couldn't set env: JFROG_CLI_CI_VCS_PROPS_DISABLED. Error: %s", err.Error()))
 		os.Exit(1)
 	}
+	// Force AI-help mode off so tests that assert on help-text content are
+	// deterministic regardless of whether the test runner inherits an AI
+	// agent's env (e.g. CLAUDECODE=1 from Claude Code, CURSOR_AGENT=1 from
+	// Cursor) that would otherwise auto-flip JGC-473's AIHelpEnabled to true.
+	err = os.Setenv(corecommon.EnvAIHelp, "false")
+	if err != nil {
+		clientlog.Error(fmt.Sprintf("Couldn't set env: %s. Error: %s", corecommon.EnvAIHelp, err.Error()))
+		os.Exit(1)
+	}
 	flag.Parse()
 	log.SetDefaultLogger()
 	validateCmdAliasesUniqueness()
@@ -67,7 +77,7 @@ func setupIntegrationTests() {
 		InitArtifactoryTests()
 	}
 
-	if *tests.TestNpm || *tests.TestPnpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv || *tests.TestPoetry || *tests.TestConan || *tests.TestHelm || *tests.TestUv || (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
+	if *tests.TestNpm || *tests.TestPnpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv || *tests.TestPoetry || *tests.TestConan || *tests.TestHelm || *tests.TestUv || *tests.TestNix || *tests.TestAlpine || (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
 		InitBuildToolsTests()
 	}
 	if *tests.TestDocker || *tests.TestPodman || *tests.TestDockerScan {
@@ -78,6 +88,9 @@ func setupIntegrationTests() {
 	}
 	if *tests.TestPlugins {
 		InitPluginsTests()
+	}
+	if *tests.TestAgentPlugins {
+		InitAgentPluginsTests()
 	}
 	if *tests.TestAccess {
 		InitAccessTests()
@@ -109,7 +122,7 @@ func tearDownIntegrationTests() {
 	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
 		CleanArtifactoryTests()
 	}
-	if *tests.TestNpm || *tests.TestPnpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv || *tests.TestPoetry || *tests.TestConan || *tests.TestHelm || *tests.TestDocker || *tests.TestPodman || *tests.TestDockerScan || (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
+	if *tests.TestNpm || *tests.TestPnpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv || *tests.TestPoetry || *tests.TestConan || *tests.TestHelm || *tests.TestNix || *tests.TestAlpine || *tests.TestDocker || *tests.TestPodman || *tests.TestDockerScan || (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
 		CleanBuildToolsTests()
 	}
 	if *tests.TestDistribution {
@@ -117,6 +130,9 @@ func tearDownIntegrationTests() {
 	}
 	if *tests.TestPlugins {
 		CleanPluginsTests()
+	}
+	if *tests.TestAgentPlugins {
+		CleanAgentPluginsTests()
 	}
 	if *tests.TestTransfer {
 		CleanTransferTests()
@@ -435,8 +451,34 @@ func TestDockerScanHelp(t *testing.T) {
 	assert.Contains(t, string(content), "jfrog docker scan - Scan local docker image using the docker client and Xray.")
 }
 
+// agentDetectorEnvVars lists every env var jfrog-cli-core's agent detector consults
+// (see ExecutionContext in jfrog-cli-core/common/commands). Tests clear these so
+// survey-visibility assertions are deterministic regardless of the shell running
+// `go test` (e.g. running inside Claude Code, Cursor, etc.).
+var agentDetectorEnvVars = []string{
+	"CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT",
+	"GEMINI_CLI",
+	"GOOSE_TERMINAL",
+	"CURSOR_AGENT", "CURSOR_CLI", "CURSOR_TRACE_ID",
+	"COPILOT_CLI",
+	"KILO_IPC_SOCKET_PATH", "KILO_SERVER_PASSWORD",
+	"ROO_CODE_IPC_SOCKET_PATH",
+	"CODEX_CI",
+	"AGENT",
+}
+
+func clearAgentEnvVarsForTest(t *testing.T) {
+	t.Helper()
+	for _, e := range agentDetectorEnvVars {
+		t.Setenv(e, "")
+	}
+	commands.ResetExecutionContextForTest()
+	t.Cleanup(commands.ResetExecutionContextForTest)
+}
+
 func TestSurvey_DisplayedOnHelp(t *testing.T) {
 	t.Setenv("CI", "false")
+	clearAgentEnvVarsForTest(t)
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 	_, contentErr, err := tests.GetCmdOutput(t, jfrogCli, "help")
 	require.NoError(t, err)
@@ -445,6 +487,18 @@ func TestSurvey_DisplayedOnHelp(t *testing.T) {
 
 func TestSurvey_NotDisplayedOnHelpCI(t *testing.T) {
 	t.Setenv("CI", "true")
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+	_, contentErr, err := tests.GetCmdOutput(t, jfrogCli, "help")
+	require.NoError(t, err)
+	assert.NotContains(t, string(contentErr), "https://") // not doing more check as url can change
+}
+
+func TestSurvey_NotDisplayedOnHelpAgent(t *testing.T) {
+	t.Setenv("CI", "false")
+	clearAgentEnvVarsForTest(t)
+	t.Setenv("CLAUDECODE", "true")
+	commands.ResetExecutionContextForTest()
+
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 	_, contentErr, err := tests.GetCmdOutput(t, jfrogCli, "help")
 	require.NoError(t, err)

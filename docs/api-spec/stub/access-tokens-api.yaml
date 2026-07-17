@@ -1,0 +1,106 @@
+# Trimmed excerpt of JFrog's public Platform Access Tokens API reference, kept as
+# an OSS test fixture for the jfrog-cli apispec package (JGC-525). Not the full
+# spec — see docs/api-spec/full/ (populated only in JFrog's internal release
+# build).
+openapi: 3.1.0
+info:
+  title: JFrog Platform - Access Tokens API
+  description: >
+    Manage access tokens for the JFrog Platform, including creating, refreshing,
+    listing, and revoking tokens.
+
+
+    **Authentication:** Access Tokens as bearer token in authorization header
+    (`Authorization: Bearer <token>`). Basic authentication is also supported
+    for the Create Token API when enabled in the platform configuration.
+
+
+    **Security:** Security requirements vary per operation. See individual
+    operation descriptions for details.
+  version: 1.0.0
+  contact:
+    name: JFrog Support
+servers:
+  - url: https://{jfrog_url}
+tags:
+  - name: Access Tokens
+    description: >-
+      Create, retrieve, refresh, and revoke access tokens for JFrog Platform
+      services.
+security:
+  - BearerAuth: []
+paths:
+  /access/api/v1/tokens:
+    get:
+      tags:
+        - Access Tokens
+      summary: Get Tokens
+      description: >
+        Returns token information based on the authenticated principal and
+        optional filters. Admin users can view all tokens; non-admin users can
+        only view their own tokens.
+
+
+        Reference tokens are supported from Artifactory version 7.133.8.
+
+
+        **Security:** Requires a valid token.
+      operationId: getTokens
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenListResponse'
+        '401':
+          description: Bad Credentials - Invalid credentials
+        '403':
+          description: Permission Denied - Insufficient permissions
+components:
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: basic
+      description: Basic authentication using username and password
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: Access Token as bearer token
+  schemas:
+    TokenDetails:
+      type: object
+      properties:
+        token_id:
+          type: string
+        subject:
+          type: string
+        expiry:
+          type: integer
+        issued_at:
+          type: integer
+        issuer:
+          type: string
+        description:
+          type: string
+        refreshable:
+          type: boolean
+        scope:
+          type: string
+        last_used:
+          type: integer
+          description: >
+            The Unix timestamp (in seconds) of when the token was last used.
+            Supported from Artifactory version 7.108.3 and above. Requires
+            `access_token_last_used_enabled: True` and
+            `access_token_last_used_threshold: 900` system properties to be
+            configured.
+    TokenListResponse:
+      type: object
+      properties:
+        tokens:
+          type: array
+          items:
+            $ref: '#/components/schemas/TokenDetails'
+x-readme:
+  explorer-enabled: false

@@ -1,9 +1,10 @@
 name: "Frogbot Scan Pull Request"
+# Reusable: invoked by build-gate.yml behind the `build-gate` approval.
+# Also runnable standalone via workflow_dispatch. The approval gate now lives in the
+# orchestrator, so this workflow no longer declares its own environment.
 on:
-  pull_request_target:
-    types: [opened, synchronize]
-    branches:
-      - "master"
+  workflow_call:
+  workflow_dispatch:
 permissions:
   pull-requests: write
   contents: read
@@ -11,10 +12,9 @@ jobs:
   scan-pull-request:
     if: ${{ github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
-    environment: frogbot
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
           
@@ -23,7 +23,7 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - uses: jfrog/frogbot@v2
+      - uses: jfrog/frogbot@v3
         env:
           JFROG_CLI_LOG_LEVEL: "DEBUG"
 

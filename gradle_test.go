@@ -707,11 +707,14 @@ func TestGradleBuildPublishWithCIVcsProps(t *testing.T) {
 	artifactCount := 0
 	for _, module := range publishedBuildInfo.BuildInfo.Modules {
 		for _, artifact := range module.Artifacts {
-			fullPath := artifact.OriginalDeploymentRepo + "/" + artifact.Path
+			fullPath := tests.ArtifactFullPath(artifact, tests.GradleRepo)
 
 			props, err := serviceManager.GetItemProps(fullPath)
 			assert.NoError(t, err, "Failed to get properties for artifact: %s", fullPath)
 			assert.NotNil(t, props, "Properties are nil for artifact: %s", fullPath)
+			if props == nil {
+				continue
+			}
 
 			// Validate VCS properties
 			assert.Contains(t, props.Properties, "vcs.provider", "Missing vcs.provider on %s", artifact.Name)
@@ -727,6 +730,107 @@ func TestGradleBuildPublishWithCIVcsProps(t *testing.T) {
 		}
 	}
 	assert.Greater(t, artifactCount, 0, "No artifacts in build info")
+
+	cleanGradleTest(t)
+}
+
+// TestGradleBuildPublishWithLocalGitVcsProps tests that local git VCS properties are set on Gradle artifacts
+// when running build-publish with VCS collection enabled and no CI env.
+// Uses the traditional Gradle extractor path (not FlexPack) because SetCIVcsPropsToConfig
+// injects local git props into the extractor config; FlexPack only sets build.* props on publish.
+func TestGradleBuildPublishWithLocalGitVcsProps(t *testing.T) {
+	initGradleTest(t)
+	buildName := "gradle-local-git-test"
+	buildNumber := "1"
+
+	cleanupEnv := tests.SetupLocalGitVcsEnv(t)
+	defer cleanupEnv()
+
+	_ = os.Unsetenv("JFROG_RUN_NATIVE")
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	buildGradlePath := createGradleProject(t, "gradleproject")
+	projectDir := filepath.Dir(buildGradlePath)
+	tests.CopyGitFixtureIntoProject(t, projectDir)
+	require.FileExists(t, filepath.Join(projectDir, ".git", "HEAD"))
+
+	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.GradleConfig)
+	createConfigFile(filepath.Join(projectDir, ".jfrog", "projects"), configFilePath, t)
+
+	oldHomeDir := changeWD(t, projectDir)
+	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
+
+	buildGradlePath = strings.ReplaceAll(buildGradlePath, `\`, "/")
+	runJfrogCli(t, "gradle", "clean", "artifactoryPublish", "-b"+buildGradlePath, "--build-name="+buildName, "--build-number="+buildNumber)
+
+	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
+
+	var publishedBuildInfo *buildinfo.PublishedBuildInfo
+	var found bool
+	assert.Eventuallyf(t, func() bool {
+		var biErr error
+		publishedBuildInfo, found, biErr = tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+		return biErr == nil && found
+	}, 30*time.Second, 2*time.Second, "Build info was not found for %s/%s", buildName, buildNumber)
+	if !found || publishedBuildInfo == nil {
+		return
+	}
+
+	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
+	assert.NoError(t, err)
+
+	artifactCount := tests.ValidateLocalGitVcsPropsOnBuildInfoArtifacts(t, serviceManager, publishedBuildInfo,
+		tests.GradleRepo, tests.VcsFixtureMainURL, tests.VcsFixtureMainRevision, tests.VcsFixtureMainBranch)
+	assert.Greater(t, artifactCount, 0)
+
+	cleanGradleTest(t)
+}
+
+// TestGradleFlexPackPublishWithLocalGitVcsProps verifies local git VCS on FlexPack publish path.
+func TestGradleFlexPackPublishWithLocalGitVcsProps(t *testing.T) {
+	initGradleTest(t)
+	buildName := "gradle-flexpack-local-git"
+	buildNumber := "1"
+
+	cleanupEnv := tests.SetupLocalGitVcsEnv(t)
+	defer cleanupEnv()
+
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_RUN_NATIVE", "true")
+	defer setEnvCallBack()
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	buildGradlePath := createGradleProject(t, "civcsproject")
+	projectDir := filepath.Dir(buildGradlePath)
+	tests.CopyGitFixtureIntoProject(t, projectDir)
+
+	oldHomeDir := changeWD(t, projectDir)
+	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
+
+	runJfrogCli(t, "gradle", "clean", "publish", "--build-name="+buildName, "--build-number="+buildNumber)
+	require.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
+
+	var publishedBuildInfo *buildinfo.PublishedBuildInfo
+	var found bool
+	require.Eventually(t, func() bool {
+		var biErr error
+		publishedBuildInfo, found, biErr = tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+		return biErr == nil && found
+	}, 30*time.Second, 2*time.Second)
+
+	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
+	require.NoError(t, err)
+
+	count := tests.ValidateLocalGitVcsPropsOnBuildInfoArtifacts(t, serviceManager, publishedBuildInfo, tests.GradleRepo,
+		tests.VcsFixtureMainURL, tests.VcsFixtureMainRevision, tests.VcsFixtureMainBranch)
+	assert.Greater(t, count, 0)
 
 	cleanGradleTest(t)
 }

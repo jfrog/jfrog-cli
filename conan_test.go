@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
@@ -1161,4 +1162,55 @@ func TestConanBuildPublishWithCIVcsProps(t *testing.T) {
 	}
 
 	assert.Greater(t, artifactCount, 0, "No artifacts were validated for CI VCS properties")
+}
+
+// TestConanUploadWithLocalGitVcsProps verifies civcs local git fallback on conan upload.
+func TestConanUploadWithLocalGitVcsProps(t *testing.T) {
+	initConanTest(t)
+
+	buildName := tests.ConanBuildName + "-local-git"
+	buildNumber := "1"
+
+	cleanupEnv := tests.SetupLocalGitVcsEnv(t)
+	defer cleanupEnv()
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	projectPath := createConanProject(t, "conan-local-git")
+	tests.CopyGitFixtureIntoProject(t, projectPath)
+
+	conanfile := filepath.Join(projectPath, "conanfile.py")
+	data, err := os.ReadFile(conanfile)
+	require.NoError(t, err)
+	patched := strings.ReplaceAll(string(data), `name = "cli-test-package"`, `name = "cli-test-package-local-git"`)
+	require.NoError(t, os.WriteFile(conanfile, []byte(patched), 0o644)) //#nosec G703 -- test code, path built from createConanProject temp dir
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+
+	configureConanRemote(t)
+	defer cleanupConanRemote()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	require.NoError(t, jfrogCli.Exec("conan", "create", ".", "--build=missing",
+		"--build-name="+buildName, "--build-number="+buildNumber))
+	require.NoError(t, jfrogCli.Exec("conan", "upload", "cli-test-package-local-git/*",
+		"-r", tests.ConanLocalRepo, "--confirm",
+		"--build-name="+buildName, "--build-number="+buildNumber))
+
+	require.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	require.NoError(t, err)
+	require.True(t, found)
+
+	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
+	require.NoError(t, err)
+
+	count := tests.ValidateLocalGitVcsPropsOnBuildInfoArtifacts(t, serviceManager, publishedBuildInfo, tests.ConanLocalRepo,
+		tests.VcsFixtureMainURL, tests.VcsFixtureMainRevision, tests.VcsFixtureMainBranch)
+	assert.Greater(t, count, 0)
 }

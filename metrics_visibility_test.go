@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	corecommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 )
 
@@ -84,6 +85,139 @@ func startVisMockServer(t *testing.T) (*httptest.Server, chan visReq) {
 	})
 	srv := httptest.NewServer(mux)
 	return srv, ch
+}
+
+// TestVisibility_AgentContext_E2E verifies that agent execution context
+// (is_agent / agent / is_interactive) flows end-to-end from env vars through
+// the metrics pipeline into the visibility wire payload.
+//
+// ExecutionContext memoizes via sync.Once for the process lifetime, and other
+// tests in this binary trigger the metrics path first under `go test`, so we
+// must reset the cache before re-evaluating env vars and reset again on
+// cleanup so this test cannot leak agent state into anything that follows.
+func TestVisibility_AgentContext_E2E(t *testing.T) {
+	corecommands.ResetExecutionContextForTest()
+	t.Cleanup(corecommands.ResetExecutionContextForTest)
+	t.Setenv("CURSOR_AGENT", "1")
+
+	srv, ch := startMockServer(t)
+	defer srv.Close()
+
+	home := t.TempDir()
+	t.Setenv("JFROG_CLI_HOME_DIR", home)
+	t.Setenv("JFROG_CLI_REPORT_USAGE", "true")
+
+	jf := coreTests.NewJfrogCli(execMain, "jf", "").WithoutCredentials()
+	platformURL := srv.URL + "/"
+	artURL := srv.URL + "/artifactory/"
+	if err := jf.Exec("c", "add", "agent-mock",
+		"--url", platformURL,
+		"--artifactory-url", artURL,
+		"--access-token", "dummy",
+		"--interactive=false",
+		"--enc-password=false",
+	); err != nil {
+		t.Fatalf("config add failed: %v", err)
+	}
+	if err := jf.Exec("c", "use", "agent-mock"); err != nil {
+		t.Fatalf("config use failed: %v", err)
+	}
+
+	if err := jf.Exec("rt", "ping", "--server-id", "agent-mock"); err != nil {
+		t.Fatalf("jf exec failed: %v", err)
+	}
+
+	select {
+	case req := <-ch:
+		if req.Path != "/jfconnect/api/v1/backoffice/metrics/log" {
+			t.Fatalf("unexpected path: %s", req.Path)
+		}
+		var payload struct {
+			Labels struct {
+				IsAgent       string `json:"is_agent"`
+				Agent         string `json:"agent"`
+				IsInteractive string `json:"is_interactive"`
+			} `json:"labels"`
+		}
+		if err := json.Unmarshal(req.Body, &payload); err != nil {
+			t.Fatalf("bad JSON: %v\nbody: %s", err, string(req.Body))
+		}
+		if payload.Labels.IsAgent != "true" {
+			t.Errorf("is_agent: got %q want %q (body: %s)", payload.Labels.IsAgent, "true", string(req.Body))
+		}
+		if payload.Labels.Agent != "cursor" {
+			t.Errorf("agent: got %q want %q (body: %s)", payload.Labels.Agent, "cursor", string(req.Body))
+		}
+		// Stdout is not a TTY under `go test`, so is_interactive should be "false".
+		if payload.Labels.IsInteractive != "false" {
+			t.Errorf("is_interactive: got %q want %q (body: %s)", payload.Labels.IsInteractive, "false", string(req.Body))
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatalf("timeout waiting for metrics POST")
+	}
+}
+
+// TestVisibility_NoAgent_E2E is the negative counterpart to
+// TestVisibility_AgentContext_E2E: with no agent env var set, the wire payload
+// must carry is_agent="false" and an empty agent name. ExecutionContext is
+// reset because the positive test above memoizes IsAgent=true earlier in this
+// binary.
+func TestVisibility_NoAgent_E2E(t *testing.T) {
+	corecommands.ResetExecutionContextForTest()
+	t.Cleanup(corecommands.ResetExecutionContextForTest)
+	t.Setenv("CURSOR_AGENT", "")
+	t.Setenv("CLAUDECODE", "")
+	t.Setenv("AGENT", "")
+
+	srv, ch := startMockServer(t)
+	defer srv.Close()
+
+	home := t.TempDir()
+	t.Setenv("JFROG_CLI_HOME_DIR", home)
+	t.Setenv("JFROG_CLI_REPORT_USAGE", "true")
+
+	jf := coreTests.NewJfrogCli(execMain, "jf", "").WithoutCredentials()
+	platformURL := srv.URL + "/"
+	artURL := srv.URL + "/artifactory/"
+	if err := jf.Exec("c", "add", "noagent-mock",
+		"--url", platformURL,
+		"--artifactory-url", artURL,
+		"--access-token", "dummy",
+		"--interactive=false",
+		"--enc-password=false",
+	); err != nil {
+		t.Fatalf("config add failed: %v", err)
+	}
+	if err := jf.Exec("c", "use", "noagent-mock"); err != nil {
+		t.Fatalf("config use failed: %v", err)
+	}
+	if err := jf.Exec("rt", "ping", "--server-id", "noagent-mock"); err != nil {
+		t.Fatalf("jf exec failed: %v", err)
+	}
+
+	select {
+	case req := <-ch:
+		if req.Path != "/jfconnect/api/v1/backoffice/metrics/log" {
+			t.Fatalf("unexpected path: %s", req.Path)
+		}
+		var payload struct {
+			Labels struct {
+				IsAgent string `json:"is_agent"`
+				Agent   string `json:"agent"`
+			} `json:"labels"`
+		}
+		if err := json.Unmarshal(req.Body, &payload); err != nil {
+			t.Fatalf("bad JSON: %v\nbody: %s", err, string(req.Body))
+		}
+		if payload.Labels.IsAgent != "false" {
+			t.Errorf("is_agent: got %q want %q (body: %s)", payload.Labels.IsAgent, "false", string(req.Body))
+		}
+		if payload.Labels.Agent != "" {
+			t.Errorf("agent: got %q want %q (body: %s)", payload.Labels.Agent, "", string(req.Body))
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatalf("timeout waiting for metrics POST")
+	}
 }
 
 func TestVisibilitySendUsage_RtCurl_E2E(t *testing.T) {
@@ -282,6 +416,224 @@ func TestVisibility_GoBuild_Flags(t *testing.T) {
 		}
 		if p.Labels.Flags != "build-name,build-number,server-id" {
 			t.Fatalf("flags mismatch: got %q want %q", p.Labels.Flags, "build-name,build-number,server-id")
+		}
+	case <-time.After(15 * time.Second):
+		t.Fatal("timeout waiting for metric")
+	}
+}
+
+// TestVisibility_WirePayload_RtPing prints the full JSON wire payload for a plain
+// `jf rt ping` (no package manager). Run with -v to see the logged payload.
+// Asserts that package_alias and package_manager are absent from the wire.
+func TestVisibility_WirePayload_RtPing(t *testing.T) {
+	srv, ch := startVisMockServer(t)
+	defer srv.Close()
+
+	home := t.TempDir()
+	t.Setenv("JFROG_CLI_HOME_DIR", home)
+	t.Setenv("JFROG_CLI_REPORT_USAGE", "true")
+
+	jf := coreTests.NewJfrogCli(execMain, "jf", "").WithoutCredentials()
+	platformURL := srv.URL + "/"
+	artURL := srv.URL + "/artifactory/"
+	if err := jf.Exec("c", "add", "mock", "--url", platformURL, "--artifactory-url", artURL,
+		"--access-token", "dummy", "--interactive=false", "--enc-password=false"); err != nil {
+		t.Fatalf("config add: %v", err)
+	}
+	_ = jf.Exec("c", "use", "mock")
+	_ = jf.Exec("rt", "ping", "--server-id", "mock")
+
+	select {
+	case req := <-ch:
+		t.Logf("WIRE PAYLOAD (rt ping):\n%s", string(req.Body))
+		var full map[string]interface{}
+		if err := json.Unmarshal(req.Body, &full); err != nil {
+			t.Fatalf("bad JSON: %v", err)
+		}
+		labels, _ := full["labels"].(map[string]interface{})
+		if v, ok := labels["package_alias"]; ok {
+			t.Errorf("unexpected package_alias=%q in rt ping payload", v)
+		}
+		if v, ok := labels["package_manager"]; ok {
+			t.Errorf("unexpected package_manager=%q in rt ping payload", v)
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatal("timeout waiting for metric")
+	}
+}
+
+// TestVisibility_WirePayload_NonPMCommand captures and logs the full JSON wire
+// payload for a non-package-manager command (`jf rt curl`).
+// Asserts that package_manager and package_alias are absent from the wire.
+// This is the negative-scenario counterpart of TestVisibility_WirePayload_GoBuild.
+func TestVisibility_WirePayload_NonPMCommand(t *testing.T) {
+	srv, ch := startVisMockServer(t)
+	defer srv.Close()
+
+	home := t.TempDir()
+	t.Setenv("JFROG_CLI_HOME_DIR", home)
+	t.Setenv("JFROG_CLI_REPORT_USAGE", "true")
+
+	jf := coreTests.NewJfrogCli(execMain, "jf", "").WithoutCredentials()
+	platformURL := srv.URL + "/"
+	artURL := srv.URL + "/artifactory/"
+	if err := jf.Exec("c", "add", "mock", "--url", platformURL, "--artifactory-url", artURL,
+		"--access-token", "dummy", "--interactive=false", "--enc-password=false"); err != nil {
+		t.Fatalf("config add: %v", err)
+	}
+	_ = jf.Exec("c", "use", "mock")
+
+	// rt curl is a generic RT command — not associated with any package manager
+	_ = jf.Exec("rt", "curl", "-X", "POST", "/api/system/ping", "--server-id", "mock")
+
+	select {
+	case req := <-ch:
+		t.Logf("WIRE PAYLOAD (rt curl — non-PM command):\n%s", string(req.Body))
+		var full map[string]interface{}
+		if err := json.Unmarshal(req.Body, &full); err != nil {
+			t.Fatalf("bad JSON: %v", err)
+		}
+		labels, _ := full["labels"].(map[string]interface{})
+
+		// package_manager must be absent for non-PM commands (omitempty)
+		if v, ok := labels["package_manager"]; ok {
+			t.Errorf("non-PM command sent unexpected package_manager=%q", v)
+		}
+		// package_alias must also be absent
+		if v, ok := labels["package_alias"]; ok {
+			t.Errorf("non-PM command sent unexpected package_alias=%q", v)
+		}
+		// feature_id must be rt_curl
+		if featureID, _ := labels["feature_id"].(string); featureID != "rt_curl" {
+			t.Errorf("feature_id: got %q want %q", featureID, "rt_curl")
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatal("timeout waiting for metric")
+	}
+}
+
+// TestVisibility_WirePayload_GoBuild prints the full JSON wire payload for
+// `jf go build` and asserts package_manager=go, package_alias absent.
+func TestVisibility_WirePayload_GoBuild(t *testing.T) {
+	srv, ch := startVisMockServer(t)
+	defer srv.Close()
+
+	home := t.TempDir()
+	t.Setenv("JFROG_CLI_HOME_DIR", home)
+	t.Setenv("JFROG_CLI_REPORT_USAGE", "true")
+
+	jf := coreTests.NewJfrogCli(execMain, "jf", "").WithoutCredentials()
+	platformURL := srv.URL + "/"
+	artURL := srv.URL + "/artifactory/"
+	if err := jf.Exec("c", "add", "mock", "--url", platformURL, "--artifactory-url", artURL,
+		"--access-token", "dummy", "--interactive=false", "--enc-password=false"); err != nil {
+		t.Fatalf("config add: %v", err)
+	}
+	_ = jf.Exec("c", "use", "mock")
+
+	projDir := t.TempDir()
+	_ = os.WriteFile(projDir+"/go.mod", []byte("module example.com/jfvis\n\ngo 1.21\n"), 0o644)
+	_ = os.WriteFile(projDir+"/main.go", []byte("package main\nfunc main(){}\n"), 0o644)
+	_ = os.MkdirAll(projDir+"/.jfrog/projects", 0o755)
+	goYaml := []byte("version: 1\ntype: go\nresolver:\n    repo: go-virtual\n    serverId: mock\ndeployer:\n    repo: go-virtual\n    serverId: mock\n")
+	_ = os.WriteFile(projDir+"/.jfrog/projects/go.yaml", goYaml, 0o644)
+	cwd, _ := os.Getwd()
+	defer func() { _ = os.Chdir(cwd) }()
+	_ = os.Chdir(projDir)
+
+	_ = jf.Exec("go", "build", "--server-id", "mock")
+
+	select {
+	case req := <-ch:
+		t.Logf("WIRE PAYLOAD (go build):\n%s", string(req.Body))
+		var full map[string]interface{}
+		if err := json.Unmarshal(req.Body, &full); err != nil {
+			t.Fatalf("bad JSON: %v", err)
+		}
+		labels, _ := full["labels"].(map[string]interface{})
+		if pm, _ := labels["package_manager"].(string); pm != "go" {
+			t.Errorf("package_manager: got %q want \"go\" (full: %s)", pm, string(req.Body))
+		}
+		if pa, ok := labels["package_alias"]; ok {
+			t.Errorf("unexpected package_alias=%q in go build payload", pa)
+		}
+	case <-time.After(15 * time.Second):
+		t.Fatal("timeout waiting for metric")
+	}
+}
+
+// TestVisibility_GoBuild_PackageManager verifies that direct (non-alias)
+// buildtool invocations stamp the package_manager label on the wire payload.
+func TestVisibility_GoBuild_PackageManager(t *testing.T) {
+	srv, ch := startVisMockServer(t)
+	defer srv.Close()
+
+	home := t.TempDir()
+	_ = os.Setenv("JFROG_CLI_HOME_DIR", home)
+	_ = os.Setenv("JFROG_CLI_REPORT_USAGE", "true")
+
+	jf := coreTests.NewJfrogCli(execMain, "jf", "").WithoutCredentials()
+
+	platformURL := srv.URL + "/"
+	artURL := srv.URL + "/artifactory/"
+	if err := jf.Exec("c", "add", "mock", "--url", platformURL, "--artifactory-url", artURL, "--access-token", "dummy", "--interactive=false", "--enc-password=false"); err != nil {
+		t.Fatalf("config add failed: %v", err)
+	}
+	if err := jf.Exec("c", "use", "mock"); err != nil {
+		t.Fatalf("config use failed: %v", err)
+	}
+
+	projDir := t.TempDir()
+	if err := os.WriteFile(projDir+"/go.mod", []byte("module example.com/jfvis\n\ngo 1.21\n"), 0o644); err != nil {
+		t.Fatalf("write go.mod: %v", err)
+	}
+	if err := os.WriteFile(projDir+"/main.go", []byte("package main\nfunc main(){}\n"), 0o644); err != nil {
+		t.Fatalf("write main.go: %v", err)
+	}
+	if err := os.MkdirAll(projDir+"/.jfrog/projects", 0o755); err != nil {
+		t.Fatalf("mkdir .jfrog/projects: %v", err)
+	}
+	goYaml := []byte("version: 1\n" +
+		"type: go\n" +
+		"resolver:\n" +
+		"    repo: go-virtual\n" +
+		"    serverId: mock\n" +
+		"deployer:\n" +
+		"    repo: go-virtual\n" +
+		"    serverId: mock\n")
+	if err := os.WriteFile(projDir+"/.jfrog/projects/go.yaml", goYaml, 0o644); err != nil {
+		t.Fatalf("write go.yaml: %v", err)
+	}
+	cwd, _ := os.Getwd()
+	defer func(dir string) {
+		if err := os.Chdir(dir); err != nil {
+			t.Fatalf("Failed to restore working directory: %v", err)
+		}
+	}(cwd)
+	_ = os.Chdir(projDir)
+
+	_ = jf.Exec("go", "build", "--server-id", "mock")
+
+	select {
+	case req := <-ch:
+		if req.Path != "/jfconnect/api/v1/backoffice/metrics/log" {
+			t.Fatalf("unexpected path: %s", req.Path)
+		}
+		var p struct {
+			Labels struct {
+				PackageAlias   string `json:"package_alias"`
+				PackageManager string `json:"package_manager"`
+			} `json:"labels"`
+		}
+		if err := json.Unmarshal(req.Body, &p); err != nil {
+			t.Fatalf("bad JSON: %v\nbody: %s", err, string(req.Body))
+		}
+		if p.Labels.PackageManager != "go" {
+			t.Errorf("package_manager: got %q want %q (body: %s)", p.Labels.PackageManager, "go", string(req.Body))
+		}
+		// Direct invocation must not set package_alias.
+		if p.Labels.PackageAlias != "" {
+			t.Errorf("package_alias: got %q want empty (body: %s)", p.Labels.PackageAlias, string(req.Body))
 		}
 	case <-time.After(15 * time.Second):
 		t.Fatal("timeout waiting for metric")
