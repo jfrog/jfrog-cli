@@ -71,6 +71,7 @@ var (
 	TestPoetry                *bool
 	TestUv                    *bool
 	TestNix                   *bool
+	TestCargo                 *bool
 	TestAgentPlugins          *bool
 	TestConan                 *bool
 	TestHelm                  *bool
@@ -139,6 +140,7 @@ func init() {
 	TestPoetry = flag.Bool("test.poetry", false, "Test Poetry")
 	TestUv = flag.Bool("test.uv", false, "Test UV")
 	TestNix = flag.Bool("test.nix", false, "Test Nix")
+	TestCargo = flag.Bool("test.cargo", false, "Test Cargo")
 	TestAgentPlugins = flag.Bool("test.agentPlugins", false, "Test Agent Plugins")
 	TestConan = flag.Bool("test.conan", false, "Test Conan")
 	TestHelm = flag.Bool("test.helm", false, "Test Helm")
@@ -326,6 +328,8 @@ var reposConfigMap = map[*string]string{
 	&NixLocalRepo:                   NixLocalRepositoryConfig,
 	&NixRemoteRepo:                  NixRemoteRepositoryConfig,
 	&NixVirtualRepo:                 NixVirtualRepositoryConfig,
+	&CargoLocalRepo:                 CargoLocalRepositoryConfig,
+	&CargoRemoteRepo:                CargoRemoteRepositoryConfig,
 	&ConanLocalRepo:                 ConanLocalRepositoryConfig,
 	&ConanRemoteRepo:                ConanRemoteRepositoryConfig,
 	&ConanVirtualRepo:               ConanVirtualRepositoryConfig,
@@ -543,6 +547,8 @@ func getSubstitutionMap() map[string]string {
 		"${NIX_LOCAL_REPO}":            NixLocalRepo,
 		"${NIX_REMOTE_REPO}":           NixRemoteRepo,
 		"${NIX_VIRTUAL_REPO}":          NixVirtualRepo,
+		"${CARGO_LOCAL_REPO}":          CargoLocalRepo,
+		"${CARGO_REMOTE_REPO}":         CargoRemoteRepo,
 		"${CONAN_LOCAL_REPO}":          ConanLocalRepo,
 		"${CONAN_REMOTE_REPO}":         ConanRemoteRepo,
 		"${CONAN_VIRTUAL_REPO}":        ConanVirtualRepo,

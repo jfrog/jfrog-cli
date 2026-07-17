@@ -1,0 +1,8 @@
+[package]
+name = "cli-cargo-lib"
+version = "1.0.0"
+edition = "2021"
+description = "Fixture crate for JFrog CLI Cargo integration tests"
+license = "Apache-2.0"
+
+[dependencies]
