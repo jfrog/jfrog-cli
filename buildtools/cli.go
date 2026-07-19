@@ -24,6 +24,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/buildtools/helmcommand"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/rubyconfig"
 	setupdocs "github.com/jfrog/jfrog-cli/docs/buildtools/setup"
+	"github.com/jfrog/jfrog-cli/utils/usage"
 
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/container"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/dotnet"
@@ -1825,6 +1826,18 @@ func setupCmd(c *cli.Context) (err error) {
 	if repoName != "" {
 		// If a repository was provided, validate it exists in Artifactory.
 		if err = validateRepoExists(repoName, artDetails); err != nil {
+			// The server and package manager are already known at this point, so report usage
+			// here too - otherwise every setup attempt against a mistyped or inaccessible repo
+			// silently disappears from usage telemetry instead of being counted as an attempt.
+			commandName := setupCmd.CommandName()
+			var flagsUsed []string
+			for _, f := range c.Command.Flags {
+				if name := f.GetName(); c.IsSet(name) {
+					flagsUsed = append(flagsUsed, name)
+				}
+			}
+			waitUsageReport := usage.StartReport(commandName, flagsUsed, artDetails)
+			usage.WaitForReport(commandName, waitUsageReport, usage.DefaultReportTimeout)
 			return err
 		}
 	}
