@@ -1821,26 +1821,36 @@ func setupCmd(c *cli.Context) (err error) {
 	if err != nil {
 		return err
 	}
+
+	// From here on, the server and package manager are known, so a usage report must fire no
+	// matter which return path is taken below - including validation added here in the future.
+	// ExecWithPackageManager reports on its own once reached, so it disarms this deferred report
+	// instead of letting it fire a second time.
+	reportPending := true
+	defer func() {
+		if !reportPending {
+			return
+		}
+		commandName := setupCmd.CommandName()
+		var flagsUsed []string
+		for _, f := range c.Command.Flags {
+			if name := f.GetName(); c.IsSet(name) {
+				flagsUsed = append(flagsUsed, name)
+			}
+		}
+		waitUsageReport := usage.StartReport(commandName, flagsUsed, artDetails)
+		usage.WaitForReport(commandName, waitUsageReport, usage.DefaultReportTimeout)
+	}()
+
 	repoName := c.String("repo")
 	if repoName != "" {
 		// If a repository was provided, validate it exists in Artifactory.
 		if err = validateRepoExists(repoName, artDetails); err != nil {
-			// The server and package manager are already known at this point, so report usage
-			// here too - otherwise every setup attempt against a mistyped or inaccessible repo
-			// silently disappears from usage telemetry instead of being counted as an attempt.
-			commandName := setupCmd.CommandName()
-			var flagsUsed []string
-			for _, f := range c.Command.Flags {
-				if name := f.GetName(); c.IsSet(name) {
-					flagsUsed = append(flagsUsed, name)
-				}
-			}
-			waitUsageReport := usage.StartReport(commandName, flagsUsed, artDetails)
-			usage.WaitForReport(commandName, waitUsageReport, usage.DefaultReportTimeout)
 			return err
 		}
 	}
 	setupCmd.SetServerDetails(artDetails).SetRepoName(repoName).SetProjectKey(cliutils.GetProject(c))
+	reportPending = false
 	return commands.ExecWithPackageManager(setupCmd, packageManager.String())
 }
 
