@@ -414,8 +414,8 @@ github.com/jfrog/jfrog-cli-evidence v0.9.5-0.20260618135203-4d2bdd4ee35f h1:MV4B
 github.com/jfrog/jfrog-cli-evidence v0.9.5-0.20260618135203-4d2bdd4ee35f/go.mod h1:t2luv7YHtrKe/Yf1xLZgLOkkiPtk1DsKj0OLXL2GwYo=
 github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260618062042-6053ab368cab h1:Zn/qB8LYhSu82YDtbqXwErN1RPHTHe/a3gQY6Ti/OBE=
 github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260618062042-6053ab368cab/go.mod h1:lVUeZtlvrLKJRsoSu8OPN9mJ+bfeq9zSESNYao2Jgo8=
-github.com/jfrog/jfrog-cli-security v1.31.2 h1:xvV99+nRw5feSF0WUYIN8lG6JcNjv9mLLmWNrAEkdw4=
-github.com/jfrog/jfrog-cli-security v1.31.2/go.mod h1:XbeN5hFnbn/cj9YQ2ym2uxKgnRqj0HNfq6haJIYupdk=
+github.com/jfrog/jfrog-cli-security v1.31.3 h1:WVkonz9/0zuNKKz/350uguXmK771NymMu7QihQibop4=
+github.com/jfrog/jfrog-cli-security v1.31.3/go.mod h1:C9DINxsrKdF5ciebWDMtt5/qfriNcKPPh1HJ5HXnotg=
 github.com/jfrog/jfrog-client-go v1.55.1-0.20260624085832-de0c68a23c43 h1:akoiWauP27YxVXcRkCC8ahgDLxqiARUAVEB+KUPO2OE=
 github.com/jfrog/jfrog-client-go v1.55.1-0.20260624085832-de0c68a23c43/go.mod h1:FHpjN1nTDoj96xd6obe27EOgGErqzU0rQgC96L3Ch9E=
 github.com/jhump/protoreflect v1.17.0 h1:qOEr613fac2lOuTgWN4tPAtLL7fUSbuJL5X5XumQh94=
