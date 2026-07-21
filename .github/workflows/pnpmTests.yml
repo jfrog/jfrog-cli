@@ -16,7 +16,7 @@ on:
 
 jobs:
   pnpm-Tests:
-    name: "pnpm 10 tests (${{ matrix.os.name }})"
+    name: "pnpm ${{ matrix.pnpm-version }} tests (${{ matrix.os.name }})"
     strategy:
       fail-fast: false
       matrix:
@@ -27,6 +27,7 @@ jobs:
             version: 2022
           - name: macos
             version: 14
+        pnpm-version: [10, 11]
     runs-on: ${{ matrix.os.name }}-${{ matrix.os.version }}
     steps:
       - name: Skip macOS - JGC-413
@@ -52,21 +53,22 @@ jobs:
         if: matrix.os.name != 'macos'
         uses: actions/setup-node@v6
         with:
-          node-version: "20"
+          # pnpm 11 requires Node >=22.13 (pnpm 10 only requires >=18.12, so 22 covers both legs).
+          node-version: "22.13"
 
-      - name: Install pnpm 10
+      - name: Install pnpm ${{ matrix.pnpm-version }}
         if: matrix.os.name != 'macos'
-        run: npm install -g pnpm@10
+        run: npm install -g pnpm@${{ matrix.pnpm-version }}
 
-      - name: Validate pnpm version is 10
+      - name: Validate pnpm version is ${{ matrix.pnpm-version }}
         if: matrix.os.name != 'macos'
         shell: bash
         run: |
           PNPM_VER=$(pnpm --version)
           PNPM_MAJOR=$(echo "$PNPM_VER" | cut -d. -f1)
           echo "pnpm version: ${PNPM_VER}"
-          if [ "$PNPM_MAJOR" -ne 10 ]; then
-            echo "::error::Expected pnpm 10.x but got ${PNPM_VER}"
+          if [ "$PNPM_MAJOR" -ne "${{ matrix.pnpm-version }}" ]; then
+            echo "::error::Expected pnpm ${{ matrix.pnpm-version }}.x but got ${PNPM_VER}"
             exit 1
           fi
           echo "pnpm ${PNPM_VER} OK"
