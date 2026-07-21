@@ -51,7 +51,7 @@ jobs:
 
       - name: Install Node.js
         if: matrix.os.name != 'macos'
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           # pnpm 11 requires Node >=22.13 (pnpm 10 only requires >=18.12, so 22 covers both legs).
           node-version: "22.13"

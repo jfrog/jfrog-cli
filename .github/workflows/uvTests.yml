@@ -31,7 +31,7 @@ jobs:
           fastci_otel_token: ${{ secrets.FASTCI_TOKEN }}
 
       - name: Setup Python3
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
 
