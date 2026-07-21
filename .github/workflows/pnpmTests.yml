@@ -1,10 +1,5 @@
 name: pnpm Tests
 on:
-  # TEMP: lets pushes to this branch run this suite directly, without going
-  # through build-gate.yml's approval/fan-out. Remove once the
-  # RTECO-1644-pnpm11 PR's CI has passed.
-  push:
-    branches: [RTECO-1644-pnpm11]
   workflow_call:
   workflow_dispatch:
     inputs:
