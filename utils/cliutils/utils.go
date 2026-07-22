@@ -318,20 +318,26 @@ func getOrDefaultEnv(arg, envKey string) string {
 
 func CreateServerDetailsFromFlags(c *cli.Context) (details *coreConfig.ServerDetails, err error) {
 	details = new(coreConfig.ServerDetails)
-	details.Url = clientutils.AddTrailingSlashIfNeeded(c.String(url))
+	details.Url = clientutils.AddTrailingSlashIfNeeded(getOrDefaultEnv(c.String(url), JfrogCliUrl))
 	details.ArtifactoryUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configRtUrl))
 	details.DistributionUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configDistUrl))
 	details.XrayUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configXrUrl))
 	details.MissionControlUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configMcUrl))
 	details.PipelinesUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configPlUrl))
-	details.User = c.String(user)
+	details.User = getOrDefaultEnv(c.String(user), JfrogCliUser)
 	details.Password, err = handleSecretInput(c, password, passwordStdin)
 	if err != nil {
 		return
 	}
+	if details.Password == "" {
+		details.Password = os.Getenv(JfrogCliPassword)
+	}
 	details.AccessToken, err = handleSecretInput(c, accessToken, accessTokenStdin)
 	if err != nil {
 		return
+	}
+	if details.AccessToken == "" {
+		details.AccessToken = os.Getenv(JfrogCliAccessToken)
 	}
 	details.SshKeyPath = c.String(sshKeyPath)
 	details.SshPassphrase = c.String(sshPassphrase)
