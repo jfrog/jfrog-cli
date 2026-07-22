@@ -18,7 +18,6 @@ import (
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/python"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/setup"
 	artutils "github.com/jfrog/jfrog-cli-artifactory/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-security/utils/techutils"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/helmcommand"
@@ -104,8 +103,7 @@ const (
 func GetCommands() []cli.Command {
 	cmds := cliutils.GetSortedCommands(cli.CommandsByName{
 		{
-			// Currently, the setup command is hidden from the help menu, till it will be released as GA.
-			Hidden:       true,
+			Hidden:       false,
 			Name:         "setup",
 			Flags:        cliutils.GetCommandFlags(cliutils.Setup),
 			Usage:        setupdocs.GetDescription(),
@@ -1821,24 +1819,10 @@ func setupCmd(c *cli.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	repoName := c.String("repo")
-	if repoName != "" {
-		// If a repository was provided, validate it exists in Artifactory.
-		if err = validateRepoExists(repoName, artDetails); err != nil {
-			return err
-		}
-	}
-	setupCmd.SetServerDetails(artDetails).SetRepoName(repoName).SetProjectKey(cliutils.GetProject(c))
+	// Repo-existence validation for --repo happens inside SetupCommand.Run(), so every return
+	// path from here is covered by the single usage-report call site in ExecWithPackageManager.
+	setupCmd.SetServerDetails(artDetails).SetRepoName(c.String("repo")).SetProjectKey(cliutils.GetProject(c))
 	return commands.ExecWithPackageManager(setupCmd, packageManager.String())
-}
-
-// validateRepoExists checks if the specified repository exists in Artifactory.
-func validateRepoExists(repoName string, artDetails *coreConfig.ServerDetails) error {
-	serviceDetails, err := artDetails.CreateArtAuthConfig()
-	if err != nil {
-		return err
-	}
-	return utils.ValidateRepoExists(repoName, serviceDetails)
 }
 
 func selectPackageManagerInteractively() (selectedPackageManager project.ProjectType, err error) {
