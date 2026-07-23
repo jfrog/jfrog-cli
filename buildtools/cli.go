@@ -336,7 +336,10 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action:          PipenvCmd,
+			Action: func(c *cli.Context) error {
+				cmdName, _ := getCommandName(c.Args())
+				return securityCLI.WrapCmdWithCurationPostFailureRun(c, PipenvCmd, techutils.Pipenv, cmdName)
+			},
 		},
 		{
 			Name:         "poetry-config",
@@ -376,7 +379,11 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action:          UvCmd,
+			Action: func(c *cli.Context) error {
+				cmdName, _ := getCommandName(c.Args())
+				return securityCLI.WrapCmdWithCurationPostFailureRun(c, UvCmd, techutils.Uv, cmdName)
+			},
+			Hidden: true,
 		},
 		{
 			Name:            "helm",
