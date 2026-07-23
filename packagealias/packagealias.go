@@ -33,6 +33,7 @@ var SupportedTools = []string{
 	"docker",
 	"gem",
 	"bundle",
+	"helm",
 }
 
 // AliasMode represents how a tool should be handled
