@@ -2158,13 +2158,13 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, repoResolve, nugetV2,
 	},
 	Nuget: {
-		BuildName, BuildNumber, module, Project, allowInsecureConnections,
+		BuildName, BuildNumber, module, Project, allowInsecureConnections, serverId, repoResolve, repoDeploy, nugetV2,
 	},
 	DotnetConfig: {
 		global, serverIdResolve, repoResolve, nugetV2,
 	},
 	Dotnet: {
-		BuildName, BuildNumber, module, Project,
+		BuildName, BuildNumber, module, Project, allowInsecureConnections, serverId, repoResolve, repoDeploy, nugetV2,
 	},
 	GoConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,

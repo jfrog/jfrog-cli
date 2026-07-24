@@ -5,6 +5,8 @@ import (
 	"fmt"
 	conancommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/conan"
 	nixcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nix"
+	nugetcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nuget"
+	dotnetutils "github.com/jfrog/build-info-go/build/utils/dotnet"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -945,6 +947,11 @@ func NugetCmd(c *cli.Context) error {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
+	// FlexPack native mode: bypass config file requirement
+	if artutils.ShouldRunNative("") {
+		return runNugetFlexPackCmd(c, dotnetutils.Nuget)
+	}
+
 	configFilePath, err := getProjectConfigPathOrThrow(project.Nuget, "nuget", "nuget-config")
 	if err != nil {
 		return err
@@ -987,6 +994,11 @@ func DotnetCmd(c *cli.Context) error {
 
 	if c.NArg() < 1 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	// FlexPack native mode: bypass config file requirement
+	if artutils.ShouldRunNative("") {
+		return runNugetFlexPackCmd(c, dotnetutils.DotnetCore)
 	}
 
 	// Get configuration file path.
@@ -2069,6 +2081,68 @@ func ConanCmd(c *cli.Context) error {
 	conanCommand := conancommand.NewConanCommand().SetCommandName(cmdName).SetArgs(conanArgs).SetBuildConfiguration(buildConfiguration).SetServerDetails(serverDetails)
 
 	return commands.ExecWithPackageManager(conanCommand, project.Conan.String())
+}
+
+// runNugetFlexPackCmd handles NuGet/dotnet commands in FlexPack native mode.
+// No project config file is required; server details come from --server-id or the default profile.
+func runNugetFlexPackCmd(c *cli.Context, toolchainType dotnetutils.ToolchainType) error {
+	args := cliutils.ExtractCommand(c)
+
+	var serverID string
+	var err error
+	args, serverID, err = coreutils.ExtractServerIdFromCommand(args)
+	if err != nil {
+		return fmt.Errorf("extract server ID: %w", err)
+	}
+	serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, false)
+	if err != nil {
+		return err
+	}
+
+	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
+	if err != nil {
+		return err
+	}
+
+	// Extract --repo-resolve and --repo-deploy flags
+	var repoResolve, repoDeploy string
+	filteredArgs, repoResolve, err = coreutils.ExtractStringOptionFromArgs(filteredArgs, "repo-resolve")
+	if err != nil {
+		return fmt.Errorf("extract --repo-resolve: %w", err)
+	}
+	filteredArgs, repoDeploy, err = coreutils.ExtractStringOptionFromArgs(filteredArgs, "repo-deploy")
+	if err != nil {
+		return fmt.Errorf("extract --repo-deploy: %w", err)
+	}
+
+	useNugetV2, err := cliutils.ExtractBoolFlagFromArgs(&filteredArgs, "nuget-v2")
+	if err != nil {
+		return err
+	}
+	allowInsecure, err := cliutils.ExtractBoolFlagFromArgs(&filteredArgs, "allow-insecure-connections")
+	if err != nil {
+		return err
+	}
+
+	cmdName, nugetArgs := getCommandName(filteredArgs)
+	workingDir, err := filepath.Abs(".")
+	if err != nil {
+		return err
+	}
+
+	nugetCmd := nugetcommand.NewNuGetFlexPackCommand().
+		SetToolchainType(toolchainType).
+		SetSubCommand(cmdName).
+		SetArgs(nugetArgs).
+		SetServerDetails(serverDetails).
+		SetRepoResolve(repoResolve).
+		SetRepoDeploy(repoDeploy).
+		SetUseNugetV2(useNugetV2).
+		SetAllowInsecureConnections(allowInsecure).
+		SetBuildConfiguration(buildConfiguration).
+		SetWorkingDir(workingDir)
+
+	return commands.ExecWithPackageManager(nugetCmd, project.Nuget.String())
 }
 
 func NixCmd(c *cli.Context) error {

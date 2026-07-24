@@ -8,6 +8,8 @@ replace (
 	github.com/CycloneDX/cyclonedx-go => github.com/CycloneDX/cyclonedx-go v0.10.0
 	// Should not be updated to 0.2.6 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
 	github.com/c-bata/go-prompt => github.com/c-bata/go-prompt v0.2.5
+	github.com/jfrog/build-info-go => /Users/bhanur/go/src/jfws/build-info-go/.worktrees/task-RTECO-1574/task/RTECO-1574/rteco-1574-implementation-of-nuget-support-for-client // task/RTECO-1574 - remove before merge
+	github.com/jfrog/jfrog-cli-artifactory => /Users/bhanur/go/src/jfws/jfrog-cli-artifactory/.worktrees/task-RTECO-1574/task/RTECO-1574/rteco-1574-implementation-of-nuget-support-for-client // task/RTECO-1574 - remove before merge
 	// Should not be updated to 0.2.0-beta.2 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
 	github.com/pkg/term => github.com/pkg/term v1.1.0
 )
@@ -238,7 +240,7 @@ require (
 	helm.sh/helm/v3 v3.21.0 // indirect
 	k8s.io/client-go v0.36.1 // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
-	oras.land/oras-go/v2 v2.6.0 // indirect
+	oras.land/oras-go/v2 v2.6.1 // indirect
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
 
