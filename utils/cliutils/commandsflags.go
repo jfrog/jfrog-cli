@@ -89,6 +89,7 @@ const (
 	ConanConfig            = "conan-config"
 	Conan                  = "conan"
 	Nix                    = "nix"
+	Apk                    = "apk"
 	Ping                   = "ping"
 	RtCurl                 = "rt-curl"
 	TemplateConsumer       = "template-consumer"
@@ -160,6 +161,10 @@ const (
 	serverIdYarn        = "server-id-yarn"
 	serverIdNpm         = "server-id-npm"
 	disableTokenRefresh = "disable-token-refresh"
+
+	// Alpine (apk) flag keys — repo and branch reuse the existing flag constants.
+	apkAlpineVersion = "alpine-version"
+	apkArch          = "arch"
 
 	passwordStdin    = "password-stdin"
 	accessTokenStdin = "access-token-stdin"
@@ -775,6 +780,14 @@ var flagsMap = map[string]cli.Flag{
 	serverIdNpm: cli.StringFlag{
 		Name:  serverId,
 		Usage: "[Optional] Server ID configured using the 'jf config' command. Used in native mode (JFROG_RUN_NATIVE=true) to identify the JFrog server for usage reporting.` `",
+	},
+	apkAlpineVersion: cli.StringFlag{
+		Name:  apkAlpineVersion,
+		Usage: "[Optional] Alpine release version, e.g. v3.20.` `",
+	},
+	apkArch: cli.StringFlag{
+		Name:  apkArch,
+		Usage: "[Optional] CPU architecture override (x86_64, aarch64, armhf, …). Inferred from filename by default.` `",
 	},
 	passwordStdin: cli.BoolFlag{
 		Name:  passwordStdin,
@@ -2242,6 +2255,9 @@ var commandFlags = map[string][]string{
 	},
 	Nix: {
 		BuildName, BuildNumber, module, Project, serverId,
+	},
+	Apk: {
+		serverId, repo, apkAlpineVersion, branch, apkArch, BuildName, BuildNumber, module, Project, user, password,
 	},
 	Stats: {
 		XrFormat, accessToken, serverId,

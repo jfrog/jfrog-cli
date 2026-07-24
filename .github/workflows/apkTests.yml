@@ -47,16 +47,20 @@ on:
 
 jobs:
   Apk-Tests:
-    name: Alpine APK tests (${{ matrix.alpine-version }})
+    name: Alpine APK tests (${{ matrix.alpine-version }}, apk-tools ${{ matrix.apk-tools }})
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
-        alpine-version:
-          - v3.18
-          - v3.19
-          - v3.20
-          - v3.21
+        # Cover both apk-tools major versions:
+        #   - v2.x: Alpine 3.18–3.21 (apk-tools 2.14.x)
+        #   - v3.x: Alpine 3.23 is the first stable release shipping apk-tools 3.x.
+        include:
+          - { alpine-version: v3.18, apk-tools: v2 }
+          - { alpine-version: v3.19, apk-tools: v2 }
+          - { alpine-version: v3.20, apk-tools: v2 }
+          - { alpine-version: v3.21, apk-tools: v2 }
+          - { alpine-version: v3.23, apk-tools: v3 }
 
     steps:
       - name: Checkout code
@@ -80,16 +84,64 @@ jobs:
           RTLIC: ${{ secrets.RTLIC }}
           RT_CONNECTION_TIMEOUT_SECONDS: '1200'
 
-      # Run on the host runner with the host Go toolchain (1.26+).
-      # Tests that require the native `apk` binary skip themselves via
-      # apkAvailable() when apk is not on PATH (Ubuntu runner).
-      # The Alpine chroot approach will be re-enabled once the Go version
-      # constraint in go.mod aligns with Alpine's packaged Go release.
-      - name: Run Alpine APK tests
-        run: |
-          go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.alpine \
-            ${{ inputs.jfrog_url != '' && format('--jfrog.url={0} --jfrog.adminToken={1}', inputs.jfrog_url, inputs.jfrog_admin_token) || '' }} \
-            ${{ inputs.jfrog_user != '' && format('--jfrog.user={0}', inputs.jfrog_user) || '' }} \
-            ${{ inputs.jfrog_password != '' && format('--jfrog.password={0}', inputs.jfrog_password) || '' }}
+      # Step 1: Compile the test binary on the host runner using Go 1.26+.
+      # Alpine's packaged Go does not yet reach 1.26, so we cross-compile a
+      # static Linux/amd64 binary here and run it inside the Alpine container.
+      - name: Build test binary
+        run: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go test -c -o apk.test .
+
+      # Step 2: Run the pre-built binary inside the target Alpine container, retrying
+      # ONLY the tests that fail (up to MAX_ATTEMPTS). The shared JFrog platform's WAF
+      # occasionally returns a transient 403 on config-add/build-publish; a selective
+      # rerun absorbs those blips without masking a genuinely broken test.
+      # --network host lets the test binary reach Artifactory on localhost.
+      - name: Run Alpine APK tests (alpine:${{ matrix.alpine-version }})
         env:
-          CGO_ENABLED: "0"
+          ALPINE_VER: ${{ matrix.alpine-version }}
+          JFROG_URL: ${{ inputs.jfrog_url }}
+          JFROG_ADMIN_TOKEN: ${{ inputs.jfrog_admin_token }}
+          JFROG_USER: ${{ inputs.jfrog_user }}
+          JFROG_PASSWORD: ${{ inputs.jfrog_password }}
+          MAX_ATTEMPTS: "3"
+          RETRY_DELAY: "10"
+        run: |
+          set -uo pipefail
+
+          # Build credential flags: external JPD (url + token) or empty for local Artifactory.
+          creds=""
+          if [ -n "$JFROG_URL" ]; then
+            creds="-jfrog.url=$JFROG_URL -jfrog.adminToken=$JFROG_ADMIN_TOKEN"
+          fi
+          [ -n "$JFROG_USER" ]     && creds="$creds -jfrog.user=$JFROG_USER"
+          [ -n "$JFROG_PASSWORD" ] && creds="$creds -jfrog.password=$JFROG_PASSWORD"
+
+          run_regex="TestApk|TestSetupApk"
+          fails=""
+          for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
+            echo ">> Attempt $attempt/$MAX_ATTEMPTS: -test.run=$run_regex"
+            docker run --rm \
+              --network host \
+              -v "${{ github.workspace }}":/workspace \
+              -w /workspace \
+              "alpine:${ALPINE_VER#v}" \
+              ./apk.test \
+                -test.v -test.timeout 0 \
+                -test.run "$run_regex" \
+                -test.alpine \
+                $creds 2>&1 | tee /tmp/apk-out.log
+
+            # Collect the top-level names of tests that failed this attempt.
+            fails=$(grep -Eo '^--- FAIL: [A-Za-z0-9_]+' /tmp/apk-out.log | awk '{print $3}' | sort -u | tr '\n' '|' | sed 's/|$//')
+            if [ -z "$fails" ]; then
+              echo ">> All Alpine tests passed on attempt $attempt."
+              exit 0
+            fi
+            echo ">> Failed on attempt $attempt: $fails"
+            if [ "$attempt" -lt "$MAX_ATTEMPTS" ]; then
+              echo ">> Retrying failed tests in ${RETRY_DELAY}s..."
+              sleep "$RETRY_DELAY"
+              run_regex="^($fails)$"
+            fi
+          done
+          echo ">> STILL FAILING after $MAX_ATTEMPTS attempts: $fails" >&2
+          exit 1
