@@ -27,7 +27,7 @@ EXAMPLES
   $ jf api docs search user --format table
 
 OUTPUT
-  JSON by default (this command exists primarily for agent consumption); pass --format table for a human-readable table instead. Each match includes the operation's method, path, summary, tags, a relevance score, and a "jf_api" field with a ready-to-run 'jf api' invocation for that operation. When the operation takes path/query parameters, they're listed under "parameters" (required ones marked). When it takes a JSON request body, its top-level fields (name, type, required, description, default) are listed under "request_body", and "jf_api" already includes a minimal -d '{...}' skeleton covering just the required fields — fill in real values before running it. Table view shows this as compact PARAMS/BODY columns ("*" marks a required field). An empty result set still reports which spec bundle was searched (spec_bundle) — a "stub" bundle may simply be missing the operation. Exits 0 even when no matches are found.`
+  JSON by default (this command exists primarily for agent consumption); pass --format table for a human-readable table instead. Each match includes the operation's method, path, summary, tags, a relevance score, and a "jf_api" field with a ready-to-run 'jf api' invocation for that operation. When the operation takes path/query parameters, they're listed under "parameters" (required ones marked). When it takes a JSON request body, its top-level fields (name, type, required, description, default) are listed under "request_body", and "jf_api" already includes a minimal -d '{...}' skeleton covering just the required fields — fill in real values before running it. Table view shows this as compact PARAMS/BODY columns ("*" marks a required field). An empty result set still reports which spec bundle was searched (spec_bundle) — a "stub" bundle may simply be missing the operation. Exits 0 even when no matches are found. "total_matches" and "truncated" report the full match count and whether --limit cut it down; when truncated, a warning is also printed to stderr (not stdout, so it never corrupts the JSON body or table).`
 }
 
 func GetAIDescription() string {
@@ -52,6 +52,7 @@ Gotchas:
 - A query with no contains-match anywhere falls back to fuzzy (typo-tolerant) matching, gated by a similarity floor to avoid coincidental false positives (e.g. "evidence" vs "environments"). Advanced: override the floor (0-1, default 0.6) with $JFROG_CLI_API_DOCS_SEARCH_FUZZY_MIN.
 - A match's "jf_api" one-liner only fills in required request-body fields with type-appropriate placeholders (e.g. "" for string, false for boolean) -- inspect the full "request_body"/"parameters" fields for optional ones, descriptions, and defaults before running it for real.
 - A request body property that is itself a nested object is reported by its type name (e.g. "PermissionResource") or "object" rather than being recursively flattened -- only top-level fields are listed.
+- Results are capped at --limit (default 10). Check "truncated"/"total_matches" in the JSON body if you need to know whether more results exist -- the truncation warning goes to stderr, which you may not be capturing.
 
 Related: jf api, jf api --ai-help`
 }

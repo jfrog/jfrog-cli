@@ -77,7 +77,13 @@ type searchResult struct {
 	SpecVersion string  `json:"spec_version"`
 	Query       string  `json:"query"`
 	Matches     []match `json:"matches"`
-	Message     string  `json:"message,omitempty"`
+	// TotalMatches is the match count before --limit truncation; Truncated is
+	// true when it exceeds len(Matches). Both are unconditional (unlike
+	// Message) so a caller parsing only the JSON body -- not the stderr
+	// warning runSearchCmd also emits -- can still detect truncation.
+	TotalMatches int    `json:"total_matches"`
+	Truncated    bool   `json:"truncated"`
+	Message      string `json:"message,omitempty"`
 }
 
 // SearchCommand implements `jf api docs search <query>`. It ranks operations
@@ -110,22 +116,35 @@ func runSearchCmd(c *cli.Context, stdOut io.Writer) error {
 	}
 
 	matches := filterAndScore(ops, query, tag, method)
+	totalMatches := len(matches)
 	if len(matches) > limit {
 		matches = matches[:limit]
 	}
 
 	info := apispec.Info()
 	result := searchResult{
-		SpecBundle:  info.SpecBundle,
-		SpecVersion: info.SpecVersion,
-		Query:       query,
-		Matches:     matches,
+		SpecBundle:   info.SpecBundle,
+		SpecVersion:  info.SpecVersion,
+		Query:        query,
+		Matches:      matches,
+		TotalMatches: totalMatches,
+		Truncated:    totalMatches > len(matches),
 	}
 	if len(matches) == 0 {
 		result.Message = fmt.Sprintf(
 			"No matching operations found in the embedded %q OpenAPI spec bundle for query %q. "+
 				"The bundle may be incomplete (see spec_bundle) -- try 'jf api <path>' directly if you already know the endpoint.",
 			result.SpecBundle, query)
+	}
+	if result.Truncated {
+		// Routed through the logger's stderr channel, not stdOut/log.Output,
+		// so it never corrupts the data channel (JSON body or table) --
+		// same separation as runApiCmd's "jf api: ... returned <status>"
+		// warning in cli.go.
+		log.Warn(fmt.Sprintf(
+			"jf api docs search: showing %d of %d matching operations (limit=%d) -- "+
+				"increase --limit or narrow with --tag/--method to see the rest.",
+			len(matches), totalMatches, limit))
 	}
 
 	// JSON is the default output format -- this command exists primarily for

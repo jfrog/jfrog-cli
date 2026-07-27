@@ -251,6 +251,70 @@ func TestRunSearchCmd_LimitTruncates(t *testing.T) {
 	assert.Equal(t, 2, lineCount, "expected a header row plus exactly one match row")
 }
 
+// runSearchJSON runs the search app with JSON output (the default) and
+// returns the parsed result body plus whatever landed on the logger's
+// Warn/Info/Error channel -- kept on a *separate* buffer from the JSON body's
+// Output channel (clientlog.NewLoggerWithFlags points both at the same
+// writer by default, which would otherwise interleave a truncation warning
+// into the JSON bytes and break json.Unmarshal).
+func runSearchJSON(t *testing.T, args ...string) (result map[string]any, logged string) {
+	t.Helper()
+	var jsonOut, logOut bytes.Buffer
+	logger := clientlog.NewLoggerWithFlags(clientlog.INFO, &logOut, 0)
+	logger.SetOutputWriter(&jsonOut)
+	prevLogger := clientlog.GetLogger()
+	t.Cleanup(func() { clientlog.SetLogger(prevLogger) })
+	clientlog.SetLogger(logger)
+
+	var stdOut bytes.Buffer
+	var runErr error
+	app := newSearchApp(&stdOut, &runErr)
+
+	require.NoError(t, app.Run(append([]string{"cmd"}, args...)))
+	require.NoError(t, runErr)
+
+	require.NoError(t, json.Unmarshal(jsonOut.Bytes(), &result), "output should be parseable JSON")
+	return result, logOut.String()
+}
+
+func TestRunSearchCmd_TruncationFieldsInJSON(t *testing.T) {
+	result, logged := runSearchJSON(t, "--limit", "1", "")
+	assert.Equal(t, float64(10), result["total_matches"], "stub has exactly 10 operations")
+	assert.Equal(t, true, result["truncated"])
+	assert.Len(t, result["matches"], 1)
+	assert.Contains(t, logged, "of 10", "truncation warning should mention the full match count")
+}
+
+func TestRunSearchCmd_NoTruncationFieldsFalse(t *testing.T) {
+	result, logged := runSearchJSON(t, "")
+	assert.Equal(t, float64(10), result["total_matches"])
+	assert.Equal(t, false, result["truncated"])
+	assert.Len(t, result["matches"], 10)
+	assert.Empty(t, logged, "no truncation warning expected when everything fits under the limit")
+}
+
+// TestRunSearchCmd_TruncationWarningDoesNotLeakIntoTable guards the QA-driven
+// requirement: the warning must go to stderr only, never into the stdOut
+// writer carrying the table -- otherwise it would corrupt/clutter the table
+// (or, for JSON, break parseability).
+func TestRunSearchCmd_TruncationWarningDoesNotLeakIntoTable(t *testing.T) {
+	var stdOut bytes.Buffer
+	var runErr error
+	app := newSearchApp(&stdOut, &runErr)
+
+	require.NoError(t, app.Run([]string{"cmd", "--format", "table", "--limit", "1", ""}))
+	require.NoError(t, runErr)
+	// header + exactly one data row -- unchanged by the new warning path.
+	lineCount := 0
+	for _, b := range stdOut.Bytes() {
+		if b == '\n' {
+			lineCount++
+		}
+	}
+	assert.Equal(t, 2, lineCount, "the stdOut table must still be exactly header + one row")
+	assert.NotContains(t, stdOut.String(), "increase --limit", "the warning text must not appear in the table's stdOut writer")
+}
+
 func TestRunSearchCmd_WrongNumberOfArguments(t *testing.T) {
 	var stdOut bytes.Buffer
 	var runErr error
