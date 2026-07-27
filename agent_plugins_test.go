@@ -6,12 +6,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
 	biutils "github.com/jfrog/build-info-go/utils"
 	agentTestutil "github.com/jfrog/jfrog-cli-artifactory/agent/common/testutil"
+	plugincommon "github.com/jfrog/jfrog-cli-artifactory/agent/plugins/common"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/generic"
 	artUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	coreBuild "github.com/jfrog/jfrog-cli-core/v2/common/build"
@@ -43,12 +46,15 @@ func CleanAgentPluginsTests() {
 }
 
 func initAgentPluginsTest(t *testing.T) {
-	t.Skip("Agent plugins e2e tests are disabled")
+	if !*tests.TestAgentPlugins {
+		t.Skip("Skipping Agent Plugins test. To run Agent Plugins test add the '-test.agentPlugins=true' option.")
+	}
 	createJfrogHomeConfig(t, false)
 	require.True(t, isRepoExist(tests.AgentPluginsLocalRepo), "agent plugins local repo does not exist: "+tests.AgentPluginsLocalRepo)
 	// The test Artifactory instance has no evidence/One-Model service configured.
 	// Disable the quiet-failure evidence gate so install commands don't block on 403.
 	t.Setenv("JFROG_AGENT_PLUGINS_DISABLE_QUIET_FAILURE", "true")
+	stubNativeAgentCLIs(t)
 }
 
 func cleanAgentPluginsTest() {
@@ -73,36 +79,15 @@ func createTestPlugin(t *testing.T, slug, version string) string {
 
 	require.NoError(t, biutils.CopyDir(pluginSrc, pluginPath, true, nil))
 
-	manifest := map[string]string{
+	manifest := map[string]any{
 		"name":        slug,
 		"version":     version,
 		"description": "Integration test plugin",
+		"skills":      []string{},
 	}
 	data, err := json.Marshal(manifest)
 	require.NoError(t, err)
 	require.NoError(t, os.WriteFile(filepath.Join(pluginPath, "plugin.json"), data, 0644)) // #nosec G306 -- test fixture
-	return pluginPath
-}
-
-// createTestClaudePlugin creates a plugin fixture whose manifest lives at
-// .claude-plugin/plugin.json (the Claude-style harness path) rather than the
-// root plugin.json. Publish discovers it via the built-in manifest search paths.
-func createTestClaudePlugin(t *testing.T, slug, version string) string {
-	t.Helper()
-	pluginPath, cleanup := coretests.CreateTempDirWithCallbackAndAssert(t)
-	t.Cleanup(cleanup)
-
-	claudeDir := filepath.Join(pluginPath, ".claude-plugin")
-	require.NoError(t, os.MkdirAll(claudeDir, 0755)) // #nosec G301 -- test directory
-
-	manifest := map[string]string{
-		"name":        slug,
-		"version":     version,
-		"description": "Integration test claude-style plugin",
-	}
-	data, err := json.Marshal(manifest)
-	require.NoError(t, err)
-	require.NoError(t, os.WriteFile(filepath.Join(claudeDir, "plugin.json"), data, 0644)) // #nosec G306 -- test fixture
 	return pluginPath
 }
 
@@ -140,23 +125,245 @@ func pluginArtifactPath(repo, slug, version string) string {
 	return repo + "/" + slug + "/" + version + "/" + slug + "-" + version + ".zip"
 }
 
-// uploadMarketplaceJSON uploads a minimal <harness>-marketplace.json to the repo root
-// so that install without --version can resolve the version via marketplace lookup.
-func uploadMarketplaceJSON(t *testing.T, harness, slug, version string) {
-	t.Helper()
-	content := fmt.Sprintf(`{"name":%q,"plugins":[{"name":%q,"version":%q}]}`, harness, slug, version)
-	f, err := os.CreateTemp("", harness+"-marketplace-*.json")
-	require.NoError(t, err)
-	_, err = f.WriteString(content)
-	require.NoError(t, err)
-	require.NoError(t, f.Close())
-	t.Cleanup(func() { _ = os.Remove(f.Name()) })
-	fileName := harness + "-marketplace.json"
-	require.NoError(t, artifactoryCli.Exec("u", f.Name(),
-		tests.AgentPluginsLocalRepo+"/"+fileName,
-		"--flat=true",
-	), "uploading %s to test repo must succeed", fileName)
+// ---------------------------------------------------------------------------
+// Harness helpers
+// ---------------------------------------------------------------------------
+
+// agentPluginHarnessCase is one of the four required harness conditions:
+// claude, codex, cursor, and combined claude,codex,cursor.
+type agentPluginHarnessCase struct {
+	name      string
+	harnesses []string
 }
+
+func agentPluginHarnessCases() []agentPluginHarnessCase {
+	return []agentPluginHarnessCase{
+		{name: "claude", harnesses: []string{"claude"}},
+		{name: "codex", harnesses: []string{"codex"}},
+		{name: "cursor", harnesses: []string{"cursor"}},
+		{name: "claude,codex,cursor", harnesses: []string{"claude", "codex", "cursor"}},
+	}
+}
+
+func harnessFlag(harnesses []string) string {
+	return strings.Join(harnesses, ",")
+}
+
+// globalPluginInstallDir returns the current global install destination for a built-in harness.
+// claude/codex use repo-keyed layout under .../local/jfrog/<repo>/<slug>;
+// cursor installs under ~/.cursor/plugins/local/<slug>.
+func globalPluginInstallDir(homeDir, harness, repoKey, slug string) string {
+	switch strings.ToLower(harness) {
+	case "claude":
+		return filepath.Join(homeDir, ".claude", "plugins", "local", "jfrog", repoKey, slug)
+	case "codex":
+		return filepath.Join(homeDir, ".agents", "plugins", "local", "jfrog", repoKey, slug)
+	case "cursor":
+		return filepath.Join(homeDir, ".cursor", "plugins", "local", slug)
+	default:
+		return filepath.Join(homeDir, "."+harness, "plugins", slug)
+	}
+}
+
+func assertPluginsInstalledGlobally(t *testing.T, homeDir string, harnesses []string, slug string) {
+	t.Helper()
+	for _, harness := range harnesses {
+		path := globalPluginInstallDir(homeDir, harness, tests.AgentPluginsLocalRepo, slug)
+		assert.DirExists(t, path, "plugin %q should be installed for harness %q at %s", slug, harness, path)
+		assert.FileExists(t, filepath.Join(path, ".jfrog", "plugin-info.json"),
+			"plugin-info.json should exist for harness %q", harness)
+	}
+}
+
+func setIsolatedHome(t *testing.T) string {
+	t.Helper()
+	homeDir := t.TempDir()
+	t.Setenv("HOME", homeDir)
+	t.Setenv("USERPROFILE", homeDir)
+	return homeDir
+}
+
+// createTestHarnessPlugin creates a plugin fixture with .<harness>-plugin/plugin.json for each harness.
+func createTestHarnessPlugin(t *testing.T, slug, version string, harnesses []string) string {
+	t.Helper()
+	pluginPath, cleanup := coretests.CreateTempDirWithCallbackAndAssert(t)
+	t.Cleanup(cleanup)
+
+	for _, harness := range harnesses {
+		harnessDir := filepath.Join(pluginPath, "."+harness+"-plugin")
+		require.NoError(t, os.MkdirAll(harnessDir, 0755)) // #nosec G301 -- test directory
+		manifest := map[string]any{
+			"name":        slug,
+			"version":     version,
+			"description": fmt.Sprintf("Integration test plugin for %s", harness),
+			"skills":      []string{},
+		}
+		data, err := json.Marshal(manifest)
+		require.NoError(t, err)
+		require.NoError(t, os.WriteFile(filepath.Join(harnessDir, "plugin.json"), data, 0644)) // #nosec G306 -- test fixture
+	}
+	return pluginPath
+}
+
+// stubNativeAgentCLIs installs cross-platform stub claude/codex binaries on PATH and wires
+// LookPath/Exec hooks so install/list/update do not depend on real native CLIs.
+func stubNativeAgentCLIs(t *testing.T) {
+	t.Helper()
+
+	binDir := t.TempDir()
+	claudeBin, codexBin := buildNativeAgentCLIStubs(t, binDir)
+
+	prevPath := os.Getenv("PATH")
+	t.Setenv("PATH", binDir+string(os.PathListSeparator)+prevPath)
+
+	prevLookClaude := plugincommon.LookPathClaude
+	prevLookCodex := plugincommon.LookPathCodex
+	prevClaudeExec := plugincommon.ClaudeExec
+	prevCodexExec := plugincommon.CodexExec
+	t.Cleanup(func() {
+		plugincommon.LookPathClaude = prevLookClaude
+		plugincommon.LookPathCodex = prevLookCodex
+		plugincommon.ClaudeExec = prevClaudeExec
+		plugincommon.CodexExec = prevCodexExec
+	})
+
+	plugincommon.LookPathClaude = func() (string, error) { return claudeBin, nil }
+	plugincommon.LookPathCodex = func() (string, error) { return codexBin, nil }
+	plugincommon.ClaudeExec = func(args ...string) error {
+		return exec.Command(claudeBin, args...).Run() // #nosec G204 -- test stub binary
+	}
+	plugincommon.CodexExec = func(args ...string) error {
+		return exec.Command(codexBin, args...).Run() // #nosec G204 -- test stub binary
+	}
+}
+
+func buildNativeAgentCLIStubs(t *testing.T, binDir string) (claudeBin, codexBin string) {
+	t.Helper()
+	srcDir := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(srcDir, "go.mod"), []byte("module nativeagentstub\n\ngo 1.22\n"), 0644)) // #nosec G306 -- test fixture
+	require.NoError(t, os.WriteFile(filepath.Join(srcDir, "main.go"), []byte(nativeAgentCLIStubSource), 0644))             // #nosec G306 -- test fixture
+
+	claudeBin = filepath.Join(binDir, "claude")
+	codexBin = filepath.Join(binDir, "codex")
+	if runtime.GOOS == "windows" {
+		claudeBin += ".exe"
+		codexBin += ".exe"
+	}
+
+	build := exec.Command("go", "build", "-o", claudeBin, ".")
+	build.Dir = srcDir
+	out, err := build.CombinedOutput()
+	require.NoError(t, err, "building claude stub failed: %s", string(out))
+
+	data, err := os.ReadFile(claudeBin) // #nosec G304 -- path from t.TempDir
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(codexBin, data, 0755)) // #nosec G306 -- test stub binary
+	return claudeBin, codexBin
+}
+
+// nativeAgentCLIStubSource is a tiny stdlib-only program that pretends to be claude/codex.
+// `plugin list --json` scans jf's global install layout under $HOME/$USERPROFILE.
+const nativeAgentCLIStubSource = `package main
+
+import (
+	"encoding/json"
+	"os"
+	"path/filepath"
+	"strings"
+)
+
+func main() {
+	name := filepath.Base(os.Args[0])
+	name = strings.TrimSuffix(name, ".exe")
+	if len(os.Args) >= 3 && os.Args[1] == "plugin" && os.Args[2] == "list" {
+		home := os.Getenv("HOME")
+		if home == "" {
+			home = os.Getenv("USERPROFILE")
+		}
+		switch name {
+		case "claude":
+			_ = json.NewEncoder(os.Stdout).Encode(scanClaude(home))
+		case "codex":
+			_ = json.NewEncoder(os.Stdout).Encode(map[string]any{"installed": scanCodex(home)})
+		default:
+			_, _ = os.Stdout.Write([]byte("[]\n"))
+		}
+		return
+	}
+}
+
+type pluginInfo struct {
+	InstalledVersion string ` + "`json:\"installedVersion\"`" + `
+}
+
+func scanClaude(home string) []map[string]string {
+	root := filepath.Join(home, ".claude", "plugins", "local", "jfrog")
+	var out []map[string]string
+	repos, _ := os.ReadDir(root)
+	for _, repo := range repos {
+		if !repo.IsDir() || strings.HasPrefix(repo.Name(), ".") {
+			continue
+		}
+		slugs, _ := os.ReadDir(filepath.Join(root, repo.Name()))
+		for _, slug := range slugs {
+			if !slug.IsDir() || strings.HasPrefix(slug.Name(), ".") {
+				continue
+			}
+			dir := filepath.Join(root, repo.Name(), slug.Name())
+			out = append(out, map[string]string{
+				"id":          slug.Name() + "@" + repo.Name(),
+				"version":     installedVersion(dir),
+				"installPath": dir,
+			})
+		}
+	}
+	if out == nil {
+		out = []map[string]string{}
+	}
+	return out
+}
+
+func scanCodex(home string) []map[string]any {
+	root := filepath.Join(home, ".agents", "plugins", "local", "jfrog")
+	var out []map[string]any
+	repos, _ := os.ReadDir(root)
+	for _, repo := range repos {
+		if !repo.IsDir() || strings.HasPrefix(repo.Name(), ".") {
+			continue
+		}
+		slugs, _ := os.ReadDir(filepath.Join(root, repo.Name()))
+		for _, slug := range slugs {
+			if !slug.IsDir() || strings.HasPrefix(slug.Name(), ".") {
+				continue
+			}
+			dir := filepath.Join(root, repo.Name(), slug.Name())
+			out = append(out, map[string]any{
+				"pluginId":        slug.Name() + "@" + repo.Name(),
+				"name":            slug.Name(),
+				"marketplaceName": repo.Name(),
+				"version":         installedVersion(dir),
+				"source":          map[string]string{"path": dir},
+			})
+		}
+	}
+	if out == nil {
+		out = []map[string]any{}
+	}
+	return out
+}
+
+func installedVersion(dir string) string {
+	data, err := os.ReadFile(filepath.Join(dir, ".jfrog", "plugin-info.json"))
+	if err != nil {
+		return ""
+	}
+	var info pluginInfo
+	if err := json.Unmarshal(data, &info); err != nil {
+		return ""
+	}
+	return info.InstalledVersion
+}
+`
 
 // ---------------------------------------------------------------------------
 // Publish
@@ -407,7 +614,7 @@ func TestAgentPluginsPublishInvalidSemver(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
 
-	pluginPath := createTestPluginWithVersion(t, "semver-plugin", "1.9.e")
+	pluginPath := createMinimalPlugin(t, "semver-plugin", "1.9.e")
 	err := runAgentPluginsCmd(t,
 		"publish", pluginPath,
 		"--repo="+tests.AgentPluginsLocalRepo,
@@ -421,7 +628,7 @@ func TestAgentPluginsPublishInvalidSlug(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
 
-	pluginPath := createTestPluginWithSlug(t, "Invalid Slug With Spaces!", "1.0.0")
+	pluginPath := createMinimalPlugin(t, "Invalid Slug With Spaces!", "1.0.0")
 	err := runAgentPluginsCmd(t,
 		"publish", pluginPath,
 		"--repo="+tests.AgentPluginsLocalRepo,
@@ -767,119 +974,89 @@ func TestAgentPluginsInstallNotFound(t *testing.T) {
 	assert.Error(t, err, "installing an unknown slug should fail with a not-found error")
 }
 
-// TestAgentPluginsInstallWithProjectDir verifies that --project-dir installs
-// the plugin into the project-relative harness directory.
-func TestAgentPluginsInstallWithProjectDir(t *testing.T) {
+// TestAgentPluginsInstallProjectScopeRejectedForBuiltIns verifies that built-in
+// harnesses reject --project-dir (global-only) for each of the four harness conditions.
+func TestAgentPluginsInstallProjectScopeRejectedForBuiltIns(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
 
 	slug := "project-dir-plugin"
 	pluginPath := createTestPlugin(t, slug, "1.0.0")
-
 	require.NoError(t, runAgentPluginsCmd(t,
 		"publish", pluginPath,
 		"--repo="+tests.AgentPluginsLocalRepo,
 	))
 
 	projectDir := t.TempDir()
-	assert.NoError(t, runAgentPluginsCmd(t,
-		"install", slug,
-		"--repo="+tests.AgentPluginsLocalRepo,
-		"--harness=claude",
-		"--project-dir="+projectDir,
-		"--version=1.0.0",
-	))
-
-	// claude harness places plugins at <projectDir>/.claude/plugins/<slug>/
-	assert.DirExists(t, filepath.Join(projectDir, ".claude", "plugins", slug),
-		"plugin should be installed under .claude/plugins in the project dir")
+	for _, tc := range agentPluginHarnessCases() {
+		t.Run(tc.name, func(t *testing.T) {
+			err := runAgentPluginsCmd(t,
+				"install", slug,
+				"--repo="+tests.AgentPluginsLocalRepo,
+				"--harness="+harnessFlag(tc.harnesses),
+				"--project-dir="+projectDir,
+				"--version=1.0.0",
+			)
+			require.Error(t, err, "built-in harnesses must reject project-scoped install")
+			assert.Contains(t, strings.ToLower(err.Error()), "global",
+				"error should steer users to --global, got: %s", err.Error())
+		})
+	}
 }
 
-// TestAgentPluginsInstallGlobal verifies that --global installs the plugin
-// into the agent's global harness directory (~/.claude/plugins/<slug>).
+// TestAgentPluginsInstallGlobal verifies that --global installs the plugin into
+// each built-in harness destination for all four harness conditions.
 func TestAgentPluginsInstallGlobal(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
 
 	slug := "global-install-plugin"
 	pluginPath := createTestPlugin(t, slug, "1.0.0")
-
 	require.NoError(t, runAgentPluginsCmd(t,
 		"publish", pluginPath,
 		"--repo="+tests.AgentPluginsLocalRepo,
 	))
 
-	// Override HOME/USERPROFILE so --global writes to a controlled temp directory
-	// instead of the real home directory on the CI runner.
-	homeDir := t.TempDir()
-	t.Setenv("HOME", homeDir)
-	t.Setenv("USERPROFILE", homeDir)
-
-	require.NoError(t, runAgentPluginsCmd(t,
-		"install", slug,
-		"--repo="+tests.AgentPluginsLocalRepo,
-		"--harness=claude",
-		"--global",
-		"--version=1.0.0",
-	))
-
-	assert.DirExists(t, filepath.Join(homeDir, ".claude", "plugins", slug),
-		"globally installed plugin should be at ~/.claude/plugins/<slug>")
+	for _, tc := range agentPluginHarnessCases() {
+		t.Run(tc.name, func(t *testing.T) {
+			homeDir := setIsolatedHome(t)
+			require.NoError(t, runAgentPluginsCmd(t,
+				"install", slug,
+				"--repo="+tests.AgentPluginsLocalRepo,
+				"--harness="+harnessFlag(tc.harnesses),
+				"--global",
+				"--version=1.0.0",
+			))
+			assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug)
+		})
+	}
 }
 
-// TestAgentPluginsInstallMarketplace verifies marketplace-based version resolution:
-//  1. --harness=claude without --version succeeds when claude-marketplace.json exists in the repo.
-//  2. --harness=cursor without --version fails when cursor-marketplace.json is absent.
-//  3. --harness=cursor with --version=1.0.0 succeeds regardless (bypasses marketplace).
+// TestAgentPluginsInstallMarketplace verifies that a published plugin can be
+// installed without --version through each generated harness marketplace.
 func TestAgentPluginsInstallMarketplace(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
 
 	slug := "marketplace-plugin"
-	// Use the Claude-style layout (.claude-plugin/plugin.json) so publish exercises
-	// the harness-specific manifest discovery path.
-	pluginPath := createTestClaudePlugin(t, slug, "1.0.0")
+	pluginPath := createTestHarnessPlugin(t, slug, "1.0.0", []string{"claude", "codex", "cursor"})
 	require.NoError(t, runAgentPluginsCmd(t,
 		"publish", pluginPath,
 		"--repo="+tests.AgentPluginsLocalRepo,
 	))
 
-	// Upload only claude-marketplace.json — cursor-marketplace.json is intentionally absent.
-	uploadMarketplaceJSON(t, "claude", slug, "1.0.0")
-
-	homeDir := t.TempDir()
-	t.Setenv("HOME", homeDir)
-	t.Setenv("USERPROFILE", homeDir)
-
-	// Case 1: claude without --version — resolves via marketplace, succeeds.
-	require.NoError(t, runAgentPluginsCmd(t,
-		"install", slug,
-		"--repo="+tests.AgentPluginsLocalRepo,
-		"--harness=claude",
-		"--global",
-	), "install without --version should succeed when claude-marketplace.json exists")
-	assert.DirExists(t, filepath.Join(homeDir, ".claude", "plugins", slug))
-
-	// Case 2: cursor without --version — no cursor-marketplace.json, must fail.
-	err := runAgentPluginsCmd(t,
-		"install", slug,
-		"--repo="+tests.AgentPluginsLocalRepo,
-		"--harness=cursor",
-		"--global",
-	)
-	require.Error(t, err, "install without --version should fail when cursor-marketplace.json is absent")
-	assert.Contains(t, err.Error(), "cursor-marketplace.json",
-		"error should name the missing marketplace file")
-
-	// Case 3: cursor with --version=1.0.0 — bypasses marketplace, succeeds.
-	require.NoError(t, runAgentPluginsCmd(t,
-		"install", slug,
-		"--repo="+tests.AgentPluginsLocalRepo,
-		"--harness=cursor",
-		"--global",
-		"--version=1.0.0",
-	), "install with explicit --version should succeed without a marketplace file")
-	assert.DirExists(t, filepath.Join(homeDir, ".cursor", "plugins", slug))
+	for _, tc := range agentPluginHarnessCases() {
+		t.Run(tc.name, func(t *testing.T) {
+			homeDir := setIsolatedHome(t)
+			require.NoError(t, runAgentPluginsCmd(t,
+				"install", slug,
+				"--repo="+tests.AgentPluginsLocalRepo,
+				"--harness="+harnessFlag(tc.harnesses),
+				"--global",
+			), "install without --version should resolve through the generated marketplace")
+			assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug)
+		})
+	}
 }
 
 // TestAgentPluginsInstallAgentConfigOverride verifies that a custom agent entry
@@ -896,9 +1073,6 @@ func TestAgentPluginsInstallAgentConfigOverride(t *testing.T) {
 		"--repo="+tests.AgentPluginsLocalRepo,
 	))
 
-	// createJfrogHomeConfig redirects JFROG_CLI_HOME_DIR to out/jfroghome and
-	// registers the default server there. WriteAgentConfig must use the same path.
-	createJfrogHomeConfig(t, false)
 	jfrogHome := os.Getenv("JFROG_CLI_HOME_DIR")
 
 	customGlobalDir := t.TempDir()
@@ -951,32 +1125,31 @@ func TestAgentPluginsInstallAgentConfigOverride(t *testing.T) {
 }
 
 // TestAgentPluginsInstallMultipleHarnesses verifies that a comma-separated
-// list of harnesses installs the plugin into all target directories.
+// harness list installs the plugin into every target for each of the four conditions.
 func TestAgentPluginsInstallMultipleHarnesses(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
 
 	slug := "multi-harness-plugin"
 	pluginPath := createTestPlugin(t, slug, "1.0.0")
-
 	require.NoError(t, runAgentPluginsCmd(t,
 		"publish", pluginPath,
 		"--repo="+tests.AgentPluginsLocalRepo,
 	))
 
-	projectDir := t.TempDir()
-	assert.NoError(t, runAgentPluginsCmd(t,
-		"install", slug,
-		"--repo="+tests.AgentPluginsLocalRepo,
-		"--harness=claude,cursor",
-		"--project-dir="+projectDir,
-		"--version=1.0.0",
-	))
-
-	assert.DirExists(t, filepath.Join(projectDir, ".claude", "plugins", slug),
-		"claude harness target should be populated")
-	assert.DirExists(t, filepath.Join(projectDir, ".cursor", "plugins", slug),
-		"cursor harness target should be populated")
+	for _, tc := range agentPluginHarnessCases() {
+		t.Run(tc.name, func(t *testing.T) {
+			homeDir := setIsolatedHome(t)
+			require.NoError(t, runAgentPluginsCmd(t,
+				"install", slug,
+				"--repo="+tests.AgentPluginsLocalRepo,
+				"--harness="+harnessFlag(tc.harnesses),
+				"--global",
+				"--version=1.0.0",
+			))
+			assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug)
+		})
+	}
 }
 
 // TestAgentPluginsInstallMissingSlugArg verifies that omitting the required
@@ -1006,12 +1179,11 @@ func TestAgentPluginsInstallUnknownHarness(t *testing.T) {
 		"--repo="+tests.AgentPluginsLocalRepo,
 	))
 
-	projectDir := t.TempDir()
 	err := runAgentPluginsCmd(t,
 		"install", slug,
 		"--repo="+tests.AgentPluginsLocalRepo,
 		"--harness=totally-unknown-harness-xyz",
-		"--project-dir="+projectDir,
+		"--global",
 	)
 	assert.Error(t, err, "install with an unknown harness should fail with a clear error")
 }
@@ -1022,12 +1194,11 @@ func TestAgentPluginsInstallEmptyHarness(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
 
-	projectDir := t.TempDir()
 	err := runAgentPluginsCmd(t,
 		"install", "some-plugin",
 		"--repo="+tests.AgentPluginsLocalRepo,
 		"--harness=",
-		"--project-dir="+projectDir,
+		"--global",
 	)
 	assert.Error(t, err, "install with empty --harness should fail")
 }
@@ -1171,20 +1342,24 @@ func TestAgentPluginsInstallEvidenceGateDisabled(t *testing.T) {
 }
 
 // TestAgentPluginsUpdateAllNothingInstalled verifies that update --all succeeds
-// and logs "nothing to update" when the harness install directory is empty.
+// when no plugins are installed for each of the four harness conditions.
 func TestAgentPluginsUpdateAllNothingInstalled(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
 
-	projectDir := t.TempDir()
-	assert.NoError(t, runAgentPluginsCmd(t,
-		"update",
-		"--all",
-		"--harness=claude",
-		"--project-dir="+projectDir,
-		"--repo="+tests.AgentPluginsLocalRepo,
-		"--quiet",
-	), "update --all with no installed plugins should succeed without error")
+	for _, tc := range agentPluginHarnessCases() {
+		t.Run(tc.name, func(t *testing.T) {
+			_ = setIsolatedHome(t)
+			assert.NoError(t, runAgentPluginsCmd(t,
+				"update",
+				"--all",
+				"--harness="+harnessFlag(tc.harnesses),
+				"--global",
+				"--repo="+tests.AgentPluginsLocalRepo,
+				"--quiet",
+			), "update --all with no installed plugins should succeed without error")
+		})
+	}
 }
 
 // TestAgentPluginsInstallWithPath publishes a plugin then installs it using
@@ -1389,7 +1564,7 @@ func TestAgentPluginsUpdateForce(t *testing.T) {
 }
 
 // TestAgentPluginsUpdateAll verifies that `update --all` discovers and updates
-// every installed plugin under a given harness.
+// every installed plugin under each of the four harness conditions.
 func TestAgentPluginsUpdateAll(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
@@ -1407,45 +1582,46 @@ func TestAgentPluginsUpdateAll(t *testing.T) {
 		require.NoError(t, runAgentPluginsCmd(t, "publish", v2Path, "--repo="+tests.AgentPluginsLocalRepo))
 	}
 
-	projectDir := t.TempDir()
+	for _, tc := range agentPluginHarnessCases() {
+		t.Run(tc.name, func(t *testing.T) {
+			homeDir := setIsolatedHome(t)
+			for _, slug := range []string{slugA, slugB} {
+				require.NoError(t, runAgentPluginsCmd(t,
+					"install", slug,
+					"--repo="+tests.AgentPluginsLocalRepo,
+					"--harness="+harnessFlag(tc.harnesses),
+					"--global",
+					"--version=1.0.0",
+				))
+			}
 
-	// Install v1 of both plugins under the claude harness.
-	for _, slug := range []string{slugA, slugB} {
-		require.NoError(t, runAgentPluginsCmd(t,
-			"install", slug,
-			"--repo="+tests.AgentPluginsLocalRepo,
-			"--harness=claude",
-			"--project-dir="+projectDir,
-			"--version=1.0.0",
-		))
-	}
+			require.NoError(t, runAgentPluginsCmd(t,
+				"update",
+				"--all",
+				"--harness="+harnessFlag(tc.harnesses),
+				"--global",
+				"--repo="+tests.AgentPluginsLocalRepo,
+				"--quiet",
+			))
 
-	// --quiet skips the interactive confirmation prompt required by --all.
-	assert.NoError(t, runAgentPluginsCmd(t,
-		"update",
-		"--all",
-		"--harness=claude",
-		"--project-dir="+projectDir,
-		"--repo="+tests.AgentPluginsLocalRepo,
-		"--quiet",
-	))
-
-	// Both plugins should now be at v2.
-	for _, slug := range []string{slugA, slugB} {
-		manifestPath := filepath.Join(projectDir, ".claude", "plugins", slug, ".jfrog", "plugin-info.json")
-		require.FileExists(t, manifestPath, "plugin-info.json should exist for %s after update --all", slug)
-		data, err := os.ReadFile(manifestPath) // #nosec G304 -- path from t.TempDir
-		require.NoError(t, err)
-		var manifest map[string]any
-		require.NoError(t, json.Unmarshal(data, &manifest))
-		assert.Equal(t, "2.0.0", manifest["installedVersion"],
-			"update --all should upgrade %s from 1.0.0 to 2.0.0", slug)
+			for _, slug := range []string{slugA, slugB} {
+				for _, harness := range tc.harnesses {
+					manifestPath := filepath.Join(globalPluginInstallDir(homeDir, harness, tests.AgentPluginsLocalRepo, slug), ".jfrog", "plugin-info.json")
+					require.FileExists(t, manifestPath, "plugin-info.json should exist for %s/%s after update --all", harness, slug)
+					data, err := os.ReadFile(manifestPath) // #nosec G304 -- path from t.TempDir
+					require.NoError(t, err)
+					var manifest map[string]any
+					require.NoError(t, json.Unmarshal(data, &manifest))
+					assert.Equal(t, "2.0.0", manifest["installedVersion"],
+						"update --all should upgrade %s/%s from 1.0.0 to 2.0.0", harness, slug)
+				}
+			}
+		})
 	}
 }
 
 // TestAgentPluginsUpdateAllNonInteractive verifies that `update --all` without
-// --quiet proceeds automatically when CI=true (non-interactive environment),
-// rather than blocking on a confirmation prompt.
+// --quiet proceeds automatically when CI=true for each harness condition.
 func TestAgentPluginsUpdateAllNonInteractive(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
@@ -1456,37 +1632,42 @@ func TestAgentPluginsUpdateAllNonInteractive(t *testing.T) {
 	v2Path := createTestPlugin(t, slug, "2.0.0")
 	require.NoError(t, runAgentPluginsCmd(t, "publish", v2Path, "--repo="+tests.AgentPluginsLocalRepo))
 
-	projectDir := t.TempDir()
-	require.NoError(t, runAgentPluginsCmd(t,
-		"install", slug,
-		"--repo="+tests.AgentPluginsLocalRepo,
-		"--harness=claude",
-		"--project-dir="+projectDir,
-		"--version=1.0.0",
-	))
+	for _, tc := range agentPluginHarnessCases() {
+		t.Run(tc.name, func(t *testing.T) {
+			homeDir := setIsolatedHome(t)
+			require.NoError(t, runAgentPluginsCmd(t,
+				"install", slug,
+				"--repo="+tests.AgentPluginsLocalRepo,
+				"--harness="+harnessFlag(tc.harnesses),
+				"--global",
+				"--version=1.0.0",
+			))
 
-	// CI=true makes the command non-interactive — no --quiet flag needed.
-	t.Setenv("CI", "true")
-	require.NoError(t, runAgentPluginsCmd(t,
-		"update",
-		"--all",
-		"--harness=claude",
-		"--project-dir="+projectDir,
-		"--repo="+tests.AgentPluginsLocalRepo,
-	), "update --all should proceed without --quiet when CI=true")
+			t.Setenv("CI", "true")
+			require.NoError(t, runAgentPluginsCmd(t,
+				"update",
+				"--all",
+				"--harness="+harnessFlag(tc.harnesses),
+				"--global",
+				"--repo="+tests.AgentPluginsLocalRepo,
+			), "update --all should proceed without --quiet when CI=true")
 
-	manifestPath := filepath.Join(projectDir, ".claude", "plugins", slug, ".jfrog", "plugin-info.json")
-	require.FileExists(t, manifestPath)
-	data, err := os.ReadFile(manifestPath) // #nosec G304 -- path from t.TempDir
-	require.NoError(t, err)
-	var manifest map[string]any
-	require.NoError(t, json.Unmarshal(data, &manifest))
-	assert.Equal(t, "2.0.0", manifest["installedVersion"],
-		"update --all with CI=true should upgrade to 2.0.0 without interactive prompt")
+			for _, harness := range tc.harnesses {
+				manifestPath := filepath.Join(globalPluginInstallDir(homeDir, harness, tests.AgentPluginsLocalRepo, slug), ".jfrog", "plugin-info.json")
+				require.FileExists(t, manifestPath)
+				data, err := os.ReadFile(manifestPath) // #nosec G304 -- path from t.TempDir
+				require.NoError(t, err)
+				var manifest map[string]any
+				require.NoError(t, json.Unmarshal(data, &manifest))
+				assert.Equal(t, "2.0.0", manifest["installedVersion"],
+					"update --all with CI=true should upgrade %s to 2.0.0", harness)
+			}
+		})
+	}
 }
 
 // TestAgentPluginsUpdateFormatJSON verifies that `update --slug --format=json`
-// and `update --all --format=json` both produce valid JSON output.
+// and `update --all --format=json` succeed for each of the four harness conditions.
 func TestAgentPluginsUpdateFormatJSON(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
@@ -1497,45 +1678,46 @@ func TestAgentPluginsUpdateFormatJSON(t *testing.T) {
 	v2Path := createTestPlugin(t, slug, "2.0.0")
 	require.NoError(t, runAgentPluginsCmd(t, "publish", v2Path, "--repo="+tests.AgentPluginsLocalRepo))
 
-	projectDir := t.TempDir()
-	require.NoError(t, runAgentPluginsCmd(t,
-		"install", slug,
-		"--repo="+tests.AgentPluginsLocalRepo,
-		"--harness=claude",
-		"--project-dir="+projectDir,
-		"--version=1.0.0",
-	))
+	for _, tc := range agentPluginHarnessCases() {
+		t.Run(tc.name, func(t *testing.T) {
+			_ = setIsolatedHome(t)
+			require.NoError(t, runAgentPluginsCmd(t,
+				"install", slug,
+				"--repo="+tests.AgentPluginsLocalRepo,
+				"--harness="+harnessFlag(tc.harnesses),
+				"--global",
+				"--version=1.0.0",
+			))
 
-	// --slug --format=json
-	require.NoError(t, runAgentPluginsCmd(t,
-		"update",
-		"--slug="+slug,
-		"--harness=claude",
-		"--project-dir="+projectDir,
-		"--repo="+tests.AgentPluginsLocalRepo,
-		"--format=json",
-	), "update --slug --format=json should succeed")
+			require.NoError(t, runAgentPluginsCmd(t,
+				"update",
+				"--slug="+slug,
+				"--harness="+harnessFlag(tc.harnesses),
+				"--global",
+				"--repo="+tests.AgentPluginsLocalRepo,
+				"--format=json",
+			), "update --slug --format=json should succeed")
 
-	// Re-install v1 so --all has something to upgrade.
-	require.NoError(t, runAgentPluginsCmd(t,
-		"install", slug,
-		"--repo="+tests.AgentPluginsLocalRepo,
-		"--harness=claude",
-		"--project-dir="+projectDir,
-		"--version=1.0.0",
-		"--force",
-	))
+			require.NoError(t, runAgentPluginsCmd(t,
+				"install", slug,
+				"--repo="+tests.AgentPluginsLocalRepo,
+				"--harness="+harnessFlag(tc.harnesses),
+				"--global",
+				"--version=1.0.0",
+				"--force",
+			))
 
-	// --all --format=json
-	require.NoError(t, runAgentPluginsCmd(t,
-		"update",
-		"--all",
-		"--harness=claude",
-		"--project-dir="+projectDir,
-		"--repo="+tests.AgentPluginsLocalRepo,
-		"--quiet",
-		"--format=json",
-	), "update --all --format=json should succeed")
+			require.NoError(t, runAgentPluginsCmd(t,
+				"update",
+				"--all",
+				"--harness="+harnessFlag(tc.harnesses),
+				"--global",
+				"--repo="+tests.AgentPluginsLocalRepo,
+				"--quiet",
+				"--format=json",
+			), "update --all --format=json should succeed")
+		})
+	}
 }
 
 // TestAgentPluginsUpdateFlags exercises the mutually exclusive and required
@@ -1560,13 +1742,13 @@ func TestAgentPluginsUpdateFlags(t *testing.T) {
 		},
 		{
 			name:        "all-with-slug",
-			args:        []string{"update", "--all", "--slug=some-plugin", "--repo=" + tests.AgentPluginsLocalRepo, "--harness=claude", "--project-dir=" + projectDir, "--quiet"},
+			args:        []string{"update", "--all", "--slug=some-plugin", "--repo=" + tests.AgentPluginsLocalRepo, "--harness=claude", "--global", "--quiet"},
 			expectError: true,
 			description: "--all and --slug are mutually exclusive",
 		},
 		{
 			name:        "all-with-version",
-			args:        []string{"update", "--all", "--version=1.0.0", "--repo=" + tests.AgentPluginsLocalRepo, "--harness=claude", "--project-dir=" + projectDir, "--quiet"},
+			args:        []string{"update", "--all", "--version=1.0.0", "--repo=" + tests.AgentPluginsLocalRepo, "--harness=claude", "--global", "--quiet"},
 			expectError: true,
 			description: "--all and --version are mutually exclusive",
 		},
@@ -1603,7 +1785,7 @@ func TestAgentPluginsUpdateFlags(t *testing.T) {
 }
 
 // TestAgentPluginsListCheckUpdates installs a plugin then runs list
-// --check-updates to verify the flag is accepted and produces no error.
+// --check-updates for each of the four harness conditions.
 func TestAgentPluginsListCheckUpdates(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
@@ -1616,124 +1798,138 @@ func TestAgentPluginsListCheckUpdates(t *testing.T) {
 		"--repo="+tests.AgentPluginsLocalRepo,
 	))
 
-	// --check-updates requires --harness; override HOME so the install goes to a
-	// controlled temp directory rather than the real home directory.
-	homeDir := t.TempDir()
-	t.Setenv("HOME", homeDir)
-	t.Setenv("USERPROFILE", homeDir)
+	for _, tc := range agentPluginHarnessCases() {
+		t.Run(tc.name, func(t *testing.T) {
+			homeDir := setIsolatedHome(t)
+			require.NoError(t, runAgentPluginsCmd(t,
+				"install", slug,
+				"--repo="+tests.AgentPluginsLocalRepo,
+				"--harness="+harnessFlag(tc.harnesses),
+				"--global",
+				"--version="+version,
+			))
+			assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug)
 
-	require.NoError(t, runAgentPluginsCmd(t,
-		"install", slug,
-		"--repo="+tests.AgentPluginsLocalRepo,
-		"--harness=claude",
-		"--global",
-		"--version="+version,
-	))
-
-	assert.NoError(t, runAgentPluginsCmd(t,
-		"list",
-		"--harness=claude",
-		"--check-updates",
-	), "list --check-updates --harness should run without error")
+			assert.NoError(t, runAgentPluginsCmd(t,
+				"list",
+				"--harness="+harnessFlag(tc.harnesses),
+				"--global",
+				"--check-updates",
+			), "list --check-updates --harness should run without error")
+		})
+	}
 }
 
 // TestAgentPluginsListCheckUpdatesStatus installs a plugin at v1 while v2 is
-// available, then verifies that list --check-updates reports status "behind" for
-// that plugin in the JSON output.
+// available, then verifies list --check-updates reports status "behind".
 func TestAgentPluginsListCheckUpdatesStatus(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
 
 	slug := "check-status-plugin"
-
 	v1Path := createTestPlugin(t, slug, "1.0.0")
 	require.NoError(t, runAgentPluginsCmd(t, "publish", v1Path, "--repo="+tests.AgentPluginsLocalRepo))
 	v2Path := createTestPlugin(t, slug, "2.0.0")
 	require.NoError(t, runAgentPluginsCmd(t, "publish", v2Path, "--repo="+tests.AgentPluginsLocalRepo))
 
-	homeDir := t.TempDir()
-	t.Setenv("HOME", homeDir)
-	t.Setenv("USERPROFILE", homeDir)
+	for _, tc := range agentPluginHarnessCases() {
+		t.Run(tc.name, func(t *testing.T) {
+			homeDir := setIsolatedHome(t)
+			require.NoError(t, runAgentPluginsCmd(t,
+				"install", slug,
+				"--repo="+tests.AgentPluginsLocalRepo,
+				"--harness="+harnessFlag(tc.harnesses),
+				"--global",
+				"--version=1.0.0",
+			))
+			assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug)
 
-	require.NoError(t, runAgentPluginsCmd(t,
-		"install", slug,
-		"--repo="+tests.AgentPluginsLocalRepo,
-		"--harness=claude",
-		"--global",
-		"--version=1.0.0",
-	))
-
-	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
-	out, err := jfrogCli.RunCliCmdWithOutputs(t,
-		"agent", "plugins", "list",
-		"--harness=claude",
-		"--global",
-		"--check-updates",
-		"--format=json",
-	)
-	require.NoError(t, err, "list --check-updates should succeed")
-
-	var rows []map[string]any
-	require.NoError(t, json.Unmarshal([]byte(out), &rows), "output must be valid JSON")
-	require.NotEmpty(t, rows, "at least one row expected")
-
-	found := false
-	for _, row := range rows {
-		if row["name"] == slug {
-			found = true
-			assert.Equal(t, "behind", row["status"],
-				"installed v1.0.0 with v2.0.0 available should report status 'behind'")
-			assert.Equal(t, "2.0.0", row["registryLatest"],
-				"registryLatest should show the newest available version")
-		}
+			jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+			out, err := jfrogCli.RunCliCmdWithOutputs(t,
+				"agent", "plugins", "list",
+				"--harness="+harnessFlag(tc.harnesses),
+				"--global",
+				"--check-updates",
+				"--format=json",
+			)
+			require.NoError(t, err, "list --check-updates should succeed")
+			assertListContainsPluginStatus(t, out, len(tc.harnesses) > 1, slug, "behind", "2.0.0")
+		})
 	}
-	assert.True(t, found, "plugin %s should appear in list output", slug)
 }
 
 // TestAgentPluginsListCheckUpdatesCurrent installs a plugin at the latest
-// available version then verifies that list --check-updates reports status
-// "current" for that plugin.
+// available version then verifies list --check-updates reports status "current".
 func TestAgentPluginsListCheckUpdatesCurrent(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
 
 	slug := "check-current-plugin"
 	version := "1.0.0"
-
 	pluginPath := createTestPlugin(t, slug, version)
 	require.NoError(t, runAgentPluginsCmd(t, "publish", pluginPath, "--repo="+tests.AgentPluginsLocalRepo))
 
-	homeDir := t.TempDir()
-	t.Setenv("HOME", homeDir)
-	t.Setenv("USERPROFILE", homeDir)
+	for _, tc := range agentPluginHarnessCases() {
+		t.Run(tc.name, func(t *testing.T) {
+			homeDir := setIsolatedHome(t)
+			require.NoError(t, runAgentPluginsCmd(t,
+				"install", slug,
+				"--repo="+tests.AgentPluginsLocalRepo,
+				"--harness="+harnessFlag(tc.harnesses),
+				"--global",
+				"--version="+version,
+			))
+			assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug)
 
-	require.NoError(t, runAgentPluginsCmd(t,
-		"install", slug,
-		"--repo="+tests.AgentPluginsLocalRepo,
-		"--harness=claude",
-		"--global",
-		"--version="+version,
-	))
+			jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+			out, err := jfrogCli.RunCliCmdWithOutputs(t,
+				"agent", "plugins", "list",
+				"--harness="+harnessFlag(tc.harnesses),
+				"--global",
+				"--check-updates",
+				"--format=json",
+			)
+			require.NoError(t, err, "list --check-updates should succeed")
+			assertListContainsPluginStatus(t, out, len(tc.harnesses) > 1, slug, "current", "")
+		})
+	}
+}
 
-	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
-	out, err := jfrogCli.RunCliCmdWithOutputs(t,
-		"agent", "plugins", "list",
-		"--harness=claude",
-		"--global",
-		"--check-updates",
-		"--format=json",
-	)
-	require.NoError(t, err, "list --check-updates should succeed")
+// assertListContainsPluginStatus validates list --format=json output for single or
+// multi-harness responses (array vs map keyed by harness name).
+func assertListContainsPluginStatus(t *testing.T, out string, multiHarness bool, slug, status, registryLatest string) {
+	t.Helper()
+	if multiHarness {
+		var byHarness map[string][]map[string]any
+		require.NoError(t, json.Unmarshal([]byte(out), &byHarness), "multi-harness output must be a JSON object")
+		require.NotEmpty(t, byHarness)
+		found := false
+		for _, rows := range byHarness {
+			for _, row := range rows {
+				if row["name"] == slug {
+					found = true
+					assert.Equal(t, status, row["status"])
+					if registryLatest != "" {
+						assert.Equal(t, registryLatest, row["registryLatest"])
+					}
+				}
+			}
+		}
+		assert.True(t, found, "plugin %s should appear in multi-harness list output", slug)
+		return
+	}
 
 	var rows []map[string]any
 	require.NoError(t, json.Unmarshal([]byte(out), &rows), "output must be valid JSON")
-
+	require.NotEmpty(t, rows, "at least one row expected")
 	found := false
 	for _, row := range rows {
 		if row["name"] == slug {
 			found = true
-			assert.Equal(t, "current", row["status"],
-				"plugin at latest version should report status 'current'")
+			assert.Equal(t, status, row["status"])
+			if registryLatest != "" {
+				assert.Equal(t, registryLatest, row["registryLatest"])
+			}
 		}
 	}
 	assert.True(t, found, "plugin %s should appear in list output", slug)
@@ -1919,39 +2115,42 @@ func TestAgentPluginsListRemote(t *testing.T) {
 	), "list should succeed after publish")
 }
 
-// TestAgentPluginsListLocal verifies that `list --harness` returns without
-// error after a plugin is installed locally.
+// TestAgentPluginsListLocal verifies that `list --harness --global` succeeds
+// after install for each of the four harness conditions.
 func TestAgentPluginsListLocal(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
 
 	slug := "list-local-plugin"
 	pluginPath := createTestPlugin(t, slug, "1.0.0")
-
 	require.NoError(t, runAgentPluginsCmd(t,
 		"publish", pluginPath,
 		"--repo="+tests.AgentPluginsLocalRepo,
 	))
 
-	projectDir := t.TempDir()
-	require.NoError(t, runAgentPluginsCmd(t,
-		"install", slug,
-		"--repo="+tests.AgentPluginsLocalRepo,
-		"--harness=claude",
-		"--project-dir="+projectDir,
-		"--version=1.0.0",
-	))
+	for _, tc := range agentPluginHarnessCases() {
+		t.Run(tc.name, func(t *testing.T) {
+			homeDir := setIsolatedHome(t)
+			require.NoError(t, runAgentPluginsCmd(t,
+				"install", slug,
+				"--repo="+tests.AgentPluginsLocalRepo,
+				"--harness="+harnessFlag(tc.harnesses),
+				"--global",
+				"--version=1.0.0",
+			))
+			assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug)
 
-	assert.NoError(t, runAgentPluginsCmd(t,
-		"list",
-		"--harness=claude",
-		"--project-dir="+projectDir,
-	), "list --harness should succeed after install")
+			assert.NoError(t, runAgentPluginsCmd(t,
+				"list",
+				"--harness="+harnessFlag(tc.harnesses),
+				"--global",
+			), "list --harness should succeed after install")
+		})
+	}
 }
 
-// TestAgentPluginsListMultipleHarnesses installs a plugin under both claude and
-// cursor then verifies list --harness=claude,cursor succeeds and produces output
-// for each harness.
+// TestAgentPluginsListMultipleHarnesses installs under each harness condition
+// then verifies list --harness succeeds for that same condition.
 func TestAgentPluginsListMultipleHarnesses(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
@@ -1963,22 +2162,25 @@ func TestAgentPluginsListMultipleHarnesses(t *testing.T) {
 		"--repo="+tests.AgentPluginsLocalRepo,
 	))
 
-	projectDir := t.TempDir()
-	for _, harness := range []string{"claude", "cursor"} {
-		require.NoError(t, runAgentPluginsCmd(t,
-			"install", slug,
-			"--repo="+tests.AgentPluginsLocalRepo,
-			"--harness="+harness,
-			"--project-dir="+projectDir,
-			"--version=1.0.0",
-		))
-	}
+	for _, tc := range agentPluginHarnessCases() {
+		t.Run(tc.name, func(t *testing.T) {
+			homeDir := setIsolatedHome(t)
+			require.NoError(t, runAgentPluginsCmd(t,
+				"install", slug,
+				"--repo="+tests.AgentPluginsLocalRepo,
+				"--harness="+harnessFlag(tc.harnesses),
+				"--global",
+				"--version=1.0.0",
+			))
+			assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug)
 
-	assert.NoError(t, runAgentPluginsCmd(t,
-		"list",
-		"--harness=claude,cursor",
-		"--project-dir="+projectDir,
-	), "list --harness with multiple agents should succeed")
+			assert.NoError(t, runAgentPluginsCmd(t,
+				"list",
+				"--harness="+harnessFlag(tc.harnesses),
+				"--global",
+			), "list --harness with harness set %q should succeed", tc.name)
+		})
+	}
 }
 
 // TestAgentPluginsListFlags exercises list flag combinations that must either
@@ -2072,31 +2274,40 @@ func TestAgentPluginsListGlobalProjectDirMutuallyExclusive(t *testing.T) {
 	assert.Contains(t, err.Error(), "--project-dir", "error should mention --project-dir")
 }
 
-// TestAgentPluginsListLimitHarnessMode verifies that --limit truncates the
-// results when listing installed plugins via --harness.
+// TestAgentPluginsListLimitHarnessMode verifies that --limit truncates results
+// when listing installed plugins via --harness for each harness condition.
 func TestAgentPluginsListLimitHarnessMode(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
 
-	projectDir := t.TempDir()
-	for _, slug := range []string{"limit-a-plugin", "limit-b-plugin", "limit-c-plugin"} {
+	slugs := []string{"limit-a-plugin", "limit-b-plugin", "limit-c-plugin"}
+	for _, slug := range slugs {
 		p := createTestPlugin(t, slug, "1.0.0")
 		require.NoError(t, runAgentPluginsCmd(t, "publish", p, "--repo="+tests.AgentPluginsLocalRepo))
-		require.NoError(t, runAgentPluginsCmd(t,
-			"install", slug,
-			"--repo="+tests.AgentPluginsLocalRepo,
-			"--harness=claude",
-			"--project-dir="+projectDir,
-			"--version=1.0.0",
-		))
 	}
 
-	assert.NoError(t, runAgentPluginsCmd(t,
-		"list",
-		"--harness=claude",
-		"--project-dir="+projectDir,
-		"--limit=2",
-	), "list --harness --limit should succeed")
+	for _, tc := range agentPluginHarnessCases() {
+		t.Run(tc.name, func(t *testing.T) {
+			homeDir := setIsolatedHome(t)
+			for _, slug := range slugs {
+				require.NoError(t, runAgentPluginsCmd(t,
+					"install", slug,
+					"--repo="+tests.AgentPluginsLocalRepo,
+					"--harness="+harnessFlag(tc.harnesses),
+					"--global",
+					"--version=1.0.0",
+				))
+				assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug)
+			}
+
+			assert.NoError(t, runAgentPluginsCmd(t,
+				"list",
+				"--harness="+harnessFlag(tc.harnesses),
+				"--global",
+				"--limit=2",
+			), "list --harness --limit should succeed")
+		})
+	}
 }
 
 // TestAgentPluginsListLimitZero verifies that --limit=0 (or a negative value)
@@ -2574,6 +2785,113 @@ func TestAgentPluginsInsecureTLS(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
+// Multi-Harness Marketplace Indexing
+// ---------------------------------------------------------------------------
+
+// TestAgentPluginsPublishMultiHarnessMarketplaceIndexing verifies that publishing
+// creates the marketplace entries needed to install without an explicit version.
+func TestAgentPluginsPublishMultiHarnessMarketplaceIndexing(t *testing.T) {
+	initAgentPluginsTest(t)
+	defer cleanAgentPluginsTest()
+
+	for _, tc := range agentPluginHarnessCases() {
+		t.Run(tc.name, func(t *testing.T) {
+			version := "1.0.0"
+			slug := "marketplace-index-" + strings.ReplaceAll(tc.name, ",", "-") + "-plugin"
+			pluginDir := createTestHarnessPlugin(t, slug, version, tc.harnesses)
+
+			require.NoError(t, runAgentPluginsCmd(t,
+				"publish", pluginDir,
+				"--repo="+tests.AgentPluginsLocalRepo,
+				"--version="+version,
+			), "publishing %s must succeed", slug)
+			assertPluginExists(t, slug, version)
+
+			for _, harness := range tc.harnesses {
+				assertMarketplaceContainsPlugin(t, harness, slug, version)
+			}
+
+			homeDir := setIsolatedHome(t)
+			require.NoError(t, runAgentPluginsCmd(t,
+				"install", slug,
+				"--repo="+tests.AgentPluginsLocalRepo,
+				"--harness="+harnessFlag(tc.harnesses),
+				"--global",
+			), "install %s without --version must succeed", slug)
+			assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug)
+
+			jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+			out, err := jfrogCli.RunCliCmdWithOutputs(t,
+				"agent", "plugins", "list",
+				"--harness="+harnessFlag(tc.harnesses),
+				"--global",
+				"--format=json",
+			)
+			require.NoError(t, err, "list --json must succeed after installing %s", slug)
+			assertListContainsInstalledPlugin(t, out, tc.harnesses, slug)
+		})
+	}
+}
+
+func assertMarketplaceContainsPlugin(t *testing.T, harness, slug, version string) {
+	t.Helper()
+	fileName := harness + "-marketplace.json"
+	downloadDir := t.TempDir()
+	require.NoError(t, artifactoryCli.Exec(
+		"dl",
+		tests.AgentPluginsLocalRepo+"/"+fileName,
+		downloadDir+"/",
+		"--flat=true",
+		"--fail-no-op=true",
+	), "%s should be generated after publishing %s", fileName, slug)
+
+	data, err := os.ReadFile(filepath.Join(downloadDir, fileName)) // #nosec G304 -- path is under t.TempDir
+	require.NoError(t, err)
+	var marketplace struct {
+		Plugins []struct {
+			Name    string `json:"name"`
+			Version string `json:"version"`
+		} `json:"plugins"`
+	}
+	require.NoError(t, json.Unmarshal(data, &marketplace), "%s must contain valid JSON", fileName)
+	for _, plugin := range marketplace.Plugins {
+		if plugin.Name == slug {
+			assert.Equal(t, version, plugin.Version)
+			return
+		}
+	}
+	t.Fatalf("%s does not contain published plugin %q", fileName, slug)
+}
+
+func assertListContainsInstalledPlugin(t *testing.T, out string, harnesses []string, slug string) {
+	t.Helper()
+	if len(harnesses) == 1 {
+		var rows []map[string]any
+		require.NoError(t, json.Unmarshal([]byte(out), &rows), "list output must be a JSON array")
+		assert.True(t, listRowsContainPlugin(rows, slug), "list --json should contain installed plugin %q", slug)
+		return
+	}
+
+	var byHarness map[string][]map[string]any
+	require.NoError(t, json.Unmarshal([]byte(out), &byHarness), "multi-harness list output must be a JSON object")
+	for _, harness := range harnesses {
+		rows, found := byHarness[harness]
+		require.True(t, found, "list --json output should contain harness %q", harness)
+		assert.True(t, listRowsContainPlugin(rows, slug),
+			"list --json should contain installed plugin %q for harness %q", slug, harness)
+	}
+}
+
+func listRowsContainPlugin(rows []map[string]any, slug string) bool {
+	for _, row := range rows {
+		if row["name"] == slug {
+			return true
+		}
+	}
+	return false
+}
+
+// ---------------------------------------------------------------------------
 // Flag validation
 // ---------------------------------------------------------------------------
 
@@ -2613,24 +2931,12 @@ func TestAgentPluginsUnknownFlag(t *testing.T) {
 // Test fixture helpers
 // ---------------------------------------------------------------------------
 
-// createTestPluginWithVersion creates a minimal plugin directory with a
-// specific version string (which may be intentionally invalid for error tests).
-func createTestPluginWithVersion(t *testing.T, slug, version string) string {
+// createMinimalPlugin writes a minimal plugin.json with the given slug and version
+// (either of which may be intentionally invalid for error-path tests). Raw JSON is
+// used so values are stored verbatim without json.Marshal normalisation.
+func createMinimalPlugin(t *testing.T, slug, version string) string {
 	t.Helper()
 	dir := t.TempDir()
-	manifest := map[string]string{"name": slug, "version": version, "description": "test"}
-	data, err := json.Marshal(manifest)
-	require.NoError(t, err)
-	require.NoError(t, os.WriteFile(filepath.Join(dir, "plugin.json"), data, 0644)) // #nosec G306 -- test fixture
-	return dir
-}
-
-// createTestPluginWithSlug creates a minimal plugin directory with a specific
-// slug in the manifest (which may be intentionally invalid for error tests).
-func createTestPluginWithSlug(t *testing.T, slug, version string) string {
-	t.Helper()
-	dir := t.TempDir()
-	// Write raw JSON to avoid json.Marshal normalising the slug.
 	raw := fmt.Sprintf(`{"name":%q,"version":%q,"description":"test"}`, slug, version)
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "plugin.json"), []byte(raw), 0644)) // #nosec G306 -- test fixture
 	return dir
