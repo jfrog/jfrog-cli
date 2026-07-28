@@ -252,3 +252,7 @@ require (
 //replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.54.2-0.20251007084958-5eeaa42c31a6
 
 // replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260723100012-d9e9c3412cb2
+
+// Local development (RTECO-1649 / RTECO-1648 APM worktrees) — keep commented for CI:
+// replace github.com/jfrog/jfrog-cli-artifactory => ../jfrog-cli-artifactory/.worktrees/task-RTECO-1648/task/RTECO-1648/rteco-1648-jf-agent-apm-implementation-document
+// replace github.com/jfrog/jfrog-cli-core/v2 => ../jfrog-cli-core/.worktrees/task-RTECO-1648/task/RTECO-1648/rteco-1648-jf-agent-apm-implementation-document

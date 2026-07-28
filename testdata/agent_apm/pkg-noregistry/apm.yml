@@ -1,0 +1,12 @@
+name: pkg-noregistry
+version: 1.0.0
+description: APM project for pkg-noregistry
+author: Uday
+targets:
+- claude
+dependencies:
+  apm:
+  - uday/pkg-base#1.0.0
+  mcp: []
+includes: auto
+scripts: {}

@@ -1,0 +1,5 @@
+{
+  "key": "${AGENT_APM_LOCAL_REPO}",
+  "rclass": "local",
+  "packageType": "agentpackages"
+}

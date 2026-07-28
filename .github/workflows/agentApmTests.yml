@@ -1,0 +1,69 @@
+name: Agent APM Tests
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  Agent-APM-Tests:
+    name: agent-apm ${{ matrix.os.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - name: ubuntu
+            version: 24.04
+          - name: windows
+            version: 2022
+          - name: macos
+            version: 14
+    runs-on: ${{ matrix.os.name }}-${{ matrix.os.version }}
+    steps:
+      - name: Skip macOS - JGC-413
+        if: matrix.os.name == 'macos'
+        run: |
+          echo "::warning::JGC-413 - Skip until artifactory bootstrap in osx is fixed"
+          exit 0
+
+      - name: Checkout code
+        if: matrix.os.name != 'macos'
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
+          allow-unsafe-pr-checkout: true
+
+      - name: Setup FastCI
+        if: matrix.os.name != 'macos'
+        uses: jfrog-fastci/fastci@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          fastci_otel_token: ${{ secrets.FASTCI_TOKEN }}
+
+      - name: Setup Go with cache
+        if: matrix.os.name != 'macos'
+        uses: jfrog/.github/actions/install-go-with-cache@main
+
+      - name: Install APM CLI
+        if: matrix.os.name != 'macos'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Install Microsoft APM CLI (>= 0.1.0) required by jf agent apm.
+          if ! command -v apm >/dev/null 2>&1; then
+            curl -fsSL https://raw.githubusercontent.com/microsoft/apm/main/install.sh | bash
+            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+            echo "$HOME/bin" >> "$GITHUB_PATH"
+          fi
+          apm --version
+
+      - name: Install local Artifactory
+        if: matrix.os.name != 'macos'
+        uses: jfrog/.github/actions/install-local-artifactory@main
+        with:
+          RTLIC: ${{ secrets.RTLIC }}
+          # Pin a version that supports agentpackages repositories.
+          VERSION: 7.161.12
+          RT_CONNECTION_TIMEOUT_SECONDS: ${{ env.RT_CONNECTION_TIMEOUT_SECONDS || '1200' }}
+
+      - name: Run agent APM tests
+        if: matrix.os.name != 'macos'
+        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.agentApm

@@ -1,0 +1,16 @@
+name: pkg-base
+version: 1.1.0
+description: APM project for pkg-base
+author: Uday
+license: MIT
+# Which agent platforms to deploy to.
+# Resolution order: --target flag > this field > auto-detect from filesystem.
+# Accepted values: vscode, agents, copilot, claude, cursor, opencode, codex,
+# gemini, antigravity, windsurf, kiro, agent-skills, all
+targets:
+- claude
+dependencies:
+  apm: []
+  mcp: []
+includes: auto
+scripts: {}

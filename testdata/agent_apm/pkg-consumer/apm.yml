@@ -1,0 +1,13 @@
+name: pkg-consumer
+version: 1.0.0
+description: APM project for pkg-consumer
+author: Uday
+license: MIT
+targets:
+- claude
+dependencies:
+  apm:
+  - uday/pkg-base#1.1.0
+  mcp: []
+includes: auto
+scripts: {}
