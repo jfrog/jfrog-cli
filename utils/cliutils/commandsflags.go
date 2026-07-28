@@ -617,6 +617,8 @@ const (
 	IncludeProjects = "include-projects"
 	ExcludeProjects = "exclude-projects"
 	IncludeFiles    = "include-files"
+	CreatedAfter    = "created-after"
+	DownloadedAfter = "downloaded-after"
 
 	// *** JFrog Pipelines Commands' flags ***
 	// Base flags
@@ -1849,6 +1851,14 @@ var flagsMap = map[string]cli.Flag{
 		Name:  IncludeFiles,
 		Usage: "[Optional] List of semicolon-separated(;) path patterns to include in the transfer. Files will be filtered based on their directory path. Pattern examples: 'folder/subfolder/*', 'org/company/*'.` `",
 	},
+	CreatedAfter: cli.StringFlag{
+		Name:  CreatedAfter,
+		Usage: "[Optional] Transfer only files created at or after this exact UTC timestamp. Format: YYYY-MM-DDTHH:mm:ss.sssZ. When both --created-after and --downloaded-after are set, --created-after takes precedence.` `",
+	},
+	DownloadedAfter: cli.StringFlag{
+		Name:  DownloadedAfter,
+		Usage: "[Optional] Transfer only files last downloaded at or after this exact UTC timestamp. Format: YYYY-MM-DDTHH:mm:ss.sssZ. Files that were never downloaded are excluded. Ignored when --created-after is also set.` `",
+	},
 	IgnoreState: cli.BoolFlag{
 		Name:  IgnoreState,
 		Usage: "[Default: false] Set to true to ignore the saved state from previous transfer-files operations.` `",
@@ -2352,7 +2362,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, deleteQuiet,
 	},
 	TransferFiles: {
-		Filestore, IncludeRepos, ExcludeRepos, IncludeFiles, IgnoreState, ProxyKey, transferFilesStatus, Stop, PreChecks, transferFilesFormat,
+		Filestore, IncludeRepos, ExcludeRepos, IncludeFiles, CreatedAfter, DownloadedAfter, IgnoreState, ProxyKey, transferFilesStatus, Stop, PreChecks, transferFilesFormat,
 	},
 	TransferInstall: {
 		installPluginVersion, InstallPluginSrcDir, InstallPluginHomeDir,

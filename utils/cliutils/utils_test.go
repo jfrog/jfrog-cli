@@ -477,3 +477,20 @@ func TestLoginCommandFlagsIncludeServerId(t *testing.T) {
 	}
 	assert.Contains(t, flagNames, "server-id", "Expected login command flags to include 'server-id'")
 }
+
+func TestTransferFilesTimestampFilterFlags(t *testing.T) {
+	flags := GetCommandFlags(TransferFiles)
+	assert.NotEmpty(t, flags)
+
+	var flagNames []string
+	usageByName := map[string]string{}
+	for _, f := range flags {
+		flagNames = append(flagNames, f.GetName())
+		usageByName[f.GetName()] = f.String()
+	}
+
+	assert.Contains(t, flagNames, CreatedAfter)
+	assert.Contains(t, flagNames, DownloadedAfter)
+	assert.Contains(t, usageByName[CreatedAfter], "YYYY-MM-DDTHH:mm:ss.sssZ")
+	assert.Contains(t, usageByName[DownloadedAfter], "YYYY-MM-DDTHH:mm:ss.sssZ")
+}
