@@ -720,6 +720,10 @@ func runMvn(c *cli.Context, preferWrapper bool) (err error) {
 		return commands.ExecWithPackageManager(mvnCmd, project.Maven.String())
 	}
 
+	if preferWrapper {
+		log.Warn("jf mvnw's wrapper requirement is not respected in legacy (config-file) mode; falling back to the standard jf mvn behavior, governed by the 'useWrapper' setting in the Maven config.")
+	}
+
 	// If config file is missing and not in native mode, return the standard missing-config error.
 	if !configExists {
 		if configFilePath, err = getProjectConfigPathOrThrow(project.Maven, "mvn", "mvn-config"); err != nil {
