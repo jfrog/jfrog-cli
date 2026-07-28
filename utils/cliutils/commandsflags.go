@@ -2242,7 +2242,7 @@ var commandFlags = map[string][]string{
 		BuildName, BuildNumber, module, Project,
 	},
 	Cargo: {
-		BuildName, BuildNumber, module, Project,
+		BuildName, BuildNumber, module, Project, serverId,
 	},
 	Nix: {
 		BuildName, BuildNumber, module, Project, serverId,

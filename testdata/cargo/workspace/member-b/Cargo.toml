@@ -5,4 +5,6 @@ edition = "2021"
 description = "Workspace member B fixture for JFrog CLI Cargo integration tests"
 license = "Apache-2.0"
 
+# member-b has no path deps, so it is the clean `cargo publish -p` target.
 [dependencies]
+serde_json = "1"

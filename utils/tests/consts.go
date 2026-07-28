@@ -270,6 +270,7 @@ var (
 	UvBuildName                 = "cli-uv-build"
 	AgentPluginsBuildName       = "cli-agent-plugins-build"
 	NixBuildName                = "cli-nix-build"
+	CargoBuildName              = "cli-cargo-build"
 	ConanBuildName              = "cli-conan-build"
 	HelmBuildName               = "cli-helm-build"
 	HuggingFaceBuildName        = "cli-huggingface-build"

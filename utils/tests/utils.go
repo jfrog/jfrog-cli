@@ -402,6 +402,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestPoetry:             {&PoetryLocalRepo, &PoetryRemoteRepo},
 		TestUv:                 {&UvLocalRepo, &UvRemoteRepo},
 		TestNix:                {&NixLocalRepo, &NixRemoteRepo},
+		TestCargo:              {&CargoLocalRepo, &CargoRemoteRepo},
 		TestAgentPlugins:       {&AgentPluginsLocalRepo},
 		TestConan:              {&ConanLocalRepo, &ConanRemoteRepo},
 		TestHelm:               {&HelmLocalRepo},
@@ -479,6 +480,7 @@ func GetBuildNames() []string {
 		TestPoetry:       {&PoetryBuildName},
 		TestUv:           {&UvBuildName},
 		TestNix:          {&NixBuildName},
+		TestCargo:        {&CargoBuildName},
 		TestAgentPlugins: {&AgentPluginsBuildName},
 		TestConan:        {&ConanBuildName},
 		TestHelm:         {&HelmBuildName},
@@ -626,6 +628,8 @@ func AddTimestampToGlobalVars() {
 	NixLocalRepo += uniqueSuffix
 	NixRemoteRepo += uniqueSuffix
 	NixVirtualRepo += uniqueSuffix
+	CargoLocalRepo += uniqueSuffix
+	CargoRemoteRepo += uniqueSuffix
 	ConanLocalRepo += uniqueSuffix
 	ConanRemoteRepo += uniqueSuffix
 	ConanVirtualRepo += uniqueSuffix
@@ -660,6 +664,7 @@ func AddTimestampToGlobalVars() {
 	AgentPluginsBuildName += uniqueSuffix
 	UvBuildName += uniqueSuffix
 	NixBuildName += uniqueSuffix
+	CargoBuildName += uniqueSuffix
 	ConanBuildName += uniqueSuffix
 	HelmBuildName += uniqueSuffix
 	HuggingFaceBuildName += uniqueSuffix
