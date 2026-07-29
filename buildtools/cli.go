@@ -95,7 +95,9 @@ import (
 )
 
 const (
-	buildToolsCategory      = "Package Managers:"
+	// No trailing colon: the help writer appends one, and every other category
+	// ("Other", "Plugins", "Command Namespaces", ...) is written without it.
+	buildToolsCategory      = "Package Managers"
 	huggingfaceAPI          = "api/huggingfaceml"
 	HF_ENDPOINT             = "HF_ENDPOINT"
 	HF_TOKEN                = "HF_TOKEN"
