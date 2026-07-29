@@ -3,10 +3,10 @@ package buildtools
 import (
 	"errors"
 	"fmt"
+	dotnetutils "github.com/jfrog/build-info-go/build/utils/dotnet"
 	conancommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/conan"
 	nixcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nix"
 	nugetcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nuget"
-	dotnetutils "github.com/jfrog/build-info-go/build/utils/dotnet"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -2088,15 +2088,9 @@ func ConanCmd(c *cli.Context) error {
 func runNugetFlexPackCmd(c *cli.Context, toolchainType dotnetutils.ToolchainType) error {
 	args := cliutils.ExtractCommand(c)
 
-	var serverID string
-	var err error
-	args, serverID, err = coreutils.ExtractServerIdFromCommand(args)
+	args, serverID, err := coreutils.ExtractServerIdFromCommand(args)
 	if err != nil {
 		return fmt.Errorf("extract server ID: %w", err)
-	}
-	serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, false)
-	if err != nil {
-		return err
 	}
 
 	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
@@ -2104,27 +2098,27 @@ func runNugetFlexPackCmd(c *cli.Context, toolchainType dotnetutils.ToolchainType
 		return err
 	}
 
-	// Extract --repo-resolve and --repo-deploy flags
+	// Extract --repo-resolve and --repo flags.
 	var repoResolve, repoDeploy string
 	filteredArgs, repoResolve, err = coreutils.ExtractStringOptionFromArgs(filteredArgs, "repo-resolve")
 	if err != nil {
 		return fmt.Errorf("extract --repo-resolve: %w", err)
 	}
-	filteredArgs, repoDeploy, err = coreutils.ExtractStringOptionFromArgs(filteredArgs, "repo-deploy")
+	filteredArgs, repoDeploy, err = coreutils.ExtractStringOptionFromArgs(filteredArgs, "repo")
 	if err != nil {
-		return fmt.Errorf("extract --repo-deploy: %w", err)
+		return fmt.Errorf("extract --repo: %w", err)
 	}
 
 	useNugetV2, err := cliutils.ExtractBoolFlagFromArgs(&filteredArgs, "nuget-v2")
 	if err != nil {
 		return err
 	}
-	allowInsecure, err := cliutils.ExtractBoolFlagFromArgs(&filteredArgs, "allow-insecure-connections")
+	allowInsecure, err := cliutils.ExtractBoolFlagFromArgs(&filteredArgs, "insecure-tls")
 	if err != nil {
 		return err
 	}
 
-	cmdName, nugetArgs := getCommandName(filteredArgs)
+	cmdName, nugetArgs := getNugetCommandName(filteredArgs, toolchainType)
 	workingDir, err := filepath.Abs(".")
 	if err != nil {
 		return err
@@ -2134,7 +2128,6 @@ func runNugetFlexPackCmd(c *cli.Context, toolchainType dotnetutils.ToolchainType
 		SetToolchainType(toolchainType).
 		SetSubCommand(cmdName).
 		SetArgs(nugetArgs).
-		SetServerDetails(serverDetails).
 		SetRepoResolve(repoResolve).
 		SetRepoDeploy(repoDeploy).
 		SetUseNugetV2(useNugetV2).
@@ -2142,7 +2135,25 @@ func runNugetFlexPackCmd(c *cli.Context, toolchainType dotnetutils.ToolchainType
 		SetBuildConfiguration(buildConfiguration).
 		SetWorkingDir(workingDir)
 
+	if nugetCmd.RequiresServerDetails() {
+		serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, false)
+		if err != nil {
+			return err
+		}
+		nugetCmd.SetServerDetails(serverDetails)
+	}
+
 	return commands.ExecWithPackageManager(nugetCmd, project.Nuget.String())
+}
+
+// getNugetCommandName parses the native NuGet command and handles dotnet's two-token
+// "nuget push" subcommand without changing the argument list for any other command.
+func getNugetCommandName(args []string, toolchainType dotnetutils.ToolchainType) (string, []string) {
+	commandName, commandArgs := getCommandName(args)
+	if toolchainType == dotnetutils.DotnetCore && commandName == "nuget" && len(commandArgs) > 0 && commandArgs[0] == "push" {
+		return "nuget push", commandArgs[1:]
+	}
+	return commandName, commandArgs
 }
 
 func NixCmd(c *cli.Context) error {

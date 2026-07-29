@@ -8,8 +8,6 @@ replace (
 	github.com/CycloneDX/cyclonedx-go => github.com/CycloneDX/cyclonedx-go v0.10.0
 	// Should not be updated to 0.2.6 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
 	github.com/c-bata/go-prompt => github.com/c-bata/go-prompt v0.2.5
-	github.com/jfrog/build-info-go => /Users/bhanur/go/src/jfws/build-info-go/.worktrees/task-RTECO-1574/task/RTECO-1574/rteco-1574-implementation-of-nuget-support-for-client // task/RTECO-1574 - remove before merge
-	github.com/jfrog/jfrog-cli-artifactory => /Users/bhanur/go/src/jfws/jfrog-cli-artifactory/.worktrees/task-RTECO-1574/task/RTECO-1574/rteco-1574-implementation-of-nuget-support-for-client // task/RTECO-1574 - remove before merge
 	// Should not be updated to 0.2.0-beta.2 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
 	github.com/pkg/term => github.com/pkg/term v1.1.0
 )
@@ -251,3 +249,7 @@ require (
 // replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260604085947-7c110b77b4b4
 
 //replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.54.2-0.20251007084958-5eeaa42c31a6
+
+replace github.com/jfrog/build-info-go => github.com/bhanurp/build-info-go v1.10.10-0.20260729175019-12ca2bdfff04
+
+replace github.com/jfrog/jfrog-cli-artifactory => github.com/bhanurp/jfrog-cli-artifactory v0.1.12-0.20260729175419-4c07eea6deff
