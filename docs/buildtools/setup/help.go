@@ -9,7 +9,8 @@ var Usage = []string{"setup [command options]",
 	"setup <package manager> [command options]"}
 
 func GetDescription() string {
-	return "An interactive command to configure your local package manager (e.g., npm, pip) to work with JFrog Artifactory."
+	return "An interactive command to configure your local package manager (e.g., npm, pip) to work with JFrog Artifactory. " +
+		"Settings are written to your user-level package manager configuration, so they apply to every project you build as this user, not only the current directory."
 }
 
 func GetArguments() string {
