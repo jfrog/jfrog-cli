@@ -16,3 +16,27 @@ func GetArguments() string {
 	return `	package manager
 		The package manager to configure. Supported package managers are: ` + strings.Join(setup.GetSupportedPackageManagersList(), ", ") + "."
 }
+
+func GetAIDescription() string {
+	return `Interactively (or non-interactively, via flags) configure a local package manager (` + strings.Join(setup.GetSupportedPackageManagersList(), ", ") + `) to resolve and/or publish through JFrog Artifactory. This is the fastest way to point an existing project at Artifactory without hand-editing the tool's native config files.
+
+When to use:
+- One-time setup of a package manager on a developer machine or CI runner to work against Artifactory.
+- Switching an already-configured package manager to a different repository or server.
+
+Prerequisites:
+- A configured server (jf c add or jf login), or pass --url/--user/--password/--access-token directly.
+- The Artifactory repository name for the package manager (a virtual repo where supported).
+
+Common patterns:
+  $ jf setup npm
+  $ jf setup go --repo=go-remote
+  $ jf setup docker --server-id=my-server
+
+Gotchas:
+- Without --repo, the command prompts for repository selection, so it is interactive by default; pass --repo for non-interactive/CI use.
+- Configuration is applied globally to the package manager's native config (e.g., ~/.npmrc, NuGet.Config), affecting all projects on the machine, not just the current one.
+- docker/podman authenticate directly against the registry and skip the repository prompt entirely (no --repo needed); helm still goes through repository selection like the other package managers even though its login step doesn't end up using the repo name.
+
+Related: jf npm-config, jf go-config, jf pip-config, jf c add`
+}
