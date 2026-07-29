@@ -54,5 +54,5 @@ Gotchas:
 - A request body property that is itself a nested object is reported by its type name (e.g. "PermissionResource") or "object" rather than being recursively flattened -- only top-level fields are listed.
 - Results are capped at --limit (default 10). Check "truncated"/"total_matches" in the JSON body if you need to know whether more results exist -- the truncation warning goes to stderr, which you may not be capturing.
 
-Related: jf api, jf api --ai-help`
+Related: jf api docs describe, jf api, jf api --ai-help`
 }
