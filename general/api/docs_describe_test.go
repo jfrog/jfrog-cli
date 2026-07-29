@@ -43,7 +43,7 @@ func newDescribeApp(stdOut *bytes.Buffer, capturedErr *error) *cli.App {
 }
 
 func TestRunDescribeCmd_KnownGetOperation(t *testing.T) {
-	result, _ := runDescribeJSON(t, "GET", "/access/api/v2/users")
+	result := runDescribeJSON(t, "GET", "/access/api/v2/users")
 	assert.Equal(t, "GET", result["method"])
 	assert.Equal(t, "/access/api/v2/users", result["path"])
 	assert.Equal(t, "stub", result["spec_bundle"])
@@ -54,12 +54,14 @@ func TestRunDescribeCmd_KnownGetOperation(t *testing.T) {
 }
 
 func TestRunDescribeCmd_KnownPostOperation(t *testing.T) {
-	result, _ := runDescribeJSON(t, "POST", "/access/api/v2/users")
+	result := runDescribeJSON(t, "POST", "/access/api/v2/users")
 	assert.Equal(t, "POST", result["method"])
 
 	requestBody, ok := result["request_body"].(map[string]any)
 	require.True(t, ok, "createUser should carry a request_body")
-	assert.True(t, requestBody["required"].(bool))
+	required, ok := requestBody["required"].(bool)
+	require.True(t, ok)
+	assert.True(t, required)
 	properties, ok := requestBody["properties"].([]any)
 	require.True(t, ok)
 	assert.NotEmpty(t, properties)
@@ -71,12 +73,12 @@ func TestRunDescribeCmd_KnownPostOperation(t *testing.T) {
 }
 
 func TestRunDescribeCmd_CaseInsensitiveMethod(t *testing.T) {
-	result, _ := runDescribeJSON(t, "get", "/access/api/v2/users")
+	result := runDescribeJSON(t, "get", "/access/api/v2/users")
 	assert.Equal(t, "GET", result["method"])
 }
 
 func TestRunDescribeCmd_PathWithoutLeadingSlashNormalizes(t *testing.T) {
-	result, _ := runDescribeJSON(t, "GET", "access/api/v2/users")
+	result := runDescribeJSON(t, "GET", "access/api/v2/users")
 	assert.Equal(t, "/access/api/v2/users", result["path"])
 }
 
@@ -150,7 +152,7 @@ func TestSearchThenDescribe_EndToEnd(t *testing.T) {
 	require.NotEmpty(t, matches)
 	top := matches[0]
 
-	result, _ := runDescribeJSON(t, top.Method, top.Path)
+	result := runDescribeJSON(t, top.Method, top.Path)
 	assert.Equal(t, top.Method, result["method"])
 	assert.Equal(t, top.Path, result["path"])
 	assert.Equal(t, top.JfApi, result["jf_api"])
@@ -158,8 +160,10 @@ func TestSearchThenDescribe_EndToEnd(t *testing.T) {
 
 // runDescribeJSON runs the describe app with JSON output (the default) and
 // returns the parsed result body -- same technique as runSearchJSON in
-// docs_search_test.go.
-func runDescribeJSON(t *testing.T, method, path string) (result map[string]any, logged string) {
+// docs_search_test.go. The logger's Info/Warn channel is routed to a separate
+// buffer from its Output channel so stray log lines can't corrupt the JSON
+// body being unmarshaled here.
+func runDescribeJSON(t *testing.T, method, path string) map[string]any {
 	t.Helper()
 	var jsonOut, logOut bytes.Buffer
 	logger := clientlog.NewLoggerWithFlags(clientlog.INFO, &logOut, 0)
@@ -175,6 +179,7 @@ func runDescribeJSON(t *testing.T, method, path string) (result map[string]any, 
 	require.NoError(t, app.Run([]string{"cmd", method, path}))
 	require.NoError(t, runErr)
 
+	var result map[string]any
 	require.NoError(t, json.Unmarshal(jsonOut.Bytes(), &result), "output should be parseable JSON")
-	return result, logOut.String()
+	return result
 }
