@@ -318,10 +318,10 @@ func TestPrintTransferFilesResponse_Table(t *testing.T) {
 
 func TestPrintTransferFilesResponse_Table_FailureStatus(t *testing.T) {
 	result := transferfilescore.TransferFilesResult{
-		TotalRepositories:    2,
-		TotalFiles:           100,
-		TransferredFiles:     50,
-		TransferFailures:     50,
+		TotalRepositories: 2,
+		TotalFiles:        100,
+		TransferredFiles:  50,
+		TransferFailures:  50,
 	}
 	var buf bytes.Buffer
 	originalErr := assert.AnError

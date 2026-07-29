@@ -103,7 +103,23 @@ func copyApmFixture(t *testing.T, fixtureName string) string {
 	src := agentApmFixtureSrc(fixtureName)
 	dst, cleanup := coretests.CreateTempDirWithCallbackAndAssert(t)
 	t.Cleanup(cleanup)
-	require.NoError(t, biutils.CopyDir(src, dst, true, nil))
+
+	// CopyDir copies contents of src into dst, so we need to copy the children,
+	// not the directory itself. Read the source directory and copy each item.
+	entries, err := os.ReadDir(src)
+	require.NoError(t, err, "failed to read fixture source: %s", src)
+	for _, entry := range entries {
+		srcItem := filepath.Join(src, entry.Name())
+		dstItem := filepath.Join(dst, entry.Name())
+		if entry.IsDir() {
+			require.NoError(t, biutils.CopyDir(srcItem, dstItem, true, nil))
+		} else {
+			data, err := os.ReadFile(srcItem) // #nosec G304 -- test fixture
+			require.NoError(t, err)
+			require.NoError(t, os.WriteFile(dstItem, data, 0644)) // #nosec G306 -- test fixture
+		}
+	}
+
 	injectApmRegistry(t, dst)
 	return dst
 }
@@ -127,6 +143,14 @@ func injectApmRegistry(t *testing.T, projectDir string) {
 			"url": registryURL,
 		},
 		"default": tests.AgentApmLocalRepo,
+	}
+
+	// Inject unique version suffix to avoid immutability conflicts when tests run in parallel or repeated.
+	// Extract test name and use it as part of the version prerelease (e.g., 1.0.0-TestName).
+	if version, ok := doc["version"].(string); ok {
+		testName := strings.TrimPrefix(t.Name(), "main.")
+		uniqueVersion := fmt.Sprintf("%s-%s", version, testName)
+		doc["version"] = uniqueVersion
 	}
 
 	// Rewrite fixture deps that still reference the demo owner "uday/" to the test owner.
@@ -163,14 +187,26 @@ func assertApmPackageExists(t *testing.T, owner, name, version string) {
 	require.NoError(t, err, "APM package should exist at %s", path)
 }
 
-func publishApmFixture(t *testing.T, fixtureName, packageName, version string, extraArgs ...string) string {
+func publishApmFixture(t *testing.T, fixtureName, packageName, version string, extraArgs ...string) (string, string) {
 	t.Helper()
 	dir := copyApmFixture(t, fixtureName)
+
+	// Read the injected apm.yml to get the actual version (includes test-name suffix)
+	manifestPath := filepath.Join(dir, "apm.yml")
+	data, err := os.ReadFile(manifestPath) // #nosec G304 -- test fixture path
+	require.NoError(t, err)
+	var doc map[string]any
+	require.NoError(t, yaml.Unmarshal(data, &doc))
+	actualVersion, ok := doc["version"].(string)
+	if !ok {
+		actualVersion = version
+	}
+
 	args := append([]string{packageRef(packageName)}, extraArgs...)
 	require.NoError(t, runAgentApmCmd(t, dir, append([]string{"publish"}, args...)...),
-		"publish %s@%s", packageName, version)
-	assertApmPackageExists(t, apmTestOwner, packageName, version)
-	return dir
+		"publish %s@%s", packageName, actualVersion)
+	assertApmPackageExists(t, apmTestOwner, packageName, actualVersion)
+	return dir, actualVersion
 }
 
 // ---------------------------------------------------------------------------
@@ -203,7 +239,7 @@ func TestAgentApmInstallUsesManifestRegistry(t *testing.T) {
 	defer cleanAgentApmTest()
 	runSetupAgentApm(t)
 
-	publishApmFixture(t, "pkg-base-v2", "pkg-base", "1.1.0")
+	_, _ = publishApmFixture(t, "pkg-base-v2", "pkg-base", "1.1.0")
 
 	consumerDir := copyApmFixture(t, "pkg-consumer")
 	require.NoError(t, runAgentApmCmd(t, consumerDir, "install", "--yes"))
@@ -221,7 +257,7 @@ func TestAgentApmPublish(t *testing.T) {
 	defer cleanAgentApmTest()
 	runSetupAgentApm(t)
 
-	publishApmFixture(t, "pkg-base", "pkg-base", "1.0.0")
+	_, _ = publishApmFixture(t, "pkg-base", "pkg-base", "1.0.0")
 }
 
 // TestAgentApmPublishWithBuildInfo captures build-info on publish and publishes it (#3,#5,#6,#12).
@@ -324,7 +360,19 @@ func TestAgentApmBuildPropertiesOnArtifact(t *testing.T) {
 
 	sm, err := artUtils.CreateServiceManager(serverDetails, -1, 0, false)
 	require.NoError(t, err)
-	props, err := sm.GetItemProps(apmArtifactPath(tests.AgentApmLocalRepo, apmTestOwner, "pkg-base", "1.0.0"))
+
+	// Read the actual version from apm.yml (which includes test-name suffix)
+	manifestPath := filepath.Join(dir, "apm.yml")
+	data, err := os.ReadFile(manifestPath) // #nosec G304 -- test fixture path
+	require.NoError(t, err)
+	var doc map[string]any
+	require.NoError(t, yaml.Unmarshal(data, &doc))
+	actualVersion, ok := doc["version"].(string)
+	if !ok {
+		actualVersion = "1.0.0"
+	}
+
+	props, err := sm.GetItemProps(apmArtifactPath(tests.AgentApmLocalRepo, apmTestOwner, "pkg-base", actualVersion))
 	require.NoError(t, err)
 	require.NotNil(t, props)
 	assert.Contains(t, props.Properties, "build.name")
@@ -360,9 +408,9 @@ func TestAgentApmChecksumStoredByArtifactory(t *testing.T) {
 	defer cleanAgentApmTest()
 	runSetupAgentApm(t)
 
-	publishApmFixture(t, "pkg-base", "pkg-base", "1.0.0")
+	_, publishedVersion := publishApmFixture(t, "pkg-base", "pkg-base", "1.0.0")
 
-	path := apmArtifactPath(tests.AgentApmLocalRepo, apmTestOwner, "pkg-base", "1.0.0")
+	path := apmArtifactPath(tests.AgentApmLocalRepo, apmTestOwner, "pkg-base", publishedVersion)
 	searchSpec := spec.NewBuilder().Pattern(path).BuildSpec()
 	searchCmd := generic.NewSearchCommand()
 	searchCmd.SetServerDetails(serverDetails).SetSpec(searchSpec)
@@ -384,7 +432,7 @@ func TestAgentApmInstallWithBuildInfo(t *testing.T) {
 	defer cleanAgentApmTest()
 	runSetupAgentApm(t)
 
-	publishApmFixture(t, "pkg-base-v2", "pkg-base", "1.1.0")
+	_, _ = publishApmFixture(t, "pkg-base-v2", "pkg-base", "1.1.0")
 
 	buildNumber := t.Name()
 	t.Cleanup(func() { _ = coreBuild.RemoveBuildDir(tests.AgentApmBuildName, buildNumber, "") })
@@ -516,7 +564,7 @@ func TestAgentApmPassthroughLock(t *testing.T) {
 	defer cleanAgentApmTest()
 	runSetupAgentApm(t)
 
-	publishApmFixture(t, "pkg-base-v2", "pkg-base", "1.1.0")
+	_, _ = publishApmFixture(t, "pkg-base-v2", "pkg-base", "1.1.0")
 	consumerDir := copyApmFixture(t, "pkg-consumer")
 	require.NoError(t, runAgentApmCmd(t, consumerDir, "install", "--yes"))
 
@@ -539,7 +587,7 @@ func TestAgentApmRoundTrip(t *testing.T) {
 	defer cleanAgentApmTest()
 	runSetupAgentApm(t)
 
-	publishApmFixture(t, "pkg-base-v2", "pkg-base", "1.1.0")
+	_, _ = publishApmFixture(t, "pkg-base-v2", "pkg-base", "1.1.0")
 	consumerDir := copyApmFixture(t, "pkg-consumer")
 	require.NoError(t, runAgentApmCmd(t, consumerDir, "install", "--yes"))
 
@@ -605,7 +653,7 @@ func TestAgentApmWithProxy(t *testing.T) {
 		t.Skip("HTTPS_PROXY/HTTP_PROXY not set")
 	}
 	runSetupAgentApm(t)
-	publishApmFixture(t, "pkg-base", "pkg-base", "1.0.0")
+	_, _ = publishApmFixture(t, "pkg-base", "pkg-base", "1.0.0")
 }
 
 func TestAgentApmNoProxy(t *testing.T) {
@@ -616,7 +664,7 @@ func TestAgentApmNoProxy(t *testing.T) {
 	}
 	t.Setenv("NO_PROXY", "*")
 	runSetupAgentApm(t)
-	publishApmFixture(t, "pkg-base", "pkg-base", "1.0.0")
+	_, _ = publishApmFixture(t, "pkg-base", "pkg-base", "1.0.0")
 }
 
 // TestAgentApmCoverageSummary documents plan coverage (scenarios from APM_TEST_PLAN_FINAL.md).

@@ -13,10 +13,10 @@ import (
 
 	"github.com/jfrog/jfrog-client-go/auth/cert"
 
+	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	coreformat "github.com/jfrog/jfrog-cli-core/v2/common/format"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
-	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/docs/config/add"

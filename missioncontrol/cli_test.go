@@ -120,4 +120,3 @@ func TestPrintLicenseAcquireResponse_UnsupportedFormat(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "unsupported format")
 }
-

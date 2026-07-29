@@ -8,11 +8,11 @@ import (
 	"os"
 	"text/tabwriter"
 
+	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	coreformat "github.com/jfrog/jfrog-cli-core/v2/common/format"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	pipelines "github.com/jfrog/jfrog-cli-core/v2/pipelines/commands"
-	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/docs/common"
@@ -22,10 +22,10 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/pipelines/trigger"
 	"github.com/jfrog/jfrog-cli/docs/pipelines/version"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
-	clientUtils "github.com/jfrog/jfrog-client-go/utils"
-	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
 	plservices "github.com/jfrog/jfrog-client-go/pipelines/services"
+	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
 )
 
