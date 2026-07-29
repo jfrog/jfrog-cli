@@ -9,8 +9,12 @@ var Usage = []string{"setup [command options]",
 	"setup <package manager> [command options]"}
 
 func GetDescription() string {
+	// Kept to roughly the length of the longest existing command description: this string
+	// is printed unwrapped on a single line in the `jf --help` command list. The
+	// consequences of re-running the command live in GetAIDescription, which is rendered
+	// as a multi-line block where length is not a constraint.
 	return "An interactive command to configure your local package manager (e.g., npm, pip) to work with JFrog Artifactory. " +
-		"Settings are written to your user-level package manager configuration, so they apply to every project you build as this user, not only the current directory."
+		"Settings persist in your user-level package manager configuration until you change them, and apply to every project you build as this user."
 }
 
 func GetArguments() string {
@@ -37,6 +41,7 @@ Common patterns:
 Gotchas:
 - Without --repo, the command prompts for repository selection, so it is interactive by default; pass --repo for non-interactive/CI use.
 - Configuration is applied globally to the package manager's native config (e.g., ~/.npmrc, NuGet.Config), affecting all projects on the machine, not just the current one.
+- The change persists until it is changed again, and re-running for the same package manager replaces the previous repository and server rather than adding to them. A machine already pointed at one Artifactory will silently start resolving from the new one, so if the user works across several instances or projects, confirm which repository they want before running this.
 - docker/podman authenticate directly against the registry and skip the repository prompt entirely (no --repo needed); helm still goes through repository selection like the other package managers even though its login step doesn't end up using the repo name.
 
 Related: jf npm-config, jf go-config, jf pip-config, jf c add`
