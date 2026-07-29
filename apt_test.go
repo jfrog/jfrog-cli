@@ -209,7 +209,10 @@ func TestAptSetup_TrustedFlag(t *testing.T) {
 // sibling install tests. No server GPG signing key is set, so the instance is
 // otherwise untouched. A remote-backed repo cannot be used here: Artifactory
 // proxies the upstream (Ubuntu/Debian) InRelease signature unchanged, so the
-// imported key never matches it (apt fails NO_PUBKEY for the upstream key).
+// imported key never matches it (apt fails NO_PUBKEY for the upstream key) —
+// this holds even when the remote is wrapped in a virtual, which passes the
+// upstream signature through. See TestAptInstall_PersistentConfigVirtualRemote,
+// which covers the virtual+remote (no local) path with --trusted instead.
 func TestAptSetup_ImportKey(t *testing.T) {
 	initAptTest(t)
 	requireRoot(t)
@@ -254,6 +257,81 @@ func TestAptSetup_ImportKey(t *testing.T) {
 	require.NoError(t, err, "apt-get install %s from Artifactory failed: %s", pkg, out)
 	artURL := strings.TrimSuffix(*tests.JfrogUrl+tests.ArtifactoryEndpoint, "/")
 	assertPersistentInstallFromArtifactory(t, pkg, artURL)
+}
+
+// TestAptInstall_PersistentConfigVirtualRemote mirrors the manual repro end to
+// end for the "virtual repo backed only by a remote, no local member" case:
+// persistent `jf setup apt` against that virtual, then a NO-FLAGS `jf apt
+// install` that must detect the persistent config setup just wrote and install a
+// remote-backed package using the embedded credentials.
+//
+// --trusted (not --import-key) is used deliberately: a virtual backed by a
+// remote proxies the upstream (Ubuntu/Debian) InRelease signature unchanged — it
+// does not re-sign with an Artifactory key — so an imported Artifactory key can
+// never verify it (apt fails NO_PUBKEY for the upstream key). --import-key
+// against an Artifactory-signed local repo is covered by TestAptSetup_ImportKey.
+//
+// Steps:
+//   - create a remote proxying the arch-correct upstream and a remote-only virtual;
+//   - `jf setup apt --trusted` — persistent [trusted=yes] source + embedded creds,
+//     verified by the trailing apt-get update (runJfrogCli asserts success);
+//   - `jf apt install <pkg>` with NO --repo/--dist — must log "Using persistent
+//     Artifactory apt configuration" and install the remote-backed package,
+//     sourced from Artifactory (Pin-Priority 1001).
+func TestAptInstall_PersistentConfigVirtualRemote(t *testing.T) {
+	initAptTest(t)
+	requireRoot(t)
+	defer cleanAptTest(t)
+
+	dist := testDist()
+	const component = "main"
+	// ed: small, in main on every Ubuntu/Debian dist, not pre-installed, and
+	// depends only on libc6 with no exact-version pin (no downgrade conflicts).
+	const pkg = "ed"
+
+	// Short, self-contained repo keys — Artifactory caps repo names at 58 chars,
+	// so do NOT derive from the already-timestamped global repo vars. dist keeps
+	// concurrent matrix containers from colliding; the hex tail adds uniqueness.
+	uniq := fmt.Sprintf("%x", time.Now().UnixNano()&0xffffff)
+	remoteRepo := fmt.Sprintf("cli-apt-pcvr-%s-r-%s", dist, uniq)
+	virtualRepo := fmt.Sprintf("cli-apt-pcvr-%s-v-%s", dist, uniq)
+
+	upstreamURL, arch := aptRemoteUpstream(t, dist)
+	createRemoteDebianRepo(t, remoteRepo, upstreamURL, arch)
+	defer deleteRepo(remoteRepo)
+
+	createVirtualDebianRepo(t, virtualRepo, remoteRepo)
+	defer deleteRepo(virtualRepo) // registered last → deleted first (before its remote member)
+
+	// Ensure pkg is absent so the install below does real work (a reused container
+	// may already have it). Non-fatal if it isn't installed.
+	if out, err := exec.Command("apt-get", "purge", "-y", pkg).CombinedOutput(); err != nil {
+		t.Logf("pre-test purge of %s failed (continuing): %v\n%s", pkg, err, out)
+	}
+
+	// Persistent setup against the remote-only virtual.
+	runJfrogCli(t, "setup", "apt",
+		"--repo="+virtualRepo,
+		"--dist="+dist,
+		"--component="+component,
+		"--trusted",
+	)
+
+	sourcesFile := sourcesListPath(virtualRepo, dist)
+	require.FileExists(t, sourcesFile)
+	require.FileExists(t, prefPath(virtualRepo, dist))
+	content, err := os.ReadFile(sourcesFile)
+	require.NoError(t, err)
+	assert.Contains(t, string(content), "[trusted=yes]")
+	assert.Contains(t, string(content), virtualRepo)
+
+	// The crux: no --repo / no --dist. Must detect the persistent config written
+	// above and install the remote-backed package via its embedded credentials.
+	runJfrogCli(t, "apt", "install", "-y", pkg)
+
+	_, err = exec.LookPath(pkg)
+	assert.NoError(t, err, "%s must be installed via persistent-config 'jf apt install'", pkg)
+	assertPersistentInstallFromArtifactory(t, pkg, *tests.JfrogUrl)
 }
 
 // TestAptSetup_TrustedAndImportKeyMutuallyExclusive verifies both flags together error.
@@ -784,6 +862,52 @@ func createLocalDebianRepo(t *testing.T, repoName, pairName string) {
 	artURL := strings.TrimSuffix(*tests.JfrogUrl+tests.ArtifactoryEndpoint, "/")
 	body := fmt.Sprintf(`{"key":%q,"rclass":"local","packageType":"debian","repoLayoutRef":"simple-default","primaryKeyPairRef":%q}`, repoName, pairName)
 	doArtRequest(t, http.MethodPut, artURL+"/api/repositories/"+repoName, []byte(body), http.StatusOK)
+}
+
+// createRemoteDebianRepo creates a remote Debian repo proxying upstreamURL, with
+// the runner's architecture added to the indexed architectures so binary-<arch>
+// Packages are served.
+func createRemoteDebianRepo(t *testing.T, repoName, upstreamURL, arch string) {
+	t.Helper()
+	artURL := strings.TrimSuffix(*tests.JfrogUrl+tests.ArtifactoryEndpoint, "/")
+	body := fmt.Sprintf(`{"key":%q,"rclass":"remote","packageType":"debian","url":%q,"debianDefaultArchitectures":%q,"listRemoteFolderItems":true}`,
+		repoName, upstreamURL, arch)
+	doArtRequest(t, http.MethodPut, artURL+"/api/repositories/"+repoName, []byte(body), http.StatusOK)
+}
+
+// createVirtualDebianRepo creates a virtual Debian repo aggregating members.
+// Note: a virtual backed by a remote proxies the upstream (Ubuntu/Debian)
+// InRelease signature unchanged — it does NOT re-sign with an Artifactory key —
+// so callers verifying via --import-key won't work here; use --trusted.
+func createVirtualDebianRepo(t *testing.T, repoName string, members ...string) {
+	t.Helper()
+	artURL := strings.TrimSuffix(*tests.JfrogUrl+tests.ArtifactoryEndpoint, "/")
+	membersJSON, err := json.Marshal(members)
+	require.NoError(t, err)
+	body := fmt.Sprintf(`{"key":%q,"rclass":"virtual","packageType":"debian","repositories":%s,"debianDefaultArchitectures":"amd64,arm64"}`,
+		repoName, membersJSON)
+	doArtRequest(t, http.MethodPut, artURL+"/api/repositories/"+repoName, []byte(body), http.StatusOK)
+}
+
+// aptRemoteUpstream returns an upstream apt mirror URL + the runner architecture
+// appropriate for dist. Ubuntu dists use archive.ubuntu.com on amd64/i386 and
+// ports.ubuntu.com/ubuntu-ports on other arches (arm64 etc.); Debian dists use
+// deb.debian.org, which serves every architecture from one URL.
+func aptRemoteUpstream(t *testing.T, dist string) (upstreamURL, arch string) {
+	t.Helper()
+	archOut, err := exec.Command("dpkg", "--print-architecture").Output()
+	require.NoError(t, err, "dpkg --print-architecture failed")
+	arch = strings.TrimSpace(string(archOut))
+
+	switch dist {
+	case "bookworm", "bullseye", "trixie", "buster", "sid":
+		return "http://deb.debian.org/debian", arch
+	default: // ubuntu codenames
+		if arch == "amd64" || arch == "i386" {
+			return "http://archive.ubuntu.com/ubuntu", arch
+		}
+		return "http://ports.ubuntu.com/ubuntu-ports", arch
+	}
 }
 
 // buildAndUploadTestDeb builds a minimal .deb for the current runner's
