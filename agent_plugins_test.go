@@ -22,6 +22,7 @@ import (
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli-evidence/evidence/cryptox"
 	"github.com/jfrog/jfrog-cli-evidence/evidence/generate"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -1048,15 +1049,33 @@ func TestAgentPluginsInstallMarketplace(t *testing.T) {
 	for _, tc := range agentPluginHarnessCases() {
 		t.Run(tc.name, func(t *testing.T) {
 			homeDir := setIsolatedHome(t)
-			require.NoError(t, runAgentPluginsCmd(t,
-				"install", slug,
-				"--repo="+tests.AgentPluginsLocalRepo,
-				"--harness="+harnessFlag(tc.harnesses),
-				"--global",
-			), "install without --version should resolve through the generated marketplace")
+			require.NoError(t, installViaMarketplaceWithRetry(t, slug, harnessFlag(tc.harnesses)),
+				"install without --version should resolve through the generated marketplace")
 			assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug)
 		})
 	}
+}
+
+// installViaMarketplaceWithRetry retries `install` without --version to accommodate Artifactory
+// generating the per-harness marketplace.json index asynchronously after publish. Mirrors the same
+// wait-for-async-indexing pattern used for terraform's module.json in verifyModuleInArtifactoryWithRetry.
+func installViaMarketplaceWithRetry(t *testing.T, slug, harnesses string) error {
+	t.Helper()
+	retryExecutor := &clientutils.RetryExecutor{
+		MaxRetries:               5,
+		RetriesIntervalMilliSecs: 3000,
+		ErrorMessage:             "Waiting for Artifactory to generate the harness marketplace.json index...",
+		ExecutionHandler: func() (shouldRetry bool, err error) {
+			err = runAgentPluginsCmd(t,
+				"install", slug,
+				"--repo="+tests.AgentPluginsLocalRepo,
+				"--harness="+harnesses,
+				"--global",
+			)
+			return err != nil, err
+		},
+	}
+	return retryExecutor.Execute()
 }
 
 // TestAgentPluginsInstallAgentConfigOverride verifies that a custom agent entry
@@ -2533,10 +2552,13 @@ func TestAgentPluginsRoundTrip(t *testing.T) {
 	require.FileExists(t, installedManifest, "plugin.json should exist after install")
 	data, err := os.ReadFile(installedManifest) // #nosec G304 -- path from t.TempDir
 	require.NoError(t, err)
-	var manifest map[string]string
+	var manifest struct {
+		Name    string `json:"name"`
+		Version string `json:"version"`
+	}
 	require.NoError(t, json.Unmarshal(data, &manifest))
-	assert.Equal(t, slug, manifest["name"], "installed plugin name should match published slug")
-	assert.Equal(t, version, manifest["version"], "installed plugin version should match published version")
+	assert.Equal(t, slug, manifest.Name, "installed plugin name should match published slug")
+	assert.Equal(t, version, manifest.Version, "installed plugin version should match published version")
 }
 
 // TestAgentPluginsRoundTripWithUpdate extends the basic round-trip by also
@@ -2837,13 +2859,8 @@ func assertMarketplaceContainsPlugin(t *testing.T, harness, slug, version string
 	t.Helper()
 	fileName := harness + "-marketplace.json"
 	downloadDir := t.TempDir()
-	require.NoError(t, artifactoryCli.Exec(
-		"dl",
-		tests.AgentPluginsLocalRepo+"/"+fileName,
-		downloadDir+"/",
-		"--flat=true",
-		"--fail-no-op=true",
-	), "%s should be generated after publishing %s", fileName, slug)
+	require.NoError(t, downloadMarketplaceJSONWithRetry(fileName, downloadDir),
+		"%s should be generated after publishing %s", fileName, slug)
 
 	data, err := os.ReadFile(filepath.Join(downloadDir, fileName)) // #nosec G304 -- path is under t.TempDir
 	require.NoError(t, err)
@@ -2861,6 +2878,28 @@ func assertMarketplaceContainsPlugin(t *testing.T, harness, slug, version string
 		}
 	}
 	t.Fatalf("%s does not contain published plugin %q", fileName, slug)
+}
+
+// downloadMarketplaceJSONWithRetry retries downloading a harness marketplace.json to accommodate a
+// race between Artifactory finalizing a shared index file's content and its checksum metadata when
+// the same repo path is rewritten by several rapid, back-to-back publishes.
+func downloadMarketplaceJSONWithRetry(fileName, downloadDir string) error {
+	retryExecutor := &clientutils.RetryExecutor{
+		MaxRetries:               5,
+		RetriesIntervalMilliSecs: 3000,
+		ErrorMessage:             "Waiting for Artifactory to settle " + fileName + "'s checksum after a rapid rewrite...",
+		ExecutionHandler: func() (shouldRetry bool, err error) {
+			err = artifactoryCli.Exec(
+				"dl",
+				tests.AgentPluginsLocalRepo+"/"+fileName,
+				downloadDir+"/",
+				"--flat=true",
+				"--fail-no-op=true",
+			)
+			return err != nil, err
+		},
+	}
+	return retryExecutor.Execute()
 }
 
 func assertListContainsInstalledPlugin(t *testing.T, out string, harnesses []string, slug string) {
