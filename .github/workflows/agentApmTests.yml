@@ -42,8 +42,9 @@ jobs:
         if: matrix.os.name != 'macos'
         uses: jfrog/.github/actions/install-go-with-cache@main
 
+      # install.sh only supports Darwin and Linux, so Windows uses install.ps1.
       - name: Install APM CLI
-        if: matrix.os.name != 'macos'
+        if: matrix.os.name != 'macos' && matrix.os.name != 'windows'
         shell: bash
         run: |
           set -euo pipefail
@@ -53,15 +54,35 @@ jobs:
             echo "$HOME/.local/bin" >> "$GITHUB_PATH"
             echo "$HOME/bin" >> "$GITHUB_PATH"
           fi
-          apm --version
+
+      - name: Install APM CLI on Windows
+        if: matrix.os.name == 'windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $installRoot = Join-Path $env:LOCALAPPDATA 'Programs\apm'
+          $binDir = Join-Path $installRoot 'bin'
+          $env:APM_INSTALL_DIR = $binDir
+          Invoke-RestMethod https://raw.githubusercontent.com/microsoft/apm/main/install.ps1 | Invoke-Expression
+          # The shim lives in bin; apm.exe lives in current. Expose both so
+          # lookups succeed with and without PATHEXT resolution.
+          $binDir | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+          Join-Path $installRoot 'current' | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+
+      # PATH additions only apply to later steps, so verify here.
+      - name: Verify APM CLI
+        if: matrix.os.name != 'macos'
+        shell: bash
+        run: apm --version
 
       - name: Install local Artifactory
         if: matrix.os.name != 'macos'
         uses: jfrog/.github/actions/install-local-artifactory@main
         with:
           RTLIC: ${{ secrets.RTLIC }}
-          # Pin a version that supports agentpackages repositories.
-          VERSION: 7.161.12
+          # No VERSION pin: releases.jfrog.io keeps only a subset of patch
+          # releases, so pinning breaks once that version is pruned. Latest
+          # supports agentpackages repositories.
           RT_CONNECTION_TIMEOUT_SECONDS: ${{ env.RT_CONNECTION_TIMEOUT_SECONDS || '1200' }}
 
       - name: Run agent APM tests
