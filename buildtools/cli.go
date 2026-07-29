@@ -3,8 +3,6 @@ package buildtools
 import (
 	"errors"
 	"fmt"
-	conancommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/conan"
-	nixcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nix"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -12,6 +10,9 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	conancommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/conan"
+	nixcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nix"
 
 	"github.com/BurntSushi/toml"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/container/strategies"
@@ -105,12 +106,11 @@ const (
 func GetCommands() []cli.Command {
 	cmds := cliutils.GetSortedCommands(cli.CommandsByName{
 		{
-			// Currently, the setup command is hidden from the help menu, till it will be released as GA.
-			Hidden:       true,
+			Hidden:       false,
 			Name:         "setup",
 			Flags:        cliutils.GetCommandFlags(cliutils.Setup),
-			Usage:        setupdocs.GetDescription(),
-			HelpName:     corecommon.CreateUsage("setup", setupdocs.GetDescription(), setupdocs.Usage),
+			Usage:        corecommon.ResolveDescription(setupdocs.GetDescription(), setupdocs.GetAIDescription()),
+			HelpName:     corecommon.CreateUsage("setup", corecommon.ResolveDescription(setupdocs.GetDescription(), setupdocs.GetAIDescription()), setupdocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			UsageText:    setupdocs.GetArguments(),
 			BashComplete: corecommon.CreateBashCompletionFunc(setup.GetSupportedPackageManagersList()...),
