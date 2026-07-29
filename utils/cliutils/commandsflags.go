@@ -1957,7 +1957,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	setupRepo: cli.StringFlag{
 		Name:  repo,
-		Usage: "[Optional] Specifies the Artifactory repository name for the selected package manager, replacing the interactive repository selection.` `",
+		Usage: "[Optional] Specifies the Artifactory repository name for the selected package manager, replacing the interactive repository selection. The interactive selection offers virtual repositories of the matching package type, which is normally what this should be set to. Note that gradle matches the gradle package type rather than maven, and pip, pipenv, poetry, twine and uv all match pypi.` `",
 	},
 	PromotionType: cli.StringFlag{
 		Name:  PromotionType,

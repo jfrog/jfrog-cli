@@ -26,6 +26,7 @@ Gotchas:
 - Interactive prompts run by default if required flags are missing.
 - The generated yaml is read by every subsequent 'jf mvn' from the same directory.
 - --global affects all projects on the machine; prefer per-project config for multi-tenant scenarios.
+- This does not configure the maven client itself. It is read only by 'jf maven' commands; a plain 'mvn install' keeps resolving from its own configuration, which this command never touches. To point the client itself at Artifactory for every project on the machine, run 'jf setup maven' instead - the two are independent and can even name different repositories.
 
-Related: jf mvn, jf gradle-config, jf rt build-publish`
+Related: jf mvn, jf gradle-config, jf rt build-publish, jf setup maven`
 }

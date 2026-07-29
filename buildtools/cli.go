@@ -95,7 +95,7 @@ import (
 )
 
 const (
-	buildToolsCategory      = "Package Managers:"
+	buildToolsCategory      = "Package Managers"
 	huggingfaceAPI          = "api/huggingfaceml"
 	HF_ENDPOINT             = "HF_ENDPOINT"
 	HF_TOKEN                = "HF_TOKEN"
