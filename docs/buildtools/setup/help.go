@@ -9,11 +9,7 @@ var Usage = []string{"setup [command options]",
 	"setup <package manager> [command options]"}
 
 func GetDescription() string {
-	// Kept to roughly the length of the longest existing command description: this string
-	// is printed unwrapped on a single line in the `jf --help` command list. The
-	// consequences of re-running the command live in GetAIDescription, which is rendered
-	// as a multi-line block where length is not a constraint.
-	return "An interactive command to configure your local package manager (e.g., npm, pip) to work with JFrog Artifactory. " +
+	return "An interactive command to configure your local package manager (e.g., npm, pip) itself to work with JFrog Artifactory, so its own commands resolve through it. " +
 		"By default, settings persist in your user-level package manager configuration until you change them, and apply to every project you build as this user."
 }
 
@@ -28,6 +24,12 @@ func GetAIDescription() string {
 When to use:
 - One-time setup of a package manager on a developer machine or CI runner to work against Artifactory.
 - Switching an already-configured package manager to a different repository or server.
+
+Not the same command as jf npm-config / jf mvn-config / jf pip-config, which look similar and do something else entirely:
+- jf setup writes the package manager's OWN configuration (~/.npmrc, pip.conf, settings.xml, GOPROXY, the docker credential store, ...), so the native client resolves through Artifactory from then on. A plain 'npm install' or 'mvn install' is affected. Credentials are written into that file and stay there.
+- jf <pm>-config writes .jfrog/projects/<pm>.yaml inside the project, holding a server ID and the resolve/deploy repositories. Only 'jf <pm>' commands read it - a plain 'npm install' is not affected at all - and the routing exists only while that command runs: jf npm swaps in a temporary .npmrc and restores the original, jf pip appends --index-url to the single invocation, jf go sets GOPROXY for the child process. No credentials are stored in the yaml. This is also what enables build-info collection (--build-name / --build-number, published with jf rt build-publish), which jf setup does not do.
+- They are independent. Running one does not configure the other, and each can point at a different repository. Use jf setup to make the client itself work against Artifactory; use jf <pm>-config when you build through 'jf <pm>' and want build-info.
+- Neither covers the same package managers: docker, podman, helm, twine and uv have setup but no -config command; conan, ruby and terraform have a -config command but no setup.
 
 Prerequisites:
 - A configured server (jf c add or jf login), or pass --url/--user/--password/--access-token directly.

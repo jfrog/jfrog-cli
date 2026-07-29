@@ -22,6 +22,7 @@ Common patterns:
 Gotchas:
 - Interactive prompts trigger when required flags are missing.
 - Updates the Poetry sources list in pyproject.toml; review the diff after running.
+- This does not configure the poetry client itself. It is read only by 'jf poetry' commands; a plain 'poetry add' keeps resolving from its own configuration, which this command never touches. To point the client itself at Artifactory for every project on the machine, run 'jf setup poetry' instead - the two are independent and can even name different repositories.
 
-Related: jf poetry, jf pip-config`
+Related: jf poetry, jf pip-config, jf setup poetry`
 }
