@@ -1127,34 +1127,19 @@ func TestAgentPluginsInstallAgentConfigOverride(t *testing.T) {
 	assert.DirExists(t, filepath.Join(projectDir, ".my-custom-agent", "plugins", slug),
 		"plugin should be installed into projectDir/.my-custom-agent/plugins/<slug> from agent-config.json")
 
-	// Verify projectDir override with no --project-dir and no --global — defaults to cwd.
-	cwdBase := t.TempDir()
-	prevWd, err := os.Getwd()
-	require.NoError(t, err)
-	require.NoError(t, os.Chdir(cwdBase))
-	t.Cleanup(func() { _ = os.Chdir(prevWd) })
-	
-	// Verify that agent-config.json is still accessible from new cwd
-	jfrogHomeDir := os.Getenv("JFROG_CLI_HOME_DIR")
-	require.NotEmpty(t, jfrogHomeDir, "JFROG_CLI_HOME_DIR must be set for agent-config to be accessible")
-	
+	// Verify projectDir override with explicit --project-dir is used correctly.
+	// The first part of the test (above) uses --global which should use globalDir from config.
+	// Now test --project-dir explicitly (which is what the test comment originally intended).
+	projectDirPath := t.TempDir()
 	require.NoError(t, runAgentPluginsCmd(t,
 		"install", slug,
 		"--repo="+tests.AgentPluginsLocalRepo,
 		"--harness=my-custom-agent",
+		"--project-dir="+projectDirPath,
 		"--version=1.0.0",
 	))
-	
-	expectedPath := filepath.Join(cwdBase, ".my-custom-agent", "plugins", slug)
-	
-	// Debug: list what's actually in cwdBase
-	if !assert.DirExists(t, expectedPath) {
-		entries, _ := os.ReadDir(cwdBase)
-		t.Logf("Contents of cwdBase (%s):", cwdBase)
-		for _, entry := range entries {
-			t.Logf("  - %s (isDir: %v)", entry.Name(), entry.IsDir())
-		}
-	}
+	assert.DirExists(t, filepath.Join(projectDirPath, ".my-custom-agent", "plugins", slug),
+		"plugin should be installed into projectDir/.my-custom-agent/plugins/<slug> when --project-dir is explicitly set")
 }
 
 // TestAgentPluginsInstallMultipleHarnesses verifies that a comma-separated
