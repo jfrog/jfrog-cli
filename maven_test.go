@@ -145,6 +145,76 @@ func TestMavenBuildWithFlexPackBuildInfo(t *testing.T) {
 	cleanMavenTest(t)
 }
 
+// TestMavenNativeModeWrapperMatrix exercises native (FlexPack) mode's Maven executable
+// resolution across the jf mvn / jf mvnw x with-wrapper / without-wrapper matrix:
+//   - jf mvn,  no wrapper   -> uses PATH mvn (unchanged behavior)
+//   - jf mvn,  with wrapper -> still uses PATH mvn (wrapper usage is opt-in via jf mvnw only)
+//   - jf mvnw, with wrapper -> uses the project's mvnw/mvnw.cmd
+//   - jf mvnw, no wrapper   -> fails, no silent fallback to PATH mvn
+//
+// Unlike the other FlexPack tests in this file, these subtests intentionally do NOT create a
+// .jfrog/projects/maven.yaml config file, since native mode only activates when no such config
+// file exists (see artifactoryutils.ShouldRunNative).
+func TestMavenNativeModeWrapperMatrix(t *testing.T) {
+	initMavenTest(t, false)
+
+	// Check if Maven is available in the environment
+	if _, err := exec.LookPath("mvn"); err != nil {
+		t.Skip("Maven not found in PATH, skipping Maven native mode wrapper matrix test")
+	}
+
+	// Set environment for native FlexPack implementation
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_RUN_NATIVE", "true")
+	defer setEnvCallBack()
+
+	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
+
+	matrix := []struct {
+		name        string
+		fixture     string
+		jfCommand   string
+		expectError bool
+	}{
+		{name: "jf mvn without wrapper", fixture: "mavenproject", jfCommand: "mvn"},
+		{name: "jf mvn with wrapper present", fixture: "mavenproject-with-wrapper", jfCommand: "mvn"},
+		{name: "jf mvnw with wrapper present", fixture: "mavenproject-with-wrapper", jfCommand: "mvnw"},
+		{name: "jf mvnw without wrapper", fixture: "mavenproject", jfCommand: "mvnw", expectError: true},
+	}
+
+	for _, tc := range matrix {
+		t.Run(tc.name, func(t *testing.T) {
+			projDir := createMavenProjectFixtureCopy(t, tc.fixture)
+			oldWd := changeWD(t, projDir)
+			defer clientTestUtils.ChangeDirAndAssert(t, oldWd)
+
+			err := runJfrogCliWithoutAssertion(tc.jfCommand, "clean", "install", "-B", repoLocalSystemProp)
+			if tc.expectError {
+				assert.Error(t, err)
+				return
+			}
+			assert.NoError(t, err)
+		})
+	}
+
+	cleanMavenTest(t)
+}
+
+// createMavenProjectFixtureCopy copies testdata/maven/<fixtureName> into a fresh temp directory
+// and returns its path. Unlike createSimpleMavenProject, it performs a plain directory copy
+// (no template variable substitution), since the wrapper fixture's scripts must stay byte-identical.
+func createMavenProjectFixtureCopy(t *testing.T, fixtureName string) string {
+	srcDir := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "maven", fixtureName)
+	destPath := filepath.Join(t.TempDir(), fixtureName)
+	require.NoError(t, biutils.CopyDir(srcDir, destPath, true, nil))
+	for _, wrapperScript := range []string{"mvnw", "mvnw.cmd"} {
+		scriptPath := filepath.Join(destPath, wrapperScript)
+		if info, err := os.Stat(scriptPath); err == nil {
+			require.NoError(t, os.Chmod(scriptPath, info.Mode()|0111))
+		}
+	}
+	return destPath
+}
+
 func TestMavenFlexPackBuildProperties(t *testing.T) {
 	// Skip this test for FlexPack - it requires proper Maven deployment configuration
 	// The test POM doesn't have <distributionManagement> configured, which is required for 'mvn deploy'

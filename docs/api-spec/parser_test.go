@@ -30,10 +30,36 @@ func TestOperations_Stub(t *testing.T) {
 	assert.Equal(t, []string{"Users"}, getUserList.Tags)
 	assert.Len(t, getUserList.Parameters, 10)
 
+	assert.Nil(t, getUserList.RequestBody, "a GET operation should have no request body")
+
 	createUser, ok := byOperationId["createUser"]
 	require.True(t, ok, "createUser should be present")
 	assert.Equal(t, "POST", createUser.Method)
 	assert.Equal(t, "/access/api/v2/users", createUser.Path)
+
+	require.NotNil(t, createUser.RequestBody, "createUser's requestBody ($ref: UserCreateRequest) should resolve")
+	assert.True(t, createUser.RequestBody.Required)
+	propsByName := make(map[string]Property, len(createUser.RequestBody.Properties))
+	for _, p := range createUser.RequestBody.Properties {
+		propsByName[p.Name] = p
+	}
+	username, ok := propsByName["username"]
+	require.True(t, ok, "username should be a flattened property of UserCreateRequest")
+	assert.Equal(t, "string", username.Type)
+	assert.True(t, username.Required, "username is in UserCreateRequest's required list")
+
+	password, ok := propsByName["password"]
+	require.True(t, ok)
+	assert.False(t, password.Required, "password is not in UserCreateRequest's required list")
+
+	admin, ok := propsByName["admin"]
+	require.True(t, ok)
+	assert.Equal(t, "boolean", admin.Type)
+	assert.Equal(t, "false", admin.Default)
+
+	groups, ok := propsByName["groups"]
+	require.True(t, ok)
+	assert.Equal(t, "array<string>", groups.Type)
 
 	deleteWorker, ok := byOperationId["deleteWorker"]
 	require.True(t, ok, "deleteWorker should be present")

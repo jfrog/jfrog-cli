@@ -3,8 +3,6 @@ package buildtools
 import (
 	"errors"
 	"fmt"
-	conancommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/conan"
-	nixcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nix"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -12,6 +10,9 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	conancommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/conan"
+	nixcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nix"
 
 	"github.com/BurntSushi/toml"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/container/strategies"
@@ -68,6 +69,7 @@ import (
 	huggingfaceuploaddocs "github.com/jfrog/jfrog-cli/docs/buildtools/huggingfaceupload"
 	mvndoc "github.com/jfrog/jfrog-cli/docs/buildtools/mvn"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/mvnconfig"
+	mvnwdoc "github.com/jfrog/jfrog-cli/docs/buildtools/mvnw"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/nix"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npmcommand"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npmconfig"
@@ -93,7 +95,7 @@ import (
 )
 
 const (
-	buildToolsCategory      = "Package Managers:"
+	buildToolsCategory      = "Package Managers"
 	huggingfaceAPI          = "api/huggingfaceml"
 	HF_ENDPOINT             = "HF_ENDPOINT"
 	HF_TOKEN                = "HF_TOKEN"
@@ -104,12 +106,11 @@ const (
 func GetCommands() []cli.Command {
 	cmds := cliutils.GetSortedCommands(cli.CommandsByName{
 		{
-			// Currently, the setup command is hidden from the help menu, till it will be released as GA.
-			Hidden:       true,
+			Hidden:       false,
 			Name:         "setup",
 			Flags:        cliutils.GetCommandFlags(cliutils.Setup),
-			Usage:        setupdocs.GetDescription(),
-			HelpName:     corecommon.CreateUsage("setup", setupdocs.GetDescription(), setupdocs.Usage),
+			Usage:        corecommon.ResolveDescription(setupdocs.GetDescription(), setupdocs.GetAIDescription()),
+			HelpName:     corecommon.CreateUsage("setup", corecommon.ResolveDescription(setupdocs.GetDescription(), setupdocs.GetAIDescription()), setupdocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			UsageText:    setupdocs.GetArguments(),
 			BashComplete: corecommon.CreateBashCompletionFunc(setup.GetSupportedPackageManagersList()...),
@@ -141,6 +142,21 @@ func GetCommands() []cli.Command {
 			Action: func(c *cli.Context) (err error) {
 				cmdName, _ := getCommandName(c.Args())
 				return securityCLI.WrapCmdWithCurationPostFailureRun(c, MvnCmd, techutils.Maven, cmdName)
+			},
+		},
+		{
+			Name:            "mvnw",
+			Flags:           cliutils.GetCommandFlags(cliutils.Mvn),
+			Usage:           corecommon.ResolveDescription(mvnwdoc.GetDescription(), mvnwdoc.GetAIDescription()),
+			HelpName:        corecommon.CreateUsage("mvnw", corecommon.ResolveDescription(mvnwdoc.GetDescription(), mvnwdoc.GetAIDescription()), mvnwdoc.Usage),
+			UsageText:       mvnwdoc.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(mvnwdoc.EnvVar...),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Category:        buildToolsCategory,
+			Action: func(c *cli.Context) (err error) {
+				cmdName, _ := getCommandName(c.Args())
+				return securityCLI.WrapCmdWithCurationPostFailureRun(c, MvnwCmd, techutils.Maven, cmdName)
 			},
 		},
 		{
@@ -664,7 +680,19 @@ func captureUserFlagsForMetrics(c *cli.Context, skipFlagParsing bool) {
 	commands.SetContextFlags(flags)
 }
 
+// MvnCmd runs "jf mvn". In native (FlexPack) mode it always runs "mvn" from PATH.
 func MvnCmd(c *cli.Context) (err error) {
+	return runMvn(c, false)
+}
+
+// MvnwCmd runs "jf mvnw". In native (FlexPack) mode it requires a Maven Wrapper
+// (mvnw/mvnw.cmd) to be present and fails otherwise; in legacy (config-file) mode
+// it behaves exactly like MvnCmd.
+func MvnwCmd(c *cli.Context) (err error) {
+	return runMvn(c, true)
+}
+
+func runMvn(c *cli.Context, preferWrapper bool) (err error) {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
@@ -688,8 +716,12 @@ func MvnCmd(c *cli.Context) (err error) {
 		if err != nil {
 			return err
 		}
-		mvnCmd := mvn.NewMvnCommand().SetConfigPath("").SetGoals(filteredMavenArgs).SetConfiguration(buildConfiguration).SetServerDetails(serverDetails)
+		mvnCmd := mvn.NewMvnCommand().SetConfigPath("").SetGoals(filteredMavenArgs).SetConfiguration(buildConfiguration).SetServerDetails(serverDetails).SetPreferWrapper(preferWrapper)
 		return commands.ExecWithPackageManager(mvnCmd, project.Maven.String())
+	}
+
+	if preferWrapper {
+		log.Warn("jf mvnw's wrapper requirement is not respected in legacy (config-file) mode; falling back to the standard jf mvn behavior, governed by the 'useWrapper' setting in the Maven config.")
 	}
 
 	// If config file is missing and not in native mode, return the standard missing-config error.
