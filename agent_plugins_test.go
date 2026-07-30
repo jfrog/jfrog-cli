@@ -11,6 +11,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	biutils "github.com/jfrog/build-info-go/utils"
 	agentTestutil "github.com/jfrog/jfrog-cli-artifactory/agent/common/testutil"
@@ -22,7 +23,6 @@ import (
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli-evidence/evidence/cryptox"
 	"github.com/jfrog/jfrog-cli-evidence/evidence/generate"
-	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
@@ -457,7 +457,9 @@ func TestAgentPluginsVersionCollisionCI(t *testing.T) {
 		"--repo="+tests.AgentPluginsLocalRepo,
 	)
 	require.Error(t, err, "second publish of the same version in CI mode should fail")
-	assertErrorContainsAll(t, err, "already exists")
+	assertErrorContainsAll(t, err,
+		fmt.Sprintf("version %s of plugin '%s' already exists", version, slug),
+		"Use a different version or remove the existing one")
 }
 
 // TestAgentPluginsPublishWithVersion verifies that --version overrides the
@@ -669,12 +671,37 @@ func TestAgentPluginsPublishInvalidSemver(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
 
-	pluginPath := createMinimalPlugin(t, "semver-plugin", "1.9.e")
-	err := runAgentPluginsCmd(t,
-		"publish", pluginPath,
-		"--repo="+tests.AgentPluginsLocalRepo,
-	)
-	assertErrorContainsAll(t, err, "invalid version", "major.minor.patch")
+	cases := []struct {
+		name        string
+		version     string
+		errContains []string
+	}{
+		{
+			name:        "non-numeric-patch",
+			version:     "1.9.e",
+			errContains: []string{`invalid version "1.9.e"`, `patch must be a number (got "e")`},
+		},
+		{
+			name:        "missing-patch-segment",
+			version:     "1.9",
+			errContains: []string{`invalid version "1.9"`, "expected format major.minor.patch"},
+		},
+		{
+			name:        "non-numeric-major",
+			version:     "x.1.0",
+			errContains: []string{`invalid version "x.1.0"`, `major must be a number (got "x")`},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			pluginPath := createMinimalPlugin(t, "semver-plugin", tc.version)
+			err := runAgentPluginsCmd(t,
+				"publish", pluginPath,
+				"--repo="+tests.AgentPluginsLocalRepo,
+			)
+			assertErrorContainsAll(t, err, tc.errContains...)
+		})
+	}
 }
 
 // TestAgentPluginsPublishInvalidSlug verifies that a manifest whose name field
@@ -1128,8 +1155,7 @@ func TestAgentPluginsInstallMarketplaceSlugNotListed(t *testing.T) {
 	// Ensure at least one marketplace.json exists by publishing a different plugin first.
 	seed := createTestHarnessPlugin(t, "marketplace-seed-plugin", "1.0.0", []string{"cursor"})
 	require.NoError(t, runAgentPluginsCmd(t, "publish", seed, "--repo="+tests.AgentPluginsLocalRepo))
-	require.NoError(t, downloadMarketplaceJSONWithRetry("cursor-marketplace.json", t.TempDir()),
-		"cursor-marketplace.json should exist after publish")
+	assertMarketplaceContainsPlugin(t, "cursor", "marketplace-seed-plugin", "1.0.0")
 
 	_ = setIsolatedHome(t)
 	err := runAgentPluginsCmd(t,
@@ -1150,21 +1176,14 @@ func TestAgentPluginsInstallMarketplaceSlugNotListed(t *testing.T) {
 // wait-for-async-indexing pattern used for terraform's module.json in verifyModuleInArtifactoryWithRetry.
 func installViaMarketplaceWithRetry(t *testing.T, slug, harnesses string) error {
 	t.Helper()
-	retryExecutor := &clientutils.RetryExecutor{
-		MaxRetries:               5,
-		RetriesIntervalMilliSecs: 3000,
-		ErrorMessage:             "Waiting for Artifactory to generate the harness marketplace.json index...",
-		ExecutionHandler: func() (shouldRetry bool, err error) {
-			err = runAgentPluginsCmd(t,
-				"install", slug,
-				"--repo="+tests.AgentPluginsLocalRepo,
-				"--harness="+harnesses,
-				"--global",
-			)
-			return err != nil, err
-		},
-	}
-	return retryExecutor.Execute()
+	return retryWithBackoff(t, "install "+slug+" via the "+harnesses+" marketplace index", func() error {
+		return runAgentPluginsCmd(t,
+			"install", slug,
+			"--repo="+tests.AgentPluginsLocalRepo,
+			"--harness="+harnesses,
+			"--global",
+		)
+	})
 }
 
 // TestAgentPluginsInstallAgentConfigOverride verifies that a custom agent entry
@@ -1215,6 +1234,110 @@ func TestAgentPluginsInstallAgentConfigOverride(t *testing.T) {
 	))
 	assert.DirExists(t, filepath.Join(projectDir, ".my-custom-agent", "plugins", slug),
 		"plugin should be installed into projectDir/.my-custom-agent/plugins/<slug> from agent-config.json")
+}
+
+// TestAgentPluginsCustomAgentLifecycle covers the fifth harness case beyond the four
+// built-in agentPluginHarnessCases (claude, codex, cursor, and all three together):
+// a custom agent registered as "my-agent" in agent-config.json.
+// It runs install → list → list --check-updates → update → list --check-updates in one flow.
+func TestAgentPluginsCustomAgentLifecycle(t *testing.T) {
+	initAgentPluginsTest(t)
+	defer cleanAgentPluginsTest()
+
+	const (
+		agentName  = "my-agent"
+		slug       = "my-agent-lifecycle-plugin"
+		oldVersion = "1.0.0"
+		newVersion = "2.0.0"
+	)
+
+	require.NoError(t, runAgentPluginsCmd(t, "publish", createTestPlugin(t, slug, oldVersion),
+		"--repo="+tests.AgentPluginsLocalRepo))
+	require.NoError(t, runAgentPluginsCmd(t, "publish", createTestPlugin(t, slug, newVersion),
+		"--repo="+tests.AgentPluginsLocalRepo))
+
+	customGlobalDir := t.TempDir()
+	agentTestutil.WriteAgentConfig(t, os.Getenv("JFROG_CLI_HOME_DIR"), `{
+		"plugins-agents": {
+			"my-agent": {
+				"globalDir": "`+filepath.ToSlash(customGlobalDir)+`",
+				"projectDir": ".my-agent/plugins"
+			}
+		}
+	}`)
+
+	harnesses := []string{agentName}
+
+	// 1. Install v1 into the custom agent's globalDir.
+	require.NoError(t, runAgentPluginsCmd(t,
+		"install", slug,
+		"--repo="+tests.AgentPluginsLocalRepo,
+		"--harness="+agentName,
+		"--global",
+		"--version="+oldVersion,
+	))
+	assertCustomAgentPluginInstalled(t, customGlobalDir, agentName, slug, oldVersion)
+
+	// 2. List installed plugins for my-agent.
+	listOut, err := runAgentPluginsCmdWithOutput(t,
+		"list",
+		"--harness="+agentName,
+		"--global",
+		"--format=json",
+	)
+	require.NoError(t, err, "list --harness=my-agent should succeed after install")
+	assertListContainsInstalledPlugin(t, listOut, harnesses, slug, oldVersion)
+
+	// 3. list --check-updates should report behind while v2 is available.
+	checkOut, err := runAgentPluginsCmdWithOutput(t,
+		"list",
+		"--harness="+agentName,
+		"--global",
+		"--check-updates",
+		"--format=json",
+	)
+	require.NoError(t, err, "list --check-updates --harness=my-agent should succeed")
+	assertListContainsPluginStatus(t, checkOut, harnesses, slug, "behind", newVersion)
+
+	// 4. Update should upgrade to v2.
+	require.NoError(t, runAgentPluginsCmd(t,
+		"update",
+		"--slug="+slug,
+		"--harness="+agentName,
+		"--global",
+		"--repo="+tests.AgentPluginsLocalRepo,
+	), "update --harness=my-agent should upgrade to latest")
+	assertCustomAgentPluginInstalled(t, customGlobalDir, agentName, slug, newVersion)
+
+	// 5. list --check-updates should now report current.
+	checkOut, err = runAgentPluginsCmdWithOutput(t,
+		"list",
+		"--harness="+agentName,
+		"--global",
+		"--check-updates",
+		"--format=json",
+	)
+	require.NoError(t, err, "list --check-updates after update should succeed")
+	assertListContainsPluginStatus(t, checkOut, harnesses, slug, "current", "")
+	assertListContainsInstalledPlugin(t, checkOut, harnesses, slug, newVersion)
+}
+
+// assertCustomAgentPluginInstalled checks install dir + plugin-info.json for a
+// custom agent whose globalDir comes from agent-config.json (not a built-in layout).
+func assertCustomAgentPluginInstalled(t *testing.T, globalDir, agentName, slug, version string) {
+	t.Helper()
+	pluginDir := filepath.Join(globalDir, slug)
+	assert.DirExists(t, pluginDir, "plugin %q should be installed under custom agent globalDir", slug)
+	manifestPath := filepath.Join(pluginDir, ".jfrog", "plugin-info.json")
+	require.FileExists(t, manifestPath)
+	data, err := os.ReadFile(manifestPath) // #nosec G304 -- path under t.TempDir
+	require.NoError(t, err)
+	var manifest map[string]any
+	require.NoError(t, json.Unmarshal(data, &manifest))
+	assert.Equal(t, version, manifest["installedVersion"])
+	assert.Equal(t, slug, manifest["slug"])
+	assert.Equal(t, agentName, manifest["agent"])
+	assert.Equal(t, tests.AgentPluginsLocalRepo, manifest["repo"])
 }
 
 // TestAgentPluginsInstallMissingSlugArg verifies that omitting the required
@@ -1873,7 +1996,7 @@ func TestAgentPluginsUpdateFlags(t *testing.T) {
 			name:        "plugin-not-installed",
 			args:        []string{"update", "--slug=notinstalled-xyz-abc", "--repo=" + tests.AgentPluginsLocalRepo, "--path=" + projectDir},
 			expectError: true,
-			errContains: []string{"update failed for all targets (see summary above)"},
+			errContains: []string{"plugin 'notinstalled-xyz-abc' not found in repository"},
 			description: "update of a plugin that was never installed should fail",
 		},
 		{
@@ -2685,17 +2808,20 @@ func TestAgentPluginsSearchNoMatches(t *testing.T) {
 	defer cleanAgentPluginsTest()
 
 	query := "nonexistent-plugin-xyzzy-abc123"
-	logBuf, _, prev := coretests.RedirectLogOutputToBuffer()
-	t.Cleanup(func() { log.SetLogger(prev) })
+	searchArgs := []string{"search", query, "--repo=" + tests.AgentPluginsLocalRepo, "--format=json"}
 
-	out, err := runAgentPluginsCmdWithOutput(t,
-		"search", query,
-		"--repo="+tests.AgentPluginsLocalRepo,
-		"--format=json",
-	)
+	out, err := runAgentPluginsCmdWithOutput(t, searchArgs...)
 	require.NoError(t, err, "search with no matches should return empty result, not an error")
 	assert.Empty(t, strings.TrimSpace(out),
 		"no-match search should not print JSON rows, got: %q", out)
+
+	// PrintSearchResults reports the no-match case through log.Info, so it lands on the
+	// logs writer rather than stdout. This needs a second run with a plain Exec:
+	// RunCliCmdWithOutputs installs its own logger writing to the real stderr, which
+	// would discard the buffer redirect.
+	_, logBuf, previousLog := coretests.RedirectLogOutputToBuffer()
+	t.Cleanup(func() { log.SetLogger(previousLog) })
+	require.NoError(t, runAgentPluginsCmd(t, searchArgs...))
 	assert.Contains(t, logBuf.String(), fmt.Sprintf("No plugins found matching '%s'.", query))
 }
 
@@ -3266,51 +3392,96 @@ func TestAgentPluginsPublishMultiHarnessMarketplaceIndexing(t *testing.T) {
 	}
 }
 
+// assertMarketplaceContainsPlugin waits until <harness>-marketplace.json lists slug at version.
+// Both the file's creation and its later rewrites are asynchronous on the Artifactory side, so a
+// missing file and a stale file that predates this publish are equally expected early on and are
+// retried rather than failed.
 func assertMarketplaceContainsPlugin(t *testing.T, harness, slug, version string) {
 	t.Helper()
-	fileName := harness + "-marketplace.json"
-	downloadDir := t.TempDir()
-	require.NoError(t, downloadMarketplaceJSONWithRetry(fileName, downloadDir),
-		"%s should be generated after publishing %s", fileName, slug)
+	fileName := plugincommon.MarketplaceFileName(harness)
+	description := fmt.Sprintf("wait for %s to list %s %s", fileName, slug, version)
+	require.NoError(t, retryWithBackoff(t, description, func() error {
+		// Download into a fresh directory each attempt: a previously fetched copy would
+		// make `dl --fail-no-op` a no-op and hide the newly indexed content.
+		downloadDir := t.TempDir()
+		if err := downloadMarketplaceJSON(fileName, downloadDir); err != nil {
+			return err
+		}
+		return marketplaceListsPluginVersion(filepath.Join(downloadDir, fileName), slug, version)
+	}))
+}
 
-	data, err := os.ReadFile(filepath.Join(downloadDir, fileName)) // #nosec G304 -- path is under t.TempDir
-	require.NoError(t, err)
+// marketplaceListsPluginVersion reports whether the marketplace index at path lists slug at the
+// given version, returning a descriptive error when the index has not caught up yet.
+func marketplaceListsPluginVersion(path, slug, version string) error {
+	data, err := os.ReadFile(path) // #nosec G304 -- path is under t.TempDir
+	if err != nil {
+		return err
+	}
 	var marketplace struct {
 		Plugins []struct {
 			Name    string `json:"name"`
 			Version string `json:"version"`
 		} `json:"plugins"`
 	}
-	require.NoError(t, json.Unmarshal(data, &marketplace), "%s must contain valid JSON", fileName)
-	for _, plugin := range marketplace.Plugins {
-		if plugin.Name == slug {
-			assert.Equal(t, version, plugin.Version)
-			return
-		}
+	if err := json.Unmarshal(data, &marketplace); err != nil {
+		return fmt.Errorf("parse %s: %w", filepath.Base(path), err)
 	}
-	t.Fatalf("%s does not contain published plugin %q", fileName, slug)
+	for _, plugin := range marketplace.Plugins {
+		if plugin.Name != slug {
+			continue
+		}
+		if plugin.Version != version {
+			return fmt.Errorf("%s lists %s at version %q, want %q",
+				filepath.Base(path), slug, plugin.Version, version)
+		}
+		return nil
+	}
+	return fmt.Errorf("%s does not list plugin %q yet", filepath.Base(path), slug)
 }
 
-// downloadMarketplaceJSONWithRetry retries downloading a harness marketplace.json to accommodate a
-// race between Artifactory finalizing a shared index file's content and its checksum metadata when
-// the same repo path is rewritten by several rapid, back-to-back publishes.
-func downloadMarketplaceJSONWithRetry(fileName, downloadDir string) error {
-	retryExecutor := &clientutils.RetryExecutor{
-		MaxRetries:               5,
-		RetriesIntervalMilliSecs: 3000,
-		ErrorMessage:             "Waiting for Artifactory to settle " + fileName + "'s checksum after a rapid rewrite...",
-		ExecutionHandler: func() (shouldRetry bool, err error) {
-			err = artifactoryCli.Exec(
-				"dl",
-				tests.AgentPluginsLocalRepo+"/"+fileName,
-				downloadDir+"/",
-				"--flat=true",
-				"--fail-no-op=true",
-			)
-			return err != nil, err
-		},
+func downloadMarketplaceJSON(fileName, downloadDir string) error {
+	return artifactoryCli.Exec(
+		"dl",
+		tests.AgentPluginsLocalRepo+"/"+fileName,
+		downloadDir+"/",
+		"--flat=true",
+		"--fail-no-op=true",
+	)
+}
+
+// Artifactory builds the per-harness marketplace index asynchronously after a publish, and the
+// wait is unpredictable: on a loaded CI runner it can take far longer than the publish response.
+// Back off geometrically within a fixed budget so a fast instance costs a couple of seconds while
+// a slow one still gets a fair chance.
+const (
+	marketplaceIndexFirstWait = 2 * time.Second
+	marketplaceIndexMaxWait   = 10 * time.Second
+	marketplaceIndexBudget    = 90 * time.Second
+)
+
+// retryWithBackoff runs operation until it succeeds or the marketplace indexing budget is spent,
+// doubling the wait between attempts. It always performs at least one attempt and wraps the last
+// error so failures name the operation that timed out.
+func retryWithBackoff(t *testing.T, description string, operation func() error) error {
+	t.Helper()
+	deadline := time.Now().Add(marketplaceIndexBudget)
+	wait := marketplaceIndexFirstWait
+	for attempt := 1; ; attempt++ {
+		err := operation()
+		if err == nil {
+			return nil
+		}
+		if time.Now().Add(wait).After(deadline) {
+			return fmt.Errorf("%s did not succeed within %s (%d attempts): %w",
+				description, marketplaceIndexBudget, attempt, err)
+		}
+		t.Logf("%s: attempt %d failed (%v); retrying in %s", description, attempt, err, wait)
+		time.Sleep(wait)
+		if wait *= 2; wait > marketplaceIndexMaxWait {
+			wait = marketplaceIndexMaxWait
+		}
 	}
-	return retryExecutor.Execute()
 }
 
 func assertListContainsInstalledPlugin(t *testing.T, out string, harnesses []string, slug, version string) {
