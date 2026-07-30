@@ -54,4 +54,5 @@ jobs:
 
       - name: Run agent plugins tests
         if: matrix.os.name != 'macos'
+        shell: bash
         run: go test -v github.com/jfrog/jfrog-cli --timeout 0 -test.agentPlugins=true
