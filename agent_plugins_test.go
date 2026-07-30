@@ -921,26 +921,25 @@ func TestAgentPluginsPublishWithSigningKey(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
 
-	const keyAlias = "agent-plugins-test-key"
+	// The trusted keys API rejects duplicate aliases, and the suite may run more than
+	// once against the same Artifactory instance, so keep the alias unique per run.
+	keyAlias := fmt.Sprintf("agent-plugins-test-key-%d", time.Now().UnixNano())
 
-	// Generate an ECDSA key pair without network access.
-	privateKeyPEM, _, err := cryptox.GenerateECDSAKeyPair()
+	// Generate an ECDSA P-256 key pair without network access.
+	privateKeyPEM, publicKeyPEM, err := cryptox.GenerateECDSAKeyPair()
 	require.NoError(t, err, "key generation must succeed")
 
-	keyDir := t.TempDir()
-	privateKeyPath := filepath.Join(keyDir, "evidence.key")
+	privateKeyPath := filepath.Join(t.TempDir(), "evidence.key")
 	require.NoError(t, os.WriteFile(privateKeyPath, []byte(privateKeyPEM), 0600))
 
-	// Upload the public key to Artifactory trusted keys so the evidence service
-	// can verify signatures made with the corresponding private key.
-	uploadCmd := generate.NewGenerateKeyPairCommand(
-		serverDetails,
-		true, // uploadPublicKey
-		keyAlias,
-		keyDir,
-		"evidence",
-	)
-	if err := uploadCmd.Run(); err != nil {
+	// Upload the public key to Artifactory trusted keys so the evidence service can verify
+	// signatures made with the corresponding private key. KeyPairCommand.Run is not used here:
+	// it refuses to overwrite an existing key file and only warns (never returns) on upload
+	// failure, so uploading directly is what surfaces a real error to skip on.
+	serviceManager, err := artUtils.CreateUploadServiceManager(serverDetails, 1, 0, 0, false, nil)
+	require.NoError(t, err)
+	keyPairCmd := generate.NewGenerateKeyPairCommand(serverDetails, true, keyAlias, "", "")
+	if _, err := keyPairCmd.UploadTrustedKey(&serviceManager, keyAlias, publicKeyPEM); err != nil {
 		t.Skipf("skipping: could not upload public key to trusted keys (evidence service may not be configured): %v", err)
 	}
 
@@ -1066,7 +1065,7 @@ func TestAgentPluginsInstallProjectScopeRejectedForBuiltIns(t *testing.T) {
 	defer cleanAgentPluginsTest()
 
 	slug := "project-dir-plugin"
-	pluginPath := createTestPlugin(t, slug, "1.0.0")
+	pluginPath := createTestHarnessPlugin(t, slug, "1.0.0", []string{"claude", "codex", "cursor"})
 	require.NoError(t, runAgentPluginsCmd(t,
 		"publish", pluginPath,
 		"--repo="+tests.AgentPluginsLocalRepo,
@@ -1080,7 +1079,6 @@ func TestAgentPluginsInstallProjectScopeRejectedForBuiltIns(t *testing.T) {
 				"--repo="+tests.AgentPluginsLocalRepo,
 				"--harness="+harnessFlag(tc.harnesses),
 				"--project-dir="+projectDir,
-				"--version=1.0.0",
 			)
 			require.Error(t, err, "built-in harnesses must reject project-scoped install")
 			// Production message from RejectUnsupportedProjectScope (exact phrases).
@@ -1094,12 +1092,13 @@ func TestAgentPluginsInstallProjectScopeRejectedForBuiltIns(t *testing.T) {
 
 // TestAgentPluginsInstallGlobal verifies that --global installs the plugin into
 // each built-in harness destination for all four harness conditions.
+// Version is resolved from the harness marketplace (no --version) after publish indexing.
 func TestAgentPluginsInstallGlobal(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
 
 	slug := "global-install-plugin"
-	pluginPath := createTestPlugin(t, slug, "1.0.0")
+	pluginPath := createTestHarnessPlugin(t, slug, "1.0.0", []string{"claude", "codex", "cursor"})
 	require.NoError(t, runAgentPluginsCmd(t,
 		"publish", pluginPath,
 		"--repo="+tests.AgentPluginsLocalRepo,
@@ -1108,13 +1107,7 @@ func TestAgentPluginsInstallGlobal(t *testing.T) {
 	for _, tc := range agentPluginHarnessCases() {
 		t.Run(tc.name, func(t *testing.T) {
 			homeDir := setIsolatedHome(t)
-			require.NoError(t, runAgentPluginsCmd(t,
-				"install", slug,
-				"--repo="+tests.AgentPluginsLocalRepo,
-				"--harness="+harnessFlag(tc.harnesses),
-				"--global",
-				"--version=1.0.0",
-			))
+			require.NoError(t, installViaMarketplaceWithRetry(t, slug, harnessFlag(tc.harnesses)))
 			assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug, "1.0.0")
 		})
 	}
@@ -1189,6 +1182,8 @@ func installViaMarketplaceWithRetry(t *testing.T, slug, harnesses string) error 
 // TestAgentPluginsInstallAgentConfigOverride verifies that a custom agent entry
 // defined in agent-config.json under "plugins-agents" is respected for both
 // --global (globalDir) and --project-dir (projectDir) installs.
+// Full install → list → update coverage for a custom agent is in
+// TestAgentPluginsCustomAgentLifecycle.
 func TestAgentPluginsInstallAgentConfigOverride(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
@@ -1212,7 +1207,8 @@ func TestAgentPluginsInstallAgentConfigOverride(t *testing.T) {
 		}
 	}`)
 
-	// Verify globalDir override.
+	// Custom agents are not indexed into <harness>-marketplace.json, so --version is
+	// required (marketplace resolution only applies to built-in harness indexes).
 	require.NoError(t, runAgentPluginsCmd(t,
 		"install", slug,
 		"--repo="+tests.AgentPluginsLocalRepo,
@@ -1236,10 +1232,12 @@ func TestAgentPluginsInstallAgentConfigOverride(t *testing.T) {
 		"plugin should be installed into projectDir/.my-custom-agent/plugins/<slug> from agent-config.json")
 }
 
-// TestAgentPluginsCustomAgentLifecycle covers the fifth harness case beyond the four
-// built-in agentPluginHarnessCases (claude, codex, cursor, and all three together):
-// a custom agent registered as "my-agent" in agent-config.json.
-// It runs install → list → list --check-updates → update → list --check-updates in one flow.
+// TestAgentPluginsCustomAgentLifecycle is the custom-agent counterpart to the
+// built-in agentPluginHarnessCases matrix. It registers "my-agent" in
+// agent-config.json and exercises install, list, and update end-to-end:
+//
+//	install (pinned older version) → list → list --check-updates (behind)
+//	→ update → list → list --check-updates (current)
 func TestAgentPluginsCustomAgentLifecycle(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
@@ -1268,27 +1266,28 @@ func TestAgentPluginsCustomAgentLifecycle(t *testing.T) {
 
 	harnesses := []string{agentName}
 
-	// 1. Install v1 into the custom agent's globalDir.
+	// --- install ---
+	// Pin oldVersion: v2 is already published, and custom agents have no marketplace index.
 	require.NoError(t, runAgentPluginsCmd(t,
 		"install", slug,
 		"--repo="+tests.AgentPluginsLocalRepo,
 		"--harness="+agentName,
 		"--global",
 		"--version="+oldVersion,
-	))
+	), "custom agent install must succeed")
 	assertCustomAgentPluginInstalled(t, customGlobalDir, agentName, slug, oldVersion)
 
-	// 2. List installed plugins for my-agent.
+	// --- list (after install) ---
 	listOut, err := runAgentPluginsCmdWithOutput(t,
 		"list",
 		"--harness="+agentName,
 		"--global",
 		"--format=json",
 	)
-	require.NoError(t, err, "list --harness=my-agent should succeed after install")
+	require.NoError(t, err, "custom agent list after install must succeed")
 	assertListContainsInstalledPlugin(t, listOut, harnesses, slug, oldVersion)
 
-	// 3. list --check-updates should report behind while v2 is available.
+	// --- list --check-updates (behind) ---
 	checkOut, err := runAgentPluginsCmdWithOutput(t,
 		"list",
 		"--harness="+agentName,
@@ -1296,20 +1295,30 @@ func TestAgentPluginsCustomAgentLifecycle(t *testing.T) {
 		"--check-updates",
 		"--format=json",
 	)
-	require.NoError(t, err, "list --check-updates --harness=my-agent should succeed")
+	require.NoError(t, err, "custom agent list --check-updates must succeed")
 	assertListContainsPluginStatus(t, checkOut, harnesses, slug, "behind", newVersion)
 
-	// 4. Update should upgrade to v2.
+	// --- update ---
 	require.NoError(t, runAgentPluginsCmd(t,
 		"update",
 		"--slug="+slug,
 		"--harness="+agentName,
 		"--global",
 		"--repo="+tests.AgentPluginsLocalRepo,
-	), "update --harness=my-agent should upgrade to latest")
+	), "custom agent update must upgrade to latest")
 	assertCustomAgentPluginInstalled(t, customGlobalDir, agentName, slug, newVersion)
 
-	// 5. list --check-updates should now report current.
+	// --- list (after update) ---
+	listOut, err = runAgentPluginsCmdWithOutput(t,
+		"list",
+		"--harness="+agentName,
+		"--global",
+		"--format=json",
+	)
+	require.NoError(t, err, "custom agent list after update must succeed")
+	assertListContainsInstalledPlugin(t, listOut, harnesses, slug, newVersion)
+
+	// --- list --check-updates (current) ---
 	checkOut, err = runAgentPluginsCmdWithOutput(t,
 		"list",
 		"--harness="+agentName,
@@ -1317,7 +1326,7 @@ func TestAgentPluginsCustomAgentLifecycle(t *testing.T) {
 		"--check-updates",
 		"--format=json",
 	)
-	require.NoError(t, err, "list --check-updates after update should succeed")
+	require.NoError(t, err, "custom agent list --check-updates after update must succeed")
 	assertListContainsPluginStatus(t, checkOut, harnesses, slug, "current", "")
 	assertListContainsInstalledPlugin(t, checkOut, harnesses, slug, newVersion)
 }
@@ -2028,7 +2037,7 @@ func TestAgentPluginsListCheckUpdates(t *testing.T) {
 
 	slug := "check-updates-plugin"
 	version := "1.0.0"
-	pluginPath := createTestPlugin(t, slug, version)
+	pluginPath := createTestHarnessPlugin(t, slug, version, []string{"claude", "codex", "cursor"})
 	require.NoError(t, runAgentPluginsCmd(t,
 		"publish", pluginPath,
 		"--repo="+tests.AgentPluginsLocalRepo,
@@ -2037,13 +2046,7 @@ func TestAgentPluginsListCheckUpdates(t *testing.T) {
 	for _, tc := range agentPluginHarnessCases() {
 		t.Run(tc.name, func(t *testing.T) {
 			homeDir := setIsolatedHome(t)
-			require.NoError(t, runAgentPluginsCmd(t,
-				"install", slug,
-				"--repo="+tests.AgentPluginsLocalRepo,
-				"--harness="+harnessFlag(tc.harnesses),
-				"--global",
-				"--version="+version,
-			))
+			require.NoError(t, installViaMarketplaceWithRetry(t, slug, harnessFlag(tc.harnesses)))
 			assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug, version)
 
 			out, err := runAgentPluginsCmdWithOutput(t,
@@ -2104,19 +2107,13 @@ func TestAgentPluginsListCheckUpdatesCurrent(t *testing.T) {
 
 	slug := "check-current-plugin"
 	version := "1.0.0"
-	pluginPath := createTestPlugin(t, slug, version)
+	pluginPath := createTestHarnessPlugin(t, slug, version, []string{"claude", "codex", "cursor"})
 	require.NoError(t, runAgentPluginsCmd(t, "publish", pluginPath, "--repo="+tests.AgentPluginsLocalRepo))
 
 	for _, tc := range agentPluginHarnessCases() {
 		t.Run(tc.name, func(t *testing.T) {
 			homeDir := setIsolatedHome(t)
-			require.NoError(t, runAgentPluginsCmd(t,
-				"install", slug,
-				"--repo="+tests.AgentPluginsLocalRepo,
-				"--harness="+harnessFlag(tc.harnesses),
-				"--global",
-				"--version="+version,
-			))
+			require.NoError(t, installViaMarketplaceWithRetry(t, slug, harnessFlag(tc.harnesses)))
 			assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug)
 
 			out, err := runAgentPluginsCmdWithOutput(t,
@@ -2442,7 +2439,7 @@ func TestAgentPluginsListLocal(t *testing.T) {
 
 	slug := "list-local-plugin"
 	version := "1.0.0"
-	pluginPath := createTestPlugin(t, slug, version)
+	pluginPath := createTestHarnessPlugin(t, slug, version, []string{"claude", "codex", "cursor"})
 	require.NoError(t, runAgentPluginsCmd(t,
 		"publish", pluginPath,
 		"--repo="+tests.AgentPluginsLocalRepo,
@@ -2451,13 +2448,7 @@ func TestAgentPluginsListLocal(t *testing.T) {
 	for _, tc := range agentPluginHarnessCases() {
 		t.Run(tc.name, func(t *testing.T) {
 			homeDir := setIsolatedHome(t)
-			require.NoError(t, runAgentPluginsCmd(t,
-				"install", slug,
-				"--repo="+tests.AgentPluginsLocalRepo,
-				"--harness="+harnessFlag(tc.harnesses),
-				"--global",
-				"--version="+version,
-			))
+			require.NoError(t, installViaMarketplaceWithRetry(t, slug, harnessFlag(tc.harnesses)))
 			assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug, version)
 
 			// Intentionally omit --global: list should still default to global scope.
@@ -2657,7 +2648,7 @@ func TestAgentPluginsListLimitHarnessMode(t *testing.T) {
 
 	slugs := []string{"limit-a-plugin", "limit-b-plugin", "limit-c-plugin"}
 	for _, slug := range slugs {
-		p := createTestPlugin(t, slug, "1.0.0")
+		p := createTestHarnessPlugin(t, slug, "1.0.0", []string{"claude", "codex", "cursor"})
 		require.NoError(t, runAgentPluginsCmd(t, "publish", p, "--repo="+tests.AgentPluginsLocalRepo))
 	}
 
@@ -2665,13 +2656,7 @@ func TestAgentPluginsListLimitHarnessMode(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			homeDir := setIsolatedHome(t)
 			for _, slug := range slugs {
-				require.NoError(t, runAgentPluginsCmd(t,
-					"install", slug,
-					"--repo="+tests.AgentPluginsLocalRepo,
-					"--harness="+harnessFlag(tc.harnesses),
-					"--global",
-					"--version=1.0.0",
-				))
+				require.NoError(t, installViaMarketplaceWithRetry(t, slug, harnessFlag(tc.harnesses)))
 				assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug)
 			}
 
@@ -2927,18 +2912,20 @@ func TestAgentPluginsInstallRepoFromEnvVar(t *testing.T) {
 	slug := "install-env-repo-plugin"
 	version := "1.0.0"
 	require.NoError(t, runAgentPluginsCmd(t,
-		"publish", createTestPlugin(t, slug, version),
+		"publish", createTestHarnessPlugin(t, slug, version, []string{"cursor"}),
 		"--repo="+tests.AgentPluginsLocalRepo,
 	))
 
 	t.Setenv("JFROG_AGENT_PLUGINS_REPO", tests.AgentPluginsLocalRepo)
 	homeDir := setIsolatedHome(t)
-	require.NoError(t, runAgentPluginsCmd(t,
-		"install", slug,
-		"--harness=cursor",
-		"--global",
-		"--version="+version,
-	), "install should resolve repo from JFROG_AGENT_PLUGINS_REPO")
+	// Omit --repo and --version: repo from env, version from cursor-marketplace.json.
+	require.NoError(t, retryWithBackoff(t, "install "+slug+" via env repo and marketplace", func() error {
+		return runAgentPluginsCmd(t,
+			"install", slug,
+			"--harness=cursor",
+			"--global",
+		)
+	}), "install should resolve repo from JFROG_AGENT_PLUGINS_REPO")
 	assertPluginsInstalledGlobally(t, homeDir, []string{"cursor"}, slug, version)
 }
 
