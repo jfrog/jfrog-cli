@@ -23,6 +23,7 @@ import (
 	"github.com/jfrog/jfrog-cli-evidence/evidence/cryptox"
 	"github.com/jfrog/jfrog-cli-evidence/evidence/generate"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -68,6 +69,13 @@ func runAgentPluginsCmd(t *testing.T, args ...string) error {
 	t.Helper()
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	return jfrogCli.Exec(append([]string{"agent", "plugins"}, args...)...)
+}
+
+// runAgentPluginsCmdWithOutput executes `jf agent plugins <args...>` and returns captured stdout.
+func runAgentPluginsCmdWithOutput(t *testing.T, args ...string) (string, error) {
+	t.Helper()
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	return jfrogCli.RunCliCmdWithOutputs(t, append([]string{"agent", "plugins"}, args...)...)
 }
 
 // assertErrorContainsAll requires a non-nil error whose message contains every substring.
@@ -2001,7 +2009,7 @@ func assertListContainsPluginStatus(t *testing.T, out string, multiHarness bool,
 // ---------------------------------------------------------------------------
 
 // TestAgentPluginsDelete verifies that deleting a specific version removes
-// the version folder from Artifactory. --version is always required by the command.
+// that version folder from Artifactory (--version is always required).
 func TestAgentPluginsDelete(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
@@ -2025,7 +2033,7 @@ func TestAgentPluginsDelete(t *testing.T) {
 }
 
 // TestAgentPluginsDeleteDryRun verifies that --dry-run does not remove the
-// artifact from Artifactory.
+// artifact from Artifactory when the version exists.
 func TestAgentPluginsDeleteDryRun(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
@@ -2050,8 +2058,8 @@ func TestAgentPluginsDeleteDryRun(t *testing.T) {
 }
 
 // TestAgentPluginsDeleteDryRunMultipleVersions verifies that --dry-run on a
-// multi-version plugin only targets the specified version and leaves the
-// other version intact.
+// multi-version plugin only targets the specified version and leaves all
+// versions intact on disk.
 func TestAgentPluginsDeleteDryRunMultipleVersions(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
@@ -2069,14 +2077,12 @@ func TestAgentPluginsDeleteDryRunMultipleVersions(t *testing.T) {
 		"--dry-run",
 	))
 
-	// Both versions must still exist after dry-run.
 	assertPluginExists(t, slug, "1.0.0")
 	assertPluginExists(t, slug, "2.0.0")
 }
 
 // TestAgentPluginsDeleteDryRunNotFound verifies that delete --dry-run on a
-// plugin that does not exist returns a not-found error rather than silently
-// succeeding.
+// missing plugin returns PackageVersionExists' not-found error (delete.go).
 func TestAgentPluginsDeleteDryRunNotFound(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
@@ -2087,12 +2093,13 @@ func TestAgentPluginsDeleteDryRunNotFound(t *testing.T) {
 		"--version=1.0.0",
 		"--dry-run",
 	)
-	require.Error(t, err, "delete --dry-run on a missing plugin must return an error")
-	assert.Contains(t, err.Error(), "not found", "error should indicate the plugin was not found")
+	assertErrorContainsAll(t, err,
+		"plugin 'nonexistent-dryrun-plugin' v1.0.0 not found in repository '"+tests.AgentPluginsLocalRepo+"'",
+	)
 }
 
-// TestAgentPluginsDeleteMissing verifies that trying to delete a slug that
-// does not exist in the repository returns a clear error.
+// TestAgentPluginsDeleteMissing verifies that deleting a nonexistent slug/version
+// fails via DeleteVersion (HTTP error from Artifactory).
 func TestAgentPluginsDeleteMissing(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
@@ -2102,7 +2109,33 @@ func TestAgentPluginsDeleteMissing(t *testing.T) {
 		"--repo="+tests.AgentPluginsLocalRepo,
 		"--version=1.0.0",
 	)
-	assert.Error(t, err, "deleting a nonexistent slug should return an error")
+	assertErrorContainsAll(t, err,
+		"failed to delete",
+		"nonexistent-slug-xyzzy",
+		"1.0.0",
+	)
+}
+
+// TestAgentPluginsDeleteMissingVersionOfExistingPlugin verifies that deleting a
+// version that was never published for an otherwise-known slug fails.
+func TestAgentPluginsDeleteMissingVersionOfExistingPlugin(t *testing.T) {
+	initAgentPluginsTest(t)
+	defer cleanAgentPluginsTest()
+
+	slug := "delete-missing-ver-plugin"
+	pluginPath := createTestPlugin(t, slug, "1.0.0")
+	require.NoError(t, runAgentPluginsCmd(t,
+		"publish", pluginPath,
+		"--repo="+tests.AgentPluginsLocalRepo,
+	))
+
+	err := runAgentPluginsCmd(t,
+		"delete", slug,
+		"--repo="+tests.AgentPluginsLocalRepo,
+		"--version=9.9.9",
+	)
+	assertErrorContainsAll(t, err, "failed to delete", slug, "9.9.9")
+	assertPluginExists(t, slug, "1.0.0")
 }
 
 // TestAgentPluginsDeleteOnlySpecifiedVersion verifies that deleting one version
@@ -2130,9 +2163,9 @@ func TestAgentPluginsDeleteOnlySpecifiedVersion(t *testing.T) {
 	assertPluginExists(t, slug, keepVersion)
 }
 
-// TestAgentPluginsDeleteMissingVersion verifies that omitting --version produces
-// a clear error rather than silently deleting all versions or panicking.
-func TestAgentPluginsDeleteMissingVersion(t *testing.T) {
+// TestAgentPluginsDeleteMissingVersionFlag verifies that omitting --version
+// produces the exact delete.go validation error.
+func TestAgentPluginsDeleteMissingVersionFlag(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
 
@@ -2148,6 +2181,43 @@ func TestAgentPluginsDeleteMissingVersion(t *testing.T) {
 		"--repo="+tests.AgentPluginsLocalRepo,
 	)
 	assertErrorContainsAll(t, err, "--version is required for delete")
+	assertPluginExists(t, slug, "1.0.0")
+}
+
+// TestAgentPluginsDeleteMissingSlugArg verifies usage when the required slug
+// positional argument is omitted.
+func TestAgentPluginsDeleteMissingSlugArg(t *testing.T) {
+	initAgentPluginsTest(t)
+	defer cleanAgentPluginsTest()
+
+	err := runAgentPluginsCmd(t,
+		"delete",
+		"--repo="+tests.AgentPluginsLocalRepo,
+		"--version=1.0.0",
+	)
+	assertErrorContainsAll(t, err, "usage: jf agent plugins delete")
+}
+
+// TestAgentPluginsDeleteRepoFromEnvVar verifies delete resolves the repo from
+// JFROG_AGENT_PLUGINS_REPO when --repo is omitted.
+func TestAgentPluginsDeleteRepoFromEnvVar(t *testing.T) {
+	initAgentPluginsTest(t)
+	defer cleanAgentPluginsTest()
+
+	slug := "delete-env-repo-plugin"
+	version := "1.0.0"
+	pluginPath := createTestPlugin(t, slug, version)
+	require.NoError(t, runAgentPluginsCmd(t,
+		"publish", pluginPath,
+		"--repo="+tests.AgentPluginsLocalRepo,
+	))
+
+	t.Setenv("JFROG_AGENT_PLUGINS_REPO", tests.AgentPluginsLocalRepo)
+	require.NoError(t, runAgentPluginsCmd(t,
+		"delete", slug,
+		"--version="+version,
+	), "delete should resolve repo from JFROG_AGENT_PLUGINS_REPO")
+	assertPluginAbsent(t, slug, version)
 }
 
 // ---------------------------------------------------------------------------
@@ -2398,46 +2468,116 @@ func TestAgentPluginsListLimitZero(t *testing.T) {
 // Search
 // ---------------------------------------------------------------------------
 
-// TestAgentPluginsSearch verifies that `jf agent plugins search <query>`
-// returns matches by the agentplugins.name property without error.
+// TestAgentPluginsSearch verifies that search finds a published plugin by
+// agentplugins.name and returns JSON rows with name, version, and repository.
 func TestAgentPluginsSearch(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
 
 	slug := "search-plugin"
-	pluginPath := createTestPlugin(t, slug, "1.0.0")
-
+	version := "1.0.0"
+	pluginPath := createTestPlugin(t, slug, version)
 	require.NoError(t, runAgentPluginsCmd(t,
 		"publish", pluginPath,
 		"--repo="+tests.AgentPluginsLocalRepo,
 	))
 
-	assert.NoError(t, runAgentPluginsCmd(t,
+	out, err := runAgentPluginsCmdWithOutput(t,
 		"search", slug,
 		"--repo="+tests.AgentPluginsLocalRepo,
-	), "search should succeed after publish")
+		"--format=json",
+	)
+	require.NoError(t, err, "search should succeed after publish")
+	assertSearchJSONContains(t, out, slug, version, tests.AgentPluginsLocalRepo)
+}
+
+// TestAgentPluginsSearchSubstringMatch verifies wildcard wrapping: a partial
+// query matches plugin names (search.go wraps non-wildcard queries in *...*).
+func TestAgentPluginsSearchSubstringMatch(t *testing.T) {
+	initAgentPluginsTest(t)
+	defer cleanAgentPluginsTest()
+
+	slug := "search-substring-plugin"
+	version := "1.0.0"
+	pluginPath := createTestPlugin(t, slug, version)
+	require.NoError(t, runAgentPluginsCmd(t,
+		"publish", pluginPath,
+		"--repo="+tests.AgentPluginsLocalRepo,
+	))
+
+	out, err := runAgentPluginsCmdWithOutput(t,
+		"search", "substring",
+		"--repo="+tests.AgentPluginsLocalRepo,
+		"--format=json",
+	)
+	require.NoError(t, err, "partial-name search should succeed")
+	assertSearchJSONContains(t, out, slug, version, tests.AgentPluginsLocalRepo)
+}
+
+// TestAgentPluginsSearchLatestVersionOnly publishes two versions and verifies
+// search returns only the highest semver (SearchLatestRowsByProperty).
+func TestAgentPluginsSearchLatestVersionOnly(t *testing.T) {
+	initAgentPluginsTest(t)
+	defer cleanAgentPluginsTest()
+
+	slug := "search-latest-plugin"
+	for _, v := range []string{"1.0.0", "2.0.0"} {
+		p := createTestPlugin(t, slug, v)
+		require.NoError(t, runAgentPluginsCmd(t, "publish", p, "--repo="+tests.AgentPluginsLocalRepo))
+	}
+
+	out, err := runAgentPluginsCmdWithOutput(t,
+		"search", slug,
+		"--repo="+tests.AgentPluginsLocalRepo,
+		"--format=json",
+	)
+	require.NoError(t, err)
+	rows := parseSearchJSON(t, out)
+	require.Len(t, rows, 1, "search should return one row per plugin name (latest only)")
+	assert.Equal(t, slug, rows[0].Name)
+	assert.Equal(t, "2.0.0", rows[0].Version, "search should keep the highest semver")
+	assert.Equal(t, tests.AgentPluginsLocalRepo, rows[0].Repository)
 }
 
 // TestAgentPluginsSearchNoMatches verifies that searching with a query that
-// matches nothing returns an empty result — not an error.
+// matches nothing succeeds with an empty result and logs the not-found message.
 func TestAgentPluginsSearchNoMatches(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
 
-	assert.NoError(t, runAgentPluginsCmd(t,
-		"search", "nonexistent-plugin-xyzzy-abc123",
+	query := "nonexistent-plugin-xyzzy-abc123"
+	logBuf, _, prev := coretests.RedirectLogOutputToBuffer()
+	t.Cleanup(func() { log.SetLogger(prev) })
+
+	out, err := runAgentPluginsCmdWithOutput(t,
+		"search", query,
 		"--repo="+tests.AgentPluginsLocalRepo,
-	), "search with no matches should return empty result, not an error")
+		"--format=json",
+	)
+	require.NoError(t, err, "search with no matches should return empty result, not an error")
+	assert.Empty(t, strings.TrimSpace(out),
+		"no-match search should not print JSON rows, got: %q", out)
+	assert.Contains(t, logBuf.String(), fmt.Sprintf("No plugins found matching '%s'.", query))
 }
 
-// TestAgentPluginsSearchEmptyQuery verifies that an empty search query
-// returns a usage error.
+// TestAgentPluginsSearchEmptyQuery verifies that omitting the query argument
+// returns the usage error from RunSearch.
 func TestAgentPluginsSearchEmptyQuery(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
 
 	err := runAgentPluginsCmd(t, "search", "--repo="+tests.AgentPluginsLocalRepo)
 	assertErrorContainsAll(t, err, "usage: jf agent plugins search")
+}
+
+// TestAgentPluginsSearchBlankQuery verifies that a whitespace-only query is
+// rejected after TrimSpace (search.go).
+func TestAgentPluginsSearchBlankQuery(t *testing.T) {
+	initAgentPluginsTest(t)
+	defer cleanAgentPluginsTest()
+
+	err := runAgentPluginsCmd(t, "search", "   ", "--repo="+tests.AgentPluginsLocalRepo)
+	assertErrorContainsAll(t, err, "search query cannot be empty")
 }
 
 // TestAgentPluginsSearchRepoFromEnvVar verifies that search picks up the repo
@@ -2447,34 +2587,70 @@ func TestAgentPluginsSearchRepoFromEnvVar(t *testing.T) {
 	defer cleanAgentPluginsTest()
 
 	slug := "search-envvar-plugin"
-	pluginPath := createTestPlugin(t, slug, "1.0.0")
+	version := "1.0.0"
+	pluginPath := createTestPlugin(t, slug, version)
 	require.NoError(t, runAgentPluginsCmd(t, "publish", pluginPath, "--repo="+tests.AgentPluginsLocalRepo))
 
 	t.Setenv("JFROG_AGENT_PLUGINS_REPO", tests.AgentPluginsLocalRepo)
 
-	assert.NoError(t, runAgentPluginsCmd(t, "search", slug),
-		"search should succeed using repo from JFROG_AGENT_PLUGINS_REPO env var")
+	out, err := runAgentPluginsCmdWithOutput(t, "search", slug, "--format=json")
+	require.NoError(t, err, "search should succeed using repo from JFROG_AGENT_PLUGINS_REPO")
+	assertSearchJSONContains(t, out, slug, version, tests.AgentPluginsLocalRepo)
 }
 
-// TestAgentPluginsSearchFormatJSON publishes a plugin with a searchable name
-// property then runs search with --format json, confirming the output is valid
-// JSON and the slug appears in it.
+// TestAgentPluginsSearchFormatJSON publishes a plugin then runs search with
+// --format json, confirming stdout is valid JSON containing the slug.
 func TestAgentPluginsSearchFormatJSON(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
 
 	slug := "search-json-plugin"
-	pluginPath := createTestPlugin(t, slug, "1.0.0")
+	version := "1.0.0"
+	pluginPath := createTestPlugin(t, slug, version)
 	require.NoError(t, runAgentPluginsCmd(t,
 		"publish", pluginPath,
 		"--repo="+tests.AgentPluginsLocalRepo,
 	))
 
-	assert.NoError(t, runAgentPluginsCmd(t,
+	out, err := runAgentPluginsCmdWithOutput(t,
 		"search", slug,
 		"--repo="+tests.AgentPluginsLocalRepo,
 		"--format=json",
-	), "search --format json should succeed without error")
+	)
+	require.NoError(t, err, "search --format json should succeed")
+	assertSearchJSONContains(t, out, slug, version, tests.AgentPluginsLocalRepo)
+}
+
+type agentPluginsSearchRow struct {
+	Name        string `json:"name"`
+	Version     string `json:"version"`
+	Repository  string `json:"repository"`
+	Description string `json:"description"`
+}
+
+func parseSearchJSON(t *testing.T, out string) []agentPluginsSearchRow {
+	t.Helper()
+	// CLI may log the command line before JSON; extract the JSON array.
+	start := strings.Index(out, "[")
+	end := strings.LastIndex(out, "]")
+	require.GreaterOrEqual(t, start, 0, "search JSON output must contain an array, got: %q", out)
+	require.Greater(t, end, start, "search JSON output must contain a closing array bracket, got: %q", out)
+	var rows []agentPluginsSearchRow
+	require.NoError(t, json.Unmarshal([]byte(out[start:end+1]), &rows), "search output must be valid JSON")
+	return rows
+}
+
+func assertSearchJSONContains(t *testing.T, out, slug, version, repo string) {
+	t.Helper()
+	rows := parseSearchJSON(t, out)
+	for _, row := range rows {
+		if row.Name == slug {
+			assert.Equal(t, version, row.Version, "search row version for %q", slug)
+			assert.Equal(t, repo, row.Repository, "search row repository for %q", slug)
+			return
+		}
+	}
+	t.Fatalf("search JSON did not contain plugin %q; output: %s", slug, out)
 }
 
 // ---------------------------------------------------------------------------
