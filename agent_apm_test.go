@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -100,7 +101,12 @@ func agentApmFixtureSrc(name string) string {
 // and injects a registries: block pointing at the test Artifactory repo.
 func copyApmFixture(t *testing.T, fixtureName string) string {
 	t.Helper()
-	src := agentApmFixtureSrc(fixtureName)
+	// Get the fixture path based on the source file location, not the current working directory.
+	// This ensures the fixture is found even if tests change the working directory.
+	_, thisFile, _, _ := runtime.Caller(0)
+	testDir := filepath.Dir(thisFile)
+	src := filepath.Join(testDir, "testdata", "agent_apm", fixtureName)
+	
 	dst, cleanup := coretests.CreateTempDirWithCallbackAndAssert(t)
 	t.Cleanup(cleanup)
 

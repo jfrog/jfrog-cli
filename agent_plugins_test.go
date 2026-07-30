@@ -43,7 +43,6 @@ func CleanAgentPluginsTests() {
 }
 
 func initAgentPluginsTest(t *testing.T) {
-	t.Skip("Agent plugins e2e tests are disabled")
 	createJfrogHomeConfig(t, false)
 	require.True(t, isRepoExist(tests.AgentPluginsLocalRepo), "agent plugins local repo does not exist: "+tests.AgentPluginsLocalRepo)
 	// The test Artifactory instance has no evidence/One-Model service configured.
