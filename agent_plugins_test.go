@@ -1854,7 +1854,7 @@ func TestAgentPluginsUpdateFlags(t *testing.T) {
 }
 
 // TestAgentPluginsListCheckUpdates installs a plugin then runs list
-// --check-updates for each of the four harness conditions.
+// --check-updates for each of the four harness conditions and verifies JSON.
 func TestAgentPluginsListCheckUpdates(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
@@ -1879,12 +1879,15 @@ func TestAgentPluginsListCheckUpdates(t *testing.T) {
 			))
 			assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug)
 
-			assert.NoError(t, runAgentPluginsCmd(t,
+			out, err := runAgentPluginsCmdWithOutput(t,
 				"list",
 				"--harness="+harnessFlag(tc.harnesses),
 				"--global",
 				"--check-updates",
-			), "list --check-updates --harness should run without error")
+				"--format=json",
+			)
+			require.NoError(t, err, "list --check-updates --harness should run without error")
+			assertListContainsInstalledPlugin(t, out, tc.harnesses, slug)
 		})
 	}
 }
@@ -1913,16 +1916,15 @@ func TestAgentPluginsListCheckUpdatesStatus(t *testing.T) {
 			))
 			assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug)
 
-			jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
-			out, err := jfrogCli.RunCliCmdWithOutputs(t,
-				"agent", "plugins", "list",
+			out, err := runAgentPluginsCmdWithOutput(t,
+				"list",
 				"--harness="+harnessFlag(tc.harnesses),
 				"--global",
 				"--check-updates",
 				"--format=json",
 			)
 			require.NoError(t, err, "list --check-updates should succeed")
-			assertListContainsPluginStatus(t, out, len(tc.harnesses) > 1, slug, "behind", "2.0.0")
+			assertListContainsPluginStatus(t, out, tc.harnesses, slug, "behind", "2.0.0")
 		})
 	}
 }
@@ -1950,58 +1952,54 @@ func TestAgentPluginsListCheckUpdatesCurrent(t *testing.T) {
 			))
 			assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug)
 
-			jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
-			out, err := jfrogCli.RunCliCmdWithOutputs(t,
-				"agent", "plugins", "list",
+			out, err := runAgentPluginsCmdWithOutput(t,
+				"list",
 				"--harness="+harnessFlag(tc.harnesses),
 				"--global",
 				"--check-updates",
 				"--format=json",
 			)
 			require.NoError(t, err, "list --check-updates should succeed")
-			assertListContainsPluginStatus(t, out, len(tc.harnesses) > 1, slug, "current", "")
+			assertListContainsPluginStatus(t, out, tc.harnesses, slug, "current", "")
 		})
 	}
 }
 
 // assertListContainsPluginStatus validates list --format=json output for single or
 // multi-harness responses (array vs map keyed by harness name).
-func assertListContainsPluginStatus(t *testing.T, out string, multiHarness bool, slug, status, registryLatest string) {
+func assertListContainsPluginStatus(t *testing.T, out string, harnesses []string, slug, status, registryLatest string) {
 	t.Helper()
-	if multiHarness {
+	if len(harnesses) > 1 {
 		var byHarness map[string][]map[string]any
-		require.NoError(t, json.Unmarshal([]byte(out), &byHarness), "multi-harness output must be a JSON object")
+		require.NoError(t, json.Unmarshal([]byte(extractJSONObjectOrArray(t, out)), &byHarness),
+			"multi-harness output must be a JSON object")
 		require.NotEmpty(t, byHarness)
-		found := false
-		for _, rows := range byHarness {
-			for _, row := range rows {
-				if row["name"] == slug {
-					found = true
-					assert.Equal(t, status, row["status"])
-					if registryLatest != "" {
-						assert.Equal(t, registryLatest, row["registryLatest"])
-					}
-				}
-			}
+		for _, harness := range harnesses {
+			rows, found := byHarness[harness]
+			require.True(t, found, "list --json should contain harness %q", harness)
+			assertListRowsHavePluginStatus(t, rows, slug, status, registryLatest)
 		}
-		assert.True(t, found, "plugin %s should appear in multi-harness list output", slug)
 		return
 	}
 
 	var rows []map[string]any
-	require.NoError(t, json.Unmarshal([]byte(out), &rows), "output must be valid JSON")
+	require.NoError(t, json.Unmarshal([]byte(extractJSONObjectOrArray(t, out)), &rows), "output must be valid JSON")
+	assertListRowsHavePluginStatus(t, rows, slug, status, registryLatest)
+}
+
+func assertListRowsHavePluginStatus(t *testing.T, rows []map[string]any, slug, status, registryLatest string) {
+	t.Helper()
 	require.NotEmpty(t, rows, "at least one row expected")
-	found := false
 	for _, row := range rows {
 		if row["name"] == slug {
-			found = true
 			assert.Equal(t, status, row["status"])
 			if registryLatest != "" {
 				assert.Equal(t, registryLatest, row["registryLatest"])
 			}
+			return
 		}
 	}
-	assert.True(t, found, "plugin %s should appear in list output", slug)
+	t.Fatalf("plugin %s should appear in list output", slug)
 }
 
 // ---------------------------------------------------------------------------
@@ -2224,34 +2222,59 @@ func TestAgentPluginsDeleteRepoFromEnvVar(t *testing.T) {
 // List
 // ---------------------------------------------------------------------------
 
-// TestAgentPluginsListRemote verifies that `jf agent plugins list` returns
-// without error after a publish.
+// TestAgentPluginsListRemote verifies list --repo --format=json returns the
+// published plugin with name, latest version, and "Repo: <repo>" source.
 func TestAgentPluginsListRemote(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
 
 	slug := "list-plugin"
-	pluginPath := createTestPlugin(t, slug, "1.0.0")
-
+	version := "1.0.0"
+	pluginPath := createTestPlugin(t, slug, version)
 	require.NoError(t, runAgentPluginsCmd(t,
 		"publish", pluginPath,
 		"--repo="+tests.AgentPluginsLocalRepo,
 	))
 
-	assert.NoError(t, runAgentPluginsCmd(t,
+	out, err := runAgentPluginsCmdWithOutput(t,
 		"list",
 		"--repo="+tests.AgentPluginsLocalRepo,
-	), "list should succeed after publish")
+		"--format=json",
+	)
+	require.NoError(t, err, "list --repo --format=json should succeed after publish")
+	assertListRepoJSONContains(t, out, slug, version, tests.AgentPluginsLocalRepo)
 }
 
-// TestAgentPluginsListLocal verifies that `list --harness --global` succeeds
-// after install for each of the four harness conditions.
+// TestAgentPluginsListRemoteLatestVersionOnly publishes two versions and verifies
+// list --repo reports only the latest version for that slug.
+func TestAgentPluginsListRemoteLatestVersionOnly(t *testing.T) {
+	initAgentPluginsTest(t)
+	defer cleanAgentPluginsTest()
+
+	slug := "list-latest-plugin"
+	require.NoError(t, runAgentPluginsCmd(t, "publish", createTestPlugin(t, slug, "1.0.0"),
+		"--repo="+tests.AgentPluginsLocalRepo))
+	require.NoError(t, runAgentPluginsCmd(t, "publish", createTestPlugin(t, slug, "2.0.0"),
+		"--repo="+tests.AgentPluginsLocalRepo))
+
+	out, err := runAgentPluginsCmdWithOutput(t,
+		"list",
+		"--repo="+tests.AgentPluginsLocalRepo,
+		"--format=json",
+	)
+	require.NoError(t, err, "list --repo should succeed with multiple versions published")
+	assertListRepoJSONContains(t, out, slug, "2.0.0", tests.AgentPluginsLocalRepo)
+}
+
+// TestAgentPluginsListLocal verifies list --harness --global --format=json
+// returns the installed plugin for each harness condition.
 func TestAgentPluginsListLocal(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
 
 	slug := "list-local-plugin"
-	pluginPath := createTestPlugin(t, slug, "1.0.0")
+	version := "1.0.0"
+	pluginPath := createTestPlugin(t, slug, version)
 	require.NoError(t, runAgentPluginsCmd(t,
 		"publish", pluginPath,
 		"--repo="+tests.AgentPluginsLocalRepo,
@@ -2265,21 +2288,24 @@ func TestAgentPluginsListLocal(t *testing.T) {
 				"--repo="+tests.AgentPluginsLocalRepo,
 				"--harness="+harnessFlag(tc.harnesses),
 				"--global",
-				"--version=1.0.0",
+				"--version="+version,
 			))
 			assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug)
 
-			assert.NoError(t, runAgentPluginsCmd(t,
+			out, err := runAgentPluginsCmdWithOutput(t,
 				"list",
 				"--harness="+harnessFlag(tc.harnesses),
 				"--global",
-			), "list --harness should succeed after install")
+				"--format=json",
+			)
+			require.NoError(t, err, "list --harness --format=json should succeed after install")
+			assertListContainsInstalledPlugin(t, out, tc.harnesses, slug)
 		})
 	}
 }
 
 // TestAgentPluginsListMultipleHarnesses installs under each harness condition
-// then verifies list --harness succeeds for that same condition.
+// then verifies list --format=json includes the plugin for every requested harness.
 func TestAgentPluginsListMultipleHarnesses(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
@@ -2303,13 +2329,65 @@ func TestAgentPluginsListMultipleHarnesses(t *testing.T) {
 			))
 			assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug)
 
-			assert.NoError(t, runAgentPluginsCmd(t,
+			out, err := runAgentPluginsCmdWithOutput(t,
 				"list",
 				"--harness="+harnessFlag(tc.harnesses),
 				"--global",
-			), "list --harness with harness set %q should succeed", tc.name)
+				"--format=json",
+			)
+			require.NoError(t, err, "list --harness with harness set %q should succeed", tc.name)
+			assertListContainsInstalledPlugin(t, out, tc.harnesses, slug)
 		})
 	}
+}
+
+// TestAgentPluginsListEmptyLocal verifies list --harness --global --format=json
+// returns an empty JSON array when nothing is installed.
+func TestAgentPluginsListEmptyLocal(t *testing.T) {
+	initAgentPluginsTest(t)
+	defer cleanAgentPluginsTest()
+
+	_ = setIsolatedHome(t)
+	out, err := runAgentPluginsCmdWithOutput(t,
+		"list",
+		"--harness=cursor",
+		"--global",
+		"--format=json",
+	)
+	require.NoError(t, err, "list with no installed plugins should succeed")
+	rows := parseListLocalJSONArray(t, out)
+	assert.Empty(t, rows, "empty install directory should list as []")
+}
+
+// TestAgentPluginsListNeitherRepoNorHarness verifies the usage error when neither
+// --repo nor --harness is provided.
+func TestAgentPluginsListNeitherRepoNorHarness(t *testing.T) {
+	initAgentPluginsTest(t)
+	defer cleanAgentPluginsTest()
+
+	err := runAgentPluginsCmd(t, "list")
+	assertErrorContainsAll(t, err,
+		"jf agent plugins list requires exactly one of:",
+		"Registry: jf agent plugins list --repo",
+		"Local:    jf agent plugins list --harness",
+	)
+}
+
+// TestAgentPluginsListProjectScopeRejected verifies built-in agents reject
+// --project-dir (project-scoped list) with the RejectUnsupportedProjectScope message.
+func TestAgentPluginsListProjectScopeRejected(t *testing.T) {
+	initAgentPluginsTest(t)
+	defer cleanAgentPluginsTest()
+
+	err := runAgentPluginsCmd(t,
+		"list",
+		"--harness=claude",
+		"--project-dir="+t.TempDir(),
+	)
+	assertErrorContainsAll(t, err,
+		"claude does not support project-scoped plugin lists",
+		"Use --global instead",
+	)
 }
 
 // TestAgentPluginsListFlags exercises list flag combinations that must either
@@ -2351,23 +2429,37 @@ func TestAgentPluginsListFlags(t *testing.T) {
 			description: "--sort-by updated is a valid value for --repo mode",
 		},
 		{
-			name:        "sort-by-invalid",
+			name:        "sort-by-invalid-repo",
 			args:        []string{"list", "--repo=" + tests.AgentPluginsLocalRepo, "--sort-by=invalid-field"},
 			expectError: true,
 			errContains: []string{`--sort-by for --repo accepts 'updated' or 'downloads'`},
-			description: "--sort-by with unknown field must produce an error",
+			description: "--sort-by with unknown field must produce an error in --repo mode",
 		},
 		{
-			name:        "sort-order-desc",
-			args:        []string{"list", "--repo=" + tests.AgentPluginsLocalRepo, "--sort-order=desc"},
+			name:        "sort-by-invalid-harness",
+			args:        []string{"list", "--harness=cursor", "--global", "--sort-by=updated"},
+			expectError: true,
+			errContains: []string{`--sort-by for --harness only accepts 'name'`},
+			description: "--sort-by updated is invalid in --harness mode",
+		},
+		{
+			name:        "sort-order-desc-harness",
+			args:        []string{"list", "--harness=cursor", "--global", "--sort-order=desc", "--format=json"},
 			expectError: false,
-			description: "--sort-order desc should succeed",
+			description: "--sort-order desc is valid for --harness mode",
 		},
 		{
-			name:        "sort-order-invalid",
+			name:        "sort-order-invalid-harness",
+			args:        []string{"list", "--harness=cursor", "--global", "--sort-order=sideways"},
+			expectError: true,
+			errContains: []string{`--sort-order must be 'asc' or 'desc'`},
+			description: "--sort-order is validated in --harness mode",
+		},
+		{
+			name:        "sort-order-ignored-in-repo-mode",
 			args:        []string{"list", "--repo=" + tests.AgentPluginsLocalRepo, "--sort-order=sideways"},
 			expectError: false,
-			description: "--sort-order is not validated by the CLI; unknown values are accepted",
+			description: "--sort-order is ignored (not validated) in --repo mode",
 		},
 		{
 			name:        "check-updates-without-harness",
@@ -2380,7 +2472,7 @@ func TestAgentPluginsListFlags(t *testing.T) {
 			name:        "repo-and-harness-mutually-exclusive",
 			args:        []string{"list", "--repo=" + tests.AgentPluginsLocalRepo, "--harness=claude", "--global"},
 			expectError: true,
-			errContains: []string{"--repo and --harness are mutually exclusive"},
+			errContains: []string{"--repo and --harness are mutually exclusive; specify only one"},
 			description: "--repo and --harness together must error",
 		},
 	}
@@ -2414,8 +2506,8 @@ func TestAgentPluginsListGlobalProjectDirMutuallyExclusive(t *testing.T) {
 	)
 }
 
-// TestAgentPluginsListLimitHarnessMode verifies that --limit truncates results
-// when listing installed plugins via --harness for each harness condition.
+// TestAgentPluginsListLimitHarnessMode verifies --limit truncates JSON rows when
+// listing installed plugins via --harness.
 func TestAgentPluginsListLimitHarnessMode(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
@@ -2440,14 +2532,41 @@ func TestAgentPluginsListLimitHarnessMode(t *testing.T) {
 				assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug)
 			}
 
-			assert.NoError(t, runAgentPluginsCmd(t,
+			out, err := runAgentPluginsCmdWithOutput(t,
 				"list",
 				"--harness="+harnessFlag(tc.harnesses),
 				"--global",
 				"--limit=2",
-			), "list --harness --limit should succeed")
+				"--format=json",
+			)
+			require.NoError(t, err, "list --harness --limit should succeed")
+			assertListLocalRowCountAtMost(t, out, tc.harnesses, 2)
 		})
 	}
+}
+
+// TestAgentPluginsListLimitRepoMode verifies --limit truncates registry list
+// results when using --repo --format=json.
+func TestAgentPluginsListLimitRepoMode(t *testing.T) {
+	initAgentPluginsTest(t)
+	defer cleanAgentPluginsTest()
+
+	for _, slug := range []string{"limit-repo-a", "limit-repo-b", "limit-repo-c"} {
+		require.NoError(t, runAgentPluginsCmd(t,
+			"publish", createTestPlugin(t, slug, "1.0.0"),
+			"--repo="+tests.AgentPluginsLocalRepo,
+		))
+	}
+
+	out, err := runAgentPluginsCmdWithOutput(t,
+		"list",
+		"--repo="+tests.AgentPluginsLocalRepo,
+		"--limit=2",
+		"--format=json",
+	)
+	require.NoError(t, err, "list --repo --limit=2 should succeed")
+	rows := parseListRepoJSON(t, out)
+	assert.Equal(t, 2, len(rows), "list --repo --limit=2 must return exactly 2 rows when more plugins exist")
 }
 
 // TestAgentPluginsListLimitZero verifies that --limit=0 (or a negative value)
@@ -3134,14 +3253,12 @@ func downloadMarketplaceJSONWithRetry(fileName, downloadDir string) error {
 func assertListContainsInstalledPlugin(t *testing.T, out string, harnesses []string, slug string) {
 	t.Helper()
 	if len(harnesses) == 1 {
-		var rows []map[string]any
-		require.NoError(t, json.Unmarshal([]byte(out), &rows), "list output must be a JSON array")
+		rows := parseListLocalJSONArray(t, out)
 		assert.True(t, listRowsContainPlugin(rows, slug), "list --json should contain installed plugin %q", slug)
 		return
 	}
 
-	var byHarness map[string][]map[string]any
-	require.NoError(t, json.Unmarshal([]byte(out), &byHarness), "multi-harness list output must be a JSON object")
+	byHarness := parseListLocalJSONObject(t, out)
 	for _, harness := range harnesses {
 		rows, found := byHarness[harness]
 		require.True(t, found, "list --json output should contain harness %q", harness)
@@ -3157,6 +3274,87 @@ func listRowsContainPlugin(rows []map[string]any, slug string) bool {
 		}
 	}
 	return false
+}
+
+type agentPluginsListRepoRow struct {
+	Name    string `json:"name"`
+	Version string `json:"version"`
+	Source  string `json:"source"`
+}
+
+func extractJSONObjectOrArray(t *testing.T, out string) string {
+	t.Helper()
+	trimmed := strings.TrimSpace(out)
+	arrayStart := strings.Index(trimmed, "[")
+	objectStart := strings.Index(trimmed, "{")
+	switch {
+	case arrayStart >= 0 && (objectStart < 0 || arrayStart < objectStart):
+		end := strings.LastIndex(trimmed, "]")
+		require.Greater(t, end, arrayStart, "JSON array must have a closing bracket, got: %q", out)
+		return trimmed[arrayStart : end+1]
+	case objectStart >= 0:
+		end := strings.LastIndex(trimmed, "}")
+		require.Greater(t, end, objectStart, "JSON object must have a closing brace, got: %q", out)
+		return trimmed[objectStart : end+1]
+	default:
+		t.Fatalf("list/search output must contain JSON, got: %q", out)
+		return ""
+	}
+}
+
+func parseListRepoJSON(t *testing.T, out string) []agentPluginsListRepoRow {
+	t.Helper()
+	var rows []agentPluginsListRepoRow
+	require.NoError(t, json.Unmarshal([]byte(extractJSONObjectOrArray(t, out)), &rows),
+		"list --repo output must be a JSON array")
+	return rows
+}
+
+func assertListRepoJSONContains(t *testing.T, out, slug, version, repo string) {
+	t.Helper()
+	rows := parseListRepoJSON(t, out)
+	expectedSource := "Repo: " + repo
+	for _, row := range rows {
+		if row.Name == slug {
+			assert.Equal(t, version, row.Version, "list --repo version for %q", slug)
+			assert.Equal(t, expectedSource, row.Source, "list --repo source for %q", slug)
+			return
+		}
+	}
+	t.Fatalf("list --repo JSON did not contain plugin %q; output: %s", slug, out)
+}
+
+func parseListLocalJSONArray(t *testing.T, out string) []map[string]any {
+	t.Helper()
+	var rows []map[string]any
+	require.NoError(t, json.Unmarshal([]byte(extractJSONObjectOrArray(t, out)), &rows),
+		"single-harness list output must be a JSON array")
+	return rows
+}
+
+func parseListLocalJSONObject(t *testing.T, out string) map[string][]map[string]any {
+	t.Helper()
+	var byHarness map[string][]map[string]any
+	require.NoError(t, json.Unmarshal([]byte(extractJSONObjectOrArray(t, out)), &byHarness),
+		"multi-harness list output must be a JSON object")
+	return byHarness
+}
+
+func assertListLocalRowCountAtMost(t *testing.T, out string, harnesses []string, limit int) {
+	t.Helper()
+	if len(harnesses) == 1 {
+		rows := parseListLocalJSONArray(t, out)
+		assert.Equal(t, limit, len(rows),
+			"list --harness --limit=%d must return exactly %d rows when more plugins are installed", limit, limit)
+		return
+	}
+	byHarness := parseListLocalJSONObject(t, out)
+	for _, harness := range harnesses {
+		rows, found := byHarness[harness]
+		require.True(t, found, "list --json should contain harness %q", harness)
+		assert.Equal(t, limit, len(rows),
+			"list --harness --limit=%d must return exactly %d rows for harness %q", limit, limit, harness)
+	}
 }
 
 // ---------------------------------------------------------------------------
