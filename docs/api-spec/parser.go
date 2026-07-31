@@ -4,6 +4,7 @@
 package apispec
 
 import (
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
@@ -42,6 +43,17 @@ type Property struct {
 type RequestBody struct {
 	Required   bool       `json:"required"`
 	Properties []Property `json:"properties,omitempty"`
+	// Example is the operation's declared requestBody.content.application/json.example,
+	// verbatim, when the spec provides one. yaml.v3 decodes YAML mappings into
+	// map[string]interface{} (not v2's map[interface{}]interface{}), so this
+	// round-trips through encoding/json without a custom converter.
+	Example json.RawMessage `json:"example,omitempty"`
+}
+
+// Response describes a single declared HTTP response for an operation.
+type Response struct {
+	Code        string `json:"code"`
+	Description string `json:"description,omitempty"`
 }
 
 // Operation describes a single OpenAPI path+method operation.
@@ -55,6 +67,9 @@ type Operation struct {
 	// RequestBody is nil for operations with no application/json request body
 	// (typically GET/DELETE).
 	RequestBody *RequestBody
+	// Responses is sorted by status code ascending; empty when the spec
+	// declares no responses object for this operation.
+	Responses []Response
 }
 
 // Metadata describes which spec bundle is embedded in this binary.
@@ -71,11 +86,16 @@ type rawDoc struct {
 }
 
 type rawOperation struct {
-	Summary     string          `yaml:"summary"`
-	OperationId string          `yaml:"operationId"`
-	Tags        []string        `yaml:"tags"`
-	Parameters  []Parameter     `yaml:"parameters"`
-	RequestBody *rawRequestBody `yaml:"requestBody"`
+	Summary     string                 `yaml:"summary"`
+	OperationId string                 `yaml:"operationId"`
+	Tags        []string               `yaml:"tags"`
+	Parameters  []Parameter            `yaml:"parameters"`
+	RequestBody *rawRequestBody        `yaml:"requestBody"`
+	Responses   map[string]rawResponse `yaml:"responses"`
+}
+
+type rawResponse struct {
+	Description string `yaml:"description"`
 }
 
 type rawRequestBody struct {
@@ -84,7 +104,8 @@ type rawRequestBody struct {
 }
 
 type rawMediaTypeItem struct {
-	Schema rawSchema `yaml:"schema"`
+	Schema  rawSchema `yaml:"schema"`
+	Example any       `yaml:"example"`
 }
 
 // rawSchema is a deliberately narrow subset of OpenAPI's Schema Object: only
@@ -190,6 +211,7 @@ func parseFile(name string) ([]Operation, error) {
 				OperationId: op.OperationId,
 				Parameters:  op.Parameters,
 				RequestBody: buildRequestBody(op.RequestBody, doc.Components.Schemas),
+				Responses:   buildResponses(op.Responses),
 			})
 		}
 	}
@@ -232,7 +254,57 @@ func buildRequestBody(raw *rawRequestBody, schemas map[string]rawSchema) *Reques
 	}
 	sort.Slice(properties, func(i, j int) bool { return properties[i].Name < properties[j].Name })
 
-	return &RequestBody{Required: raw.Required, Properties: properties}
+	return &RequestBody{Required: raw.Required, Properties: properties, Example: buildExample(media.Example)}
+}
+
+// buildExample marshals a requestBody media-type's declared example (decoded by
+// yaml.v3 into map[string]interface{}/[]interface{}/primitives) into JSON.
+// Returns nil when there's no example to marshal or marshaling somehow fails --
+// an example is a nice-to-have, not worth failing operation parsing over.
+func buildExample(v any) json.RawMessage {
+	if v == nil {
+		return nil
+	}
+	data, err := json.Marshal(v)
+	if err != nil {
+		return nil
+	}
+	return data
+}
+
+// buildResponses flattens an operation's responses object into a slice sorted
+// by status code ascending. String sort is sufficient for the 2/3/4/5-digit
+// numeric codes present in both the stub and full bundles today; neither uses
+// wildcard forms like "2XX".
+func buildResponses(raw map[string]rawResponse) []Response {
+	if len(raw) == 0 {
+		return nil
+	}
+	responses := make([]Response, 0, len(raw))
+	for code, r := range raw {
+		responses = append(responses, Response{Code: code, Description: r.Description})
+	}
+	sort.Slice(responses, func(i, j int) bool { return responses[i].Code < responses[j].Code })
+	return responses
+}
+
+// FindOperation returns the operation matching method (case-insensitive) and
+// path (exact, case-sensitive -- paths may contain literal {param} segments,
+// e.g. "/worker/api/v1/workers/{workerKey}", matched verbatim against the
+// catalog rather than against a concrete instantiated path) from the embedded
+// bundle, or ok=false if none matches.
+func FindOperation(method, path string) (op Operation, ok bool) {
+	ops, err := Operations()
+	if err != nil {
+		return Operation{}, false
+	}
+	method = strings.ToUpper(strings.TrimSpace(method))
+	for _, o := range ops {
+		if o.Method == method && o.Path == path {
+			return o, true
+		}
+	}
+	return Operation{}, false
 }
 
 // schemaRefName extracts "Foo" from a local-document ref like

@@ -137,6 +137,7 @@ const (
 	ExchangeOidcToken = "exchange-oidc-token"
 	Api               = "api"
 	ApiDocsSearch     = "api-docs-search"
+	ApiDocsDescribe   = "api-docs-describe"
 
 	// MCP commands keys
 	McpShow      = "mcp-show"
@@ -668,6 +669,9 @@ const (
 	apiDocsSearchLimit  = "api-docs-search-limit"
 	apiDocsSearchFormat = "api-docs-search-format"
 
+	// API docs describe command flags
+	apiDocsDescribeFormat = "api-docs-describe-format"
+
 	// MCP command flags
 	mcpUrl        = "mcp-url"
 	mcpAgent      = "mcp-agent"
@@ -832,6 +836,10 @@ var flagsMap = map[string]cli.Flag{
 		Usage: "[Default: 10] Maximum number of ranked matches to return.` `",
 	},
 	apiDocsSearchFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + components.GetFormatFlagDescription([]format.OutputFormat{format.Json, format.Table}) + "` `",
+	},
+	apiDocsDescribeFormat: cli.StringFlag{
 		Name:  Format,
 		Usage: "[Optional] " + components.GetFormatFlagDescription([]format.OutputFormat{format.Json, format.Table}) + "` `",
 	},
@@ -2287,6 +2295,9 @@ var commandFlags = map[string][]string{
 	},
 	ApiDocsSearch: {
 		apiDocsSearchTag, apiDocsSearchMethod, apiDocsSearchLimit, apiDocsSearchFormat,
+	},
+	ApiDocsDescribe: {
+		apiDocsDescribeFormat,
 	},
 	McpShow: {
 		platformUrl, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,

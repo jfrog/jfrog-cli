@@ -31,13 +31,24 @@ func TestOperations_Stub(t *testing.T) {
 	assert.Len(t, getUserList.Parameters, 10)
 
 	assert.Nil(t, getUserList.RequestBody, "a GET operation should have no request body")
+	require.Len(t, getUserList.Responses, 4, "getUserList declares 200/400/401/403")
+	assert.Equal(t, []Response{
+		{Code: "200", Description: "Success"},
+		{Code: "400", Description: "Bad Request - Invalid input, object invalid"},
+		{Code: "401", Description: "Bad Credentials - Invalid credentials"},
+		{Code: "403", Description: "Permission Denied - Insufficient permissions"},
+	}, getUserList.Responses, "responses should be sorted by code ascending")
 
 	createUser, ok := byOperationId["createUser"]
 	require.True(t, ok, "createUser should be present")
 	assert.Equal(t, "POST", createUser.Method)
 	assert.Equal(t, "/access/api/v2/users", createUser.Path)
+	require.Len(t, createUser.Responses, 5, "createUser declares 201/400/401/403/409")
+	assert.Equal(t, "201", createUser.Responses[0].Code)
+	assert.Equal(t, "User created successfully", createUser.Responses[0].Description)
 
 	require.NotNil(t, createUser.RequestBody, "createUser's requestBody ($ref: UserCreateRequest) should resolve")
+	assert.Nil(t, createUser.RequestBody.Example, "users-api.yaml's createUser declares no requestBody example")
 	assert.True(t, createUser.RequestBody.Required)
 	propsByName := make(map[string]Property, len(createUser.RequestBody.Properties))
 	for _, p := range createUser.RequestBody.Properties {
