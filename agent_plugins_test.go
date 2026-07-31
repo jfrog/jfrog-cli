@@ -305,7 +305,7 @@ func buildNativeAgentCLIStubs(t *testing.T, binDir string) (claudeBin, codexBin 
 
 	data, err := os.ReadFile(claudeBin) // #nosec G304 -- path from t.TempDir
 	require.NoError(t, err)
-	require.NoError(t, os.WriteFile(codexBin, data, 0755)) // #nosec G306 -- test stub binary
+	require.NoError(t, os.WriteFile(codexBin, data, 0755)) // #nosec G306,G703 -- test stub binary path is under t.TempDir
 	return claudeBin, codexBin
 }
 
