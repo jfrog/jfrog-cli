@@ -2729,13 +2729,12 @@ func TestAgentPluginsSearch(t *testing.T) {
 		"--repo="+tests.AgentPluginsLocalRepo,
 	))
 
-	out, err := runAgentPluginsCmdWithOutput(t,
+	rows := searchRowsWithRetry(t, slug, version,
 		"search", slug,
 		"--repo="+tests.AgentPluginsLocalRepo,
 		"--format=json",
 	)
-	require.NoError(t, err, "search should succeed after publish")
-	assertSearchJSONContains(t, out, slug, version, tests.AgentPluginsLocalRepo)
+	assertSearchRowsContain(t, rows, slug, version, tests.AgentPluginsLocalRepo)
 }
 
 // TestAgentPluginsSearchSubstringMatch verifies wildcard wrapping: a partial
@@ -2752,13 +2751,12 @@ func TestAgentPluginsSearchSubstringMatch(t *testing.T) {
 		"--repo="+tests.AgentPluginsLocalRepo,
 	))
 
-	out, err := runAgentPluginsCmdWithOutput(t,
+	rows := searchRowsWithRetry(t, slug, version,
 		"search", "substring",
 		"--repo="+tests.AgentPluginsLocalRepo,
 		"--format=json",
 	)
-	require.NoError(t, err, "partial-name search should succeed")
-	assertSearchJSONContains(t, out, slug, version, tests.AgentPluginsLocalRepo)
+	assertSearchRowsContain(t, rows, slug, version, tests.AgentPluginsLocalRepo)
 }
 
 // TestAgentPluginsSearchLatestVersionOnly publishes two versions and verifies
@@ -2773,13 +2771,13 @@ func TestAgentPluginsSearchLatestVersionOnly(t *testing.T) {
 		require.NoError(t, runAgentPluginsCmd(t, "publish", p, "--repo="+tests.AgentPluginsLocalRepo))
 	}
 
-	out, err := runAgentPluginsCmdWithOutput(t,
+	// Wait for the highest version specifically: the lower one can be indexed first,
+	// and a search that sees only 1.0.0 would fail the latest-only assertion below.
+	rows := searchRowsWithRetry(t, slug, "2.0.0",
 		"search", slug,
 		"--repo="+tests.AgentPluginsLocalRepo,
 		"--format=json",
 	)
-	require.NoError(t, err)
-	rows := parseSearchJSON(t, out)
 	require.Len(t, rows, 1, "search should return one row per plugin name (latest only)")
 	assert.Equal(t, slug, rows[0].Name)
 	assert.Equal(t, "2.0.0", rows[0].Version, "search should keep the highest semver")
@@ -2843,9 +2841,8 @@ func TestAgentPluginsSearchRepoFromEnvVar(t *testing.T) {
 
 	t.Setenv("JFROG_AGENT_PLUGINS_REPO", tests.AgentPluginsLocalRepo)
 
-	out, err := runAgentPluginsCmdWithOutput(t, "search", slug, "--format=json")
-	require.NoError(t, err, "search should succeed using repo from JFROG_AGENT_PLUGINS_REPO")
-	assertSearchJSONContains(t, out, slug, version, tests.AgentPluginsLocalRepo)
+	rows := searchRowsWithRetry(t, slug, version, "search", slug, "--format=json")
+	assertSearchRowsContain(t, rows, slug, version, tests.AgentPluginsLocalRepo)
 }
 
 type agentPluginsSearchRow struct {
@@ -2855,21 +2852,51 @@ type agentPluginsSearchRow struct {
 	Description string `json:"description"`
 }
 
-func parseSearchJSON(t *testing.T, out string) []agentPluginsSearchRow {
-	t.Helper()
-	// CLI may log the command line before JSON; extract the JSON array.
+func parseSearchRows(out string) ([]agentPluginsSearchRow, error) {
+	// CLI may log the command line before JSON; extract the JSON array. A search that
+	// matched nothing reports that through the log instead, leaving no array at all.
 	start := strings.Index(out, "[")
 	end := strings.LastIndex(out, "]")
-	require.GreaterOrEqual(t, start, 0, "search JSON output must contain an array, got: %q", out)
-	require.Greater(t, end, start, "search JSON output must contain a closing array bracket, got: %q", out)
+	if start < 0 || end <= start {
+		return nil, fmt.Errorf("search output does not contain a JSON array, got: %q", out)
+	}
 	var rows []agentPluginsSearchRow
-	require.NoError(t, json.Unmarshal([]byte(out[start:end+1]), &rows), "search output must be valid JSON")
-	return rows
+	if err := json.Unmarshal([]byte(out[start:end+1]), &rows); err != nil {
+		return nil, fmt.Errorf("parse search JSON %q: %w", out[start:end+1], err)
+	}
+	return rows, nil
 }
 
-func assertSearchJSONContains(t *testing.T, out, slug, version, repo string) {
+// searchRowsWithRetry runs a search command until it lists slug at version. Artifactory sets the
+// agentplugins.name property that search queries asynchronously after the upload response returns,
+// so a search issued right after publish can legitimately come back empty. This is the same
+// wait-for-async-indexing pattern as assertMarketplaceContainsPlugin.
+func searchRowsWithRetry(t *testing.T, slug, version string, searchArgs ...string) []agentPluginsSearchRow {
 	t.Helper()
-	rows := parseSearchJSON(t, out)
+	var found []agentPluginsSearchRow
+	description := fmt.Sprintf("wait for property search to list %s %s", slug, version)
+	require.NoError(t, retryWithBackoff(t, description, func() error {
+		out, err := runAgentPluginsCmdWithOutput(t, searchArgs...)
+		if err != nil {
+			return err
+		}
+		rows, err := parseSearchRows(out)
+		if err != nil {
+			return err
+		}
+		for _, row := range rows {
+			if row.Name == slug && row.Version == version {
+				found = rows
+				return nil
+			}
+		}
+		return fmt.Errorf("search does not list plugin %q at version %q yet; output: %s", slug, version, out)
+	}))
+	return found
+}
+
+func assertSearchRowsContain(t *testing.T, rows []agentPluginsSearchRow, slug, version, repo string) {
+	t.Helper()
 	for _, row := range rows {
 		if row.Name == slug {
 			assert.Equal(t, version, row.Version, "search row version for %q", slug)
@@ -2877,7 +2904,7 @@ func assertSearchJSONContains(t *testing.T, out, slug, version, repo string) {
 			return
 		}
 	}
-	t.Fatalf("search JSON did not contain plugin %q; output: %s", slug, out)
+	t.Fatalf("search rows did not contain plugin %q; rows: %+v", slug, rows)
 }
 
 // ---------------------------------------------------------------------------
