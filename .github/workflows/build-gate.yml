@@ -41,6 +41,10 @@ jobs:
     needs: gate
     uses: ./.github/workflows/agentPluginsTests.yml
     secrets: inherit
+  agent-skills:
+    needs: gate
+    uses: ./.github/workflows/agentSkillsTests.yml
+    secrets: inherit
   access:
     needs: gate
     # OIDC suite: caller must grant id-token so the reusable workflow can request it.
