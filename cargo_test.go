@@ -167,12 +167,16 @@ func TestCargoInstallCollectsDeps(t *testing.T) {
 			assert.NotContains(t, dep.Id, d, "dev-dependency (or its exclusive transitive) must be excluded: %s", dep.Id)
 		}
 	}
-	// serde_json is the direct production dependency.
-	assertScope(t, scopes, "serde_json-", "prod")
+	// Scopes are cargo's own dep-kind names verbatim ("normal"/"build"/"dev") — no synthesized
+	// "prod" or "transitive" markers, matching the Q3 bughunt correction: cargo's normal
+	// dependency (kind: "") is surfaced as "normal", not "prod", and indirect deps keep the same
+	// kind as their reaching edge rather than being relabelled as "transitive".
+	assertScope(t, scopes, "serde_json-", "normal")
 	// cc is the build-dependency.
 	assertScope(t, scopes, "cc-", "build")
-	// At least one transitive prod dep (e.g. serde/itoa/ryu/memchr).
-	assert.True(t, hasScope(scopes, "transitive"), "expected at least one transitive dependency")
+	// At least one transitive normal dep (e.g. serde_core/itoa/memchr/zmij), reached only via
+	// serde_json — carries "normal" scope, not "transitive".
+	assert.True(t, hasScope(scopes, "normal"), "expected at least one normal-scoped transitive dependency")
 	// #42 — every dependency should carry a sha256 (local cache + AQL enrichment).
 	assert.Equal(t, len(module.Dependencies), sha256Count,
 		"all dependencies should have sha256 (got %d/%d)", sha256Count, len(module.Dependencies))
