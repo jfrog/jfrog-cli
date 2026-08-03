@@ -113,8 +113,9 @@ func execMain() error {
 		}
 	}
 
-	// Set JFrog CLI's user-agent on the jfrog-client-go.
-	clientutils.SetUserAgent(coreutils.GetCliUserAgent())
+	// Set JFrog CLI's user-agent on the jfrog-client-go, enriched with the AI agent
+	// that invoked us when one is detected (AGW-86).
+	clientutils.SetUserAgent(cliutils.GetCliUserAgentWithAgent())
 
 	app := cli.NewApp()
 	app.Name = jfrogAppName
