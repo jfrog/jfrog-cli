@@ -157,7 +157,7 @@ func TestMavenBuildWithFlexPackBuildInfo(t *testing.T) {
 func TestMavenNativeMultiModuleBuildInfo(t *testing.T) {
 	buildName := tests.MvnBuildName + "-flexpack-multimodule"
 	buildNumber := "1"
-	projDir := setupNativeMavenMultiModule(t, "build info test")
+	setupNativeMavenMultiModule(t, "build info test")
 
 	// Native mode shells out to raw mvn, which resolves from the machine's default settings. Point it
 	// at a public-central mirror so resolution is deterministic and independent of local settings.
@@ -342,7 +342,7 @@ func anyHasPrefix(values []string, prefix string) bool {
 func TestMavenNativeMultiModuleDeploy(t *testing.T) {
 	buildName := tests.MvnBuildName + "-flexpack-multimodule-deploy"
 	buildNumber := "1"
-	projDir := setupNativeMavenMultiModule(t, "deploy test")
+	setupNativeMavenMultiModule(t, "deploy test")
 
 	const deployServerId = "artifactory-deploy"
 	settingsPath := writeMavenDeploySettings(t, deployServerId)
@@ -448,7 +448,7 @@ func searchPathsByProps(t *testing.T, pattern, props string) []string {
 // build info records that PHYSICAL repo as OriginalDeploymentRepo (not the virtual). This is the
 // GetRepository-based virtual resolution (help:effective-pom URL -> repo key -> defaultDeploymentRepo).
 func TestMavenNativeMultiModuleDeployToVirtual(t *testing.T) {
-	projDir := setupNativeMavenMultiModule(t, "virtual-deploy test")
+	setupNativeMavenMultiModule(t, "virtual-deploy test")
 
 	// Create a maven virtual repository whose default deployment target is MvnRepo1 (the physical local
 	// repo). Deploying through the virtual must therefore store bytes in MvnRepo1.
