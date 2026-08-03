@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -141,6 +142,7 @@ func assertPluginAbsent(t *testing.T, slug, version string) {
 	searchCmd.SetServerDetails(serverDetails).SetSpec(searchSpec)
 	reader, err := searchCmd.Search()
 	require.NoError(t, err, "search for absent artifact failed")
+	// Read-side Close: search reader has no write flush; nothing actionable on failure.
 	defer func() { _ = reader.Close() }()
 	var found bool
 	for item := new(artUtils.SearchResult); reader.NextRecord(item) == nil; item = new(artUtils.SearchResult) {
@@ -253,13 +255,66 @@ func createTestHarnessPlugin(t *testing.T, slug, version string, harnesses []str
 	return pluginPath
 }
 
+// nativeAgentStubOnce builds the shared claude/codex stub binary once per process.
+// stubNativeAgentCLIs copies that binary into each test's PATH dir so we avoid
+// recompiling on every initAgentPluginsTest (~99 times across the suite).
+var (
+	nativeAgentStubOnce sync.Once
+	nativeAgentStubData []byte
+	nativeAgentStubErr  error
+)
+
+func nativeAgentStubBinary() ([]byte, error) {
+	nativeAgentStubOnce.Do(func() {
+		srcDir, err := os.MkdirTemp("", "jf-agent-plugins-native-stub-src-*")
+		if err != nil {
+			nativeAgentStubErr = err
+			return
+		}
+		defer func() { _ = os.RemoveAll(srcDir) }() // best-effort teardown of compile workspace
+
+		if err := os.WriteFile(filepath.Join(srcDir, "go.mod"), []byte("module nativeagentstub\n\ngo 1.22\n"), 0644); err != nil { // #nosec G306 -- test fixture
+			nativeAgentStubErr = err
+			return
+		}
+		if err := os.WriteFile(filepath.Join(srcDir, "main.go"), []byte(nativeAgentCLIStubSource), 0644); err != nil { // #nosec G306 -- test fixture
+			nativeAgentStubErr = err
+			return
+		}
+
+		outBin := filepath.Join(srcDir, "claude")
+		if runtime.GOOS == "windows" {
+			outBin += ".exe"
+		}
+		build := exec.Command("go", "build", "-o", outBin, ".") // #nosec G204 -- fixed go build of local stub sources
+		build.Dir = srcDir
+		out, err := build.CombinedOutput()
+		if err != nil {
+			nativeAgentStubErr = fmt.Errorf("building claude stub failed: %w: %s", err, string(out))
+			return
+		}
+		nativeAgentStubData, nativeAgentStubErr = os.ReadFile(outBin) // #nosec G304 -- path under MkdirTemp
+	})
+	return nativeAgentStubData, nativeAgentStubErr
+}
+
 // stubNativeAgentCLIs installs cross-platform stub claude/codex binaries on PATH and wires
 // LookPath/Exec hooks so install/list/update do not depend on real native CLIs.
 func stubNativeAgentCLIs(t *testing.T) {
 	t.Helper()
 
+	data, err := nativeAgentStubBinary()
+	require.NoError(t, err)
+
 	binDir := t.TempDir()
-	claudeBin, codexBin := buildNativeAgentCLIStubs(t, binDir)
+	claudeBin := filepath.Join(binDir, "claude")
+	codexBin := filepath.Join(binDir, "codex")
+	if runtime.GOOS == "windows" {
+		claudeBin += ".exe"
+		codexBin += ".exe"
+	}
+	require.NoError(t, os.WriteFile(claudeBin, data, 0755)) // #nosec G306 -- test stub binary path is under t.TempDir
+	require.NoError(t, os.WriteFile(codexBin, data, 0755))  // #nosec G306 -- test stub binary path is under t.TempDir
 
 	prevPath := os.Getenv("PATH")
 	t.Setenv("PATH", binDir+string(os.PathListSeparator)+prevPath)
@@ -283,30 +338,6 @@ func stubNativeAgentCLIs(t *testing.T) {
 	plugincommon.CodexExec = func(args ...string) error {
 		return exec.Command(codexBin, args...).Run() // #nosec G204 -- test stub binary
 	}
-}
-
-func buildNativeAgentCLIStubs(t *testing.T, binDir string) (claudeBin, codexBin string) {
-	t.Helper()
-	srcDir := t.TempDir()
-	require.NoError(t, os.WriteFile(filepath.Join(srcDir, "go.mod"), []byte("module nativeagentstub\n\ngo 1.22\n"), 0644)) // #nosec G306 -- test fixture
-	require.NoError(t, os.WriteFile(filepath.Join(srcDir, "main.go"), []byte(nativeAgentCLIStubSource), 0644))             // #nosec G306 -- test fixture
-
-	claudeBin = filepath.Join(binDir, "claude")
-	codexBin = filepath.Join(binDir, "codex")
-	if runtime.GOOS == "windows" {
-		claudeBin += ".exe"
-		codexBin += ".exe"
-	}
-
-	build := exec.Command("go", "build", "-o", claudeBin, ".")
-	build.Dir = srcDir
-	out, err := build.CombinedOutput()
-	require.NoError(t, err, "building claude stub failed: %s", string(out))
-
-	data, err := os.ReadFile(claudeBin) // #nosec G304 -- path from t.TempDir
-	require.NoError(t, err)
-	require.NoError(t, os.WriteFile(codexBin, data, 0755)) // #nosec G306,G703 -- test stub binary path is under t.TempDir
-	return claudeBin, codexBin
 }
 
 // nativeAgentCLIStubSource is a tiny stdlib-only program that pretends to be claude/codex.
@@ -520,6 +551,7 @@ func TestAgentPluginsChecksumIntegrity(t *testing.T) {
 	slug := "checksum-plugin"
 	version := "1.0.0"
 	buildNumber := t.Name()
+	// Best-effort teardown of local build-info dir; leftover dirs do not affect assertions.
 	t.Cleanup(func() { _ = coreBuild.RemoveBuildDir(tests.AgentPluginsBuildName, buildNumber, "") })
 	pluginPath := createTestPlugin(t, slug, version)
 
@@ -538,16 +570,16 @@ func TestAgentPluginsChecksumIntegrity(t *testing.T) {
 	require.NotEmpty(t, publishedBuildInfo.BuildInfo.Modules[0].Artifacts,
 		"expected at least one artifact in build info")
 
-	for _, a := range publishedBuildInfo.BuildInfo.Modules[0].Artifacts {
-		assert.NotEmpty(t, a.Md5, "artifact %s: md5 must not be empty", a.Name)
-		assert.NotEmpty(t, a.Sha1, "artifact %s: sha1 must not be empty", a.Name)
-		assert.NotEmpty(t, a.Sha256, "artifact %s: sha256 must not be empty", a.Name)
-		assert.NotEqual(t, "untrusted", strings.ToLower(a.Md5),
-			"artifact %s: md5 must not be 'untrusted'", a.Name)
-		assert.NotEqual(t, "untrusted", strings.ToLower(a.Sha1),
-			"artifact %s: sha1 must not be 'untrusted'", a.Name)
-		assert.NotEqual(t, "untrusted", strings.ToLower(a.Sha256),
-			"artifact %s: sha256 must not be 'untrusted'", a.Name)
+	for _, artifact := range publishedBuildInfo.BuildInfo.Modules[0].Artifacts {
+		assert.NotEmpty(t, artifact.Md5, "artifact %s: md5 must not be empty", artifact.Name)
+		assert.NotEmpty(t, artifact.Sha1, "artifact %s: sha1 must not be empty", artifact.Name)
+		assert.NotEmpty(t, artifact.Sha256, "artifact %s: sha256 must not be empty", artifact.Name)
+		assert.NotEqual(t, "untrusted", strings.ToLower(artifact.Md5),
+			"artifact %s: md5 must not be 'untrusted'", artifact.Name)
+		assert.NotEqual(t, "untrusted", strings.ToLower(artifact.Sha1),
+			"artifact %s: sha1 must not be 'untrusted'", artifact.Name)
+		assert.NotEqual(t, "untrusted", strings.ToLower(artifact.Sha256),
+			"artifact %s: sha256 must not be 'untrusted'", artifact.Name)
 	}
 }
 
@@ -561,6 +593,7 @@ func TestAgentPluginsPublishWithBuildInfo(t *testing.T) {
 	slug := "buildinfo-plugin"
 	version := "1.0.0"
 	buildNumber := t.Name()
+	// Best-effort teardown of local build-info dir; leftover dirs do not affect assertions.
 	t.Cleanup(func() { _ = coreBuild.RemoveBuildDir(tests.AgentPluginsBuildName, buildNumber, "") })
 	pluginPath := createTestPlugin(t, slug, version)
 
@@ -644,6 +677,7 @@ func TestAgentPluginsModuleOverride(t *testing.T) {
 
 	slug := "module-override-plugin"
 	buildNumber := t.Name()
+	// Best-effort teardown of local build-info dir; leftover dirs do not affect assertions.
 	t.Cleanup(func() { _ = coreBuild.RemoveBuildDir(tests.AgentPluginsBuildName, buildNumber, "") })
 	customModule := "my-custom-agent-module"
 	pluginPath := createTestPlugin(t, slug, "1.0.0")
@@ -794,6 +828,7 @@ func TestAgentPluginsBuildPropertiesOnArtifact(t *testing.T) {
 	slug := "build-props-plugin"
 	version := "1.0.0"
 	buildNumber := t.Name()
+	// Best-effort teardown of local build-info dir; leftover dirs do not affect assertions.
 	t.Cleanup(func() { _ = coreBuild.RemoveBuildDir(tests.AgentPluginsBuildName, buildNumber, "") })
 	pluginPath := createTestPlugin(t, slug, version)
 
@@ -863,6 +898,7 @@ func TestAgentPluginsBuildPublishRetrievable(t *testing.T) {
 	slug := "bp-retrievable-plugin"
 	version := "1.0.0"
 	buildNumber := t.Name()
+	// Best-effort teardown of local build-info dir; leftover dirs do not affect assertions.
 	t.Cleanup(func() { _ = coreBuild.RemoveBuildDir(tests.AgentPluginsBuildName, buildNumber, "") })
 	pluginPath := createTestPlugin(t, slug, version)
 
@@ -905,6 +941,7 @@ func TestAgentPluginsChecksumStoredByArtifactory(t *testing.T) {
 	searchCmd.SetServerDetails(serverDetails).SetSpec(searchSpec)
 	reader, err := searchCmd.Search()
 	require.NoError(t, err, "search for artifact checksum failed")
+	// Read-side Close: search reader has no write flush; nothing actionable on failure.
 	defer func() { _ = reader.Close() }()
 	item := new(artUtils.SearchResult)
 	require.NoError(t, reader.NextRecord(item), "artifact must be found in Artifactory")
@@ -930,7 +967,7 @@ func TestAgentPluginsPublishWithSigningKey(t *testing.T) {
 	require.NoError(t, err, "key generation must succeed")
 
 	privateKeyPath := filepath.Join(t.TempDir(), "evidence.key")
-	require.NoError(t, os.WriteFile(privateKeyPath, []byte(privateKeyPEM), 0600))
+	require.NoError(t, os.WriteFile(privateKeyPath, []byte(privateKeyPEM), 0600)) // #nosec G306 -- test private key under t.TempDir
 
 	// Upload the public key to Artifactory trusted keys so the evidence service can verify
 	// signatures made with the corresponding private key. KeyPairCommand.Run is not used here:
@@ -1150,6 +1187,7 @@ func TestAgentPluginsInstallMarketplaceSlugNotListed(t *testing.T) {
 	require.NoError(t, runAgentPluginsCmd(t, "publish", seed, "--repo="+tests.AgentPluginsLocalRepo))
 	assertMarketplaceContainsPlugin(t, "cursor", "marketplace-seed-plugin", "1.0.0")
 
+	// Isolate HOME for global install; returned path is unused in this assertion.
 	_ = setIsolatedHome(t)
 	err := runAgentPluginsCmd(t,
 		"install", "slug-absent-from-marketplace",
@@ -1230,6 +1268,24 @@ func TestAgentPluginsInstallAgentConfigOverride(t *testing.T) {
 	))
 	assert.DirExists(t, filepath.Join(projectDir, ".my-custom-agent", "plugins", slug),
 		"plugin should be installed into projectDir/.my-custom-agent/plugins/<slug> from agent-config.json")
+
+	// When neither --global nor --project-dir is set, install defaults to global scope
+	// and still honors globalDir from agent-config.json.
+	defaultScopeSlug := "agent-config-default-scope-plugin"
+	require.NoError(t, runAgentPluginsCmd(t,
+		"publish", createTestPlugin(t, defaultScopeSlug, "1.0.0"),
+		"--repo="+tests.AgentPluginsLocalRepo,
+	))
+	require.NoError(t, runAgentPluginsCmd(t,
+		"install", defaultScopeSlug,
+		"--repo="+tests.AgentPluginsLocalRepo,
+		"--harness=my-custom-agent",
+		"--version=1.0.0",
+	))
+	assert.DirExists(t, filepath.Join(customGlobalDir, defaultScopeSlug),
+		"omitting --global/--project-dir must default to globalDir from agent-config.json")
+	assert.NoDirExists(t, filepath.Join(projectDir, ".my-custom-agent", "plugins", defaultScopeSlug),
+		"default-scope install must not land under projectDir")
 }
 
 // TestAgentPluginsCustomAgentLifecycle is the custom-agent counterpart to the
@@ -1545,6 +1601,7 @@ func TestAgentPluginsUpdateAllNothingInstalled(t *testing.T) {
 
 	for _, tc := range agentPluginHarnessCases() {
 		t.Run(tc.name, func(t *testing.T) {
+			// Isolate HOME so --global update does not scan the real user profile.
 			_ = setIsolatedHome(t)
 			assert.NoError(t, runAgentPluginsCmd(t,
 				"update",
@@ -2227,9 +2284,9 @@ func TestAgentPluginsDeleteDryRunMultipleVersions(t *testing.T) {
 	defer cleanAgentPluginsTest()
 
 	slug := "delete-dryrun-multi-plugin"
-	for _, v := range []string{"1.0.0", "2.0.0"} {
-		p := createTestPlugin(t, slug, v)
-		require.NoError(t, runAgentPluginsCmd(t, "publish", p, "--repo="+tests.AgentPluginsLocalRepo))
+	for _, version := range []string{"1.0.0", "2.0.0"} {
+		pluginPath := createTestPlugin(t, slug, version)
+		require.NoError(t, runAgentPluginsCmd(t, "publish", pluginPath, "--repo="+tests.AgentPluginsLocalRepo))
 	}
 
 	require.NoError(t, runAgentPluginsCmd(t,
@@ -2310,9 +2367,9 @@ func TestAgentPluginsDeleteOnlySpecifiedVersion(t *testing.T) {
 	keepVersion := "1.0.0"
 	deleteVersion := "2.0.0"
 
-	for _, v := range []string{keepVersion, deleteVersion} {
-		p := createTestPlugin(t, slug, v)
-		require.NoError(t, runAgentPluginsCmd(t, "publish", p, "--repo="+tests.AgentPluginsLocalRepo))
+	for _, version := range []string{keepVersion, deleteVersion} {
+		pluginPath := createTestPlugin(t, slug, version)
+		require.NoError(t, runAgentPluginsCmd(t, "publish", pluginPath, "--repo="+tests.AgentPluginsLocalRepo))
 	}
 
 	require.NoError(t, runAgentPluginsCmd(t,
@@ -2469,6 +2526,7 @@ func TestAgentPluginsListEmptyLocal(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
 
+	// Isolate HOME so list --global does not scan the real user profile.
 	_ = setIsolatedHome(t)
 	out, err := runAgentPluginsCmdWithOutput(t,
 		"list",
@@ -2766,9 +2824,9 @@ func TestAgentPluginsSearchLatestVersionOnly(t *testing.T) {
 	defer cleanAgentPluginsTest()
 
 	slug := "search-latest-plugin"
-	for _, v := range []string{"1.0.0", "2.0.0"} {
-		p := createTestPlugin(t, slug, v)
-		require.NoError(t, runAgentPluginsCmd(t, "publish", p, "--repo="+tests.AgentPluginsLocalRepo))
+	for _, version := range []string{"1.0.0", "2.0.0"} {
+		pluginPath := createTestPlugin(t, slug, version)
+		require.NoError(t, runAgentPluginsCmd(t, "publish", pluginPath, "--repo="+tests.AgentPluginsLocalRepo))
 	}
 
 	// Wait for the highest version specifically: the lower one can be indexed first,
@@ -3016,7 +3074,9 @@ func TestAgentPluginsNoRepoConfigured(t *testing.T) {
 
 	t.Setenv("JFROG_AGENT_PLUGINS_REPO", "")
 
-	// Temporarily remove the suite's agentplugins repo so auto-discovery finds nothing.
+	// Temporarily remove the suite's shared agentplugins repo so auto-discovery finds nothing.
+	// Safe only while this package runs sequentially (no t.Parallel): a hard process exit
+	// before Cleanup would leave later tests without the suite repo.
 	require.True(t, isRepoExist(tests.AgentPluginsLocalRepo))
 	execDeleteRepo(tests.AgentPluginsLocalRepo)
 	require.False(t, isRepoExist(tests.AgentPluginsLocalRepo))
@@ -3163,9 +3223,9 @@ func TestAgentPluginsRoundTripDeleteThenInstall(t *testing.T) {
 	deletedVersion := "1.0.0"
 	keepVersion := "2.0.0"
 
-	for _, v := range []string{deletedVersion, keepVersion} {
-		p := createTestPlugin(t, slug, v)
-		require.NoError(t, runAgentPluginsCmd(t, "publish", p, "--repo="+tests.AgentPluginsLocalRepo))
+	for _, version := range []string{deletedVersion, keepVersion} {
+		pluginPath := createTestPlugin(t, slug, version)
+		require.NoError(t, runAgentPluginsCmd(t, "publish", pluginPath, "--repo="+tests.AgentPluginsLocalRepo))
 	}
 
 	// Delete v1.
@@ -3207,6 +3267,7 @@ func TestAgentPluginsArtifactoryUnreachable(t *testing.T) {
 		"--access-token=dummytoken",
 	))
 	t.Cleanup(func() {
+		// Best-effort removal of the temporary unreachable server entry.
 		_ = configCli.Exec("rm", bogusServerID, "--quiet")
 	})
 
@@ -3236,6 +3297,7 @@ func TestAgentPluginsCIPipeline(t *testing.T) {
 		version = "1.0.0"
 	)
 	buildNumber := t.Name()
+	// Best-effort teardown of local build-info dir; leftover dirs do not affect assertions.
 	t.Cleanup(func() { _ = coreBuild.RemoveBuildDir(tests.AgentPluginsBuildName, buildNumber, "") })
 
 	pluginPath := createTestPlugin(t, slug, version)
