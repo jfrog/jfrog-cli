@@ -210,14 +210,16 @@ func waitForSkillIndexed(t *testing.T, slug, version string) {
 }
 
 // publishTestSkill publishes a fixture skill, asserts storage presence, and waits for Skills API indexing.
-func publishTestSkill(t *testing.T, slug, version string, extraArgs ...string) string {
+func publishTestSkill(t *testing.T, slug, version string) {
 	t.Helper()
 	skillPath := createTestSkill(t, slug, version)
-	args := append([]string{"publish", skillPath, "--repo=" + tests.AgentSkillsLocalRepo, "--skip-scan"}, extraArgs...)
-	require.NoError(t, runAgentSkillsCmd(t, args...))
+	require.NoError(t, runAgentSkillsCmd(t,
+		"publish", skillPath,
+		"--repo="+tests.AgentSkillsLocalRepo,
+		"--skip-scan",
+	))
 	assertSkillExists(t, slug, version)
 	waitForSkillIndexed(t, slug, version)
-	return skillPath
 }
 
 // agentSkillHarnessCase covers built-in skills harnesses. Project scope is the default
@@ -495,9 +497,10 @@ func listRepoSkillsWithRetry(t *testing.T, slug, version string) []agentSkillsRe
 	return found
 }
 
-// assertLocalListStatusWithRetry waits until list --check-updates reports the expected status.
+// waitForLocalListStatus waits until list --check-updates reports wantStatus for slug and
+// returns the matching row so callers can assert the registry version it resolved.
 // Pass projectDir="" to use --global instead of --project-dir.
-func assertLocalListStatusWithRetry(t *testing.T, harness, projectDir, slug, wantStatus, wantLatest string) {
+func waitForLocalListStatus(t *testing.T, harness, projectDir, slug, wantStatus string) agentSkillsLocalListRow {
 	t.Helper()
 	args := []string{"list", "--harness=" + harness, "--check-updates", "--format=json"}
 	if projectDir != "" {
@@ -505,6 +508,7 @@ func assertLocalListStatusWithRetry(t *testing.T, harness, projectDir, slug, wan
 	} else {
 		args = append(args, "--global")
 	}
+	var matched agentSkillsLocalListRow
 	description := fmt.Sprintf("wait for check-updates status %q for %s", wantStatus, slug)
 	require.NoError(t, retryWithBackoffSkills(t, description, func() error {
 		out, err := runAgentSkillsCmdWithOutput(t, args...)
@@ -522,13 +526,12 @@ func assertLocalListStatusWithRetry(t *testing.T, harness, projectDir, slug, wan
 			if !strings.EqualFold(row.Status, wantStatus) {
 				return fmt.Errorf("status=%q want %q (latest=%q)", row.Status, wantStatus, row.RegistryLatest)
 			}
-			if wantLatest != "" && row.RegistryLatest != wantLatest {
-				return fmt.Errorf("registryLatest=%q want %q", row.RegistryLatest, wantLatest)
-			}
+			matched = row
 			return nil
 		}
 		return fmt.Errorf("skill %q not in local list output: %s", slug, out)
 	}))
+	return matched
 }
 
 func parseSkillsSummaryJSON(t *testing.T, out string) agentSkillsSummaryJSON {
@@ -1157,7 +1160,8 @@ func TestAgentSkillsListCheckUpdates(t *testing.T) {
 		"--version=1.0.0",
 	))
 
-	assertLocalListStatusWithRetry(t, "cursor", projectDir, slug, "behind", "2.0.0")
+	behindRow := waitForLocalListStatus(t, "cursor", projectDir, slug, "behind")
+	assert.Equal(t, "2.0.0", behindRow.RegistryLatest)
 
 	require.NoError(t, runAgentSkillsCmd(t,
 		"update", slug,
@@ -1165,7 +1169,8 @@ func TestAgentSkillsListCheckUpdates(t *testing.T) {
 		"--harness=cursor",
 		"--project-dir="+projectDir,
 	))
-	assertLocalListStatusWithRetry(t, "cursor", projectDir, slug, "current", "2.0.0")
+	currentRow := waitForLocalListStatus(t, "cursor", projectDir, slug, "current")
+	assert.Equal(t, "2.0.0", currentRow.RegistryLatest)
 }
 
 // ---------------------------------------------------------------------------
@@ -1354,7 +1359,8 @@ func TestAgentSkillsCustomAgentLifecycle(t *testing.T) {
 	assert.Equal(t, slug, localRows[0].Name)
 	assert.Equal(t, oldVersion, localRows[0].Version)
 
-	assertLocalListStatusWithRetry(t, agentName, "", slug, "behind", newVersion)
+	behindRow := waitForLocalListStatus(t, agentName, "", slug, "behind")
+	assert.Equal(t, newVersion, behindRow.RegistryLatest)
 
 	require.NoError(t, runAgentSkillsCmd(t,
 		"update", slug,
@@ -1363,7 +1369,8 @@ func TestAgentSkillsCustomAgentLifecycle(t *testing.T) {
 		"--global",
 	))
 	assertSkillInfoManifest(t, installDir, slug, newVersion, agentName, "global", tests.AgentSkillsLocalRepo)
-	assertLocalListStatusWithRetry(t, agentName, "", slug, "current", newVersion)
+	currentRow := waitForLocalListStatus(t, agentName, "", slug, "current")
+	assert.Equal(t, newVersion, currentRow.RegistryLatest)
 }
 
 // ---------------------------------------------------------------------------
