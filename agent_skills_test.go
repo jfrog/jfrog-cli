@@ -18,7 +18,10 @@ import (
 	coreBuild "github.com/jfrog/jfrog-cli-core/v2/common/build"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
+	"github.com/jfrog/jfrog-cli-evidence/evidence/cryptox"
+	"github.com/jfrog/jfrog-cli-evidence/evidence/generate"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -30,7 +33,7 @@ import (
 //
 // Run:
 //
-//	go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.agentSkills
+//	go test -v github.com/jfrog/jfrog-cli --timeout 0 -test.agentSkills=true
 //
 // Skills differ from agent plugins in ways that matter for these tests:
 //   - Default install scope is project (plugins default to global).
@@ -100,6 +103,17 @@ func assertErrorContainsAll(t *testing.T, err error, substrings ...string) {
 	for _, substring := range substrings {
 		assert.Contains(t, msg, substring, "error %q should contain %q", msg, substring)
 	}
+}
+
+// recreateAgentSkillsLocalRepo recreates the e2e skills repository after a temporary delete.
+func recreateAgentSkillsLocalRepo(t *testing.T) {
+	t.Helper()
+	repoConfig := tests.GetTestResourcesPath() + tests.AgentSkillsLocalRepositoryConfig
+	repoConfig, err := tests.ReplaceTemplateVariables(repoConfig, "")
+	require.NoError(t, err)
+	execCreateRepoRest(repoConfig, tests.AgentSkillsLocalRepo)
+	require.True(t, isRepoExist(tests.AgentSkillsLocalRepo),
+		"agent skills local repo must exist after recreate: "+tests.AgentSkillsLocalRepo)
 }
 
 // createTestSkill copies the fixture and rewrites SKILL.md frontmatter name/version.
@@ -631,6 +645,33 @@ func TestAgentSkillsPublishVersionResolution(t *testing.T) {
 		waitForSkillIndexed(t, slug, "2.0.0")
 	})
 
+	t.Run("skip-scan-env", func(t *testing.T) {
+		slug := "skip-scan-env-skill"
+		t.Setenv("JFROG_CLI_SKIP_SKILLS_SCAN", "true")
+		require.NoError(t, runAgentSkillsCmd(t,
+			"publish", createTestSkill(t, slug, "1.0.0"),
+			"--repo="+tests.AgentSkillsLocalRepo,
+		))
+		assertSkillExists(t, slug, "1.0.0")
+		waitForSkillIndexed(t, slug, "1.0.0")
+	})
+
+	t.Run("quiet-missing-version-defaults", func(t *testing.T) {
+		slug := "quiet-default-version-skill"
+		dir := t.TempDir()
+		require.NoError(t, os.WriteFile(filepath.Join(dir, "SKILL.md"), []byte(
+			"---\nname: "+slug+"\ndescription: no version field\n---\n\n# body\n",
+		), 0644)) // #nosec G306 -- test fixture
+		require.NoError(t, runAgentSkillsCmd(t,
+			"publish", dir,
+			"--repo="+tests.AgentSkillsLocalRepo,
+			"--skip-scan",
+			"--quiet",
+		))
+		assertSkillExists(t, slug, "0.1.0")
+		waitForSkillIndexed(t, slug, "0.1.0")
+	})
+
 	t.Run("collision-ci", func(t *testing.T) {
 		slug := "collision-skill"
 		publishTestSkill(t, slug, "1.0.0")
@@ -665,7 +706,7 @@ func TestAgentSkillsPublishValidation(t *testing.T) {
 			name: "missing-name",
 			setup: func(t *testing.T) (string, []string) {
 				dir := t.TempDir()
-				require.NoError(t, os.WriteFile(filepath.Join(dir, "SKILL.md"), []byte("---\ndescription: x\nversion: 1.0.0\n---\n"), 0644)) // #nosec G306
+				require.NoError(t, os.WriteFile(filepath.Join(dir, "SKILL.md"), []byte("---\ndescription: x\nversion: 1.0.0\n---\n"), 0644)) // #nosec G306 -- test fixture
 				return dir, nil
 			},
 			errContains: []string{"SKILL.md missing required 'name' field"},
@@ -674,7 +715,7 @@ func TestAgentSkillsPublishValidation(t *testing.T) {
 			name: "invalid-frontmatter",
 			setup: func(t *testing.T) (string, []string) {
 				dir := t.TempDir()
-				require.NoError(t, os.WriteFile(filepath.Join(dir, "SKILL.md"), []byte("# no frontmatter\n"), 0644)) // #nosec G306
+				require.NoError(t, os.WriteFile(filepath.Join(dir, "SKILL.md"), []byte("# no frontmatter\n"), 0644)) // #nosec G306 -- test fixture
 				return dir, nil
 			},
 			errContains: []string{"YAML frontmatter delimiter"},
@@ -751,6 +792,25 @@ func TestAgentSkillsInstallHarnesses(t *testing.T) {
 		})
 	}
 
+	t.Run("default-project/cursor", func(t *testing.T) {
+		projectDir := t.TempDir()
+		originalDir, err := os.Getwd()
+		require.NoError(t, err)
+		restoreDir := clientTestUtils.ChangeDirWithCallback(t, originalDir, projectDir)
+		defer restoreDir()
+
+		// Skills default to project scope when neither --global nor --project-dir is set.
+		require.NoError(t, runAgentSkillsCmd(t,
+			"install", slug,
+			"--repo="+tests.AgentSkillsLocalRepo,
+			"--harness=cursor",
+			"--version=1.0.0",
+		))
+		installDir := filepath.Join(projectDir, skillProjectRelDir("cursor"), slug)
+		require.DirExists(t, installDir)
+		assertSkillInfoManifest(t, installDir, slug, "1.0.0", "cursor", "project", tests.AgentSkillsLocalRepo)
+	})
+
 	t.Run("global/cursor", func(t *testing.T) {
 		homeDir := t.TempDir()
 		t.Setenv("HOME", homeDir)
@@ -799,6 +859,24 @@ func TestAgentSkillsInstallPathAndFlags(t *testing.T) {
 		assertSkillInfoManifest(t, filepath.Join(base, slug), slug, "1.0.0", "(path)", "path", tests.AgentSkillsLocalRepo)
 	})
 
+	t.Run("path-install-json", func(t *testing.T) {
+		base := t.TempDir()
+		out, err := runAgentSkillsCmdWithOutput(t,
+			"install", slug,
+			"--repo="+tests.AgentSkillsLocalRepo,
+			"--path="+base,
+			"--version=1.0.0",
+			"--format=json",
+		)
+		require.NoError(t, err)
+		summary := parseSkillsSummaryJSON(t, out)
+		assert.Equal(t, slug, summary.Slug)
+		assert.Equal(t, "1.0.0", summary.Version)
+		require.Len(t, summary.Results, 1)
+		assert.Equal(t, "ok", summary.Results[0].Status)
+		assertSkillInfoManifest(t, filepath.Join(base, slug), slug, "1.0.0", "(path)", "path", tests.AgentSkillsLocalRepo)
+	})
+
 	cases := []struct {
 		name string
 		args []string
@@ -818,6 +896,11 @@ func TestAgentSkillsInstallPathAndFlags(t *testing.T) {
 			name: "unknown-harness",
 			args: []string{"install", slug, "--repo=" + tests.AgentSkillsLocalRepo, "--harness=not-a-real-agent", "--project-dir=" + t.TempDir()},
 			want: []string{"unknown agent"},
+		},
+		{
+			name: "empty-harness",
+			args: []string{"install", slug, "--repo=" + tests.AgentSkillsLocalRepo, "--harness="},
+			want: []string{"--harness is required unless --path is set"},
 		},
 	}
 	for _, tc := range cases {
@@ -955,6 +1038,30 @@ func TestAgentSkillsUpdate(t *testing.T) {
 		assertSkillInfoManifest(t, installDir, slug, "2.0.0", "cursor", "project", tests.AgentSkillsLocalRepo)
 	})
 
+	t.Run("path-and-pinned-version", func(t *testing.T) {
+		pathSlug := "update-path-skill"
+		publishTestSkill(t, pathSlug, "1.0.0")
+		publishTestSkill(t, pathSlug, "2.0.0")
+		publishTestSkill(t, pathSlug, "3.0.0")
+
+		installBase := t.TempDir()
+		require.NoError(t, runAgentSkillsCmd(t,
+			"install", pathSlug,
+			"--repo="+tests.AgentSkillsLocalRepo,
+			"--path="+installBase,
+			"--version=1.0.0",
+		))
+		assertSkillInfoManifest(t, filepath.Join(installBase, pathSlug), pathSlug, "1.0.0", "(path)", "path", tests.AgentSkillsLocalRepo)
+
+		require.NoError(t, runAgentSkillsCmd(t,
+			"update", pathSlug,
+			"--repo="+tests.AgentSkillsLocalRepo,
+			"--path="+installBase,
+			"--version=2.0.0",
+		))
+		assertSkillInfoManifest(t, filepath.Join(installBase, pathSlug), pathSlug, "2.0.0", "(path)", "path", tests.AgentSkillsLocalRepo)
+	})
+
 	// A published-but-not-installed skill fails per target; the returned error is generic and
 	// the "not installed" reason is reported in the summary detail.
 	t.Run("not-installed", func(t *testing.T) {
@@ -1014,6 +1121,16 @@ func TestAgentSkillsDelete(t *testing.T) {
 		))
 		assertSkillAbsent(t, slug, "1.0.0")
 		assertSkillExists(t, slug, "2.0.0")
+	})
+
+	t.Run("dry-run-missing-version", func(t *testing.T) {
+		err := runAgentSkillsCmd(t,
+			"delete", slug,
+			"--repo="+tests.AgentSkillsLocalRepo,
+			"--version=9.9.9",
+			"--dry-run",
+		)
+		assertErrorContainsAll(t, err, "skill '"+slug+"' v9.9.9 not found", tests.AgentSkillsLocalRepo)
 	})
 
 	t.Run("missing-version-flag", func(t *testing.T) {
@@ -1121,10 +1238,54 @@ func TestAgentSkillsList(t *testing.T) {
 			args: []string{"list", "--repo=" + tests.AgentSkillsLocalRepo, "--limit=0"},
 			want: []string{"--limit must be a positive integer"},
 		},
+		{
+			name: "global-and-project-dir",
+			args: []string{"list", "--harness=cursor", "--global", "--project-dir=" + t.TempDir()},
+			want: []string{"--global and --project-dir are mutually exclusive"},
+		},
+		{
+			name: "check-updates-in-repo-mode",
+			args: []string{"list", "--repo=" + tests.AgentSkillsLocalRepo, "--check-updates"},
+			want: []string{"--check-updates is only supported with --harness"},
+		},
+		{
+			name: "invalid-repo-sort",
+			args: []string{"list", "--repo=" + tests.AgentSkillsLocalRepo, "--sort-by=invalid-field"},
+			want: []string{"--sort-by for --repo accepts 'updated' or 'downloads'"},
+		},
+		{
+			name: "invalid-harness-sort",
+			args: []string{"list", "--harness=cursor", "--global", "--sort-by=updated"},
+			want: []string{"--sort-by for --harness only accepts 'name'"},
+		},
+		{
+			name: "invalid-sort-order",
+			args: []string{"list", "--harness=cursor", "--global", "--sort-order=sideways"},
+			want: []string{"--sort-order must be 'asc' or 'desc'"},
+		},
+		{
+			name: "sort-order-with-repo",
+			args: []string{"list", "--repo=" + tests.AgentSkillsLocalRepo, "--sort-order=desc"},
+			want: []string{"--sort-order is not supported with --repo"},
+		},
 	}
 	for _, tc := range flagCases {
 		t.Run(tc.name, func(t *testing.T) {
 			assertErrorContainsAll(t, runAgentSkillsCmd(t, tc.args...), tc.want...)
+		})
+	}
+
+	successFlagCases := []struct {
+		name string
+		args []string
+	}{
+		{name: "sort-by-updated", args: []string{"list", "--repo=" + tests.AgentSkillsLocalRepo, "--sort-by=updated"}},
+		{name: "sort-by-downloads", args: []string{"list", "--repo=" + tests.AgentSkillsLocalRepo, "--sort-by=downloads"}},
+		{name: "sort-by-name-harness", args: []string{"list", "--harness=cursor", "--global", "--sort-by=name"}},
+	}
+	for _, tc := range successFlagCases {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.NoError(t, runAgentSkillsCmd(t, tc.args...))
 		})
 	}
 
@@ -1138,6 +1299,38 @@ func TestAgentSkillsList(t *testing.T) {
 		var rows []agentSkillsRepoListRow
 		require.NoError(t, json.Unmarshal([]byte(extractJSONPayload(t, out)), &rows))
 		assert.Len(t, rows, 2)
+	})
+
+	t.Run("limit-and-sort-harness", func(t *testing.T) {
+		projectDir := t.TempDir()
+		for _, name := range []string{"list-harness-c", "list-harness-a", "list-harness-b"} {
+			publishTestSkill(t, name, "1.0.0")
+			require.NoError(t, runAgentSkillsCmd(t,
+				"install", name,
+				"--repo="+tests.AgentSkillsLocalRepo,
+				"--harness=cursor",
+				"--project-dir="+projectDir,
+				"--version=1.0.0",
+			))
+		}
+
+		limitedOut, err := runAgentSkillsCmdWithOutput(t,
+			"list", "--harness=cursor", "--project-dir="+projectDir, "--format=json", "--limit=2")
+		require.NoError(t, err)
+		var limited []agentSkillsLocalListRow
+		require.NoError(t, json.Unmarshal([]byte(extractJSONPayload(t, limitedOut)), &limited))
+		assert.Len(t, limited, 2)
+
+		descOut, err := runAgentSkillsCmdWithOutput(t,
+			"list", "--harness=cursor", "--project-dir="+projectDir, "--format=json", "--sort-order=desc")
+		require.NoError(t, err)
+		var descRows []agentSkillsLocalListRow
+		require.NoError(t, json.Unmarshal([]byte(extractJSONPayload(t, descOut)), &descRows))
+		require.GreaterOrEqual(t, len(descRows), 3)
+		for index := 1; index < len(descRows); index++ {
+			assert.GreaterOrEqual(t, descRows[index-1].Name, descRows[index].Name,
+				"sort-order=desc must keep names non-increasing at index %d: %+v", index, descRows)
+		}
 	})
 }
 
@@ -1190,6 +1383,16 @@ func TestAgentSkillsSearch(t *testing.T) {
 		rows := searchSkillsRowsWithRetry(t, slug, "1.0.0",
 			"search", slug,
 			"--repo="+tests.AgentSkillsLocalRepo,
+			"--format=json",
+		)
+		require.NotEmpty(t, rows)
+		assertSearchSkillsRowsContain(t, rows, slug, "1.0.0", tests.AgentSkillsLocalRepo)
+	})
+
+	t.Run("without-repo-discovers", func(t *testing.T) {
+		// Search omits ResolveRepo / JFROG_SKILLS_REPO and discovers Skills repos by package type.
+		rows := searchSkillsRowsWithRetry(t, slug, "1.0.0",
+			"search", slug,
 			"--format=json",
 		)
 		require.NotEmpty(t, rows)
@@ -1264,6 +1467,17 @@ func TestAgentSkillsRepoResolution(t *testing.T) {
 		assert.FileExists(t, filepath.Join(installBase, slug, "SKILL.md"))
 	})
 
+	t.Run("repo-flag-overrides-env", func(t *testing.T) {
+		overrideSlug := "repo-flag-override-skill"
+		t.Setenv("JFROG_SKILLS_REPO", "nonexistent-env-repo-xyz")
+		require.NoError(t, runAgentSkillsCmd(t,
+			"publish", createTestSkill(t, overrideSlug, "1.0.0"),
+			"--repo="+tests.AgentSkillsLocalRepo,
+			"--skip-scan",
+		))
+		assertSkillExists(t, overrideSlug, "1.0.0")
+	})
+
 	// Artifactory answers an unknown repo with 405 and no repo name in the body, so the
 	// assertion stays on the wrapper the publish command adds.
 	t.Run("nonexistent-repo", func(t *testing.T) {
@@ -1272,6 +1486,68 @@ func TestAgentSkillsRepoResolution(t *testing.T) {
 			"--repo=does-not-exist-skills-repo",
 			"--skip-scan",
 		), "upload failed")
+	})
+}
+
+// TestAgentSkillsNoRepoConfigured verifies repo auto-discovery fails clearly when
+// neither --repo nor JFROG_SKILLS_REPO is set and no Skills repositories exist.
+func TestAgentSkillsNoRepoConfigured(t *testing.T) {
+	initAgentSkillsTest(t)
+	defer cleanAgentSkillsTest()
+
+	t.Setenv("JFROG_SKILLS_REPO", "")
+
+	// Temporarily remove the suite's shared Skills repo so auto-discovery finds nothing.
+	// Safe only while this package runs sequentially (no t.Parallel): a hard process exit
+	// before Cleanup would leave later tests without the suite repo.
+	require.True(t, isRepoExist(tests.AgentSkillsLocalRepo))
+	execDeleteRepo(tests.AgentSkillsLocalRepo)
+	t.Cleanup(func() { recreateAgentSkillsLocalRepo(t) })
+	require.False(t, isRepoExist(tests.AgentSkillsLocalRepo))
+
+	err := runAgentSkillsCmd(t,
+		"publish", createTestSkill(t, "no-repo-skill", "1.0.0"),
+		"--skip-scan",
+	)
+	assertErrorContainsAll(t, err, "no skills repositories found")
+}
+
+// TestAgentSkillsServerID covers explicit configured and unknown server IDs.
+func TestAgentSkillsServerID(t *testing.T) {
+	initAgentSkillsTest(t)
+	defer cleanAgentSkillsTest()
+
+	t.Run("valid", func(t *testing.T) {
+		slug := "serverid-valid-skill"
+		version := "1.0.0"
+		require.NoError(t, runAgentSkillsCmd(t,
+			"publish", createTestSkill(t, slug, version),
+			"--repo="+tests.AgentSkillsLocalRepo,
+			"--server-id=default",
+			"--skip-scan",
+		))
+		assertSkillExists(t, slug, version)
+		waitForSkillIndexed(t, slug, version)
+
+		installBase := t.TempDir()
+		require.NoError(t, runAgentSkillsCmd(t,
+			"install", slug,
+			"--repo="+tests.AgentSkillsLocalRepo,
+			"--path="+installBase,
+			"--server-id=default",
+			"--version="+version,
+		))
+		assertSkillInfoManifest(t, filepath.Join(installBase, slug), slug, version, "(path)", "path", tests.AgentSkillsLocalRepo)
+	})
+
+	t.Run("unknown", func(t *testing.T) {
+		err := runAgentSkillsCmd(t,
+			"publish", createTestSkill(t, "serverid-unknown-skill", "1.0.0"),
+			"--repo="+tests.AgentSkillsLocalRepo,
+			"--server-id=nonexistent-server-id-xyz",
+			"--skip-scan",
+		)
+		assertErrorContainsAll(t, err, "Server ID 'nonexistent-server-id-xyz' does not exist.")
 	})
 }
 
@@ -1289,10 +1565,12 @@ func TestAgentSkillsMultiRepoCIFail(t *testing.T) {
 	data, err := os.ReadFile(repoConfig) // #nosec G304 -- test template path
 	require.NoError(t, err)
 	rewritten := strings.Replace(string(data), tests.AgentSkillsLocalRepo, secondRepo, 1)
-	tmpCfg := filepath.Join(t.TempDir(), "skills-extra-repo.json")
-	// #nosec G306,G703 -- test fixture path is constrained to t.TempDir.
-	require.NoError(t, os.WriteFile(tmpCfg, []byte(rewritten), 0644))
-	execCreateRepoRest(tmpCfg, secondRepo)
+	configFile, err := os.CreateTemp(t.TempDir(), "skills-extra-repo-*.json")
+	require.NoError(t, err)
+	_, err = configFile.WriteString(rewritten)
+	require.NoError(t, err)
+	require.NoError(t, configFile.Close())
+	execCreateRepoRest(configFile.Name(), secondRepo)
 	t.Cleanup(func() { execDeleteRepo(secondRepo) })
 	require.True(t, isRepoExist(secondRepo))
 
@@ -1434,6 +1712,139 @@ func TestAgentSkillsPublishBuildInfo(t *testing.T) {
 	assert.NotEmpty(t, props.Properties["build.timestamp"])
 }
 
+// TestAgentSkillsPublishModuleOverride verifies --module overrides the default
+// build-info module id (skill slug).
+func TestAgentSkillsPublishModuleOverride(t *testing.T) {
+	initAgentSkillsTest(t)
+	defer cleanAgentSkillsTest()
+
+	slug := "module-override-skill"
+	buildNumber := t.Name()
+	customModule := "my-custom-skills-module"
+	// Best-effort teardown of local build-info dir; leftover dirs do not affect assertions.
+	t.Cleanup(func() { _ = coreBuild.RemoveBuildDir(tests.AgentSkillsBuildName, buildNumber, "") })
+
+	require.NoError(t, runAgentSkillsCmd(t,
+		"publish", createTestSkill(t, slug, "1.0.0"),
+		"--repo="+tests.AgentSkillsLocalRepo,
+		"--skip-scan",
+		"--build-name="+tests.AgentSkillsBuildName,
+		"--build-number="+buildNumber,
+		"--module="+customModule,
+	))
+	require.NoError(t, artifactoryCli.Exec("bp", tests.AgentSkillsBuildName, buildNumber))
+
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.AgentSkillsBuildName, buildNumber)
+	require.NoError(t, err)
+	require.True(t, found)
+	require.NotEmpty(t, publishedBuildInfo.BuildInfo.Modules)
+	assert.Equal(t, customModule, publishedBuildInfo.BuildInfo.Modules[0].Id,
+		"--module flag should override the default module ID in build info")
+}
+
+// TestAgentSkillsPublishBuildInfoFromEnvVars verifies JFROG_CLI_BUILD_NAME/NUMBER
+// are honored when publish flags are omitted.
+func TestAgentSkillsPublishBuildInfoFromEnvVars(t *testing.T) {
+	initAgentSkillsTest(t)
+	defer cleanAgentSkillsTest()
+
+	envBuildName := tests.AgentSkillsBuildName + "-envvar"
+	envBuildNumber := "42"
+	t.Setenv("JFROG_CLI_BUILD_NAME", envBuildName)
+	t.Setenv("JFROG_CLI_BUILD_NUMBER", envBuildNumber)
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, envBuildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, envBuildName, artHttpDetails)
+	// Best-effort teardown of local build-info dir; leftover dirs do not affect assertions.
+	t.Cleanup(func() { _ = coreBuild.RemoveBuildDir(envBuildName, envBuildNumber, "") })
+
+	slug := "envvar-build-skill"
+	require.NoError(t, runAgentSkillsCmd(t,
+		"publish", createTestSkill(t, slug, "1.0.0"),
+		"--repo="+tests.AgentSkillsLocalRepo,
+		"--skip-scan",
+	))
+	require.NoError(t, artifactoryCli.Exec("bp", envBuildName, envBuildNumber))
+	_, found, err := tests.GetBuildInfo(serverDetails, envBuildName, envBuildNumber)
+	require.NoError(t, err)
+	assert.True(t, found, "build info should be captured from JFROG_CLI_BUILD_NAME/NUMBER")
+}
+
+// TestAgentSkillsPublishBuildNameWithoutNumber verifies build-name and
+// build-number must be provided together.
+func TestAgentSkillsPublishBuildNameWithoutNumber(t *testing.T) {
+	initAgentSkillsTest(t)
+	defer cleanAgentSkillsTest()
+
+	cases := []struct {
+		name      string
+		extraArgs []string
+	}{
+		{name: "name-only", extraArgs: []string{"--build-name=" + tests.AgentSkillsBuildName}},
+		{name: "number-only", extraArgs: []string{"--build-number=42"}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			args := append([]string{
+				"publish", createTestSkill(t, "build-flag-skill-"+tc.name, "1.0.0"),
+				"--repo=" + tests.AgentSkillsLocalRepo,
+				"--skip-scan",
+			}, tc.extraArgs...)
+			assertErrorContainsAll(t, runAgentSkillsCmd(t, args...),
+				"the build-name and build-number options cannot be provided separately")
+		})
+	}
+}
+
+// TestAgentSkillsPublishWithSigningKey publishes with a generated ECDSA key.
+// Evidence attachment depends on the Artifactory evidence service; this asserts
+// publish still succeeds when --signing-key / --key-alias are provided.
+func TestAgentSkillsPublishWithSigningKey(t *testing.T) {
+	initAgentSkillsTest(t)
+	defer cleanAgentSkillsTest()
+
+	keyAlias := fmt.Sprintf("agent-skills-test-key-%d", time.Now().UnixNano())
+	privateKeyPEM, publicKeyPEM, err := cryptox.GenerateECDSAKeyPair()
+	require.NoError(t, err)
+	privateKeyPath := filepath.Join(t.TempDir(), "evidence.key")
+	require.NoError(t, os.WriteFile(privateKeyPath, []byte(privateKeyPEM), 0600)) // #nosec G306 -- test key
+
+	serviceManager, err := artUtils.CreateUploadServiceManager(serverDetails, 1, 0, 0, false, nil)
+	require.NoError(t, err)
+	keyPairCmd := generate.NewGenerateKeyPairCommand(serverDetails, true, keyAlias, "", "")
+	if _, err := keyPairCmd.UploadTrustedKey(&serviceManager, keyAlias, publicKeyPEM); err != nil {
+		t.Skipf("skipping: could not upload public key to trusted keys (evidence service may not be configured): %v", err)
+	}
+
+	slug := "signed-skill"
+	require.NoError(t, runAgentSkillsCmd(t,
+		"publish", createTestSkill(t, slug, "1.0.0"),
+		"--repo="+tests.AgentSkillsLocalRepo,
+		"--skip-scan",
+		"--signing-key="+privateKeyPath,
+		"--key-alias="+keyAlias,
+	))
+	assertSkillExists(t, slug, "1.0.0")
+}
+
+// TestAgentSkillsPublishWithoutSigningKey confirms omitting signing key/env still
+// publishes successfully (evidence is skipped, not failed).
+func TestAgentSkillsPublishWithoutSigningKey(t *testing.T) {
+	initAgentSkillsTest(t)
+	defer cleanAgentSkillsTest()
+
+	t.Setenv("EVD_SIGNING_KEY_PATH", "")
+	t.Setenv("JFROG_CLI_SIGNING_KEY", "")
+	t.Setenv("EVD_KEY_ALIAS", "")
+
+	slug := "no-signing-skill"
+	require.NoError(t, runAgentSkillsCmd(t,
+		"publish", createTestSkill(t, slug, "1.0.0"),
+		"--repo="+tests.AgentSkillsLocalRepo,
+		"--skip-scan",
+	))
+	assertSkillExists(t, slug, "1.0.0")
+}
+
 // ---------------------------------------------------------------------------
 // Round-trip / CI
 // ---------------------------------------------------------------------------
@@ -1468,6 +1879,40 @@ func TestAgentSkillsRoundTrip(t *testing.T) {
 	installedMD, err := os.ReadFile(filepath.Join(installBase, slug, "SKILL.md")) // #nosec G304
 	require.NoError(t, err)
 	assert.Equal(t, string(sourceMD), string(installedMD))
+}
+
+// TestAgentSkillsRoundTripDeleteThenInstall verifies delete removes a version
+// and a later install of that version fails until it is republished.
+func TestAgentSkillsRoundTripDeleteThenInstall(t *testing.T) {
+	initAgentSkillsTest(t)
+	defer cleanAgentSkillsTest()
+
+	slug := "roundtrip-delete-skill"
+	publishTestSkill(t, slug, "1.0.0")
+	publishTestSkill(t, slug, "2.0.0")
+
+	require.NoError(t, runAgentSkillsCmd(t,
+		"delete", slug,
+		"--repo="+tests.AgentSkillsLocalRepo,
+		"--version=1.0.0",
+	))
+	assertSkillAbsent(t, slug, "1.0.0")
+	assertSkillExists(t, slug, "2.0.0")
+
+	err := runAgentSkillsCmd(t,
+		"install", slug,
+		"--repo="+tests.AgentSkillsLocalRepo,
+		"--path="+t.TempDir(),
+		"--version=1.0.0",
+	)
+	assertErrorContainsAll(t, err, "version '1.0.0' not found", "Available versions")
+
+	require.NoError(t, runAgentSkillsCmd(t,
+		"install", slug,
+		"--repo="+tests.AgentSkillsLocalRepo,
+		"--path="+t.TempDir(),
+		"--version=2.0.0",
+	))
 }
 
 // TestAgentSkillsCIPipeline covers quiet CI publish(+bp) → install → list → update

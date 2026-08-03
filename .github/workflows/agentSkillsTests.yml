@@ -48,8 +48,11 @@ jobs:
         uses: jfrog/.github/actions/install-local-artifactory@main
         with:
           RTLIC: ${{ secrets.RTLIC }}
+          # No VERSION pin: releases.jfrog.io keeps only a subset of patch
+          # releases, so pinning breaks once that version is pruned.
           RT_CONNECTION_TIMEOUT_SECONDS: ${{ env.RT_CONNECTION_TIMEOUT_SECONDS || '1200' }}
 
       - name: Run agent skills tests
         if: matrix.os.name != 'macos'
-        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.agentSkills
+        shell: bash
+        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 -test.agentSkills=true
