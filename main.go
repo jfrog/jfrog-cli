@@ -31,6 +31,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/common"
 	apiDocs "github.com/jfrog/jfrog-cli/docs/general/api"
 	apiDocsNodeDocs "github.com/jfrog/jfrog-cli/docs/general/apidocs"
+	apiDocsDescribeDocs "github.com/jfrog/jfrog-cli/docs/general/apidocsdescribe"
 	apiDocsSearchDocs "github.com/jfrog/jfrog-cli/docs/general/apidocssearch"
 	loginDocs "github.com/jfrog/jfrog-cli/docs/general/login"
 	oidcDocs "github.com/jfrog/jfrog-cli/docs/general/oidc"
@@ -404,6 +405,15 @@ func getCommands() ([]cli.Command, error) {
 							UsageText:    apiDocsSearchDocs.GetArguments(),
 							BashComplete: corecommon.CreateBashCompletionFunc(),
 							Action:       api.SearchCommand,
+						},
+						{
+							Name:         "describe",
+							Flags:        cliutils.GetCommandFlags(cliutils.ApiDocsDescribe),
+							Usage:        corecommon.ResolveDescription(apiDocsDescribeDocs.GetDescription(), apiDocsDescribeDocs.GetAIDescription()),
+							HelpName:     corecommon.CreateUsage("api docs describe", corecommon.ResolveDescription(apiDocsDescribeDocs.GetDescription(), apiDocsDescribeDocs.GetAIDescription()), apiDocsDescribeDocs.Usage),
+							UsageText:    apiDocsDescribeDocs.GetArguments(),
+							BashComplete: corecommon.CreateBashCompletionFunc(),
+							Action:       api.DescribeCommand,
 						},
 					},
 				},
