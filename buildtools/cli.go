@@ -355,10 +355,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action: func(c *cli.Context) error {
-				cmdName, _ := getCommandName(c.Args())
-				return securityCLI.WrapCmdWithCurationPostFailureRun(c, PipenvCmd, techutils.Pipenv, cmdName)
-			},
+			Action:          PipenvCmd,
 		},
 		{
 			Name:         "poetry-config",
