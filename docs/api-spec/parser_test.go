@@ -30,10 +30,47 @@ func TestOperations_Stub(t *testing.T) {
 	assert.Equal(t, []string{"Users"}, getUserList.Tags)
 	assert.Len(t, getUserList.Parameters, 10)
 
+	assert.Nil(t, getUserList.RequestBody, "a GET operation should have no request body")
+	require.Len(t, getUserList.Responses, 4, "getUserList declares 200/400/401/403")
+	assert.Equal(t, []Response{
+		{Code: "200", Description: "Success"},
+		{Code: "400", Description: "Bad Request - Invalid input, object invalid"},
+		{Code: "401", Description: "Bad Credentials - Invalid credentials"},
+		{Code: "403", Description: "Permission Denied - Insufficient permissions"},
+	}, getUserList.Responses, "responses should be sorted by code ascending")
+
 	createUser, ok := byOperationId["createUser"]
 	require.True(t, ok, "createUser should be present")
 	assert.Equal(t, "POST", createUser.Method)
 	assert.Equal(t, "/access/api/v2/users", createUser.Path)
+	require.Len(t, createUser.Responses, 5, "createUser declares 201/400/401/403/409")
+	assert.Equal(t, "201", createUser.Responses[0].Code)
+	assert.Equal(t, "User created successfully", createUser.Responses[0].Description)
+
+	require.NotNil(t, createUser.RequestBody, "createUser's requestBody ($ref: UserCreateRequest) should resolve")
+	assert.Nil(t, createUser.RequestBody.Example, "users-api.yaml's createUser declares no requestBody example")
+	assert.True(t, createUser.RequestBody.Required)
+	propsByName := make(map[string]Property, len(createUser.RequestBody.Properties))
+	for _, p := range createUser.RequestBody.Properties {
+		propsByName[p.Name] = p
+	}
+	username, ok := propsByName["username"]
+	require.True(t, ok, "username should be a flattened property of UserCreateRequest")
+	assert.Equal(t, "string", username.Type)
+	assert.True(t, username.Required, "username is in UserCreateRequest's required list")
+
+	password, ok := propsByName["password"]
+	require.True(t, ok)
+	assert.False(t, password.Required, "password is not in UserCreateRequest's required list")
+
+	admin, ok := propsByName["admin"]
+	require.True(t, ok)
+	assert.Equal(t, "boolean", admin.Type)
+	assert.Equal(t, "false", admin.Default)
+
+	groups, ok := propsByName["groups"]
+	require.True(t, ok)
+	assert.Equal(t, "array<string>", groups.Type)
 
 	deleteWorker, ok := byOperationId["deleteWorker"]
 	require.True(t, ok, "deleteWorker should be present")

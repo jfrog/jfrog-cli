@@ -477,3 +477,114 @@ func TestLoginCommandFlagsIncludeServerId(t *testing.T) {
 	}
 	assert.Contains(t, flagNames, "server-id", "Expected login command flags to include 'server-id'")
 }
+
+func TestTransferFilesTimestampFilterFlags(t *testing.T) {
+	flags := GetCommandFlags(TransferFiles)
+	assert.NotEmpty(t, flags)
+
+	var flagNames []string
+	usageByName := map[string]string{}
+	for _, f := range flags {
+		flagNames = append(flagNames, f.GetName())
+		usageByName[f.GetName()] = f.String()
+	}
+
+	assert.Contains(t, flagNames, CreatedAfter)
+	assert.Contains(t, flagNames, DownloadedAfter)
+	assert.Contains(t, usageByName[CreatedAfter], "YYYY-MM-DDTHH:mm:ss.sssZ")
+	assert.Contains(t, usageByName[DownloadedAfter], "YYYY-MM-DDTHH:mm:ss.sssZ")
+}
+
+// --- AGW-86: User-Agent enrichment with the detected AI agent ---
+
+// withCliUserAgent pins the CLI user-agent name/version for one test. The real values are
+// set once in init() from JFROG_CLI_USER_AGENT, so tests drive the setters directly rather
+// than trying to re-run init.
+func withCliUserAgent(t *testing.T, name, version string) {
+	t.Helper()
+	prevName, prevVersion := coreutils.GetCliUserAgentName(), coreutils.GetCliUserAgentVersion()
+	coreutils.SetCliUserAgentName(name)
+	coreutils.SetCliUserAgentVersion(version)
+	t.Cleanup(func() {
+		coreutils.SetCliUserAgentName(prevName)
+		coreutils.SetCliUserAgentVersion(prevVersion)
+	})
+}
+
+func TestGetCliUserAgentWithAgentNoAgentDetected(t *testing.T) {
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
+	corecommands.ResetExecutionContextForTest()
+
+	assert.Equal(t, "jfrog-cli-go/2.117.0", GetCliUserAgentWithAgent(),
+		"a human invocation must stay byte-identical to today's behaviour")
+}
+
+func TestGetCliUserAgentWithAgentPerDetector(t *testing.T) {
+	// One case per row of jfrog-cli-core's agentEnvDetectors table, plus the generic
+	// AGENT fallback that is deliberately collapsed to "unknown".
+	testCases := []struct {
+		name      string
+		envVar    string
+		wantAgent string
+	}{
+		{"claude code", "CLAUDECODE", "claude"},
+		{"claude code entrypoint", "CLAUDE_CODE_ENTRYPOINT", "claude"},
+		{"gemini", "GEMINI_CLI", "gemini"},
+		{"goose", "GOOSE_TERMINAL", "goose"},
+		{"cursor agent", "CURSOR_AGENT", "cursor"},
+		{"cursor cli", "CURSOR_CLI", "cursor"},
+		{"copilot", "COPILOT_CLI", "copilot"},
+		{"kilocode", "KILO_IPC_SOCKET_PATH", "kilocode"},
+		{"roo code", "ROO_CODE_IPC_SOCKET_PATH", "roo_code"},
+		{"codex", "CODEX_CI", "codex"},
+		{"generic agent collapses to unknown", "AGENT", "unknown"},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			clearAgentEnvVarsForTest(t)
+			withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
+			t.Setenv(testCase.envVar, "1")
+			corecommands.ResetExecutionContextForTest()
+
+			assert.Equal(t, "jfrog-cli-go/2.117.0 ai-agent/"+testCase.wantAgent, GetCliUserAgentWithAgent())
+		})
+	}
+}
+
+func TestGetCliUserAgentWithAgentPreservesCustomUserAgent(t *testing.T) {
+	// JFROG_CLI_USER_AGENT lets an operator replace the product token entirely. The agent
+	// marker must be appended to whatever that resolves to, never replace it.
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "my-wrapper", "9.9.9")
+	t.Setenv("CLAUDECODE", "true")
+	corecommands.ResetExecutionContextForTest()
+
+	assert.Equal(t, "my-wrapper/9.9.9 ai-agent/claude", GetCliUserAgentWithAgent())
+}
+
+func TestGetCliUserAgentWithAgentNoVersion(t *testing.T) {
+	// GetCliUserAgent omits the slash when no version is set; the marker still appends.
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "jfrog-cli-go", "")
+	t.Setenv("CLAUDECODE", "true")
+	corecommands.ResetExecutionContextForTest()
+
+	assert.Equal(t, "jfrog-cli-go ai-agent/claude", GetCliUserAgentWithAgent())
+}
+
+func TestGetCliUserAgentWithAgentMarkerIsWellFormed(t *testing.T) {
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
+	t.Setenv("CURSOR_AGENT", "1")
+	corecommands.ResetExecutionContextForTest()
+
+	userAgent := GetCliUserAgentWithAgent()
+	// The product token stays first, so parsers that read only it are unaffected.
+	assert.True(t, strings.HasPrefix(userAgent, "jfrog-cli-go/2.117.0"), "got %q", userAgent)
+	assert.True(t, strings.HasSuffix(userAgent, "ai-agent/cursor"), "got %q", userAgent)
+	// The detector only ever returns fixed table names, so no raw env value — and
+	// therefore no header-splitting sequence — can reach the wire.
+	assert.NotContains(t, userAgent, "\n")
+	assert.NotContains(t, userAgent, "\r")
+}
