@@ -1,8 +1,6 @@
 name: apt Tests
 
 on:
-  push:
-    branches: [RTECO-1564]
   workflow_call:
   workflow_dispatch:
 
