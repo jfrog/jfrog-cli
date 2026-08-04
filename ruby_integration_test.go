@@ -14,8 +14,8 @@ import (
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	biutils "github.com/jfrog/build-info-go/utils"
-	coreBuild "github.com/jfrog/jfrog-cli-core/v2/common/build"
 	artUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	coreBuild "github.com/jfrog/jfrog-cli-core/v2/common/build"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
@@ -102,12 +102,12 @@ end`
 	specsURL := serverDetails.ArtifactoryUrl + "api/gems/" + tests.RubyLocalRepo + "/specs.4.8.gz"
 	user, pass := rubyTestCredentials()
 	for i := 0; i < 12; i++ {
-		req, _ := http.NewRequest("GET", specsURL, nil)
+		req, _ := http.NewRequest(http.MethodGet, specsURL, nil)
 		req.SetBasicAuth(user, pass)
 		resp, httpErr := http.DefaultClient.Do(req)
 		if httpErr == nil {
-			resp.Body.Close()
-			if resp.StatusCode == 200 {
+			assert.NoError(t, resp.Body.Close())
+			if resp.StatusCode == http.StatusOK {
 				t.Logf("warm-up: local repo specs.4.8.gz available after %ds", i*2)
 				return
 			}
