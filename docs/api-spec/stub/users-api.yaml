@@ -1,0 +1,270 @@
+# Trimmed excerpt of JFrog's public Platform Users API reference, kept as an
+# OSS test fixture for the jfrog-cli apispec package (JGC-525). Not the full spec —
+# see docs/api-spec/full/ (populated only in JFrog's internal release build).
+openapi: 3.1.0
+info:
+  title: JFrog Platform - Users API
+  description: >
+    User management APIs for the JFrog Platform.
+
+    **Authentication:** Access Tokens as bearer token in authorization header
+    (Authorization: Bearer <token>)
+
+    **Security:** Unless otherwise specified, all APIs require admin privileges.
+
+    **Availability:** Artifactory 7.49.3+
+  version: 1.0.0
+  contact:
+    name: JFrog Support
+servers:
+  - url: https://{jfrog_url}
+tags:
+  - name: Users
+    description: >-
+      APIs for creating, updating, deleting, and managing JFrog Platform users,
+      groups, and passwords.
+security:
+  - BearerAuth: []
+paths:
+  /access/api/v2/users:
+    get:
+      tags:
+        - Users
+      summary: Get User List
+      description: >
+        Returns the list of users.
+
+
+        **Security:** Requires admin privileges, or a scoped token with
+        `system:identities:r`.
+      operationId: getUserList
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum:
+              - invited
+              - enabled
+              - disabled
+              - locked
+          description: Filter users by status
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1000
+          description: Number of results to return (minimum 1, default 1000)
+        - name: username
+          in: query
+          schema:
+            type: string
+          description: Filter by username (contains)
+        - name: onlyAdmins
+          in: query
+          schema:
+            type: boolean
+          description: >-
+            Filter to only admin users. Cannot be used with resourceName.
+            Available from Artifactory 7.117.x.
+        - name: cursor
+          in: query
+          schema:
+            type: string
+          description: Pagination cursor - shows results after this cursor
+        - name: role
+          in: query
+          schema:
+            type: string
+          description: >-
+            Filter users by role. When filtering by role, onlyAdmins and
+            username parameters are ignored. Available from Artifactory 7.117.x.
+        - name: resourceType
+          in: query
+          schema:
+            type: string
+          description: >-
+            Filter by resource type. Required when filtering by repository role.
+            Available from Artifactory 7.117.x.
+        - name: resourceName
+          in: query
+          schema:
+            type: string
+          description: >-
+            Filter by repository name. Cannot be used with onlyAdmins. Available
+            from Artifactory 7.117.x.
+        - name: projectKey
+          in: query
+          schema:
+            type: string
+          description: >-
+            Filter by project key. Refines search within a specific project
+            context.
+        - name: descendingOrder
+          in: query
+          schema:
+            type: boolean
+          description: Sort results in descending order
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserListResponse'
+        '400':
+          description: Bad Request - Invalid input, object invalid
+        '401':
+          description: Bad Credentials - Invalid credentials
+        '403':
+          description: Permission Denied - Insufficient permissions
+    post:
+      tags:
+        - Users
+      summary: Create User
+      description: >
+        Creates a new Access user.
+
+
+
+        **Note:**
+
+        - When `internal_password_disabled=true`, the 'password' field is not
+        mandatory.
+
+        - The parameter `realm` will be `internal`
+
+
+
+        **Security:** Requires admin privileges.
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreateRequest'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDetails'
+        '400':
+          description: Bad Request - Invalid input, object invalid
+        '401':
+          description: Bad Credentials - Invalid credentials
+        '403':
+          description: Permission Denied - Insufficient permissions
+        '409':
+          description: Conflict - User already exists
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: Access Token as bearer token
+  schemas:
+    UserDetails:
+      type: object
+      properties:
+        username:
+          type: string
+          description: The username
+        email:
+          type: string
+          description: The user's email address
+        admin:
+          type: boolean
+          description: Whether the user is an admin
+        effective_admin:
+          type: boolean
+          description: Whether the user is effectively an admin (based on groups).
+        profile_updatable:
+          type: boolean
+          description: Whether the user can update their profile
+        disable_ui_access:
+          type: boolean
+          description: Whether UI access is disabled for this user
+        internal_password_disabled:
+          type: boolean
+          description: Whether internal password is disabled
+        last_logged_in:
+          type: string
+          format: date-time
+          description: Last login timestamp
+        realm:
+          type: string
+          description: The authentication realm
+        groups:
+          type: array
+          items:
+            type: string
+          description: Groups the user belongs to
+        status:
+          type: string
+          enum:
+            - invited
+            - enabled
+            - disabled
+            - locked
+          description: User status
+    UserCreateRequest:
+      type: object
+      required:
+        - username
+        - email
+      properties:
+        username:
+          type: string
+          description: The username (required)
+        password:
+          type: string
+          description: The password (not required if internal_password_disabled=true)
+        email:
+          type: string
+          description: The user's email address
+        groups:
+          type: array
+          items:
+            type: string
+          description: Groups to add the user to
+        admin:
+          type: boolean
+          default: false
+          description: Whether the user is an admin
+        profile_updatable:
+          type: boolean
+          default: true
+          description: Whether the user can update their profile
+        internal_password_disabled:
+          type: boolean
+          default: false
+          description: Whether internal password is disabled
+        disable_ui_access:
+          type: boolean
+          default: false
+          description: Whether UI access is disabled
+    UserListResponse:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            type: object
+            properties:
+              username:
+                type: string
+              uri:
+                type: string
+              realm:
+                type: string
+              status:
+                type: string
+        cursor:
+          type: string
+          description: Pagination cursor
+x-readme:
+  explorer-enabled: false
