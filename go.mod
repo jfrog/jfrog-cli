@@ -8,11 +8,6 @@ replace (
 	github.com/CycloneDX/cyclonedx-go => github.com/CycloneDX/cyclonedx-go v0.10.0
 	// Should not be updated to 0.2.6 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
 	github.com/c-bata/go-prompt => github.com/c-bata/go-prompt v0.2.5
-	// TEMPORARY, remove once build-info-go PR #394 (RubyGems FlexPack) merges to main and is
-	// released. The RubyGems support lives on that unmerged branch, whose commit is older
-	// than main, so a require cannot select it: minimal version selection would pick the
-	// newer main and the ruby package would not compile.
-	github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.13.1-0.20260715194847-6e04c9b133c8
 	// Should not be updated to 0.2.0-beta.2 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
 	github.com/pkg/term => github.com/pkg/term v1.1.0
 )
@@ -23,10 +18,10 @@ require (
 	github.com/buger/jsonparser v1.3.0
 	github.com/gocarina/gocsv v0.0.0-20260607070740-0735908c6461
 	github.com/jfrog/archiver/v3 v3.6.3
-	github.com/jfrog/build-info-go v1.13.1-0.20260728083052-16a97012811d
+	github.com/jfrog/build-info-go v1.13.1-0.20260804205917-fc5cf2241bdf
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-application v1.0.2-0.20260723152309-34eeb81e2847
-	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260804205629-88c8c0c11820
+	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260804210212-ce78a4ab1071
 	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260804120604-edaa34435a80
 	github.com/jfrog/jfrog-cli-evidence v0.9.5-0.20260618135203-4d2bdd4ee35f
 	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260618062042-6053ab368cab
