@@ -159,9 +159,8 @@ func TestMavenNativeMultiModuleBuildInfo(t *testing.T) {
 	buildNumber := "1"
 	setupNativeMavenMultiModule(t, "build info test")
 
-	// Resolve through the Artifactory instance under test (default-maven-virtual) rather than public
-	// Maven Central, matching all other native tests. Passing -s exercises resolution-flag forwarding
-	// into the internal dependency:tree call (which must resolve inter-module deps, e.g. multi3→multi1).
+	// Resolve through the test Artifactory remote repo (cli-mvn-remote-*), guaranteed to exist.
+	// Passing -s also exercises resolution-flag forwarding into the internal dependency:tree call.
 	const settingsServerId = "central-mirror"
 	settingsPath := writeMavenDeploySettings(t, settingsServerId)
 	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
@@ -279,9 +278,8 @@ func writeMavenDeploySettings(t *testing.T, serverId string) string {
 		}
 		password = serverDetails.AccessToken
 	}
-	// Resolve dependencies/plugins through the Artifactory instance under test (its default-maven-virtual)
-	// rather than public Maven Central, using the same server credentials. mirrorOf="external:*" leaves
-	// the deployment repositories untouched.
+	// Resolve dependencies/plugins through the test remote repo (cli-mvn-remote-*), which is created
+	// by initMavenTest and proxies Maven Central. mirrorOf="external:*" leaves deployment repos untouched.
 	settings := fmt.Sprintf(`<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0">
   <servers>
     <server>
@@ -294,10 +292,10 @@ func writeMavenDeploySettings(t *testing.T, serverId string) string {
     <mirror>
       <id>%s</id>
       <mirrorOf>external:*</mirrorOf>
-      <url>%sdefault-maven-virtual</url>
+      <url>%s%s</url>
     </mirror>
   </mirrors>
-</settings>`, serverId, user, password, serverId, serverDetails.ArtifactoryUrl)
+</settings>`, serverId, user, password, serverId, serverDetails.ArtifactoryUrl, tests.MvnRemoteRepo)
 	path := filepath.Join(t.TempDir(), "settings.xml")
 	require.NoError(t, os.WriteFile(path, []byte(settings), 0600))
 	return path
