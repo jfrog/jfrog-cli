@@ -270,14 +270,13 @@ func setupNativeMavenMultiModule(t *testing.T, skipSuffix string) string {
 // (mirrorOf="external:*" leaves the deployment repository untouched). Native mode shells out to raw
 // mvn, so this is how the deploy target is authenticated, mirroring how a real user would configure it.
 func writeMavenDeploySettings(t *testing.T, serverId string) string {
-	user, password := serverDetails.User, serverDetails.Password
-	if serverDetails.AccessToken != "" {
-		// Artifactory accepts an access token as the password in Basic auth; the username is ignored.
-		if user == "" {
-			user = "token"
-		}
-		password = serverDetails.AccessToken
-	}
+	// Maven's settings.xml uses HTTP Basic auth. Use the test user/password directly (not the JFrog
+	// Platform access token, which is a JWT issued by jfac and cannot be validated via Basic auth by
+	// a standalone Artifactory instance). *tests.JfrogUser/*tests.JfrogPassword default to admin/password
+	// for a fresh local Artifactory instance, and are overridden via --jfrog.user/--jfrog.password flags
+	// for external instances.
+	user := *tests.JfrogUser
+	password := *tests.JfrogPassword
 	// Resolve dependencies/plugins through the test remote repo (cli-mvn-remote-*), which is created
 	// by initMavenTest and proxies Maven Central. mirrorOf="external:*" leaves deployment repos untouched.
 	settings := fmt.Sprintf(`<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0">
