@@ -1,5 +1,15 @@
 package main
 
+// Agent APM e2e suite for `jf agent apm` (auth + build-info wrappers).
+//
+// Run (requires a live Artifactory and `apm` on PATH):
+//
+//	go test -v -test.agentApm=true -timeout 30m .
+//
+// Coverage focus: setup/registry, publish/install/update build-info, scopes,
+// checksums, dry-run skip, flags, and failure paths. Native apm behavior is
+// only exercised where it intersects jf's value-add.
+
 import (
 	"fmt"
 	"os"
@@ -49,6 +59,7 @@ func initAgentApmTest(t *testing.T) {
 	requireApmBinary(t)
 	createJfrogHomeConfig(t, false)
 	require.True(t, isRepoExist(tests.AgentApmLocalRepo), "agent apm local repo does not exist: "+tests.AgentApmLocalRepo)
+	t.Cleanup(cleanAgentApmTest)
 }
 
 func cleanAgentApmTest() {
@@ -63,15 +74,29 @@ func requireApmBinary(t *testing.T) {
 	}
 }
 
+// assertErrorContainsAll requires a non-nil error whose message contains every substring.
+func assertErrorContainsAll(t *testing.T, err error, substrings ...string) {
+	t.Helper()
+	require.Error(t, err)
+	msg := err.Error()
+	for _, sub := range substrings {
+		assert.Contains(t, msg, sub, "error %q should contain %q", msg, sub)
+	}
+}
+
 // runAgentApmCmd executes `jf agent apm <args...>` in dir (empty = current dir).
+// Each chdir registers a LIFO t.Cleanup restore so nested calls unwind correctly.
 func runAgentApmCmd(t *testing.T, dir string, args ...string) error {
 	t.Helper()
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	if dir != "" {
-		wd, err := os.Getwd()
+		previousDir, err := os.Getwd()
 		require.NoError(t, err)
 		require.NoError(t, os.Chdir(dir))
-		t.Cleanup(func() { _ = os.Chdir(wd) })
+		t.Cleanup(func() {
+			// Best-effort restore; later cleanups still run if this fails.
+			_ = os.Chdir(previousDir)
+		})
 	}
 	return jfrogCli.Exec(append([]string{"agent", "apm"}, args...)...)
 }
@@ -94,24 +119,20 @@ func runSetupAgentApm(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func agentApmFixtureSrc(name string) string {
-	return filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "agent_apm", name)
+	_, thisFile, _, _ := runtime.Caller(0)
+	return filepath.Join(filepath.Dir(thisFile), "testdata", "agent_apm", name)
 }
 
 // copyApmFixture copies a testdata/agent_apm/<name> project into a fresh temp dir
 // and injects a registries: block pointing at the test Artifactory repo.
 func copyApmFixture(t *testing.T, fixtureName string) string {
 	t.Helper()
-	// Get the fixture path based on the source file location, not the current working directory.
-	// This ensures the fixture is found even if tests change the working directory.
-	_, thisFile, _, _ := runtime.Caller(0)
-	testDir := filepath.Dir(thisFile)
-	src := filepath.Join(testDir, "testdata", "agent_apm", fixtureName)
-	
+	src := agentApmFixtureSrc(fixtureName)
+
 	dst, cleanup := coretests.CreateTempDirWithCallbackAndAssert(t)
 	t.Cleanup(cleanup)
 
-	// CopyDir copies contents of src into dst, so we need to copy the children,
-	// not the directory itself. Read the source directory and copy each item.
+	// CopyDir copies contents of src into dst, so copy children, not the directory itself.
 	entries, err := os.ReadDir(src)
 	require.NoError(t, err, "failed to read fixture source: %s", src)
 	for _, entry := range entries {
@@ -122,7 +143,7 @@ func copyApmFixture(t *testing.T, fixtureName string) string {
 		} else {
 			data, err := os.ReadFile(srcItem) // #nosec G304 -- test fixture
 			require.NoError(t, err)
-			require.NoError(t, os.WriteFile(dstItem, data, 0644)) // #nosec G306 -- test fixture
+			require.NoError(t, os.WriteFile(dstItem, data, 0644)) // #nosec G306,G703 -- test fixture path from temp dir
 		}
 	}
 
@@ -151,11 +172,10 @@ func injectApmRegistry(t *testing.T, projectDir string) {
 		"default": tests.AgentApmLocalRepo,
 	}
 
-	// Inject unique version suffix to avoid immutability conflicts when tests run in parallel or repeated.
-	// Extract test name and use it as part of the version prerelease (e.g., 1.0.0-TestName).
+	// Unique version suffix avoids immutability conflicts across repeated/parallel runs.
 	if version, ok := doc["version"].(string); ok {
 		testName := strings.TrimPrefix(t.Name(), "main.")
-		uniqueVersion := fmt.Sprintf("%s-%s", version, testName)
+		uniqueVersion := fmt.Sprintf("%s-%s", version, sanitizeApmVersionSuffix(testName))
 		doc["version"] = uniqueVersion
 	}
 
@@ -176,43 +196,129 @@ func injectApmRegistry(t *testing.T, projectDir string) {
 	require.NoError(t, os.WriteFile(manifestPath, out, 0o644)) // #nosec G306 -- test fixture
 }
 
+// sanitizeApmVersionSuffix keeps unique version strings compatible with common semver parsers.
+func sanitizeApmVersionSuffix(s string) string {
+	replacer := strings.NewReplacer("/", "-", " ", "-", "_", "-")
+	return replacer.Replace(s)
+}
+
 func packageRef(name string) string {
 	return apmTestOwner + "/" + name
+}
+
+func publishedRef(name, version string) string {
+	return fmt.Sprintf("%s/%s#%s", apmTestOwner, name, version)
+}
+
+func readApmManifest(t *testing.T, projectDir string) (name, version string) {
+	t.Helper()
+	manifestPath := filepath.Join(projectDir, "apm.yml")
+	data, err := os.ReadFile(manifestPath) // #nosec G304 -- test fixture path
+	require.NoError(t, err)
+	var doc map[string]any
+	require.NoError(t, yaml.Unmarshal(data, &doc))
+	name, ok := doc["name"].(string)
+	require.True(t, ok && name != "", "apm.yml must declare name")
+	version, ok = doc["version"].(string)
+	require.True(t, ok && version != "", "apm.yml must declare version")
+	return name, version
+}
+
+func readApmManifestVersion(t *testing.T, projectDir string) string {
+	t.Helper()
+	_, version := readApmManifest(t, projectDir)
+	return version
+}
+
+// pinApmDeps replaces dependencies.apm with the given refs (owner/name#version).
+// Needed because injectApmRegistry uniquifies published package versions.
+func pinApmDeps(t *testing.T, projectDir string, deps ...string) {
+	t.Helper()
+	manifestPath := filepath.Join(projectDir, "apm.yml")
+	data, err := os.ReadFile(manifestPath) // #nosec G304 -- test fixture path
+	require.NoError(t, err)
+	var doc map[string]any
+	require.NoError(t, yaml.Unmarshal(data, &doc))
+
+	depsMap, _ := doc["dependencies"].(map[string]any)
+	if depsMap == nil {
+		depsMap = map[string]any{}
+		doc["dependencies"] = depsMap
+	}
+	list := make([]any, len(deps))
+	for i, d := range deps {
+		list[i] = d
+	}
+	depsMap["apm"] = list
+
+	out, err := yaml.Marshal(doc)
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(manifestPath, out, 0o644)) // #nosec G306 -- test fixture
 }
 
 func apmArtifactPath(repo, owner, name, version string) string {
 	return fmt.Sprintf("%s/%s/%s/%s-%s.zip", repo, owner, name, name, version)
 }
 
+// assertApmPackageExists searches for the published zip. Prefer search over
+// GetItemProps: Artifactory can return a nil props map for an existing file
+// that has no properties yet, which makes props-based existence checks flaky.
 func assertApmPackageExists(t *testing.T, owner, name, version string) {
 	t.Helper()
-	sm, err := artUtils.CreateServiceManager(serverDetails, -1, 0, false)
-	require.NoError(t, err)
 	path := apmArtifactPath(tests.AgentApmLocalRepo, owner, name, version)
-	_, err = sm.GetItemProps(path)
-	require.NoError(t, err, "APM package should exist at %s", path)
+	searchSpec := spec.NewBuilder().Pattern(path).BuildSpec()
+	searchCmd := generic.NewSearchCommand()
+	searchCmd.SetServerDetails(serverDetails).SetSpec(searchSpec)
+	reader, err := searchCmd.Search()
+	require.NoError(t, err)
+	defer func() {
+		_ = reader.Close() // read-side close after search; no actionable failure mode
+	}()
+	item := new(artUtils.SearchResult)
+	require.NoError(t, reader.NextRecord(item), "APM package should exist at %s", path)
+	assert.Equal(t, path, item.Path, "artifact layout must be {repo}/{owner}/{name}/{name}-{version}.zip")
 }
 
-func publishApmFixture(t *testing.T, fixtureName, packageName, version string, extraArgs ...string) (string, string) {
+func publishApmFixture(t *testing.T, fixtureName, packageName string, extraArgs ...string) (string, string) {
 	t.Helper()
 	dir := copyApmFixture(t, fixtureName)
+	actualVersion := readApmManifestVersion(t, dir)
 
-	// Read the injected apm.yml to get the actual version (includes test-name suffix)
-	manifestPath := filepath.Join(dir, "apm.yml")
-	data, err := os.ReadFile(manifestPath) // #nosec G304 -- test fixture path
-	require.NoError(t, err)
-	var doc map[string]any
-	require.NoError(t, yaml.Unmarshal(data, &doc))
-	actualVersion, ok := doc["version"].(string)
-	if !ok {
-		actualVersion = version
-	}
-
-	args := append([]string{packageRef(packageName)}, extraArgs...)
+	args := append([]string{"--package=" + packageRef(packageName)}, extraArgs...)
 	require.NoError(t, runAgentApmCmd(t, dir, append([]string{"publish"}, args...)...),
 		"publish %s@%s", packageName, actualVersion)
 	assertApmPackageExists(t, apmTestOwner, packageName, actualVersion)
 	return dir, actualVersion
+}
+
+// publishApmFixtureFromDir publishes an already-prepared project dir (registries + pinned deps).
+func publishApmFixtureFromDir(t *testing.T, dir, packageName string) (string, string) {
+	t.Helper()
+	actualVersion := readApmManifestVersion(t, dir)
+	require.NoError(t, runAgentApmCmd(t, dir,
+		"publish", "--package="+packageRef(packageName),
+	), "publish %s@%s", packageName, actualVersion)
+	assertApmPackageExists(t, apmTestOwner, packageName, actualVersion)
+	return dir, actualVersion
+}
+
+func apmRegistryTokenEnvVar() string {
+	sanitized := strings.NewReplacer("-", "_", ".", "_").Replace(strings.ToUpper(tests.AgentApmLocalRepo))
+	return "APM_REGISTRY_TOKEN_" + sanitized
+}
+
+// apmDepScopeContaining returns the single scope for the first dependency whose id contains namePart.
+func apmDepScopeContaining(scopesByID map[string][]string, namePart string) (scope string, found bool) {
+	for depID, scopes := range scopesByID {
+		if !strings.Contains(depID, namePart) {
+			continue
+		}
+		if len(scopes) != 1 {
+			return "", false
+		}
+		return scopes[0], true
+	}
+	return "", false
 }
 
 // ---------------------------------------------------------------------------
@@ -222,13 +328,12 @@ func publishApmFixture(t *testing.T, fixtureName, packageName, version string, e
 // TestAgentApmSetup configures ~/.apm/config.json via jf setup agent-apm (scenario #1).
 func TestAgentApmSetup(t *testing.T) {
 	initAgentApmTest(t)
-	defer cleanAgentApmTest()
 
 	runSetupAgentApm(t)
 
 	configPath := filepath.Join(os.Getenv("HOME"), ".apm", "config.json")
 	require.FileExists(t, configPath, "jf setup agent-apm should create ~/.apm/config.json")
-	data, err := os.ReadFile(configPath) // #nosec G304 -- path under isolated HOME
+	data, err := os.ReadFile(configPath) // #nosec G304,G703 -- path under isolated HOME temp dir
 	require.NoError(t, err)
 	assert.Contains(t, string(data), tests.AgentApmLocalRepo,
 		"config should reference the agentpackages repo")
@@ -242,12 +347,12 @@ func TestAgentApmSetup(t *testing.T) {
 // discovers the registry from apm.yml registries: (scenario #2) without relying solely on setup.
 func TestAgentApmInstallUsesManifestRegistry(t *testing.T) {
 	initAgentApmTest(t)
-	defer cleanAgentApmTest()
 	runSetupAgentApm(t)
 
-	_, _ = publishApmFixture(t, "pkg-base-v2", "pkg-base", "1.1.0")
+	_, baseVer := publishApmFixture(t, "pkg-base-v2", "pkg-base")
 
 	consumerDir := copyApmFixture(t, "pkg-consumer")
+	pinApmDeps(t, consumerDir, publishedRef("pkg-base", baseVer))
 	require.NoError(t, runAgentApmCmd(t, consumerDir, "install", "--yes"))
 	require.FileExists(t, filepath.Join(consumerDir, "apm.lock.yaml"),
 		"install should write apm.lock.yaml using the registries: block")
@@ -260,24 +365,24 @@ func TestAgentApmInstallUsesManifestRegistry(t *testing.T) {
 // TestAgentApmPublish uploads a package and verifies Artifactory layout owner/name/name-ver.zip (#3,#4).
 func TestAgentApmPublish(t *testing.T) {
 	initAgentApmTest(t)
-	defer cleanAgentApmTest()
 	runSetupAgentApm(t)
 
-	_, _ = publishApmFixture(t, "pkg-base", "pkg-base", "1.0.0")
+	publishApmFixture(t, "pkg-base", "pkg-base")
 }
 
 // TestAgentApmPublishWithBuildInfo captures build-info on publish and publishes it (#3,#5,#6,#12).
 func TestAgentApmPublishWithBuildInfo(t *testing.T) {
 	initAgentApmTest(t)
-	defer cleanAgentApmTest()
 	runSetupAgentApm(t)
 
 	buildNumber := t.Name()
-	t.Cleanup(func() { _ = coreBuild.RemoveBuildDir(tests.AgentApmBuildName, buildNumber, "") })
+	t.Cleanup(func() {
+		_ = coreBuild.RemoveBuildDir(tests.AgentApmBuildName, buildNumber, "") // best-effort local build dir teardown
+	})
 
 	dir := copyApmFixture(t, "pkg-base")
 	require.NoError(t, runAgentApmCmd(t, dir,
-		"publish", packageRef("pkg-base"),
+		"publish", "--package="+packageRef("pkg-base"),
 		"--build-name="+tests.AgentApmBuildName,
 		"--build-number="+buildNumber,
 	))
@@ -293,47 +398,88 @@ func TestAgentApmPublishWithBuildInfo(t *testing.T) {
 		"artifact sha256 must be present (scenario #6/#18/#19)")
 }
 
-// TestAgentApmNoBuildInfoWithoutFlags verifies publish without BI flags creates no local build (#25 inverse).
+// TestAgentApmNoBuildInfoWithoutFlags verifies publish without BI flags creates no local build.
 func TestAgentApmNoBuildInfoWithoutFlags(t *testing.T) {
 	initAgentApmTest(t)
-	defer cleanAgentApmTest()
 	runSetupAgentApm(t)
 
 	dir := copyApmFixture(t, "pkg-base")
-	require.NoError(t, runAgentApmCmd(t, dir, "publish", packageRef("pkg-base")))
+	require.NoError(t, runAgentApmCmd(t, dir, "publish", "--package="+packageRef("pkg-base")))
 
 	localBuilds, err := coreBuild.GetGeneratedBuildsInfo(tests.AgentApmBuildName, "1", "")
 	require.NoError(t, err)
 	assert.Empty(t, localBuilds, "no local build info without --build-name/--build-number")
 }
 
-// TestAgentApmPublishBuildNameWithoutNumber requires both build flags together (#25).
-func TestAgentApmPublishBuildNameWithoutNumber(t *testing.T) {
+// TestAgentApmPublishBuildFlagsTable covers build-name/number combinations (plugins-style table).
+func TestAgentApmPublishBuildFlagsTable(t *testing.T) {
 	initAgentApmTest(t)
-	defer cleanAgentApmTest()
 	runSetupAgentApm(t)
 
-	dir := copyApmFixture(t, "pkg-base")
-	err := runAgentApmCmd(t, dir,
-		"publish", packageRef("pkg-base"),
-		"--build-name="+tests.AgentApmBuildName,
-	)
-	require.Error(t, err, "--build-name without --build-number must fail")
+	bothBuildNumber := t.Name() + "-both"
+	t.Cleanup(func() {
+		_ = coreBuild.RemoveBuildDir(tests.AgentApmBuildName, bothBuildNumber, "") // best-effort local build dir teardown
+	})
+
+	cases := []struct {
+		name        string
+		extraArgs   []string
+		wantErr     bool
+		errContains []string
+	}{
+		{
+			name:        "build-name without build-number",
+			extraArgs:   []string{"--build-name=" + tests.AgentApmBuildName},
+			wantErr:     true,
+			errContains: []string{"build-name and build-number options cannot be provided separately"},
+		},
+		{
+			name:        "build-number without build-name",
+			extraArgs:   []string{"--build-number=1"},
+			wantErr:     true,
+			errContains: []string{"build-name and build-number options cannot be provided separately"},
+		},
+		{
+			name: "both build flags",
+			extraArgs: []string{
+				"--build-name=" + tests.AgentApmBuildName,
+				"--build-number=" + bothBuildNumber,
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := copyApmFixture(t, "pkg-base")
+			args := append([]string{"publish", "--package=" + packageRef("pkg-base")}, tc.extraArgs...)
+			err := runAgentApmCmd(t, dir, args...)
+			if tc.wantErr {
+				assertErrorContainsAll(t, err, tc.errContains...)
+				return
+			}
+			require.NoError(t, err)
+			require.NoError(t, artifactoryCli.Exec("bp", tests.AgentApmBuildName, bothBuildNumber))
+			_, found, getErr := tests.GetBuildInfo(serverDetails, tests.AgentApmBuildName, bothBuildNumber)
+			require.NoError(t, getErr)
+			assert.True(t, found)
+		})
+	}
 }
 
-// TestAgentApmModuleOverride verifies --module overrides the build module id (#26).
+// TestAgentApmModuleOverride verifies --module overrides the build module id.
 func TestAgentApmModuleOverride(t *testing.T) {
 	initAgentApmTest(t)
-	defer cleanAgentApmTest()
 	runSetupAgentApm(t)
 
 	buildNumber := t.Name()
-	t.Cleanup(func() { _ = coreBuild.RemoveBuildDir(tests.AgentApmBuildName, buildNumber, "") })
+	t.Cleanup(func() {
+		_ = coreBuild.RemoveBuildDir(tests.AgentApmBuildName, buildNumber, "") // best-effort local build dir teardown
+	})
 	customModule := "my-custom-apm-module"
 
 	dir := copyApmFixture(t, "pkg-base")
 	require.NoError(t, runAgentApmCmd(t, dir,
-		"publish", packageRef("pkg-base"),
+		"publish", "--package="+packageRef("pkg-base"),
 		"--build-name="+tests.AgentApmBuildName,
 		"--build-number="+buildNumber,
 		"--module="+customModule,
@@ -347,18 +493,46 @@ func TestAgentApmModuleOverride(t *testing.T) {
 	assert.Equal(t, customModule, published.BuildInfo.Modules[0].Id)
 }
 
-// TestAgentApmBuildPropertiesOnArtifact verifies build.* properties after publish (#8).
-func TestAgentApmBuildPropertiesOnArtifact(t *testing.T) {
+// TestAgentApmDefaultModuleIdNameVersion asserts default module id is name:version.
+func TestAgentApmDefaultModuleIdNameVersion(t *testing.T) {
 	initAgentApmTest(t)
-	defer cleanAgentApmTest()
 	runSetupAgentApm(t)
 
 	buildNumber := t.Name()
-	t.Cleanup(func() { _ = coreBuild.RemoveBuildDir(tests.AgentApmBuildName, buildNumber, "") })
+	t.Cleanup(func() {
+		_ = coreBuild.RemoveBuildDir(tests.AgentApmBuildName, buildNumber, "") // best-effort local build dir teardown
+	})
 
 	dir := copyApmFixture(t, "pkg-base")
+	name, version := readApmManifest(t, dir)
 	require.NoError(t, runAgentApmCmd(t, dir,
-		"publish", packageRef("pkg-base"),
+		"publish", "--package="+packageRef("pkg-base"),
+		"--build-name="+tests.AgentApmBuildName,
+		"--build-number="+buildNumber,
+	))
+	require.NoError(t, artifactoryCli.Exec("bp", tests.AgentApmBuildName, buildNumber))
+
+	published, found, err := tests.GetBuildInfo(serverDetails, tests.AgentApmBuildName, buildNumber)
+	require.NoError(t, err)
+	require.True(t, found)
+	require.NotEmpty(t, published.BuildInfo.Modules)
+	assert.Equal(t, name+":"+version, published.BuildInfo.Modules[0].Id)
+}
+
+// TestAgentApmBuildPropertiesOnArtifact verifies build.* properties after publish (#8).
+func TestAgentApmBuildPropertiesOnArtifact(t *testing.T) {
+	initAgentApmTest(t)
+	runSetupAgentApm(t)
+
+	buildNumber := t.Name()
+	t.Cleanup(func() {
+		_ = coreBuild.RemoveBuildDir(tests.AgentApmBuildName, buildNumber, "") // best-effort local build dir teardown
+	})
+
+	dir := copyApmFixture(t, "pkg-base")
+	actualVersion := readApmManifestVersion(t, dir)
+	require.NoError(t, runAgentApmCmd(t, dir,
+		"publish", "--package="+packageRef("pkg-base"),
 		"--build-name="+tests.AgentApmBuildName,
 		"--build-number="+buildNumber,
 	))
@@ -366,17 +540,6 @@ func TestAgentApmBuildPropertiesOnArtifact(t *testing.T) {
 
 	sm, err := artUtils.CreateServiceManager(serverDetails, -1, 0, false)
 	require.NoError(t, err)
-
-	// Read the actual version from apm.yml (which includes test-name suffix)
-	manifestPath := filepath.Join(dir, "apm.yml")
-	data, err := os.ReadFile(manifestPath) // #nosec G304 -- test fixture path
-	require.NoError(t, err)
-	var doc map[string]any
-	require.NoError(t, yaml.Unmarshal(data, &doc))
-	actualVersion, ok := doc["version"].(string)
-	if !ok {
-		actualVersion = "1.0.0"
-	}
 
 	props, err := sm.GetItemProps(apmArtifactPath(tests.AgentApmLocalRepo, apmTestOwner, "pkg-base", actualVersion))
 	require.NoError(t, err)
@@ -386,10 +549,44 @@ func TestAgentApmBuildPropertiesOnArtifact(t *testing.T) {
 	assert.Contains(t, props.Properties, "build.timestamp")
 }
 
-// TestAgentApmBuildInfoFromEnvVars uses JFROG_CLI_BUILD_* without CLI flags (#25 env path).
+// TestAgentApmCIVCSProperties stamps vcs.* when GitHub Actions env is detected (#9).
+func TestAgentApmCIVCSProperties(t *testing.T) {
+	initAgentApmTest(t)
+	runSetupAgentApm(t)
+
+	cleanupEnv, expectedOrg, expectedRepo := tests.SetupGitHubActionsEnv(t)
+	defer cleanupEnv()
+
+	buildNumber := t.Name()
+	t.Cleanup(func() {
+		_ = coreBuild.RemoveBuildDir(tests.AgentApmBuildName, buildNumber, "") // best-effort local build dir teardown
+	})
+
+	dir := copyApmFixture(t, "pkg-base")
+	actualVersion := readApmManifestVersion(t, dir)
+	require.NoError(t, runAgentApmCmd(t, dir,
+		"publish", "--package="+packageRef("pkg-base"),
+		"--build-name="+tests.AgentApmBuildName,
+		"--build-number="+buildNumber,
+	))
+	require.NoError(t, artifactoryCli.Exec("bp", tests.AgentApmBuildName, buildNumber))
+
+	sm, err := artUtils.CreateServiceManager(serverDetails, -1, 0, false)
+	require.NoError(t, err)
+	props, err := sm.GetItemProps(apmArtifactPath(tests.AgentApmLocalRepo, apmTestOwner, "pkg-base", actualVersion))
+	require.NoError(t, err)
+	require.NotNil(t, props)
+
+	providers, ok := props.Properties["vcs.provider"]
+	require.True(t, ok, "expected vcs.provider on published artifact when GitHub Actions env is set")
+	assert.Contains(t, providers, "github")
+	assert.Contains(t, props.Properties["vcs.org"], expectedOrg)
+	assert.Contains(t, props.Properties["vcs.repo"], expectedRepo)
+}
+
+// TestAgentApmBuildInfoFromEnvVars uses JFROG_CLI_BUILD_* without CLI flags.
 func TestAgentApmBuildInfoFromEnvVars(t *testing.T) {
 	initAgentApmTest(t)
-	defer cleanAgentApmTest()
 	runSetupAgentApm(t)
 
 	envBuildName := tests.AgentApmBuildName + "-env"
@@ -400,7 +597,7 @@ func TestAgentApmBuildInfoFromEnvVars(t *testing.T) {
 	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, envBuildName, artHttpDetails)
 
 	dir := copyApmFixture(t, "pkg-base")
-	require.NoError(t, runAgentApmCmd(t, dir, "publish", packageRef("pkg-base")))
+	require.NoError(t, runAgentApmCmd(t, dir, "publish", "--package="+packageRef("pkg-base")))
 	require.NoError(t, artifactoryCli.Exec("bp", envBuildName, envBuildNumber))
 
 	_, found, err := tests.GetBuildInfo(serverDetails, envBuildName, envBuildNumber)
@@ -411,10 +608,9 @@ func TestAgentApmBuildInfoFromEnvVars(t *testing.T) {
 // TestAgentApmChecksumStoredByArtifactory verifies Artifactory stores sha256 on the zip (#19).
 func TestAgentApmChecksumStoredByArtifactory(t *testing.T) {
 	initAgentApmTest(t)
-	defer cleanAgentApmTest()
 	runSetupAgentApm(t)
 
-	_, publishedVersion := publishApmFixture(t, "pkg-base", "pkg-base", "1.0.0")
+	_, publishedVersion := publishApmFixture(t, "pkg-base", "pkg-base")
 
 	path := apmArtifactPath(tests.AgentApmLocalRepo, apmTestOwner, "pkg-base", publishedVersion)
 	searchSpec := spec.NewBuilder().Pattern(path).BuildSpec()
@@ -422,10 +618,35 @@ func TestAgentApmChecksumStoredByArtifactory(t *testing.T) {
 	searchCmd.SetServerDetails(serverDetails).SetSpec(searchSpec)
 	reader, err := searchCmd.Search()
 	require.NoError(t, err)
-	defer func() { _ = reader.Close() }()
+	defer func() {
+		_ = reader.Close() // read-side close after search; no actionable failure mode
+	}()
 	item := new(artUtils.SearchResult)
 	require.NoError(t, reader.NextRecord(item))
 	assert.NotEmpty(t, item.Sha256, "Artifactory must store sha256 for the published zip")
+	assert.NotEmpty(t, item.Sha1, "Artifactory must store sha1 for the published zip")
+	assert.NotEmpty(t, item.Md5, "Artifactory must store md5 for the published zip")
+}
+
+// TestAgentApmBuildInfoReadCommand exercises jf rt bi after bp (scenario #5).
+func TestAgentApmBuildInfoReadCommand(t *testing.T) {
+	initAgentApmTest(t)
+	runSetupAgentApm(t)
+
+	buildNumber := t.Name()
+	t.Cleanup(func() {
+		_ = coreBuild.RemoveBuildDir(tests.AgentApmBuildName, buildNumber, "") // best-effort local build dir teardown
+	})
+
+	dir := copyApmFixture(t, "pkg-base")
+	require.NoError(t, runAgentApmCmd(t, dir,
+		"publish", "--package="+packageRef("pkg-base"),
+		"--build-name="+tests.AgentApmBuildName,
+		"--build-number="+buildNumber,
+	))
+	require.NoError(t, artifactoryCli.Exec("bp", tests.AgentApmBuildName, buildNumber))
+	require.NoError(t, artifactoryCli.Exec("bi", tests.AgentApmBuildName, buildNumber),
+		"jf rt bi should read the published build-info")
 }
 
 // ---------------------------------------------------------------------------
@@ -435,15 +656,17 @@ func TestAgentApmChecksumStoredByArtifactory(t *testing.T) {
 // TestAgentApmInstallWithBuildInfo installs deps and captures build-info (#7,#13,#18).
 func TestAgentApmInstallWithBuildInfo(t *testing.T) {
 	initAgentApmTest(t)
-	defer cleanAgentApmTest()
 	runSetupAgentApm(t)
 
-	_, _ = publishApmFixture(t, "pkg-base-v2", "pkg-base", "1.1.0")
+	_, baseVer := publishApmFixture(t, "pkg-base-v2", "pkg-base")
 
 	buildNumber := t.Name()
-	t.Cleanup(func() { _ = coreBuild.RemoveBuildDir(tests.AgentApmBuildName, buildNumber, "") })
+	t.Cleanup(func() {
+		_ = coreBuild.RemoveBuildDir(tests.AgentApmBuildName, buildNumber, "") // best-effort local build dir teardown
+	})
 
 	consumerDir := copyApmFixture(t, "pkg-consumer")
+	pinApmDeps(t, consumerDir, publishedRef("pkg-base", baseVer))
 	require.NoError(t, runAgentApmCmd(t, consumerDir,
 		"install", "--yes",
 		"--build-name="+tests.AgentApmBuildName,
@@ -460,13 +683,139 @@ func TestAgentApmInstallWithBuildInfo(t *testing.T) {
 		"install build-info should record registry dependencies")
 	for _, dep := range published.BuildInfo.Modules[0].Dependencies {
 		assert.NotEmpty(t, dep.Sha256, "dependency %s must have sha256", dep.Id)
+		assert.NotEmpty(t, dep.Sha1, "dependency %s must have sha1 after enrichment", dep.Id)
+		assert.NotEmpty(t, dep.Md5, "dependency %s must have md5 after enrichment", dep.Id)
 	}
+}
+
+// TestAgentApmInstallDependencyScopes asserts prod / transitive / dev scopes on install BI.
+func TestAgentApmInstallDependencyScopes(t *testing.T) {
+	initAgentApmTest(t)
+	runSetupAgentApm(t)
+
+	t.Run("prod-and-transitive", func(t *testing.T) {
+		_, baseVer := publishApmFixture(t, "pkg-base-v2", "pkg-base")
+
+		midDir := copyApmFixture(t, "pkg-mid")
+		pinApmDeps(t, midDir, publishedRef("pkg-base", baseVer))
+		_, midVer := publishApmFixtureFromDir(t, midDir, "pkg-mid")
+
+		buildNumber := t.Name()
+		t.Cleanup(func() {
+			_ = coreBuild.RemoveBuildDir(tests.AgentApmBuildName, buildNumber, "") // best-effort local build dir teardown
+		})
+
+		consumerDir := copyApmFixture(t, "pkg-consumer-mid")
+		pinApmDeps(t, consumerDir, publishedRef("pkg-mid", midVer))
+		require.NoError(t, runAgentApmCmd(t, consumerDir,
+			"install", "--yes",
+			"--build-name="+tests.AgentApmBuildName,
+			"--build-number="+buildNumber,
+		))
+		require.NoError(t, artifactoryCli.Exec("bp", tests.AgentApmBuildName, buildNumber))
+
+		published, found, err := tests.GetBuildInfo(serverDetails, tests.AgentApmBuildName, buildNumber)
+		require.NoError(t, err)
+		require.True(t, found)
+		require.NotEmpty(t, published.BuildInfo.Modules)
+
+		byID := map[string][]string{}
+		for _, dep := range published.BuildInfo.Modules[0].Dependencies {
+			byID[dep.Id] = dep.Scopes
+		}
+		require.NotEmpty(t, byID, "expected dependencies in install build-info")
+
+		midScope, midFound := apmDepScopeContaining(byID, "pkg-mid")
+		baseScope, baseFound := apmDepScopeContaining(byID, "pkg-base")
+		require.True(t, midFound, "expected pkg-mid in dependencies, got %#v", byID)
+		require.True(t, baseFound, "expected pkg-base in dependencies, got %#v", byID)
+		assert.Equal(t, "prod", midScope, "direct pkg-mid should be scoped prod")
+		assert.Equal(t, "transitive", baseScope, "pkg-base via pkg-mid should be scoped transitive")
+	})
+
+	t.Run("dev", func(t *testing.T) {
+		_, baseVer := publishApmFixture(t, "pkg-base-v2", "pkg-base")
+
+		buildNumber := t.Name()
+		t.Cleanup(func() {
+			_ = coreBuild.RemoveBuildDir(tests.AgentApmBuildName, buildNumber, "") // best-effort local build dir teardown
+		})
+
+		dir := copyApmFixture(t, "pkg-nodeps")
+		require.NoError(t, runAgentApmCmd(t, dir,
+			"install", "--dev", publishedRef("pkg-base", baseVer), "--yes",
+			"--build-name="+tests.AgentApmBuildName,
+			"--build-number="+buildNumber,
+		))
+		require.NoError(t, artifactoryCli.Exec("bp", tests.AgentApmBuildName, buildNumber))
+
+		published, found, err := tests.GetBuildInfo(serverDetails, tests.AgentApmBuildName, buildNumber)
+		require.NoError(t, err)
+		require.True(t, found)
+		require.NotEmpty(t, published.BuildInfo.Modules)
+		require.NotEmpty(t, published.BuildInfo.Modules[0].Dependencies)
+
+		var sawDev bool
+		for _, dep := range published.BuildInfo.Modules[0].Dependencies {
+			require.Len(t, dep.Scopes, 1, "dependency %s should have a single scope", dep.Id)
+			if dep.Scopes[0] == "dev" && strings.Contains(dep.Id, "pkg-base") {
+				sawDev = true
+			}
+		}
+		assert.True(t, sawDev, "install --dev should record pkg-base with scope=dev")
+	})
+}
+
+// TestAgentApmInstallDryRunSkipsBuildInfo verifies --dry-run does not record build-info.
+func TestAgentApmInstallDryRunSkipsBuildInfo(t *testing.T) {
+	initAgentApmTest(t)
+	runSetupAgentApm(t)
+
+	_, baseVer := publishApmFixture(t, "pkg-base-v2", "pkg-base")
+
+	buildNumber := t.Name()
+	t.Cleanup(func() {
+		_ = coreBuild.RemoveBuildDir(tests.AgentApmBuildName, buildNumber, "") // best-effort local build dir teardown
+	})
+
+	consumerDir := copyApmFixture(t, "pkg-consumer")
+	pinApmDeps(t, consumerDir, publishedRef("pkg-base", baseVer))
+	require.NoError(t, runAgentApmCmd(t, consumerDir,
+		"install", "--dry-run", "--yes",
+		"--build-name="+tests.AgentApmBuildName,
+		"--build-number="+buildNumber,
+	))
+
+	localBuilds, err := coreBuild.GetGeneratedBuildsInfo(tests.AgentApmBuildName, buildNumber, "")
+	require.NoError(t, err)
+	assert.Empty(t, localBuilds, "--dry-run must not record local build-info")
+}
+
+// TestAgentApmPublishDryRunSkipsBuildInfo verifies publish --dry-run does not record build-info.
+func TestAgentApmPublishDryRunSkipsBuildInfo(t *testing.T) {
+	initAgentApmTest(t)
+	runSetupAgentApm(t)
+
+	buildNumber := t.Name()
+	t.Cleanup(func() {
+		_ = coreBuild.RemoveBuildDir(tests.AgentApmBuildName, buildNumber, "") // best-effort local build dir teardown
+	})
+
+	dir := copyApmFixture(t, "pkg-base")
+	require.NoError(t, runAgentApmCmd(t, dir,
+		"publish", "--package="+packageRef("pkg-base"), "--dry-run",
+		"--build-name="+tests.AgentApmBuildName,
+		"--build-number="+buildNumber,
+	))
+
+	localBuilds, err := coreBuild.GetGeneratedBuildsInfo(tests.AgentApmBuildName, buildNumber, "")
+	require.NoError(t, err)
+	assert.Empty(t, localBuilds, "publish --dry-run must not record local build-info")
 }
 
 // TestAgentApmInstallNotFound returns an error for an unknown package (#15).
 func TestAgentApmInstallNotFound(t *testing.T) {
 	initAgentApmTest(t)
-	defer cleanAgentApmTest()
 	runSetupAgentApm(t)
 
 	dir := copyApmFixture(t, "pkg-nodeps")
@@ -477,11 +826,9 @@ func TestAgentApmInstallNotFound(t *testing.T) {
 // TestAgentApmInstallFrozenFailsWithoutLockfile (#14).
 func TestAgentApmInstallFrozenFailsWithoutLockfile(t *testing.T) {
 	initAgentApmTest(t)
-	defer cleanAgentApmTest()
 	runSetupAgentApm(t)
 
 	dir := copyApmFixture(t, "pkg-consumer")
-	// Native apm flags after -- escape.
 	err := runAgentApmCmd(t, dir, "install", "--", "--frozen")
 	assert.Error(t, err, "install --frozen without lockfile should fail")
 }
@@ -489,16 +836,18 @@ func TestAgentApmInstallFrozenFailsWithoutLockfile(t *testing.T) {
 // TestAgentApmUpdateWithBuildInfo runs update and captures BI (#16).
 func TestAgentApmUpdateWithBuildInfo(t *testing.T) {
 	initAgentApmTest(t)
-	defer cleanAgentApmTest()
 	runSetupAgentApm(t)
 
-	publishApmFixture(t, "pkg-base-v2", "pkg-base", "1.1.0")
+	_, baseVer := publishApmFixture(t, "pkg-base-v2", "pkg-base")
 
 	consumerDir := copyApmFixture(t, "pkg-consumer")
+	pinApmDeps(t, consumerDir, publishedRef("pkg-base", baseVer))
 	require.NoError(t, runAgentApmCmd(t, consumerDir, "install", "--yes"))
 
 	buildNumber := t.Name()
-	t.Cleanup(func() { _ = coreBuild.RemoveBuildDir(tests.AgentApmBuildName, buildNumber, "") })
+	t.Cleanup(func() {
+		_ = coreBuild.RemoveBuildDir(tests.AgentApmBuildName, buildNumber, "") // best-effort local build dir teardown
+	})
 	require.NoError(t, runAgentApmCmd(t, consumerDir,
 		"update", "--yes",
 		"--build-name="+tests.AgentApmBuildName,
@@ -517,20 +866,17 @@ func TestAgentApmUpdateWithBuildInfo(t *testing.T) {
 // TestAgentApmPublishMissingPackageArg (#23).
 func TestAgentApmPublishMissingPackageArg(t *testing.T) {
 	initAgentApmTest(t)
-	defer cleanAgentApmTest()
 	runSetupAgentApm(t)
 
 	dir := copyApmFixture(t, "pkg-base")
 	err := runAgentApmCmd(t, dir, "publish")
-	assert.Error(t, err, "publish without package/org should fail")
+	assertErrorContainsAll(t, err, "--package")
 }
 
 // TestAgentApmNoRegistryConfigured fails clearly when no registry is available (#24/#36).
 func TestAgentApmNoRegistryConfigured(t *testing.T) {
 	initAgentApmTest(t)
-	defer cleanAgentApmTest()
 
-	// Isolated HOME without setup, and fixture without registries injection.
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	t.Setenv("USERPROFILE", home)
@@ -540,24 +886,32 @@ func TestAgentApmNoRegistryConfigured(t *testing.T) {
 	t.Cleanup(cleanup)
 	require.NoError(t, biutils.CopyDir(src, dst, true, nil))
 
-	err := runAgentApmCmd(t, dst, "publish", packageRef("pkg-noregistry"))
-	require.Error(t, err, "publish without registry should fail before/during apm auth")
-	lower := strings.ToLower(err.Error())
-	assert.True(t,
-		strings.Contains(lower, "registry") || strings.Contains(lower, "setup") || strings.Contains(lower, "auth"),
-		"error should mention registry/setup/auth, got: %s", err.Error())
+	err := runAgentApmCmd(t, dst, "publish", "--package="+packageRef("pkg-noregistry"))
+	assertErrorContainsAll(t, err, "registry")
+}
+
+// TestAgentApmRegistryTokenEnv proves a pre-set APM_REGISTRY_TOKEN_* is respected (#33).
+// An invalid token must fail auth (injectRegistryCredentialEnv leaves existing env alone).
+func TestAgentApmRegistryTokenEnv(t *testing.T) {
+	initAgentApmTest(t)
+	runSetupAgentApm(t)
+
+	_, baseVer := publishApmFixture(t, "pkg-base-v2", "pkg-base")
+
+	t.Setenv(apmRegistryTokenEnvVar(), "invalid-apm-registry-token")
+	consumerDir := copyApmFixture(t, "pkg-consumer")
+	pinApmDeps(t, consumerDir, publishedRef("pkg-base", baseVer))
+	err := runAgentApmCmd(t, consumerDir, "install", "--yes")
+	assert.Error(t, err, "invalid APM_REGISTRY_TOKEN_* must fail install auth")
 }
 
 // TestAgentApmNativeFlagEscape verifies -- passes native apm flags (#28).
 func TestAgentApmNativeFlagEscape(t *testing.T) {
 	initAgentApmTest(t)
-	defer cleanAgentApmTest()
 	runSetupAgentApm(t)
 
 	dir := copyApmFixture(t, "pkg-nodeps")
-	// --dry-run after -- should reach apm without being interpreted by jf.
 	err := runAgentApmCmd(t, dir, "install", "--", "--dry-run")
-	// Zero-dep project: dry-run may succeed; either way it must not be a jf flag parse error.
 	if err != nil {
 		assert.NotContains(t, strings.ToLower(err.Error()), "unknown flag",
 			"native --dry-run after -- must not be rejected as a jf flag")
@@ -567,16 +921,14 @@ func TestAgentApmNativeFlagEscape(t *testing.T) {
 // TestAgentApmPassthroughLock smoke-tests passthrough `jf agent apm lock`.
 func TestAgentApmPassthroughLock(t *testing.T) {
 	initAgentApmTest(t)
-	defer cleanAgentApmTest()
 	runSetupAgentApm(t)
 
-	_, _ = publishApmFixture(t, "pkg-base-v2", "pkg-base", "1.1.0")
+	_, baseVer := publishApmFixture(t, "pkg-base-v2", "pkg-base")
 	consumerDir := copyApmFixture(t, "pkg-consumer")
+	pinApmDeps(t, consumerDir, publishedRef("pkg-base", baseVer))
 	require.NoError(t, runAgentApmCmd(t, consumerDir, "install", "--yes"))
 
-	// lock is intentionally passthrough-only (no build-info).
 	err := runAgentApmCmd(t, consumerDir, "lock")
-	// lock may be a no-op / succeed depending on apm version; just ensure the command is routed.
 	if err != nil {
 		assert.NotContains(t, strings.ToLower(err.Error()), "unknown command",
 			"jf agent apm lock must be recognized as passthrough")
@@ -590,11 +942,11 @@ func TestAgentApmPassthroughLock(t *testing.T) {
 // TestAgentApmRoundTrip publish then install and verify lockfile (#40).
 func TestAgentApmRoundTrip(t *testing.T) {
 	initAgentApmTest(t)
-	defer cleanAgentApmTest()
 	runSetupAgentApm(t)
 
-	_, _ = publishApmFixture(t, "pkg-base-v2", "pkg-base", "1.1.0")
+	_, baseVer := publishApmFixture(t, "pkg-base-v2", "pkg-base")
 	consumerDir := copyApmFixture(t, "pkg-consumer")
+	pinApmDeps(t, consumerDir, publishedRef("pkg-base", baseVer))
 	require.NoError(t, runAgentApmCmd(t, consumerDir, "install", "--yes"))
 
 	lockData, err := os.ReadFile(filepath.Join(consumerDir, "apm.lock.yaml")) // #nosec G304
@@ -606,16 +958,17 @@ func TestAgentApmRoundTrip(t *testing.T) {
 // TestAgentApmCIPipeline install(BI) → publish(BI) → bp (#50 simplified).
 func TestAgentApmCIPipeline(t *testing.T) {
 	initAgentApmTest(t)
-	defer cleanAgentApmTest()
 	runSetupAgentApm(t)
 
 	t.Setenv("CI", "true")
 	buildNumber := t.Name()
-	t.Cleanup(func() { _ = coreBuild.RemoveBuildDir(tests.AgentApmBuildName, buildNumber, "") })
+	t.Cleanup(func() {
+		_ = coreBuild.RemoveBuildDir(tests.AgentApmBuildName, buildNumber, "") // best-effort local build dir teardown
+	})
 
 	baseDir := copyApmFixture(t, "pkg-base")
 	require.NoError(t, runAgentApmCmd(t, baseDir,
-		"publish", packageRef("pkg-base"),
+		"publish", "--package="+packageRef("pkg-base"),
 		"--build-name="+tests.AgentApmBuildName,
 		"--build-number="+buildNumber,
 	))
@@ -628,14 +981,13 @@ func TestAgentApmCIPipeline(t *testing.T) {
 // TestAgentApmArtifactoryUnreachable returns a clear error (#53).
 func TestAgentApmArtifactoryUnreachable(t *testing.T) {
 	initAgentApmTest(t)
-	defer cleanAgentApmTest()
 
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	t.Setenv("USERPROFILE", home)
-	// Point default server at a closed port.
 	createJfrogHomeConfig(t, false)
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog config", "")
+	// Best-effort remove; config may already be empty after isolated HOME setup.
 	_ = jfrogCli.Exec("rm", "default", "--quiet")
 	require.NoError(t, coretests.NewJfrogCli(execMain, "jfrog config",
 		"--access-token=dummy").Exec(
@@ -644,7 +996,7 @@ func TestAgentApmArtifactoryUnreachable(t *testing.T) {
 	))
 
 	dir := copyApmFixture(t, "pkg-base")
-	err := runAgentApmCmd(t, dir, "publish", packageRef("pkg-base"))
+	err := runAgentApmCmd(t, dir, "publish", "--package="+packageRef("pkg-base"))
 	assert.Error(t, err, "unreachable Artifactory must not succeed silently")
 }
 
@@ -654,31 +1006,19 @@ func TestAgentApmArtifactoryUnreachable(t *testing.T) {
 
 func TestAgentApmWithProxy(t *testing.T) {
 	initAgentApmTest(t)
-	defer cleanAgentApmTest()
 	if os.Getenv("HTTPS_PROXY") == "" && os.Getenv("HTTP_PROXY") == "" {
 		t.Skip("HTTPS_PROXY/HTTP_PROXY not set")
 	}
 	runSetupAgentApm(t)
-	_, _ = publishApmFixture(t, "pkg-base", "pkg-base", "1.0.0")
+	publishApmFixture(t, "pkg-base", "pkg-base")
 }
 
 func TestAgentApmNoProxy(t *testing.T) {
 	initAgentApmTest(t)
-	defer cleanAgentApmTest()
 	if os.Getenv("HTTPS_PROXY") == "" && os.Getenv("HTTP_PROXY") == "" {
 		t.Skip("proxy env not set")
 	}
 	t.Setenv("NO_PROXY", "*")
 	runSetupAgentApm(t)
-	_, _ = publishApmFixture(t, "pkg-base", "pkg-base", "1.0.0")
-}
-
-// TestAgentApmCoverageSummary documents plan coverage (scenarios from APM_TEST_PLAN_FINAL.md).
-func TestAgentApmCoverageSummary(t *testing.T) {
-	t.Log(`Agent APM e2e coverage mapped from APM_TEST_PLAN_FINAL.md:
-P0 implemented: #1 setup, #2 manifest registry, #3/#4 publish+layout, #5/#6/#12 BI publish/retrieve,
-#8 build props, #13/#18 install BI+checksums, #15 not-found, #19 RT sha256, #23 missing arg,
-#24/#36 no registry, #25 build flags.
-P1 implemented: #14 frozen, #16 update BI, #26 module, #28 flag escape, #40 round-trip, #50 CI pipeline, #53 unreachable.
-Deferred (need Xray/RB/policy/CI VCS): #9-11, #27, #29-30, #31-35, #37-39, #41-48, #51-52, #54-57.`)
+	publishApmFixture(t, "pkg-base", "pkg-base")
 }

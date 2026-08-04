@@ -1,0 +1,13 @@
+name: pkg-mid
+version: 1.0.0
+description: Mid-layer package depending on pkg-base (for transitive scope e2e)
+author: Uday
+license: MIT
+targets:
+- claude
+dependencies:
+  apm:
+  - uday/pkg-base#1.1.0
+  mcp: []
+includes: auto
+scripts: {}

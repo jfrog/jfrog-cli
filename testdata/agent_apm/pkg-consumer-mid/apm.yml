@@ -1,0 +1,13 @@
+name: pkg-consumer-mid
+version: 1.0.0
+description: Consumer of pkg-mid (transitive chain for scope e2e)
+author: Uday
+license: MIT
+targets:
+- claude
+dependencies:
+  apm:
+  - uday/pkg-mid#1.0.0
+  mcp: []
+includes: auto
+scripts: {}
