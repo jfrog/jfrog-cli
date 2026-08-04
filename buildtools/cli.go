@@ -2254,7 +2254,10 @@ func AptCmd(c *cli.Context) error {
 func aptSetupCmd(c *cli.Context) error {
 	// --remove only needs root (enforced in Run); skip server/repo validation.
 	if c.Bool("remove") {
+		// Pass --repo so removal can be scoped to a single repo's config; empty
+		// means "all repos" (the existing behavior).
 		cmd := aptcommand.NewAptSetupCommand().
+			SetRepoName(c.String("repo")).
 			SetDist(c.String("dist")).
 			SetRemove(true)
 		return commands.ExecWithPackageManager(cmd, "apt")

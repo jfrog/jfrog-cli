@@ -1436,8 +1436,11 @@ var flagsMap = map[string]cli.Flag{
 		Usage: "[apt only] [Required for apt setup] Debian distribution name (e.g. noble, jammy).` `",
 	},
 	aptComponent: cli.StringFlag{
-		Name:  aptComponent,
-		Value: "main",
+		Name: aptComponent,
+		// No Value default: leaving it unset lets 'jf setup apt' detect "not
+		// provided" and fire its interactive "Component ..." prompt. The effective
+		// default of "main" is applied downstream by AptSetupCommand/AptCommand
+		// SetComponent, so an unset flag still resolves to "main" non-interactively.
 		Usage: "[apt only] [Default: main] Debian component (e.g. main, contrib, non-free). Multiple components: --component \"main contrib non-free\".` `",
 	},
 	aptTrusted: cli.BoolFlag{
