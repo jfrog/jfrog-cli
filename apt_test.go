@@ -785,7 +785,7 @@ func createArtifactoryGPGKeypair(t *testing.T) (pairName, passphrase string, cle
 	if _, err := exec.LookPath("gpg"); err != nil {
 		t.Skip("gpg not found — cannot create test GPG keypair")
 	}
-	const pass = "jfrog-apt-test-pass"
+	const pass = "jfrog-apt-test-pass" //#nosec G101 -- test-only passphrase for a throwaway GPG keypair, not a real credential
 
 	// Isolated GPG home so we don't pollute the system keyring.
 	gpgHome := t.TempDir()
