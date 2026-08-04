@@ -70,6 +70,9 @@ var (
 	TestPipenv                *bool
 	TestPoetry                *bool
 	TestUv                    *bool
+	TestNix                   *bool
+	TestAlpine                *bool
+	TestAgentPlugins          *bool
 	TestConan                 *bool
 	TestHelm                  *bool
 	TestHuggingFace           *bool
@@ -86,6 +89,28 @@ var (
 	InstallDataTransferPlugin *bool
 	timestampAdded            bool
 )
+
+// nonProjectKeyCharsRegex matches any character that isn't allowed in an Artifactory
+// project key (project keys allow only lowercase alphanumeric characters and hyphens).
+// We use this to sanitize the --ci.runId value before splicing it into resource names
+// whose format is constrained (project keys, GPG keypair names, etc.). Project-key
+// charset is a strict subset of the GPG keypair charset, so a single sanitization is
+// safe for both.
+var nonProjectKeyCharsRegex = regexp.MustCompile(`[^a-z0-9-]+`)
+
+// SanitizedCiRunId returns the --ci.runId flag value lowercased with any characters
+// outside [a-z0-9-] collapsed to a single hyphen and surrounding hyphens trimmed.
+// Returns "" if the flag wasn't set. Callers that need a per-runId suffix on
+// resources whose name format is constrained (e.g. Artifactory project keys, GPG
+// keypair names) should use this so concurrent runs against a shared JPD don't
+// clobber each other.
+func SanitizedCiRunId() string {
+	if ciRunId == nil || *ciRunId == "" {
+		return ""
+	}
+	sanitized := nonProjectKeyCharsRegex.ReplaceAllString(strings.ToLower(*ciRunId), "-")
+	return strings.Trim(sanitized, "-")
+}
 
 func init() {
 	JfrogUrl = flag.String("jfrog.url", "http://localhost:8081/", "JFrog platform url")
@@ -113,7 +138,10 @@ func init() {
 	TestPip = flag.Bool("test.pip", false, "Test Pip")
 	TestPipenv = flag.Bool("test.pipenv", false, "Test Pipenv")
 	TestPoetry = flag.Bool("test.poetry", false, "Test Poetry")
-	TestUv     = flag.Bool("test.uv", false, "Test UV")
+	TestUv = flag.Bool("test.uv", false, "Test UV")
+	TestNix = flag.Bool("test.nix", false, "Test Nix")
+	TestAlpine = flag.Bool("test.alpine", false, "Test Alpine APK")
+	TestAgentPlugins = flag.Bool("test.agentPlugins", false, "Test Agent Plugins")
 	TestConan = flag.Bool("test.conan", false, "Test Conan")
 	TestHelm = flag.Bool("test.helm", false, "Test Helm")
 	TestHuggingFace = flag.Bool("test.huggingface", false, "Test HuggingFace")
@@ -296,6 +324,13 @@ var reposConfigMap = map[*string]string{
 	&UvLocalRepo:                    UvLocalRepositoryConfig,
 	&UvRemoteRepo:                   UvRemoteRepositoryConfig,
 	&UvVirtualRepo:                  UvVirtualRepositoryConfig,
+	&AgentPluginsLocalRepo:          AgentPluginsLocalRepositoryConfig,
+	&NixLocalRepo:                   NixLocalRepositoryConfig,
+	&NixRemoteRepo:                  NixRemoteRepositoryConfig,
+	&NixVirtualRepo:                 NixVirtualRepositoryConfig,
+	&AlpineLocalRepo:                AlpineLocalRepositoryConfig,
+	&AlpineRemoteRepo:               AlpineRemoteRepositoryConfig,
+	&AlpineVirtualRepo:              AlpineVirtualRepositoryConfig,
 	&ConanLocalRepo:                 ConanLocalRepositoryConfig,
 	&ConanRemoteRepo:                ConanRemoteRepositoryConfig,
 	&ConanVirtualRepo:               ConanVirtualRepositoryConfig,
@@ -367,6 +402,9 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestPipenv:             {&PipenvRemoteRepo},
 		TestPoetry:             {&PoetryLocalRepo, &PoetryRemoteRepo},
 		TestUv:                 {&UvLocalRepo, &UvRemoteRepo},
+		TestNix:                {&NixLocalRepo, &NixRemoteRepo},
+		TestAlpine:             {&AlpineLocalRepo, &AlpineRemoteRepo},
+		TestAgentPlugins:       {&AgentPluginsLocalRepo},
 		TestConan:              {&ConanLocalRepo, &ConanRemoteRepo},
 		TestHelm:               {&HelmLocalRepo},
 		TestHuggingFace:        {&HuggingFaceLocalRepo},
@@ -398,6 +436,9 @@ func GetVirtualRepositories() map[*string]string {
 		TestPipenv:       {&PipenvVirtualRepo},
 		TestPoetry:       {&PoetryVirtualRepo},
 		TestUv:           {&UvVirtualRepo},
+		TestNix:          {&NixVirtualRepo},
+		TestAlpine:       {&AlpineVirtualRepo},
+		TestAgentPlugins: {},
 		TestConan:        {&ConanVirtualRepo},
 		TestHelm:         {},
 		TestHuggingFace:  {},
@@ -440,6 +481,9 @@ func GetBuildNames() []string {
 		TestPipenv:       {&PipenvBuildName},
 		TestPoetry:       {&PoetryBuildName},
 		TestUv:           {&UvBuildName},
+		TestNix:          {&NixBuildName},
+		TestAlpine:       {&AlpineBuildName},
+		TestAgentPlugins: {&AgentPluginsBuildName},
 		TestConan:        {&ConanBuildName},
 		TestHelm:         {&HelmBuildName},
 		TestHuggingFace:  {&HuggingFaceBuildName},
@@ -503,6 +547,13 @@ func getSubstitutionMap() map[string]string {
 		"${UV_LOCAL_REPO}":             UvLocalRepo,
 		"${UV_REMOTE_REPO}":            UvRemoteRepo,
 		"${UV_VIRTUAL_REPO}":           UvVirtualRepo,
+		"${AGENT_PLUGINS_LOCAL_REPO}":  AgentPluginsLocalRepo,
+		"${NIX_LOCAL_REPO}":            NixLocalRepo,
+		"${NIX_REMOTE_REPO}":           NixRemoteRepo,
+		"${NIX_VIRTUAL_REPO}":          NixVirtualRepo,
+		"${ALPINE_LOCAL_REPO}":         AlpineLocalRepo,
+		"${ALPINE_REMOTE_REPO}":        AlpineRemoteRepo,
+		"${ALPINE_VIRTUAL_REPO}":       AlpineVirtualRepo,
 		"${CONAN_LOCAL_REPO}":          ConanLocalRepo,
 		"${CONAN_REMOTE_REPO}":         ConanRemoteRepo,
 		"${CONAN_VIRTUAL_REPO}":        ConanVirtualRepo,
@@ -576,6 +627,13 @@ func AddTimestampToGlobalVars() {
 	UvLocalRepo += uniqueSuffix
 	UvRemoteRepo += uniqueSuffix
 	UvVirtualRepo += uniqueSuffix
+	AgentPluginsLocalRepo += uniqueSuffix
+	NixLocalRepo += uniqueSuffix
+	NixRemoteRepo += uniqueSuffix
+	NixVirtualRepo += uniqueSuffix
+	AlpineLocalRepo += uniqueSuffix
+	AlpineRemoteRepo += uniqueSuffix
+	AlpineVirtualRepo += uniqueSuffix
 	ConanLocalRepo += uniqueSuffix
 	ConanRemoteRepo += uniqueSuffix
 	ConanVirtualRepo += uniqueSuffix
@@ -607,6 +665,10 @@ func AddTimestampToGlobalVars() {
 	PipBuildName += uniqueSuffix
 	PipenvBuildName += uniqueSuffix
 	PoetryBuildName += uniqueSuffix
+	AgentPluginsBuildName += uniqueSuffix
+	UvBuildName += uniqueSuffix
+	NixBuildName += uniqueSuffix
+	AlpineBuildName += uniqueSuffix
 	ConanBuildName += uniqueSuffix
 	HelmBuildName += uniqueSuffix
 	HuggingFaceBuildName += uniqueSuffix
@@ -629,10 +691,35 @@ func AddTimestampToGlobalVars() {
 	Password1 += uniqueSuffix + strconv.FormatFloat(randomSequence.Float64(), 'f', 2, 32)
 	Password2 += uniqueSuffix + strconv.FormatFloat(randomSequence.Float64(), 'f', 2, 32)
 
-	// Projects
-	ProjectKey += timestamp[len(timestamp)-7:]
+	// Projects. The artifactory and lifecycle suites use distinct base keys
+	// (ProjectKey vs LcProjectKey) so neither can delete the other's project
+	// when run concurrently against a shared JPD.
+	ProjectKey = appendProjectKeySuffix(ProjectKey, timestamp)
+	ProjectKey2 = appendProjectKeySuffix(ProjectKey2, timestamp)
 
 	timestampAdded = true
+}
+
+// appendProjectKeySuffix appends a per-run suffix to an Artifactory project-key
+// base. Project keys must be 2-32 chars, lowercase alphanumeric or hyphen, and
+// start with a letter. We always include the sanitized --ci.runId (when set) so
+// that concurrent runs against a shared JPD don't clobber each other's project —
+// createTestProject calls deleteProjectIfExists(<key>) unconditionally, so a
+// colliding key from another concurrent suite would silently delete the project
+// (and every release bundle inside it) out from under us.
+func appendProjectKeySuffix(base, timestamp string) string {
+	suffix := timestamp[len(timestamp)-7:]
+	if sanitizedRunId := SanitizedCiRunId(); sanitizedRunId != "" {
+		suffix = sanitizedRunId + "-" + suffix
+	}
+	// The total must be <= 32. Trim from the front so the trailing timestamp
+	// (used for visual debuggability) is preserved and we don't end up with a
+	// key that starts with a hyphen.
+	const maxProjectKeyLen = 32
+	if maxSuffixLen := maxProjectKeyLen - len(base); len(suffix) > maxSuffixLen {
+		suffix = strings.TrimLeft(suffix[len(suffix)-maxSuffixLen:], "-")
+	}
+	return base + suffix
 }
 
 // Replace all variables in the form of ${VARIABLE} in the input file, according to the substitution map (see getSubstitutionMap()).
@@ -851,6 +938,31 @@ func SetupGitHubActionsEnv(t *testing.T) (cleanup func(), actualOrg, actualRepo 
 	return cleanup, actualOrg, actualRepo
 }
 
+// SetupGitHubActionsEnvForLocalGitMerge enables CI VCS collection with provider/org/repo
+// but clears url/revision/branch CI env vars so local git fallback is exercised.
+func SetupGitHubActionsEnvForLocalGitMerge(t *testing.T) (cleanup func(), actualOrg, actualRepo string) {
+	t.Helper()
+	cleanupBase, actualOrg, actualRepo := SetupGitHubActionsEnv(t)
+
+	var callbacks []func()
+	for _, key := range []string{
+		"GITHUB_SERVER_URL",
+		"GITHUB_SHA",
+		"GITHUB_REF",
+		"GITHUB_REF_NAME",
+		"GITHUB_HEAD_REF",
+	} {
+		callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, key, ""))
+	}
+
+	return func() {
+		for _, cb := range callbacks {
+			cb()
+		}
+		cleanupBase()
+	}, actualOrg, actualRepo
+}
+
 // ValidateCIVcsPropsOnArtifacts validates that CI VCS properties are set on artifacts.
 func ValidateCIVcsPropsOnArtifacts(t *testing.T, resultItems []utils.ResultItem, expectedProvider, expectedOrg, expectedRepo string) {
 	for _, item := range resultItems {
@@ -946,6 +1058,79 @@ func ValidateCIVcsPropsIfPresent(t *testing.T, resultItems []utils.ResultItem, e
 			vals, ok := propertiesMap["vcs.repo"]
 			assert.True(t, ok, "Missing vcs.repo on %s", item.Name)
 			assert.Contains(t, vals, expectedRepo, "Wrong vcs.repo on %s", item.Name)
+		}
+	}
+}
+
+// SetupLocalGitVcsEnv enables VCS property collection and clears CI detection
+// so only local git fallback is exercised.
+func SetupLocalGitVcsEnv(t *testing.T) (cleanup func()) {
+	t.Helper()
+	var callbacks []func()
+
+	for _, key := range []string{
+		"JFROG_CLI_CI_VCS_PROPS_DISABLED", // set to "" to enable
+		"CI", "GITHUB_ACTIONS", "GITHUB_WORKFLOW", "GITHUB_RUN_ID",
+		"GITHUB_REPOSITORY", "GITHUB_REPOSITORY_OWNER",
+		"GITHUB_SERVER_URL", "GITHUB_SHA", "GITHUB_REF", "GITHUB_REF_NAME", "GITHUB_HEAD_REF",
+	} {
+		callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, key, ""))
+	}
+
+	return func() {
+		for _, cb := range callbacks {
+			cb()
+		}
+	}
+}
+
+// ValidateLocalGitVcsPropsOnArtifacts asserts vcs.url, vcs.revision, vcs.branch on every item.
+func ValidateLocalGitVcsPropsOnArtifacts(t *testing.T, resultItems []utils.ResultItem, expectedURL, expectedRevision, expectedBranch string) {
+	t.Helper()
+	for _, item := range resultItems {
+		propertiesMap := ConvertPropertiesToMap(item.Properties)
+		assertLocalGitProp(t, item.Name, propertiesMap, "vcs.url", expectedURL)
+		assertLocalGitProp(t, item.Name, propertiesMap, "vcs.revision", expectedRevision)
+		if expectedBranch != "" {
+			assertLocalGitProp(t, item.Name, propertiesMap, "vcs.branch", expectedBranch)
+		}
+	}
+}
+
+func assertLocalGitProp(t *testing.T, itemName string, props map[string][]string, key, expected string) {
+	t.Helper()
+	vals, ok := props[key]
+	assert.True(t, ok, "Missing %s on %s", key, itemName)
+	assert.Contains(t, vals, expected, "Wrong %s on %s", key, itemName)
+}
+
+// ValidateNoLocalGitVcsPropsOnArtifacts asserts url/revision/branch are absent.
+func ValidateNoLocalGitVcsPropsOnArtifacts(t *testing.T, resultItems []utils.ResultItem) {
+	t.Helper()
+	for _, item := range resultItems {
+		propertiesMap := ConvertPropertiesToMap(item.Properties)
+		_, hasURL := propertiesMap["vcs.url"]
+		_, hasRev := propertiesMap["vcs.revision"]
+		_, hasBranch := propertiesMap["vcs.branch"]
+		assert.False(t, hasURL, "vcs.url should not be set on %s", item.Name)
+		assert.False(t, hasRev, "vcs.revision should not be set on %s", item.Name)
+		assert.False(t, hasBranch, "vcs.branch should not be set on %s", item.Name)
+	}
+}
+
+// ValidateCIAndLocalGitVcsPropsOnArtifacts asserts CI props plus local git props coexist.
+func ValidateCIAndLocalGitVcsPropsOnArtifacts(t *testing.T, resultItems []utils.ResultItem,
+	expectedProvider, expectedOrg, expectedRepo, expectedURL, expectedRevision, expectedBranch string) {
+	t.Helper()
+	for _, item := range resultItems {
+		propertiesMap := ConvertPropertiesToMap(item.Properties)
+		assertLocalGitProp(t, item.Name, propertiesMap, "vcs.provider", expectedProvider)
+		assertLocalGitProp(t, item.Name, propertiesMap, "vcs.org", expectedOrg)
+		assertLocalGitProp(t, item.Name, propertiesMap, "vcs.repo", expectedRepo)
+		assertLocalGitProp(t, item.Name, propertiesMap, "vcs.url", expectedURL)
+		assertLocalGitProp(t, item.Name, propertiesMap, "vcs.revision", expectedRevision)
+		if expectedBranch != "" {
+			assertLocalGitProp(t, item.Name, propertiesMap, "vcs.branch", expectedBranch)
 		}
 	}
 }

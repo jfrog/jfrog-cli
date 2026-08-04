@@ -5,7 +5,7 @@ import "github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 var Usage = []string{"api <endpoint-path>"}
 
 func GetDescription() string {
-	return "Invoke a JFrog Platform HTTP API using the configured server URL and credentials (hostname and token are not passed manually; use 'jf config' or --url / --access-token / --server-id as usual). REST API reference: " + coreutils.JFrogHelpUrl + "jfrog-platform-documentation/rest-apis (OpenAPI bundles are not shipped with the CLI)."
+	return "Invoke a JFrog Platform HTTP API using the configured server URL and credentials (hostname and token are not passed manually; use 'jf config' or --url / --access-token / --server-id as usual). REST API reference: " + coreutils.JFrogHelpUrl + "jfrog-platform-documentation/rest-apis. Run 'jf api docs search <query>' to look up an endpoint locally, offline, from this binary's embedded OpenAPI spec."
 }
 
 func GetArguments() string {
@@ -60,4 +60,34 @@ REFERENCES
    Platform Administration        :  https://docs.jfrog.com/administration/reference/
 SEE ALSO
   Use 'jf config' to add or select a server. Use --server-id to target a specific configuration.`
+}
+
+func GetAIDescription() string {
+	return `Invoke any JFrog Platform REST endpoint using the configured server URL and credentials. Acts as an authenticated curl: paths are relative to the platform base URL, and the response body goes to stdout. Use this when no dedicated jf subcommand exists for the operation you need.
+
+When to use:
+- Calling REST APIs that don't have a first-class CLI wrapper (Access user/group APIs, repository CRUD, GraphQL, etc.).
+- Scripting platform admin tasks where 'jf rt' or 'jf c' don't cover the operation.
+- Debugging API responses with full visibility into status code and body.
+
+Before guessing at a path: if you don't already know the exact endpoint/method, run 'jf api docs search <query>' first (e.g. 'jf api docs search user') — it's a local, offline lookup over this binary's embedded OpenAPI spec that returns ranked matches with a ready-to-run 'jf api' command for each. Then run 'jf api docs describe <method> <path>' on the best match to see its full parameters, request body schema, and response codes before calling it for real.
+
+Prerequisites:
+- A configured server (jf c add or jf login) or explicit --url / --access-token / --server-id.
+- The caller's identity must have the privileges the target endpoint requires.
+
+Common patterns:
+  $ jf api /access/api/v2/users
+  $ jf api /artifactory/api/repositories -X POST -H "Content-Type: application/json" --input ./repo.json
+  $ jf api /artifactory/api/repositories/my-repo -X DELETE
+  $ jf api /access/api/v2/users -X POST -d '{"username":"newuser","email":"u@example.com","password":"S3cret!"}' -H "Content-Type: application/json"
+
+Gotchas:
+- The endpoint path must start with /; the platform base URL is prepended.
+- -d/--data and --input are mutually exclusive.
+- HTTP status goes to stderr (one line), body to stdout. Non-2xx exits with status 1 but still prints the body.
+- Some APIs require trailing slashes or specific Accept headers; check the API reference before scripting.
+- The bare, slash-less path 'docs' (e.g. 'jf api docs') routes to 'jf api docs search' instead of issuing an HTTP call. This does not affect the leading-slash form: 'jf api -X GET /docs' still reaches the platform normally, since no real JFrog REST path is bare '/docs'.
+
+Related: jf api docs search, jf api docs describe, jf c add, jf rt, jf c show`
 }

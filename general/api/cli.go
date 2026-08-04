@@ -9,12 +9,12 @@ import (
 
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
-	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-cli/utils/usage"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
 )
 
@@ -63,11 +63,9 @@ func runApiCmd(c commandContext, serverDetails *coreconfig.ServerDetails, stdOut
 		return errorutils.CheckErrorf("no JFrog Platform URL specified, either via the --url flag or as part of the server configuration")
 	}
 
-	commands.CollectMetrics("jf api", flagsUsed)
-
 	timeout := time.Duration(c.Int(flagTimeout)) * time.Second
-	waitUsageReport := startUsageReport(serverDetails)
-	defer waitForUsageReport(waitUsageReport, timeout)
+	waitUsageReport := usage.StartReport("jf api", flagsUsed, serverDetails)
+	defer usage.WaitForReport("jf api", waitUsageReport, timeout)
 
 	pathArg := c.Args().First()
 	fullURL, err := joinPlatformAPIURL(serverDetails.GetUrl(), pathArg)
@@ -92,42 +90,6 @@ func runApiCmd(c commandContext, serverDetails *coreconfig.ServerDetails, stdOut
 	}
 
 	return exchangeAndPrint(client, c, method, fullURL, body, details, stdOut)
-}
-
-// reportUsageFn is the usage reporter invoked by startUsageReport. Overridable
-// in tests to inject fakes (panic, slow, fast) without touching HTTP.
-var reportUsageFn = commands.ReportUsage
-
-// startUsageReport launches the usage report in a goroutine, recovering from
-// any panic so that a misbehaving reporter cannot crash the process. The
-// returned channel is signaled by ReportUsage on success, or closed by the
-// recover path on panic — either way the caller's receive unblocks.
-func startUsageReport(serverDetails *coreconfig.ServerDetails) chan bool {
-	waitUsageReport := make(chan bool)
-	go func() {
-		defer func() {
-			if r := recover(); r != nil {
-				log.Debug("jf api: usage report panicked:", r)
-				close(waitUsageReport)
-			}
-		}()
-		reportUsageFn("jf api", serverDetails, waitUsageReport)
-	}()
-	return waitUsageReport
-}
-
-// waitForUsageReport blocks until the usage report completes or the timeout
-// elapses. A non-positive timeout waits indefinitely.
-func waitForUsageReport(wait <-chan bool, timeout time.Duration) {
-	if timeout <= 0 {
-		<-wait
-		return
-	}
-	select {
-	case <-wait:
-	case <-time.After(timeout):
-		log.Debug("jf api: usage report did not complete within", timeout)
-	}
 }
 
 func httpMethodOrDefault(c commandContext) string {

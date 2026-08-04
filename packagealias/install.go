@@ -107,7 +107,11 @@ func (ic *InstallCommand) Run() error {
 
 		for _, tool := range selectedTools {
 			if _, exists := cfg.ToolModes[tool]; !exists {
-				cfg.ToolModes[tool] = ModeJF
+				if _, isDefaultPass := defaultPassTools[tool]; isDefaultPass {
+					cfg.ToolModes[tool] = ModePass
+				} else {
+					cfg.ToolModes[tool] = ModeJF
+				}
 			}
 		}
 

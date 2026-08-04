@@ -17,8 +17,8 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "bash",
 			Flags:        cliutils.GetCommandFlags(cliutils.Completion),
-			Usage:        bash_docs.GetDescription(),
-			HelpName:     corecommon.CreateUsage("completion bash", bash_docs.GetDescription(), bash_docs.Usage),
+			Usage:        corecommon.ResolveDescription(bash_docs.GetDescription(), bash_docs.GetAIDescription()),
+			HelpName:     corecommon.CreateUsage("completion bash", corecommon.ResolveDescription(bash_docs.GetDescription(), bash_docs.GetAIDescription()), bash_docs.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) {
 				bash.WriteBashCompletionScript(getInstallFlag(c))
@@ -27,8 +27,8 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "zsh",
 			Flags:        cliutils.GetCommandFlags(cliutils.Completion),
-			Usage:        zsh_docs.GetDescription(),
-			HelpName:     corecommon.CreateUsage("completion zsh", zsh_docs.GetDescription(), zsh_docs.Usage),
+			Usage:        corecommon.ResolveDescription(zsh_docs.GetDescription(), zsh_docs.GetAIDescription()),
+			HelpName:     corecommon.CreateUsage("completion zsh", corecommon.ResolveDescription(zsh_docs.GetDescription(), zsh_docs.GetAIDescription()), zsh_docs.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) {
 				zsh.WriteZshCompletionScript(getInstallFlag(c))
@@ -37,8 +37,8 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "fish",
 			Flags:        cliutils.GetCommandFlags(cliutils.Completion),
-			Usage:        fish_docs.GetDescription(),
-			HelpName:     corecommon.CreateUsage("completion fish", fish_docs.GetDescription(), fish_docs.Usage),
+			Usage:        corecommon.ResolveDescription(fish_docs.GetDescription(), fish_docs.GetAIDescription()),
+			HelpName:     corecommon.CreateUsage("completion fish", corecommon.ResolveDescription(fish_docs.GetDescription(), fish_docs.GetAIDescription()), fish_docs.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) {
 				fish.WriteFishCompletionScript(c, getInstallFlag(c))

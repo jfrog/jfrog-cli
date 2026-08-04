@@ -10,5 +10,5 @@ func LoginCmd(c *cli.Context) error {
 	if c.NArg() > 0 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
-	return coreLogin.NewLoginCommand().Run()
+	return coreLogin.NewLoginCommand().SetServerId(c.String("server-id")).Run()
 }

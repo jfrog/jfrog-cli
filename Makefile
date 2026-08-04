@@ -17,6 +17,8 @@ help:
 	@echo "  clean                    - Clean build artifacts"
 	@echo "  test                     - Run tests"
 	@echo "  build                    - Build the project"
+	@echo "  stub                     - Build jf with the OSS-default stub OpenAPI spec bundle"
+	@echo "  full                     - Build jf with the full OpenAPI spec bundle (requires docs/api-spec/full/ to be populated)"
 
 # Update all JFrog dependencies
 update-all: update-build-info-go update-client-go update-gofrog update-core update-artifactory update-platform-services update-security update-apptrust update-evidence
@@ -94,3 +96,12 @@ test:
 build:
 	@echo "Building project..."
 	@go build ./...
+
+# Build jf with the OSS-default stub OpenAPI spec bundle (docs/api-spec/stub/)
+stub:
+	@./build/build.sh jf
+
+# Build jf with the full OpenAPI spec bundle (docs/api-spec/full/) — used by
+# JFrog's internal release pipeline after it populates docs/api-spec/full/
+full:
+	@JF_BUILD_TAGS=full ./build/build.sh jf
