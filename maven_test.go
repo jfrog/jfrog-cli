@@ -159,10 +159,11 @@ func TestMavenNativeMultiModuleBuildInfo(t *testing.T) {
 	buildNumber := "1"
 	setupNativeMavenMultiModule(t, "build info test")
 
-	// Native mode shells out to raw mvn, which resolves from the machine's default settings. Point it
-	// at a public-central mirror so resolution is deterministic and independent of local settings.
-	// Passing -s also exercises resolution-flag forwarding into the internal dependency:tree call.
-	settingsPath := writeCentralMirrorSettings(t)
+	// Resolve through the Artifactory instance under test (default-maven-virtual) rather than public
+	// Maven Central, matching all other native tests. Passing -s exercises resolution-flag forwarding
+	// into the internal dependency:tree call (which must resolve inter-module deps, e.g. multi3→multi1).
+	const settingsServerId = "central-mirror"
+	settingsPath := writeMavenDeploySettings(t, settingsServerId)
 	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
 
 	args := []string{"mvn", "clean", "install",
@@ -262,23 +263,6 @@ func setupNativeMavenMultiModule(t *testing.T, skipSuffix string) string {
 	oldWd := changeWD(t, projDir)
 	t.Cleanup(func() { clientTestUtils.ChangeDirAndAssert(t, oldWd) })
 	return projDir
-}
-
-// writeCentralMirrorSettings writes a Maven settings.xml that mirrors all repositories to Maven
-// Central, and returns its path. Used to make native-mode dependency resolution deterministic.
-func writeCentralMirrorSettings(t *testing.T) string {
-	settings := `<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0">
-  <mirrors>
-    <mirror>
-      <id>central-public</id>
-      <mirrorOf>*</mirrorOf>
-      <url>https://repo1.maven.org/maven2</url>
-    </mirror>
-  </mirrors>
-</settings>`
-	path := filepath.Join(t.TempDir(), "settings.xml")
-	require.NoError(t, os.WriteFile(path, []byte(settings), 0600))
-	return path
 }
 
 // writeMavenDeploySettings writes a Maven settings.xml carrying (a) a <server> entry with the test's
@@ -522,7 +506,7 @@ func addDistributionManagement(t *testing.T, pomPath, serverID, repoURL string) 
 	require.NoError(t, err)
 	dm := fmt.Sprintf("<distributionManagement><repository><id>%s</id><url>%s</url></repository></distributionManagement>\n</project>", serverID, repoURL)
 	updated := strings.Replace(string(data), "</project>", dm, 1)
-	require.NoError(t, os.WriteFile(pomPath, []byte(updated), 0644))
+	require.NoError(t, os.WriteFile(pomPath, []byte(updated), 0644)) // #nosec G703 -- pomPath is always a t.TempDir()-derived path in tests
 }
 
 // TestMavenNativeMultiModuleDeployPerModuleRepo verifies that when reactor modules deploy to DIFFERENT
