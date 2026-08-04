@@ -38,6 +38,7 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	cliproxy "github.com/jfrog/jfrog-cli/utils/tests/proxy/server"
 	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
+	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
@@ -141,6 +142,426 @@ func TestMavenBuildWithFlexPackBuildInfo(t *testing.T) {
 		// Traditional Maven Build Info Extractor auto-deploys, but FlexPack follows standard Maven behavior
 		// So we don't expect artifacts in the build info for 'install' goal
 	}
+
+	cleanMavenTest(t)
+}
+
+// TestMavenNativeMultiModuleBuildInfo verifies that native (FlexPack) mode produces a complete
+// build-info for a multi-module (reactor) project: one module per reactor module, each carrying its
+// own dependencies (including the inter-module dependency), rather than collapsing everything into a
+// single module. This is the regression test for the multi-module native build-info fix.
+//
+// Native (FlexPack) mode only activates when no .jfrog/projects/maven.yaml config file exists (see
+// artifactoryutils.ShouldRunNative), so this test runs jf mvn directly in the project directory
+// rather than through runMaven (which always writes a config file and would take the legacy path).
+func TestMavenNativeMultiModuleBuildInfo(t *testing.T) {
+	buildName := tests.MvnBuildName + "-flexpack-multimodule"
+	buildNumber := "1"
+	setupNativeMavenMultiModule(t, "build info test")
+
+	// Resolve through the test Artifactory remote repo (cli-mvn-remote-*), guaranteed to exist.
+	// Passing -s also exercises resolution-flag forwarding into the internal dependency:tree call.
+	const settingsServerId = "central-mirror"
+	settingsPath := writeMavenDeploySettings(t, settingsServerId)
+	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
+
+	args := []string{"mvn", "clean", "install",
+		"--build-name=" + buildName, "--build-number=" + buildNumber,
+		"-B", repoLocalSystemProp, "-s", settingsPath}
+	assert.NoError(t, runJfrogCliWithoutAssertion(args...))
+
+	// Publish and fetch the build info.
+	assert.NoError(t, runJfrogCliWithoutAssertion("rt", "bp", buildName, buildNumber))
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	if !assert.NoError(t, err, "Failed to get build info") {
+		return
+	}
+	if !assert.True(t, found, "build info was expected to be found") {
+		return
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
+
+	// The build info records the native build-mode marker (distinguishes native from the legacy extractor).
+	assert.Equal(t, "native", buildInfo.Properties["buildInfo.env.JFROG_MAVEN_MODE"],
+		"build info should be marked as produced in native mode")
+
+	// Core assertion: every reactor module is present (parent aggregator + multi1/multi2/multi3),
+	// not a single collapsed module.
+	modulesById := map[string]buildinfo.Module{}
+	for _, m := range buildInfo.Modules {
+		modulesById[m.Id] = m
+	}
+	expectedModules := []string{
+		"org.jfrog.test:multi:3.7-SNAPSHOT",
+		"org.jfrog.test:multi1:3.7-SNAPSHOT",
+		"org.jfrog.test:multi2:3.7-SNAPSHOT",
+		"org.jfrog.test:multi3:3.7-SNAPSHOT",
+	}
+	for _, id := range expectedModules {
+		assert.Contains(t, modulesById, id, "expected module %s in native build info", id)
+	}
+	assert.Len(t, buildInfo.Modules, len(expectedModules), "expected one build-info module per reactor module")
+
+	// Dependencies are segregated per module: buildable modules resolve their own deps, each with a
+	// maven type. Compile-scoped deps also carry a checksum (checksums are looked up from the local
+	// repo; test-scoped artifacts may not be present there and classifier artifacts are out of scope).
+	for _, id := range []string{"org.jfrog.test:multi1:3.7-SNAPSHOT", "org.jfrog.test:multi3:3.7-SNAPSHOT"} {
+		module := modulesById[id]
+		assert.Equal(t, "maven", string(module.Type), "module %s type", id)
+		assert.Greater(t, len(module.Dependencies), 0, "module %s should have its own dependencies", id)
+		for _, dep := range module.Dependencies {
+			assert.NotEmpty(t, dep.Id, "dependency id in module %s", id)
+			assert.NotEmpty(t, dep.Type, "dependency type in module %s", id)
+			if !hasScope(dep, "test") {
+				hasChecksum := dep.Sha1 != "" || dep.Sha256 != "" || dep.Md5 != ""
+				assert.True(t, hasChecksum, "compile dependency %s in module %s should have a checksum", dep.Id, id)
+			}
+		}
+	}
+
+	// The inter-module dependency (multi3 -> multi1) proves dependencies are attributed to the right
+	// module and not merged into one flat list.
+	multi3 := modulesById["org.jfrog.test:multi3:3.7-SNAPSHOT"]
+	assert.True(t, moduleDependsOn(multi3, "org.jfrog.test:multi1"),
+		"multi3 should depend on multi1 (inter-module dependency)")
+
+	cleanMavenTest(t)
+}
+
+func moduleDependsOn(module buildinfo.Module, dependencyPrefix string) bool {
+	for _, dep := range module.Dependencies {
+		if strings.HasPrefix(dep.Id, dependencyPrefix) {
+			return true
+		}
+	}
+	return false
+}
+
+func hasScope(dep buildinfo.Dependency, scope string) bool {
+	for _, s := range dep.Scopes {
+		if s == scope {
+			return true
+		}
+	}
+	return false
+}
+
+// setupNativeMavenMultiModule initializes the common prerequisites shared by all native multi-module
+// Maven integration tests: ensures Maven is on PATH (skipping otherwise), activates JFROG_RUN_NATIVE,
+// and creates + enters a fresh multi-module project directory. All resources are released via t.Cleanup
+// so callers need no manual defers for these steps.
+func setupNativeMavenMultiModule(t *testing.T, skipSuffix string) string {
+	t.Helper()
+	initMavenTest(t, false)
+	if _, err := exec.LookPath("mvn"); err != nil {
+		t.Skip("Maven not found in PATH, skipping native multi-module " + skipSuffix)
+	}
+	resetEnv := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_RUN_NATIVE", "true")
+	t.Cleanup(resetEnv)
+	projDir := createMultiMavenProject(t)
+	oldWd := changeWD(t, projDir)
+	t.Cleanup(func() { clientTestUtils.ChangeDirAndAssert(t, oldWd) })
+	return projDir
+}
+
+// writeMavenDeploySettings writes a Maven settings.xml carrying (a) a <server> entry with the test's
+// Artifactory credentials under serverId, used by `mvn deploy` to authenticate the upload, and (b) a
+// mirror of external repositories to Maven Central so dependency/plugin resolution stays deterministic
+// (mirrorOf="external:*" leaves the deployment repository untouched). Native mode shells out to raw
+// mvn, so this is how the deploy target is authenticated, mirroring how a real user would configure it.
+func writeMavenDeploySettings(t *testing.T, serverId string) string {
+	// Maven's settings.xml uses HTTP Basic auth. Use the test user/password directly (not the JFrog
+	// Platform access token, which is a JWT issued by jfac and cannot be validated via Basic auth by
+	// a standalone Artifactory instance). *tests.JfrogUser/*tests.JfrogPassword default to admin/password
+	// for a fresh local Artifactory instance, and are overridden via --jfrog.user/--jfrog.password flags
+	// for external instances.
+	user := *tests.JfrogUser
+	password := *tests.JfrogPassword
+	// Resolve dependencies/plugins through the test remote repo (cli-mvn-remote-*), which is created
+	// by initMavenTest and proxies Maven Central. mirrorOf="external:*" leaves deployment repos untouched.
+	settings := fmt.Sprintf(`<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0">
+  <servers>
+    <server>
+      <id>%s</id>
+      <username>%s</username>
+      <password>%s</password>
+    </server>
+  </servers>
+  <mirrors>
+    <mirror>
+      <id>%s</id>
+      <mirrorOf>external:*</mirrorOf>
+      <url>%s%s</url>
+    </mirror>
+  </mirrors>
+</settings>`, serverId, user, password, serverId, serverDetails.ArtifactoryUrl, tests.MvnRemoteRepo)
+	path := filepath.Join(t.TempDir(), "settings.xml")
+	require.NoError(t, os.WriteFile(path, []byte(settings), 0600))
+	return path
+}
+
+// anyHasPrefix reports whether any string in values starts with prefix.
+func anyHasPrefix(values []string, prefix string) bool {
+	for _, v := range values {
+		if strings.HasPrefix(v, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+// TestMavenNativeMultiModuleDeploy verifies that native (FlexPack) mode, when the Maven goal is
+// `deploy`, both (a) deploys every reactor module's artifacts to Artifactory and (b) records those
+// artifacts on the matching build-info module (main jar + pom for each buildable module, pom for the
+// aggregator) rather than collapsing them onto a single module. It is the deploy-side counterpart to
+// TestMavenNativeMultiModuleBuildInfo, which covers install-time dependency segregation.
+//
+// Native mode shells out to raw `mvn`, so the deploy target is supplied the standard Maven way rather
+// than through a .jfrog config: -DaltDeploymentRepository plus a settings.xml <server> carrying the
+// Artifactory credentials. Because SNAPSHOT deploys are timestamped, deployed-artifact existence is
+// asserted by snapshot-path prefix rather than exact file name.
+func TestMavenNativeMultiModuleDeploy(t *testing.T) {
+	buildName := tests.MvnBuildName + "-flexpack-multimodule-deploy"
+	buildNumber := "1"
+	setupNativeMavenMultiModule(t, "deploy test")
+
+	const deployServerId = "artifactory-deploy"
+	settingsPath := writeMavenDeploySettings(t, deployServerId)
+	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
+	altDeployRepo := fmt.Sprintf("%s::default::%s%s", deployServerId, serverDetails.ArtifactoryUrl, tests.MvnRepo1)
+
+	args := []string{"mvn", "clean", "deploy",
+		"--build-name=" + buildName, "--build-number=" + buildNumber,
+		"-B", repoLocalSystemProp, "-s", settingsPath,
+		"-DaltDeploymentRepository=" + altDeployRepo}
+	assert.NoError(t, runJfrogCliWithoutAssertion(args...))
+
+	// Publish and fetch the build info.
+	assert.NoError(t, runJfrogCliWithoutAssertion("rt", "bp", buildName, buildNumber))
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	if !assert.NoError(t, err, "Failed to get build info") {
+		return
+	}
+	if !assert.True(t, found, "build info was expected to be found") {
+		return
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
+
+	if !assert.Len(t, buildInfo.Modules, 4, "expected one build-info module per reactor module") {
+		return
+	}
+
+	// Core assertion: each buildable module records its OWN main artifact + pom (2 artifacts), and the
+	// pom aggregator records only its pom (1 artifact). Dependency counts match the install-mode test.
+	// (Attached artifacts such as multi1's -tests.jar are out of scope; native records the main artifact.)
+	validateSpecificModule(buildInfo, t, 13, 2, 0, "org.jfrog.test:multi1:3.7-SNAPSHOT", buildinfo.Maven)
+	validateSpecificModule(buildInfo, t, 1, 2, 0, "org.jfrog.test:multi2:3.7-SNAPSHOT", buildinfo.Maven)
+	validateSpecificModule(buildInfo, t, 15, 2, 0, "org.jfrog.test:multi3:3.7-SNAPSHOT", buildinfo.Maven)
+	validateSpecificModule(buildInfo, t, 1, 1, 0, "org.jfrog.test:multi:3.7-SNAPSHOT", buildinfo.Maven)
+
+	// Every recorded artifact carries a sha256 checksum and records its real deployment repository.
+	// The build deployed via -DaltDeploymentRepository to MvnRepo1 (a local repo), so OriginalDeploymentRepo
+	// must be exactly that repo on every module's artifacts.
+	for _, module := range buildInfo.Modules {
+		for _, artifact := range module.Artifacts {
+			assert.NotEmpty(t, artifact.Sha256, "artifact %s in module %s should have a sha256", artifact.Name, module.Id)
+			assert.Equal(t, tests.MvnRepo1, artifact.OriginalDeploymentRepo,
+				"artifact %s in module %s should record its deployment repository", artifact.Name, module.Id)
+		}
+	}
+
+	// The build info records the native build-mode marker.
+	assert.Equal(t, "native", buildInfo.Properties["buildInfo.env.JFROG_MAVEN_MODE"],
+		"build info should be marked as produced in native mode")
+
+	// The artifacts were actually deployed to Artifactory. Snapshot deploys are timestamped, so match
+	// by each module's snapshot path prefix rather than an exact file name.
+	deployedPaths := inttestutils.SearchPathsByPattern(tests.MvnRepo1+"/*", serverDetails, t)
+	for _, moduleSnapshotPath := range []string{
+		tests.MvnRepo1 + "/org/jfrog/test/multi/3.7-SNAPSHOT",
+		tests.MvnRepo1 + "/org/jfrog/test/multi1/3.7-SNAPSHOT",
+		tests.MvnRepo1 + "/org/jfrog/test/multi2/3.7-SNAPSHOT",
+		tests.MvnRepo1 + "/org/jfrog/test/multi3/3.7-SNAPSHOT",
+	} {
+		assert.True(t, anyHasPrefix(deployedPaths, moduleSnapshotPath),
+			"expected deployed artifacts under %s", moduleSnapshotPath)
+	}
+
+	// The deployed artifacts are tagged with this build's properties (build.name/number/timestamp), which
+	// is what links them to the build in Artifactory. Verify tagged artifacts exist for each buildable module.
+	taggedPaths := searchPathsByProps(t, tests.MvnRepo1+"/org/jfrog/test/*", "build.name="+buildName)
+	for _, moduleSnapshotPath := range []string{
+		tests.MvnRepo1 + "/org/jfrog/test/multi1/3.7-SNAPSHOT",
+		tests.MvnRepo1 + "/org/jfrog/test/multi2/3.7-SNAPSHOT",
+		tests.MvnRepo1 + "/org/jfrog/test/multi3/3.7-SNAPSHOT",
+	} {
+		assert.True(t, anyHasPrefix(taggedPaths, moduleSnapshotPath),
+			"expected build-property-tagged artifacts under %s", moduleSnapshotPath)
+	}
+
+	cleanMavenTest(t)
+}
+
+// searchPathsByProps returns the repo-relative paths of artifacts matching pattern that also carry the
+// given property (e.g. "build.name=my-build"), searched recursively.
+func searchPathsByProps(t *testing.T, pattern, props string) []string {
+	searchSpec := spec.NewBuilder().Pattern(pattern).Props(props).Recursive(true).BuildSpec()
+	searchCmd := generic.NewSearchCommand()
+	searchCmd.SetServerDetails(serverDetails).SetSpec(searchSpec)
+	reader, err := searchCmd.Search()
+	if !assert.NoError(t, err) || reader == nil {
+		return nil
+	}
+	defer func() { assert.NoError(t, reader.Close()) }()
+	readerNoDate, err := utils.SearchResultNoDate(reader)
+	if !assert.NoError(t, err) || readerNoDate == nil {
+		return nil
+	}
+	var paths []string
+	for item := new(utils.SearchResult); readerNoDate.NextRecord(item) == nil; item = new(utils.SearchResult) {
+		paths = append(paths, item.Path)
+	}
+	return paths
+}
+
+// TestMavenNativeMultiModuleDeployToVirtual verifies that when native mode deploys THROUGH a virtual
+// repository, the artifacts physically land in the virtual's default-deployment local repo, and the
+// build info records that PHYSICAL repo as OriginalDeploymentRepo (not the virtual). This is the
+// GetRepository-based virtual resolution (help:effective-pom URL -> repo key -> defaultDeploymentRepo).
+func TestMavenNativeMultiModuleDeployToVirtual(t *testing.T) {
+	setupNativeMavenMultiModule(t, "virtual-deploy test")
+
+	// Create a maven virtual repository whose default deployment target is MvnRepo1 (the physical local
+	// repo). Deploying through the virtual must therefore store bytes in MvnRepo1.
+	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, 0, false)
+	if !assert.NoError(t, err) {
+		return
+	}
+	virtualRepo := tests.MvnRepo1 + "-virtual"
+	virtualParams := services.NewMavenVirtualRepositoryParams()
+	virtualParams.Key = virtualRepo
+	virtualParams.Repositories = []string{tests.MvnRepo1}
+	virtualParams.DefaultDeploymentRepo = tests.MvnRepo1
+	if !assert.NoError(t, servicesManager.CreateVirtualRepository().Maven(virtualParams)) {
+		return
+	}
+	defer func() { assert.NoError(t, servicesManager.DeleteRepository(virtualRepo)) }()
+
+	buildName := tests.MvnBuildName + "-flexpack-multimodule-virtual"
+	buildNumber := "1"
+
+	const deployServerId = "artifactory-deploy"
+	settingsPath := writeMavenDeploySettings(t, deployServerId)
+	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
+	// Deploy target is the VIRTUAL repo; Artifactory routes the bytes to its default deployment repo.
+	altDeployRepo := fmt.Sprintf("%s::default::%s%s", deployServerId, serverDetails.ArtifactoryUrl, virtualRepo)
+
+	args := []string{"mvn", "clean", "deploy",
+		"--build-name=" + buildName, "--build-number=" + buildNumber,
+		"-B", repoLocalSystemProp, "-s", settingsPath,
+		"-DaltDeploymentRepository=" + altDeployRepo}
+	assert.NoError(t, runJfrogCliWithoutAssertion(args...))
+
+	assert.NoError(t, runJfrogCliWithoutAssertion("rt", "bp", buildName, buildNumber))
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	if !assert.NoError(t, err, "Failed to get build info") || !assert.True(t, found, "build info was expected to be found") {
+		return
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
+	if !assert.Len(t, buildInfo.Modules, 4, "expected one build-info module per reactor module") {
+		return
+	}
+
+	// The key assertion: OriginalDeploymentRepo is the PHYSICAL repo (MvnRepo1), NOT the virtual repo the
+	// artifacts were deployed through - proving the virtual->default-deployment resolution.
+	for _, module := range buildInfo.Modules {
+		for _, artifact := range module.Artifacts {
+			assert.NotEmpty(t, artifact.Sha256, "artifact %s should have a sha256", artifact.Name)
+			assert.Equal(t, tests.MvnRepo1, artifact.OriginalDeploymentRepo,
+				"artifact %s must record the physical repo, not the virtual '%s'", artifact.Name, virtualRepo)
+		}
+	}
+	assert.Equal(t, "native", buildInfo.Properties["buildInfo.env.JFROG_MAVEN_MODE"], "native build-mode marker")
+
+	// Bytes physically landed in MvnRepo1 (the virtual's default deployment repo).
+	deployedPaths := inttestutils.SearchPathsByPattern(tests.MvnRepo1+"/*", serverDetails, t)
+	for _, moduleSnapshotPath := range []string{
+		tests.MvnRepo1 + "/org/jfrog/test/multi1/3.7-SNAPSHOT",
+		tests.MvnRepo1 + "/org/jfrog/test/multi3/3.7-SNAPSHOT",
+	} {
+		assert.True(t, anyHasPrefix(deployedPaths, moduleSnapshotPath),
+			"expected artifacts physically stored under %s", moduleSnapshotPath)
+	}
+
+	cleanMavenTest(t)
+}
+
+// addDistributionManagement injects a <distributionManagement> block (deploying to repoURL under the
+// given server id) into a pom.xml, so different reactor modules can target different repositories.
+func addDistributionManagement(t *testing.T, pomPath, serverID, repoURL string) {
+	data, err := os.ReadFile(pomPath)
+	require.NoError(t, err)
+	dm := fmt.Sprintf("<distributionManagement><repository><id>%s</id><url>%s</url></repository></distributionManagement>\n</project>", serverID, repoURL)
+	updated := strings.Replace(string(data), "</project>", dm, 1)
+	require.NoError(t, os.WriteFile(pomPath, []byte(updated), 0644)) // #nosec G703 -- pomPath is always a t.TempDir()-derived path in tests
+}
+
+// TestMavenNativeMultiModuleDeployPerModuleRepo verifies that when reactor modules deploy to DIFFERENT
+// repositories (via per-module <distributionManagement>), native build-info records each module's own
+// deployment repo and tags each module's artifacts in the right repo - not one repo for the whole reactor.
+func TestMavenNativeMultiModuleDeployPerModuleRepo(t *testing.T) {
+	buildName := tests.MvnBuildName + "-flexpack-permodule"
+	buildNumber := "1"
+	projDir := setupNativeMavenMultiModule(t, "per-module-repo deploy test")
+
+	const deployServerId = "artifactory-deploy"
+	settingsPath := writeMavenDeploySettings(t, deployServerId)
+	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
+
+	// Parent (inherited by multi1/multi2) deploys to MvnRepo1; multi3 overrides to MvnRepo2.
+	addDistributionManagement(t, filepath.Join(projDir, "pom.xml"), deployServerId, serverDetails.ArtifactoryUrl+tests.MvnRepo1)
+	addDistributionManagement(t, filepath.Join(projDir, "multi3", "pom.xml"), deployServerId, serverDetails.ArtifactoryUrl+tests.MvnRepo2)
+
+	// No -DaltDeploymentRepository: the per-module distributionManagement (from effective-pom) must be used.
+	args := []string{"mvn", "clean", "deploy",
+		"--build-name=" + buildName, "--build-number=" + buildNumber,
+		"-B", repoLocalSystemProp, "-s", settingsPath}
+	assert.NoError(t, runJfrogCliWithoutAssertion(args...))
+
+	assert.NoError(t, runJfrogCliWithoutAssertion("rt", "bp", buildName, buildNumber))
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	if !assert.NoError(t, err, "Failed to get build info") || !assert.True(t, found, "build info was expected to be found") {
+		return
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
+	if !assert.Len(t, buildInfo.Modules, 4, "expected one build-info module per reactor module") {
+		return
+	}
+
+	// Each module records its OWN deployment repo: parent/multi1/multi2 -> MvnRepo1, multi3 -> MvnRepo2.
+	wantRepo := map[string]string{
+		"org.jfrog.test:multi:3.7-SNAPSHOT":  tests.MvnRepo1,
+		"org.jfrog.test:multi1:3.7-SNAPSHOT": tests.MvnRepo1,
+		"org.jfrog.test:multi2:3.7-SNAPSHOT": tests.MvnRepo1,
+		"org.jfrog.test:multi3:3.7-SNAPSHOT": tests.MvnRepo2,
+	}
+	for _, module := range buildInfo.Modules {
+		want := wantRepo[module.Id]
+		assert.NotEmpty(t, want, "unexpected module %s", module.Id)
+		for _, artifact := range module.Artifacts {
+			assert.NotEmpty(t, artifact.Sha256, "artifact %s should have a sha256", artifact.Name)
+			assert.Equal(t, want, artifact.OriginalDeploymentRepo,
+				"module %s artifact %s should record repo %s", module.Id, artifact.Name, want)
+		}
+	}
+
+	// Artifacts physically landed in their respective repos, tagged with this build's properties.
+	multi1Tagged := searchPathsByProps(t, tests.MvnRepo1+"/org/jfrog/test/*", "build.name="+buildName)
+	assert.True(t, anyHasPrefix(multi1Tagged, tests.MvnRepo1+"/org/jfrog/test/multi1/3.7-SNAPSHOT"),
+		"multi1 artifacts should be tagged in %s", tests.MvnRepo1)
+	multi3Tagged := searchPathsByProps(t, tests.MvnRepo2+"/org/jfrog/test/*", "build.name="+buildName)
+	assert.True(t, anyHasPrefix(multi3Tagged, tests.MvnRepo2+"/org/jfrog/test/multi3/3.7-SNAPSHOT"),
+		"multi3 artifacts should be tagged in %s", tests.MvnRepo2)
 
 	cleanMavenTest(t)
 }

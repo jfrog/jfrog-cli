@@ -159,6 +159,7 @@ const (
 	password            = "password"
 	accessToken         = "access-token"
 	serverId            = "server-id"
+	serverIdMvn         = "server-id-mvn"
 	serverIdYarn        = "server-id-yarn"
 	serverIdNpm         = "server-id-npm"
 	disableTokenRefresh = "disable-token-refresh"
@@ -780,6 +781,10 @@ var flagsMap = map[string]cli.Flag{
 	serverId: cli.StringFlag{
 		Name:  serverId,
 		Usage: "[Optional] Server ID configured using the 'jf config' command.` `",
+	},
+	serverIdMvn: cli.StringFlag{
+		Name:  serverId,
+		Usage: "[Optional] Server ID configured using the 'jf config' command. Used in native mode (JFROG_RUN_NATIVE=true) for build-info operations (artifact tagging, virtual-repo resolution). Has no effect in legacy (config-file) mode.` `",
 	},
 	serverIdYarn: cli.StringFlag{
 		Name:  serverId,
@@ -2140,7 +2145,7 @@ var commandFlags = map[string][]string{
 		deployIvyDesc, ivyDescPattern, ivyArtifactsPattern,
 	},
 	Mvn: {
-		BuildName, BuildNumber, deploymentThreads, InsecureTls, Project, detailedSummary, xrayScan, XrFormat,
+		BuildName, BuildNumber, deploymentThreads, InsecureTls, Project, serverIdMvn, detailedSummary, xrayScan, XrFormat,
 	},
 	Gradle: {
 		BuildName, BuildNumber, deploymentThreads, Project, serverId, detailedSummary, xrayScan, XrFormat,

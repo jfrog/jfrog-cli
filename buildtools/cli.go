@@ -711,8 +711,16 @@ func runMvn(c *cli.Context, preferWrapper bool) (err error) {
 		if err != nil {
 			return err
 		}
-		// Maven does not accept --server-id; use the default configured server for usage reporting.
-		serverDetails, err := coreConfig.GetDefaultServerConf()
+		// Native accepts --server-id (for build-info collection: property tagging, virtual-repo
+		// resolution, repository lookups). Strip it from the goals and resolve the target server,
+		// falling back to the default configured server when not provided.
+		filteredMavenArgs, serverID, err := coreutils.ExtractServerIdFromCommand(filteredMavenArgs)
+		if err != nil {
+			return fmt.Errorf("failed to extract server ID: %w", err)
+		}
+		// GetSpecificConfig with an empty serverID (defaultOrEmpty=true) returns the default server, so
+		// this covers both the --server-id and no-flag cases.
+		serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, true)
 		if err != nil {
 			return err
 		}
