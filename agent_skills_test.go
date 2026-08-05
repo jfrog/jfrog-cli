@@ -2056,7 +2056,7 @@ func createAdditionalSkillsLocalRepo(t *testing.T, repoName string) {
 	templateContent, err := os.ReadFile(repoConfig) // #nosec G304 -- test template path
 	require.NoError(t, err)
 	rewritten := strings.Replace(string(templateContent), tests.AgentSkillsLocalRepo, repoName, 1)
-	configPath := filepath.Join(t.TempDir(), repoName+".json")
+	configPath := filepath.Join(t.TempDir(), "skills-repository-config.json")
 	require.NoError(t, os.WriteFile(configPath, []byte(rewritten), 0600))
 	execCreateRepoRest(configPath, repoName)
 	t.Cleanup(func() { execDeleteRepo(repoName) })
