@@ -18,15 +18,15 @@ require (
 	github.com/buger/jsonparser v1.3.0
 	github.com/gocarina/gocsv v0.0.0-20260607070740-0735908c6461
 	github.com/jfrog/archiver/v3 v3.6.3
-	github.com/jfrog/build-info-go v1.13.1-0.20260728083052-16a97012811d
+	github.com/jfrog/build-info-go v1.13.1-0.20260803032325-7865244a87b5
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-application v1.0.2-0.20260723152309-34eeb81e2847
 	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260804124646-1a5e6a2d3caf
 	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260804120604-edaa34435a80
-	github.com/jfrog/jfrog-cli-evidence v0.9.5-0.20260618135203-4d2bdd4ee35f
+	github.com/jfrog/jfrog-cli-evidence v0.9.5
 	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260618062042-6053ab368cab
-	github.com/jfrog/jfrog-cli-security v1.31.4
-	github.com/jfrog/jfrog-client-go v1.55.1-0.20260729072925-e1104f6b9e00
+	github.com/jfrog/jfrog-cli-security v1.32.1
+	github.com/jfrog/jfrog-client-go v1.55.1-0.20260803094922-a87c05639195
 	github.com/jszwec/csvutil v1.10.0
 	github.com/moby/moby/api v1.55.0
 	github.com/spf13/viper v1.21.0
@@ -232,7 +232,7 @@ require (
 	golang.org/x/time v0.15.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260526163538-3dc84a4a5aaa // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260526163538-3dc84a4a5aaa // indirect
-	google.golang.org/grpc v1.81.1 // indirect
+	google.golang.org/grpc v1.82.1 // indirect
 	google.golang.org/protobuf v1.36.12-0.20260120151049-f2248ac996af // indirect
 	gopkg.in/ini.v1 v1.67.2 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
