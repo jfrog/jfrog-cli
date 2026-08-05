@@ -193,23 +193,31 @@ func assertSkillAbsent(t *testing.T, slug, version string) {
 	}))
 }
 
-// waitForSkillIndexed polls the Skills versions API until slug@version is visible.
+// waitForSkillIndexed polls the Skills versions API until slug@version is visible
+// in the suite's default skills repository.
 // Install, update, list --repo, search, collision checks, and delete --dry-run all depend
 // on this index; a successful storage upload alone is not enough.
 func waitForSkillIndexed(t *testing.T, slug, version string) {
 	t.Helper()
-	description := fmt.Sprintf("wait for Skills API to index %s@%s", slug, version)
+	waitForSkillIndexedInRepo(t, tests.AgentSkillsLocalRepo, slug, version)
+}
+
+// waitForSkillIndexedInRepo polls the Skills versions API until slug@version is
+// visible in the given repository.
+func waitForSkillIndexedInRepo(t *testing.T, repo, slug, version string) {
+	t.Helper()
+	description := fmt.Sprintf("wait for Skills API to index %s@%s in %s", slug, version, repo)
 	require.NoError(t, retryWithBackoffSkills(t, description, func() error {
 		sm, err := artUtils.CreateServiceManager(serverDetails, -1, 0, false)
 		if err != nil {
 			return err
 		}
-		exists, err := sm.SkillVersionExists(tests.AgentSkillsLocalRepo, slug, version)
+		exists, err := sm.SkillVersionExists(repo, slug, version)
 		if err != nil {
 			return err
 		}
 		if !exists {
-			return fmt.Errorf("Skills API does not yet list %s@%s", slug, version)
+			return fmt.Errorf("Skills API does not yet list %s@%s in %s", slug, version, repo)
 		}
 		return nil
 	}))
@@ -2056,9 +2064,12 @@ func createAdditionalSkillsLocalRepo(t *testing.T, repoName string) {
 	templateContent, err := os.ReadFile(repoConfig) // #nosec G304 -- test template path
 	require.NoError(t, err)
 	rewritten := strings.Replace(string(templateContent), tests.AgentSkillsLocalRepo, repoName, 1)
-	configPath := filepath.Join(t.TempDir(), "skills-repository-config.json")
-	require.NoError(t, os.WriteFile(configPath, []byte(rewritten), 0600))
-	execCreateRepoRest(configPath, repoName)
+	configFile, err := os.CreateTemp(t.TempDir(), "skills-repository-config-*.json")
+	require.NoError(t, err)
+	_, err = configFile.WriteString(rewritten)
+	require.NoError(t, err)
+	require.NoError(t, configFile.Close())
+	execCreateRepoRest(configFile.Name(), repoName)
 	t.Cleanup(func() { execDeleteRepo(repoName) })
 	require.True(t, isRepoExist(repoName), "additional skills repo must exist: "+repoName)
 }
@@ -2309,18 +2320,20 @@ func TestAgentSkillsNoBuildInfoWithoutFlags(t *testing.T) {
 	t.Setenv("JFROG_CLI_BUILD_NUMBER", "")
 
 	slug := "no-bi-skill"
-	buildName := tests.AgentSkillsBuildName + "-none"
+	buildName := tests.AgentSkillsBuildName
 	buildNumber := "1"
-	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
-	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	// Best-effort teardown of local build-info dir; leftover dirs do not affect assertions.
+	t.Cleanup(func() { _ = coreBuild.RemoveBuildDir(buildName, buildNumber, "") })
 
 	require.NoError(t, runAgentSkillsCmd(t,
 		"publish", createTestSkill(t, slug, "1.0.0"),
 		"--repo="+tests.AgentSkillsLocalRepo,
 		"--skip-scan",
 	))
-	err := artifactoryCli.Exec("bp", buildName, buildNumber)
-	assert.Error(t, err, "bp should fail when publish collected no local build-info")
+
+	localBuilds, err := coreBuild.GetGeneratedBuildsInfo(buildName, buildNumber, "")
+	require.NoError(t, err)
+	assert.Empty(t, localBuilds, "no local build info should be stored when --build-name/--build-number are absent")
 }
 
 // TestAgentSkillsBuildInfoEnrichment covers plan #72 (bce / bag / set-props).
@@ -2596,7 +2609,10 @@ func TestAgentSkillsTopLevelAlias(t *testing.T) {
 	assert.FileExists(t, filepath.Join(installBase, slug, "SKILL.md"))
 }
 
-// TestAgentSkillsMultiEnvPromoteInstall covers plan #103 (copy between skills repos).
+// TestAgentSkillsMultiEnvPromoteInstall covers plan #103 (publish to staging, then
+// to a second skills repo, and install from the second environment).
+// Skills install resolves packages through the Skills API, so a raw rt cp of the
+// zip is not enough — the target repo must receive a real skills publish.
 func TestAgentSkillsMultiEnvPromoteInstall(t *testing.T) {
 	initAgentSkillsTest(t)
 	defer cleanAgentSkillsTest()
@@ -2606,11 +2622,23 @@ func TestAgentSkillsMultiEnvPromoteInstall(t *testing.T) {
 
 	slug := "multi-env-skill"
 	version := "1.0.0"
-	publishTestSkill(t, slug, version)
+	skillPath := createTestSkill(t, slug, version)
 
-	sourcePath := skillArtifactPath(tests.AgentSkillsLocalRepo, slug, version)
-	require.NoError(t, artifactoryCli.Exec("cp", sourcePath, prodRepo+"/"))
+	require.NoError(t, runAgentSkillsCmd(t,
+		"publish", skillPath,
+		"--repo="+tests.AgentSkillsLocalRepo,
+		"--skip-scan",
+	))
+	assertSkillExists(t, slug, version)
+	waitForSkillIndexed(t, slug, version)
+
+	require.NoError(t, runAgentSkillsCmd(t,
+		"publish", skillPath,
+		"--repo="+prodRepo,
+		"--skip-scan",
+	))
 	assertSkillArtifactExists(t, skillArtifactPath(prodRepo, slug, version))
+	waitForSkillIndexedInRepo(t, prodRepo, slug, version)
 
 	installBase := t.TempDir()
 	require.NoError(t, runAgentSkillsCmd(t,
