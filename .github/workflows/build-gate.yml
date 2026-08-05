@@ -117,6 +117,10 @@ jobs:
     needs: gate
     uses: ./.github/workflows/apkTests.yml
     secrets: inherit
+  apt:
+    needs: gate
+    uses: ./.github/workflows/aptTests.yml
+    secrets: inherit
   npm:
     needs: gate
     uses: ./.github/workflows/npmTests.yml
