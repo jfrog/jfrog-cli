@@ -181,6 +181,7 @@ jobs:
       - gate
       - frogbot
       - agent-plugins
+      - agent-skills
       - access
       - artifactory
       - conan
