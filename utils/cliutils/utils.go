@@ -104,11 +104,25 @@ const AgentUserAgentSuffixFormat = " ai-agent/%s"
 // table, or the literal "unknown" for the generic AGENT variable — a raw environment
 // value is never propagated.
 func GetCliUserAgentWithAgent() string {
-	userAgent := coreutils.GetCliUserAgent()
-	if executionContext := commonCommands.DetectExecutionContext(); executionContext.IsAgent {
-		userAgent += fmt.Sprintf(AgentUserAgentSuffixFormat, executionContext.Agent)
+	return coreutils.GetCliUserAgent() + agentUserAgentSuffix(commonCommands.DetectExecutionContext())
+}
+
+// agentUserAgentSuffix renders the agent-attribution suffix appended to the
+// User-Agent for agent-driven invocations: one product token per detected axis
+// (ai-agent, and — when the harness advertised them — ai-client and ai-model).
+// Empty for human invocations, keeping them byte-identical to a plain CLI.
+func agentUserAgentSuffix(executionContext commonCommands.ExecutionContext) string {
+	if !executionContext.IsAgent {
+		return ""
 	}
-	return userAgent
+	suffix := fmt.Sprintf(AgentUserAgentSuffixFormat, executionContext.Agent)
+	if executionContext.AIClient != "" {
+		suffix += fmt.Sprintf(" ai-client/%s", executionContext.AIClient)
+	}
+	if executionContext.AIModel != "" {
+		suffix += fmt.Sprintf(" ai-model/%s", executionContext.AIModel)
+	}
+	return suffix
 }
 
 func GetCliError(err error, success, failed int, failNoOp bool) error {

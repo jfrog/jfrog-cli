@@ -395,11 +395,18 @@ var agentDetectorEnvVars = []string{
 	"GEMINI_CLI",
 	"GOOSE_TERMINAL",
 	"CURSOR_AGENT", "CURSOR_CLI", "CURSOR_TRACE_ID",
-	"COPILOT_CLI",
+	"COPILOT_CLI", "COPILOT_AGENT_SESSION_ID",
 	"KILO_IPC_SOCKET_PATH", "KILO_SERVER_PASSWORD",
-	"ROO_CODE_IPC_SOCKET_PATH",
-	"CODEX_CI",
-	"AGENT",
+	"ROO_CODE_IPC_SOCKET_PATH", "ROO_ACTIVE",
+	"CODEX_CI", "CODEX_THREAD_ID", "CODEX_SANDBOX",
+	"WINDSURF_AGENT", "CODEIUM_EDITOR_APP_ROOT",
+	"AIDER_API_KEY", "CLINE_ACTIVE", "OPENCODE", "OPENCODE_CLIENT",
+	"AMP_CURRENT_THREAD_ID", "AUGMENT_AGENT", "QWEN_CODE",
+	"ANTIGRAVITY_AGENT", "CRUSH", "IFLOW_CLI", "TRAE_AI_SHELL_ID",
+	"AI_AGENT", "AGENT",
+	// Host editor and model axes — cleared so the wire format is deterministic
+	// regardless of the shell running `go test`.
+	"TERM_PROGRAM", "JFROG_CLI_AI_MODEL",
 }
 
 func clearAgentEnvVarsForTest(t *testing.T) {
@@ -571,6 +578,29 @@ func TestGetCliUserAgentWithAgentNoVersion(t *testing.T) {
 	corecommands.ResetExecutionContextForTest()
 
 	assert.Equal(t, "jfrog-cli-go ai-agent/claude", GetCliUserAgentWithAgent())
+}
+
+func TestGetCliUserAgentWithAgentAppendsHostAndModel(t *testing.T) {
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
+	t.Setenv("CURSOR_AGENT", "1")
+	t.Setenv("TERM_PROGRAM", "vscode")
+	t.Setenv("JFROG_CLI_AI_MODEL", "opus-4.7")
+	corecommands.ResetExecutionContextForTest()
+
+	assert.Equal(t, "jfrog-cli-go/2.117.0 ai-agent/cursor ai-client/vscode ai-model/opus-4.7",
+		GetCliUserAgentWithAgent())
+}
+
+func TestGetCliUserAgentWithAgentOmitsAbsentAxes(t *testing.T) {
+	// Host and model are optional: with neither advertised, the suffix is just
+	// the agent token — byte-identical to the pre-host/model behaviour.
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
+	t.Setenv("CLAUDECODE", "1")
+	corecommands.ResetExecutionContextForTest()
+
+	assert.Equal(t, "jfrog-cli-go/2.117.0 ai-agent/claude", GetCliUserAgentWithAgent())
 }
 
 func TestGetCliUserAgentWithAgentMarkerIsWellFormed(t *testing.T) {
