@@ -109,8 +109,8 @@ github.com/bshuster-repo/logrus-logstash-hook v1.0.0 h1:e+C0SB5R1pu//O4MQ3f9cFuP
 github.com/bshuster-repo/logrus-logstash-hook v1.0.0/go.mod h1:zsTqEiSzDgAa/8GZR7E1qaXrhYNDKBYy5/dWPTIflbk=
 github.com/bufbuild/protocompile v0.14.1 h1:iA73zAf/fyljNjQKwYzUHD6AD4R8KMasmwa/FBatYVw=
 github.com/bufbuild/protocompile v0.14.1/go.mod h1:ppVdAIhbr2H8asPk6k4pY7t9zB1OU5DoEw9xY/FUi1c=
-github.com/buger/jsonparser v1.3.0 h1:2RJHo4G3vFBQSYwwEAOfHNRlKIameh/HdbhPJ/zY/0A=
-github.com/buger/jsonparser v1.3.0/go.mod h1:6RYKKt7H4d4+iWqouImQ9R2FZql3VbhNgx27UK13J/0=
+github.com/buger/jsonparser v1.6.1 h1:I0phFv0PlbLHnM7TZAVjZ2MJ2/eWRTDyuO7GLR98IEs=
+github.com/buger/jsonparser v1.6.1/go.mod h1:6RYKKt7H4d4+iWqouImQ9R2FZql3VbhNgx27UK13J/0=
 github.com/c-bata/go-prompt v0.2.5 h1:3zg6PecEywxNn0xiqcXHD96fkbxghD+gdB2tbsYfl+Y=
 github.com/c-bata/go-prompt v0.2.5/go.mod h1:vFnjEGDIIA/Lib7giyE4E9c50Lvl8j0S+7FVlAwDAVw=
 github.com/cenkalti/backoff/v4 v4.3.0 h1:MyRJ/UdXutAwSAT+s3wNd7MfTIcy71VQueUuFK343L8=
@@ -414,8 +414,8 @@ github.com/jfrog/jfrog-cli-evidence v0.9.5-0.20260618135203-4d2bdd4ee35f h1:MV4B
 github.com/jfrog/jfrog-cli-evidence v0.9.5-0.20260618135203-4d2bdd4ee35f/go.mod h1:t2luv7YHtrKe/Yf1xLZgLOkkiPtk1DsKj0OLXL2GwYo=
 github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260618062042-6053ab368cab h1:Zn/qB8LYhSu82YDtbqXwErN1RPHTHe/a3gQY6Ti/OBE=
 github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260618062042-6053ab368cab/go.mod h1:lVUeZtlvrLKJRsoSu8OPN9mJ+bfeq9zSESNYao2Jgo8=
-github.com/jfrog/jfrog-cli-security v1.31.4 h1:V7/QMIQe6mQQW9b5lIRvGA3LPOkX5YAsH8pmda4TcT0=
-github.com/jfrog/jfrog-cli-security v1.31.4/go.mod h1:p3xcAh9nXRvlPYWgGwCgVo1Ni/ht/scemXKYCBLkf2U=
+github.com/jfrog/jfrog-cli-security v1.32.0 h1:O+GHLFlBtQTUIB5Mv8qBROeXvy2Om2ZH0vo8Dmrb5JQ=
+github.com/jfrog/jfrog-cli-security v1.32.0/go.mod h1:2DVy/0F2EFhF2/gbtXVK6OckYX6DoUVMEjp8Z5Gmmbc=
 github.com/jfrog/jfrog-client-go v1.55.1-0.20260729072925-e1104f6b9e00 h1:QekOqpZ4c34Xb/eX9UCM1JMGipGoW/ZpkbwsWrx/kAQ=
 github.com/jfrog/jfrog-client-go v1.55.1-0.20260729072925-e1104f6b9e00/go.mod h1:FHpjN1nTDoj96xd6obe27EOgGErqzU0rQgC96L3Ch9E=
 github.com/jhump/protoreflect v1.17.0 h1:qOEr613fac2lOuTgWN4tPAtLL7fUSbuJL5X5XumQh94=
