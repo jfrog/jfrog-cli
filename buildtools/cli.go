@@ -2117,6 +2117,19 @@ func runNugetFlexPackCmd(c *cli.Context, toolchainType dotnetutils.ToolchainType
 	if err != nil {
 		return err
 	}
+	// --scan isn't a native nuget.exe option; it must be consumed here or it leaks through and
+	// nuget.exe rejects it with "Unknown option". Conditional-upload Xray scanning (blocking the
+	// push itself on a critical vulnerability, as Maven's --scan does via
+	// commandsUtils.ConditionalUploadScanFunc) isn't wired for NuGet FlexPack yet - same
+	// documented gap as the curation hook (scenario 11) - so for now this only strips the flag
+	// rather than acting on it.
+	xrayScan, err := cliutils.ExtractBoolFlagFromArgs(&filteredArgs, "scan")
+	if err != nil {
+		return err
+	}
+	if xrayScan {
+		log.Debug("'--scan' was passed to 'jf nuget push' but conditional-upload Xray scanning is not yet wired for NuGet FlexPack; the flag is accepted and stripped, not acted on.")
+	}
 
 	cmdName, nugetArgs := getNugetCommandName(filteredArgs, toolchainType)
 	workingDir, err := filepath.Abs(".")
