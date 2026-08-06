@@ -475,6 +475,7 @@ var agentDetectorEnvVars = []string{
 	"AMP_CURRENT_THREAD_ID", "AUGMENT_AGENT", "QWEN_CODE",
 	"ANTIGRAVITY_AGENT", "CRUSH", "IFLOW_CLI", "TRAE_AI_SHELL_ID",
 	"AI_AGENT", "AGENT",
+	"TERM_PROGRAM", "JFROG_CLI_AI_MODEL",
 }
 
 func clearAgentEnvVarsForTest(t *testing.T) {
