@@ -166,6 +166,7 @@ func TestVisibility_NoAgent_E2E(t *testing.T) {
 	corecommands.ResetExecutionContextForTest()
 	t.Cleanup(corecommands.ResetExecutionContextForTest)
 	t.Setenv("CURSOR_AGENT", "")
+	t.Setenv("CLAUDE_CODE_CHILD_SESSION", "")
 	t.Setenv("CLAUDECODE", "")
 	t.Setenv("AGENT", "")
 

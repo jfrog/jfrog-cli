@@ -462,13 +462,14 @@ func TestDockerScanHelp(t *testing.T) {
 // survey-visibility assertions are deterministic regardless of the shell running
 // `go test` (e.g. running inside Claude Code, Cursor, etc.).
 var agentDetectorEnvVars = []string{
+	"CLAUDE_CODE_CHILD_SESSION",
 	"CLAUDECODE", "CLAUDE_CODE", "CLAUDE_CODE_ENTRYPOINT",
 	"GEMINI_CLI",
 	"GOOSE_TERMINAL",
-	"CURSOR_AGENT", "CURSOR_TRACE_ID", "CURSOR_EXTENSION_HOST_ROLE",
+	"CURSOR_AGENT", "CURSOR_TRACE_ID", "CURSOR_EXTENSION_HOST_ROLE", "CURSOR_CLI",
 	"COPILOT_CLI", "COPILOT_AGENT_SESSION_ID", "COPILOT_MODEL", "COPILOT_ALLOW_ALL",
-	"KILOCODE_FEATURE", "KILO_PID",
-	"ROO_ACTIVE", "ROO_CLI_RUNTIME",
+	"KILOCODE_FEATURE", "KILO_PID", "KILO_IPC_SOCKET_PATH", "KILO_SERVER_PASSWORD",
+	"ROO_ACTIVE", "ROO_CLI_RUNTIME", "ROO_CODE_IPC_SOCKET_PATH",
 	"CODEX_CI", "CODEX_THREAD_ID", "CODEX_SANDBOX",
 	"WINDSURF_CASCADE_TERMINAL",
 	"CLINE_ACTIVE", "OPENCODE", "OPENCODE_CLIENT",
@@ -507,7 +508,7 @@ func TestSurvey_NotDisplayedOnHelpCI(t *testing.T) {
 func TestSurvey_NotDisplayedOnHelpAgent(t *testing.T) {
 	t.Setenv("CI", "false")
 	clearAgentEnvVarsForTest(t)
-	t.Setenv("CLAUDECODE", "true")
+	t.Setenv("CLAUDE_CODE_CHILD_SESSION", "true")
 	commands.ResetExecutionContextForTest()
 
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")

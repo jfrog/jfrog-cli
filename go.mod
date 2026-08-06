@@ -22,7 +22,7 @@ require (
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-application v1.0.2-0.20260723152309-34eeb81e2847
 	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260804124646-1a5e6a2d3caf
-	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260806155414-14c84dde00d1
+	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260806165013-a9fb8a640f22
 	github.com/jfrog/jfrog-cli-evidence v0.9.5
 	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260618062042-6053ab368cab
 	github.com/jfrog/jfrog-cli-security v1.33.0
@@ -247,7 +247,7 @@ require (
 //replace github.com/ktrysmt/go-bitbucket => github.com/ktrysmt/go-bitbucket v0.9.80
 
 // Temporary pin to jfrog-cli-core PR #1602 tip — drop after that merges and re-bump require.
-// replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260806155414-14c84dde00d1
+// replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260806165013-a9fb8a640f22
 //replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.54.2-0.20251007084958-5eeaa42c31a6
 
 // replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260723100012-d9e9c3412cb2

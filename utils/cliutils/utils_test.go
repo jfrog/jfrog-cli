@@ -391,13 +391,16 @@ func (t *redirectingTransport) RoundTrip(req *http.Request) (*http.Response, err
 // ShouldHideSurveyLink's agent check is deterministic regardless of the shell
 // running `go test` (e.g. running inside Claude Code, Cursor, etc.).
 var agentDetectorEnvVars = []string{
+	"CLAUDE_CODE_CHILD_SESSION",
+	// Cleared even though no longer detectors — leftover process env must not
+	// bleed into human / strong-signal assertions.
 	"CLAUDECODE", "CLAUDE_CODE", "CLAUDE_CODE_ENTRYPOINT",
 	"GEMINI_CLI",
 	"GOOSE_TERMINAL",
-	"CURSOR_AGENT", "CURSOR_TRACE_ID", "CURSOR_EXTENSION_HOST_ROLE",
+	"CURSOR_AGENT", "CURSOR_TRACE_ID", "CURSOR_EXTENSION_HOST_ROLE", "CURSOR_CLI",
 	"COPILOT_CLI", "COPILOT_AGENT_SESSION_ID", "COPILOT_MODEL", "COPILOT_ALLOW_ALL",
-	"KILOCODE_FEATURE", "KILO_PID",
-	"ROO_ACTIVE", "ROO_CLI_RUNTIME",
+	"KILOCODE_FEATURE", "KILO_PID", "KILO_IPC_SOCKET_PATH", "KILO_SERVER_PASSWORD",
+	"ROO_ACTIVE", "ROO_CLI_RUNTIME", "ROO_CODE_IPC_SOCKET_PATH",
 	"CODEX_CI", "CODEX_THREAD_ID", "CODEX_SANDBOX",
 	"WINDSURF_CASCADE_TERMINAL",
 	"CLINE_ACTIVE", "OPENCODE", "OPENCODE_CLIENT",
@@ -468,7 +471,7 @@ func TestSurveyHiddenForAgent(t *testing.T) {
 	t.Setenv(coreutils.CI, "")
 	t.Setenv(JfrogCliHideSurvey, "")
 	clearAgentEnvVarsForTest(t)
-	t.Setenv("CLAUDECODE", "true")
+	t.Setenv("CLAUDE_CODE_CHILD_SESSION", "true")
 	corecommands.ResetExecutionContextForTest()
 
 	assert.True(t, ShouldHideSurveyLink(), "Expected survey to be hidden when invoked by an agent")
@@ -536,8 +539,7 @@ func TestGetCliUserAgentWithAgentPerDetector(t *testing.T) {
 		envValue  string // empty → "1"
 		wantAgent string
 	}{
-		{"claude code", "CLAUDECODE", "", "claude"},
-		{"claude code entrypoint", "CLAUDE_CODE_ENTRYPOINT", "", "claude"},
+		{"claude child session", "CLAUDE_CODE_CHILD_SESSION", "", "claude"},
 		{"gemini", "GEMINI_CLI", "", "gemini"},
 		{"goose", "GOOSE_TERMINAL", "", "goose"},
 		{"cursor agent", "CURSOR_AGENT", "", "cursor"},
@@ -569,7 +571,7 @@ func TestGetCliUserAgentWithAgentPreservesCustomUserAgent(t *testing.T) {
 	// marker must be appended to whatever that resolves to, never replace it.
 	clearAgentEnvVarsForTest(t)
 	withCliUserAgent(t, "my-wrapper", "9.9.9")
-	t.Setenv("CLAUDECODE", "true")
+	t.Setenv("CLAUDE_CODE_CHILD_SESSION", "true")
 	corecommands.ResetExecutionContextForTest()
 
 	assert.Equal(t, "my-wrapper/9.9.9 ai-agent/claude", GetCliUserAgentWithAgent())
@@ -579,7 +581,7 @@ func TestGetCliUserAgentWithAgentNoVersion(t *testing.T) {
 	// GetCliUserAgent omits the slash when no version is set; the marker still appends.
 	clearAgentEnvVarsForTest(t)
 	withCliUserAgent(t, "jfrog-cli-go", "")
-	t.Setenv("CLAUDECODE", "true")
+	t.Setenv("CLAUDE_CODE_CHILD_SESSION", "true")
 	corecommands.ResetExecutionContextForTest()
 
 	assert.Equal(t, "jfrog-cli-go ai-agent/claude", GetCliUserAgentWithAgent())
@@ -602,7 +604,7 @@ func TestGetCliUserAgentWithAgentOmitsAbsentAxes(t *testing.T) {
 	// the agent token — byte-identical to the pre-host/model behaviour.
 	clearAgentEnvVarsForTest(t)
 	withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
-	t.Setenv("CLAUDECODE", "1")
+	t.Setenv("CLAUDE_CODE_CHILD_SESSION", "1")
 	corecommands.ResetExecutionContextForTest()
 
 	assert.Equal(t, "jfrog-cli-go/2.117.0 ai-agent/claude", GetCliUserAgentWithAgent())
