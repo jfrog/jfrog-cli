@@ -108,10 +108,15 @@ func GetCliUserAgentWithAgent() string {
 }
 
 // agentUserAgentSuffix renders the agent-attribution suffix appended to the
-// User-Agent for agent-driven invocations: one product token per detected axis
-// (ai-agent, and — when the harness advertised them — ai-client and ai-model).
-// Empty for human invocations, keeping them byte-identical to a plain CLI.
-// Pure string work — never logs and never fails the calling command.
+// User-Agent for agent-driven invocations. One product token per axis:
+//
+//	ai-agent/<Agent>     — which harness invoked jf   (e.g. ai-agent/cursor)
+//	ai-client/<AIClient> — which app hosts it         (e.g. ai-client/vscode)
+//	ai-model/<AIModel>   — which model it is running  (e.g. ai-model/opus-4.7)
+//
+// Client/model tokens are omitted when empty. The whole suffix is empty for
+// human invocations (byte-identical to a plain CLI). Pure string work — never
+// logs and never fails the calling command.
 func agentUserAgentSuffix(executionContext commonCommands.ExecutionContext) string {
 	if !executionContext.IsAgent {
 		return ""
