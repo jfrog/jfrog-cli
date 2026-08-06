@@ -250,6 +250,6 @@ require (
 
 //replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.54.2-0.20251007084958-5eeaa42c31a6
 
-replace github.com/jfrog/build-info-go => /Users/bhanur/go/src/jfws/build-info-go/.worktrees/task-RTECO-1574/task/RTECO-1574/rteco-1574-implementation-of-nuget-support-for-client
+replace github.com/jfrog/build-info-go => github.com/bhanurp/build-info-go v1.10.10-0.20260806064130-74d0864c5414
 
-replace github.com/jfrog/jfrog-cli-artifactory => /Users/bhanur/go/src/jfws/jfrog-cli-artifactory/.worktrees/task-RTECO-1574/task/RTECO-1574/rteco-1574-implementation-of-nuget-support-for-client
+replace github.com/jfrog/jfrog-cli-artifactory => github.com/bhanurp/jfrog-cli-artifactory v0.1.12-0.20260806082621-55bd344d6463
