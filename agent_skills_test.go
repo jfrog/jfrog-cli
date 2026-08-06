@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
@@ -45,6 +46,10 @@ import (
 //   - Evidence quiet-failure override is JFROG_SKILLS_DISABLE_QUIET_FAILURE.
 //   - Custom agents live under "skills-agents" in agent-config.json.
 //
+// Evidence note: the shared test Artifactory has no evidence/One-Model service, so the
+// quiet-failure gate never fires there. Negative-path evidence assertions are opt-in via
+// JFROG_CLI_TEST_SKILLS_EVIDENCE_GATE=true; see skipUnlessEvidenceGateEnabled.
+//
 // Indexing note: upload to storage can succeed before the Skills versions/list/search
 // APIs see the artifact. publishTestSkill waits on SkillVersionExists; list/search/
 // check-updates helpers also retry with backoff when they hit those APIs directly.
@@ -72,10 +77,38 @@ func initAgentSkillsTest(t *testing.T) {
 		t.Skip("Skipping Agent Skills test. To run Agent Skills test add the '-test.agentSkills=true' option.")
 	}
 	createJfrogHomeConfig(t, false)
-	require.True(t, isRepoExist(tests.AgentSkillsLocalRepo), "agent skills local repo does not exist: "+tests.AgentSkillsLocalRepo)
+	ensureAgentSkillsLocalRepo(t)
 	// Shared test Artifactory has no evidence/One-Model service. Disable the quiet-failure
 	// evidence gate so install/update do not block on 403.
 	t.Setenv("JFROG_SKILLS_DISABLE_QUIET_FAILURE", "true")
+}
+
+// envRequireEvidenceGate opts in the negative-path evidence assertions. They only produce a
+// signal on an Artifactory with evidence/One-Model enabled; the shared CI instance has neither,
+// so install succeeds there and the gate never triggers.
+const envRequireEvidenceGate = "JFROG_CLI_TEST_SKILLS_EVIDENCE_GATE"
+
+// skipUnlessEvidenceGateEnabled skips unless the suite is explicitly pointed at an instance
+// where the evidence quiet-failure gate can fire. The gate decision itself (env override,
+// quiet/CI mode) is unit-tested in jfrog-cli-artifactory: agent/common/quiet_failure_test.go.
+func skipUnlessEvidenceGateEnabled(t *testing.T) {
+	t.Helper()
+	if !strings.EqualFold(strings.TrimSpace(os.Getenv(envRequireEvidenceGate)), "true") {
+		t.Skip("Skipping evidence quiet-failure assertion: set " + envRequireEvidenceGate +
+			"=true when running against an Artifactory with evidence/One-Model enabled.")
+	}
+}
+
+// ensureAgentSkillsLocalRepo recreates the suite's shared Skills repo when it is missing.
+// TestAgentSkillsNoRepoConfigured deletes it on purpose, so a hard process exit before its
+// cleanup would otherwise leave every later test without a repo.
+func ensureAgentSkillsLocalRepo(t *testing.T) {
+	t.Helper()
+	if isRepoExist(tests.AgentSkillsLocalRepo) {
+		return
+	}
+	t.Logf("agent skills local repo %s is missing; recreating it", tests.AgentSkillsLocalRepo)
+	recreateAgentSkillsLocalRepo(t)
 }
 
 func cleanAgentSkillsTest() {
@@ -124,7 +157,7 @@ func writeSkillMD(t *testing.T, skillDir, slug, version, description string) {
 	t.Helper()
 	content := fmt.Sprintf("---\nname: %s\ndescription: %s\nversion: %s\n---\n\n# %s\n\nBody content for agent skills e2e.\n",
 		slug, description, version, slug)
-	require.NoError(t, os.WriteFile(filepath.Join(skillDir, "SKILL.md"), []byte(content), 0644)) // #nosec G306 -- test fixture
+	require.NoError(t, os.WriteFile(filepath.Join(skillDir, "SKILL.md"), []byte(content), 0600))
 }
 
 // skillArtifactPath is the generated (hyphen) publish layout:
@@ -332,10 +365,10 @@ func assertSkillInfoManifest(t *testing.T, installDir, slug, version, agent, sco
 	}
 }
 
-// extractJSONPayload returns the first JSON array/object in CLI output, preferring a
-// document that starts on its own line so log prefixes containing '[' do not win.
-func extractJSONPayload(t *testing.T, out string) string {
-	t.Helper()
+// findJSONPayload returns the first JSON array/object in CLI output, preferring a document
+// that starts on its own line so log prefixes containing '[' do not win. Callers inside a
+// retry use this form so log-only or not-yet-populated output retries instead of failing.
+func findJSONPayload(out string) (string, error) {
 	trimmed := strings.TrimSpace(out)
 	arrayStart := strings.LastIndex(trimmed, "\n[")
 	if arrayStart >= 0 {
@@ -352,16 +385,28 @@ func extractJSONPayload(t *testing.T, out string) string {
 	switch {
 	case arrayStart >= 0 && (objectStart < 0 || arrayStart < objectStart):
 		end := strings.LastIndex(trimmed, "]")
-		require.Greater(t, end, arrayStart, "JSON array must have a closing bracket, got: %q", out)
-		return trimmed[arrayStart : end+1]
+		if end <= arrayStart {
+			return "", fmt.Errorf("JSON array must have a closing bracket, got: %q", out)
+		}
+		return trimmed[arrayStart : end+1], nil
 	case objectStart >= 0:
 		end := strings.LastIndex(trimmed, "}")
-		require.Greater(t, end, objectStart, "JSON object must have a closing brace, got: %q", out)
-		return trimmed[objectStart : end+1]
+		if end <= objectStart {
+			return "", fmt.Errorf("JSON object must have a closing brace, got: %q", out)
+		}
+		return trimmed[objectStart : end+1], nil
 	default:
-		t.Fatalf("output must contain JSON, got: %q", out)
-		return ""
+		return "", fmt.Errorf("output must contain JSON, got: %q", out)
 	}
+}
+
+// extractJSONPayload is the fail-fast form of findJSONPayload, for callers that expect
+// well-formed JSON on the first attempt.
+func extractJSONPayload(t *testing.T, out string) string {
+	t.Helper()
+	payload, err := findJSONPayload(out)
+	require.NoError(t, err)
+	return payload
 }
 
 // Skills API / property indexing can lag after upload. Budget mirrors agent plugins e2e.
@@ -433,13 +478,9 @@ type agentSkillsSummaryJSON struct {
 }
 
 func parseSkillsSearchRows(out string) ([]agentSkillsSearchRow, error) {
-	payload := out
-	if start := strings.Index(out, "["); start >= 0 {
-		end := strings.LastIndex(out, "]")
-		if end <= start {
-			return nil, fmt.Errorf("search output does not contain a JSON array, got: %q", out)
-		}
-		payload = out[start : end+1]
+	payload, err := findJSONPayload(out)
+	if err != nil {
+		return nil, err
 	}
 	var rows []agentSkillsSearchRow
 	if err := json.Unmarshal([]byte(payload), &rows); err != nil {
@@ -503,8 +544,12 @@ func listRepoSkillsWithRetry(t *testing.T, slug, version string) []agentSkillsRe
 		if err != nil {
 			return err
 		}
+		payload, err := findJSONPayload(out)
+		if err != nil {
+			return err
+		}
 		var rows []agentSkillsRepoListRow
-		if err := json.Unmarshal([]byte(extractJSONPayload(t, out)), &rows); err != nil {
+		if err := json.Unmarshal([]byte(payload), &rows); err != nil {
 			return fmt.Errorf("parse list --repo JSON: %w", err)
 		}
 		for _, row := range rows {
@@ -536,8 +581,12 @@ func waitForLocalListStatus(t *testing.T, harness, projectDir, slug, wantStatus 
 		if err != nil {
 			return err
 		}
+		payload, err := findJSONPayload(out)
+		if err != nil {
+			return err
+		}
 		var rows []agentSkillsLocalListRow
-		if err := json.Unmarshal([]byte(extractJSONPayload(t, out)), &rows); err != nil {
+		if err := json.Unmarshal([]byte(payload), &rows); err != nil {
 			return fmt.Errorf("parse local list JSON: %w", err)
 		}
 		for _, row := range rows {
@@ -973,6 +1022,7 @@ func TestAgentSkillsInstallEvidenceGate(t *testing.T) {
 	publishTestSkill(t, slug, "1.0.0")
 
 	t.Run("ci-gate", func(t *testing.T) {
+		skipUnlessEvidenceGateEnabled(t)
 		t.Setenv("CI", "true")
 		t.Setenv("JFROG_SKILLS_DISABLE_QUIET_FAILURE", "")
 		err := runAgentSkillsCmd(t,
@@ -981,9 +1031,6 @@ func TestAgentSkillsInstallEvidenceGate(t *testing.T) {
 			"--path="+t.TempDir(),
 			"--quiet",
 		)
-		if err == nil {
-			t.Skip("evidence quiet-failure gate not enforced on this Artifactory instance")
-		}
 		assertErrorContainsAll(t, err, "evidence verification failed", "JFROG_SKILLS_DISABLE_QUIET_FAILURE")
 	})
 
@@ -1539,9 +1586,11 @@ func TestAgentSkillsNoRepoConfigured(t *testing.T) {
 
 	t.Setenv("JFROG_SKILLS_REPO", "")
 
-	// Temporarily remove the suite's shared Skills repo so auto-discovery finds nothing.
-	// Safe only while this package runs sequentially (no t.Parallel): a hard process exit
-	// before Cleanup would leave later tests without the suite repo.
+	// Auto-discovery scans every Skills-type repo on the instance, so "no repositories" cannot
+	// be staged in a throwaway repo: the suite's shared repo has to be gone. Cleanup restores
+	// it, and initAgentSkillsTest recreates it when missing, so a hard process exit here costs
+	// one repo recreate rather than cascading into every later test. Safe only while this
+	// package runs sequentially (no t.Parallel).
 	require.True(t, isRepoExist(tests.AgentSkillsLocalRepo))
 	execDeleteRepo(tests.AgentSkillsLocalRepo)
 	t.Cleanup(func() { recreateAgentSkillsLocalRepo(t) })
@@ -2475,23 +2524,37 @@ func TestAgentSkillsArtifactoryUnreachable(t *testing.T) {
 	defer cleanAgentSkillsTest()
 
 	const bogusServerID = "unreachable-skills-rt"
-	bogusServerURL := "https://nonexistent-artifactory-host-xyzzy.example.com/artifactory/"
 	configCli := coretests.NewJfrogCli(execMain, "jfrog config", "")
 	require.NoError(t, configCli.Exec("add", bogusServerID,
 		"--interactive=false",
-		"--url="+bogusServerURL,
+		"--url="+unreachableArtifactoryURL(t),
 		"--access-token=dummytoken",
 	))
 	// Best-effort teardown of the throwaway server config; a leftover entry is harmless.
 	t.Cleanup(func() { _ = configCli.Exec("rm", bogusServerID, "--quiet") })
 
+	installPath := t.TempDir()
 	err := runAgentSkillsCmd(t,
 		"install", "any-skill",
 		"--repo=nonexistent-repo-on-unreachable-server",
 		"--server-id="+bogusServerID,
-		"--path="+t.TempDir(),
+		"--path="+installPath,
 	)
-	assert.Error(t, err, "install against unreachable Artifactory must fail clearly")
+	require.Error(t, err, "install against unreachable Artifactory must fail clearly")
+	assert.NoDirExists(t, filepath.Join(installPath, "any-skill"), "failed install must not create the skill directory")
+}
+
+// unreachableArtifactoryURL returns a URL on a closed loopback port. Connecting fails with
+// connection-refused immediately, so the test needs no DNS lookup (resolvers that answer for
+// unregistered names or hijack NXDOMAIN would break that) and never waits out a connect
+// timeout the way a blackholed address does.
+func unreachableArtifactoryURL(t *testing.T) string {
+	t.Helper()
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	url := "http://" + listener.Addr().String() + "/artifactory/"
+	require.NoError(t, listener.Close())
+	return url
 }
 
 // TestAgentSkillsFullLifecycle covers plan #87.
@@ -2729,23 +2792,25 @@ func TestAgentSkillsQuietEvidenceCombined(t *testing.T) {
 
 	t.Setenv("CI", "true")
 	t.Setenv("JFROG_SKILLS_DISABLE_QUIET_FAILURE", "")
-	err := runAgentSkillsCmd(t,
-		"install", slug,
-		"--repo="+tests.AgentSkillsLocalRepo,
-		"--path="+t.TempDir(),
-		"--quiet",
-	)
-	if err == nil {
-		t.Skip("evidence quiet-failure gate not enforced on this Artifactory instance")
-	}
-	assertErrorContainsAll(t, err, "evidence verification failed", "JFROG_SKILLS_DISABLE_QUIET_FAILURE")
 
-	// Collision half of #79 under the same quiet/CI settings.
-	err = runAgentSkillsCmd(t,
-		"publish", createTestSkill(t, slug, "1.0.0"),
-		"--repo="+tests.AgentSkillsLocalRepo,
-		"--skip-scan",
-		"--quiet",
-	)
-	assertErrorContainsAll(t, err, "already exists")
+	t.Run("evidence-gate", func(t *testing.T) {
+		skipUnlessEvidenceGateEnabled(t)
+		assertErrorContainsAll(t, runAgentSkillsCmd(t,
+			"install", slug,
+			"--repo="+tests.AgentSkillsLocalRepo,
+			"--path="+t.TempDir(),
+			"--quiet",
+		), "evidence verification failed", "JFROG_SKILLS_DISABLE_QUIET_FAILURE")
+	})
+
+	// Collision half of #79 under the same quiet/CI settings. Runs on every instance,
+	// including those without evidence, so this test always asserts something.
+	t.Run("publish-collision", func(t *testing.T) {
+		assertErrorContainsAll(t, runAgentSkillsCmd(t,
+			"publish", createTestSkill(t, slug, "1.0.0"),
+			"--repo="+tests.AgentSkillsLocalRepo,
+			"--skip-scan",
+			"--quiet",
+		), "already exists")
+	})
 }
