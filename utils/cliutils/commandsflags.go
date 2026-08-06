@@ -2497,7 +2497,7 @@ var commandFlags = map[string][]string{
 		aptDistribution, aptComponent, aptTrusted, aptImportKey, aptRemove,
 	},
 	Login: {
-		serverId,
+		serverId, configDisableRefreshAccessToken,
 	},
 }
 
