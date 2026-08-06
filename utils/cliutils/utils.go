@@ -111,6 +111,7 @@ func GetCliUserAgentWithAgent() string {
 // User-Agent for agent-driven invocations: one product token per detected axis
 // (ai-agent, and — when the harness advertised them — ai-client and ai-model).
 // Empty for human invocations, keeping them byte-identical to a plain CLI.
+// Pure string work — never logs and never fails the calling command.
 func agentUserAgentSuffix(executionContext commonCommands.ExecutionContext) string {
 	if !executionContext.IsAgent {
 		return ""
