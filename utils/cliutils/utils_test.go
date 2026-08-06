@@ -391,16 +391,16 @@ func (t *redirectingTransport) RoundTrip(req *http.Request) (*http.Response, err
 // ShouldHideSurveyLink's agent check is deterministic regardless of the shell
 // running `go test` (e.g. running inside Claude Code, Cursor, etc.).
 var agentDetectorEnvVars = []string{
-	"CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT",
+	"CLAUDECODE", "CLAUDE_CODE", "CLAUDE_CODE_ENTRYPOINT",
 	"GEMINI_CLI",
 	"GOOSE_TERMINAL",
-	"CURSOR_AGENT", "CURSOR_CLI", "CURSOR_TRACE_ID",
-	"COPILOT_CLI", "COPILOT_AGENT_SESSION_ID",
-	"KILO_IPC_SOCKET_PATH", "KILO_SERVER_PASSWORD",
-	"ROO_CODE_IPC_SOCKET_PATH", "ROO_ACTIVE",
+	"CURSOR_AGENT", "CURSOR_TRACE_ID", "CURSOR_EXTENSION_HOST_ROLE",
+	"COPILOT_CLI", "COPILOT_AGENT_SESSION_ID", "COPILOT_MODEL", "COPILOT_ALLOW_ALL",
+	"KILOCODE_FEATURE", "KILO_PID",
+	"ROO_ACTIVE", "ROO_CLI_RUNTIME",
 	"CODEX_CI", "CODEX_THREAD_ID", "CODEX_SANDBOX",
-	"WINDSURF_AGENT", "CODEIUM_EDITOR_APP_ROOT",
-	"AIDER_API_KEY", "CLINE_ACTIVE", "OPENCODE", "OPENCODE_CLIENT",
+	"WINDSURF_CASCADE_TERMINAL",
+	"CLINE_ACTIVE", "OPENCODE", "OPENCODE_CLIENT",
 	"AMP_CURRENT_THREAD_ID", "AUGMENT_AGENT", "QWEN_CODE",
 	"ANTIGRAVITY_AGENT", "CRUSH", "IFLOW_CLI", "TRAE_AI_SHELL_ID",
 	"AI_AGENT", "AGENT",
@@ -533,25 +533,30 @@ func TestGetCliUserAgentWithAgentPerDetector(t *testing.T) {
 	testCases := []struct {
 		name      string
 		envVar    string
+		envValue  string // empty → "1"
 		wantAgent string
 	}{
-		{"claude code", "CLAUDECODE", "claude"},
-		{"claude code entrypoint", "CLAUDE_CODE_ENTRYPOINT", "claude"},
-		{"gemini", "GEMINI_CLI", "gemini"},
-		{"goose", "GOOSE_TERMINAL", "goose"},
-		{"cursor agent", "CURSOR_AGENT", "cursor"},
-		{"cursor cli", "CURSOR_CLI", "cursor"},
-		{"copilot", "COPILOT_CLI", "copilot"},
-		{"kilocode", "KILO_IPC_SOCKET_PATH", "kilocode"},
-		{"roo code", "ROO_CODE_IPC_SOCKET_PATH", "roo_code"},
-		{"codex", "CODEX_CI", "codex"},
-		{"generic agent collapses to unknown", "AGENT", "unknown"},
+		{"claude code", "CLAUDECODE", "", "claude"},
+		{"claude code entrypoint", "CLAUDE_CODE_ENTRYPOINT", "", "claude"},
+		{"gemini", "GEMINI_CLI", "", "gemini"},
+		{"goose", "GOOSE_TERMINAL", "", "goose"},
+		{"cursor agent", "CURSOR_AGENT", "", "cursor"},
+		{"cursor extension host", "CURSOR_EXTENSION_HOST_ROLE", "agent-exec", "cursor"},
+		{"copilot", "COPILOT_CLI", "", "copilot"},
+		{"kilocode", "KILO_PID", "", "kilocode"},
+		{"roo code", "ROO_ACTIVE", "", "roo_code"},
+		{"codex", "CODEX_CI", "", "codex"},
+		{"generic agent collapses to unknown", "AGENT", "", "unknown"},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			clearAgentEnvVarsForTest(t)
 			withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
-			t.Setenv(testCase.envVar, "1")
+			val := testCase.envValue
+			if val == "" {
+				val = "1"
+			}
+			t.Setenv(testCase.envVar, val)
 			corecommands.ResetExecutionContextForTest()
 
 			assert.Equal(t, "jfrog-cli-go/2.117.0 ai-agent/"+testCase.wantAgent, GetCliUserAgentWithAgent())
