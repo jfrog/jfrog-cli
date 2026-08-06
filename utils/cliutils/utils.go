@@ -114,8 +114,8 @@ func agentUserAgentSuffix(executionContext commonCommands.ExecutionContext) stri
 		return ""
 	}
 	suffix := fmt.Sprintf(AgentUserAgentSuffixFormat, executionContext.Agent)
-	if executionContext.AIClient != "" {
-		suffix += fmt.Sprintf(" ai-client/%s", executionContext.AIClient)
+	if executionContext.Client != "" {
+		suffix += fmt.Sprintf(" ai-client/%s", executionContext.Client)
 	}
 	if executionContext.AIModel != "" {
 		suffix += fmt.Sprintf(" ai-model/%s", executionContext.AIModel)
