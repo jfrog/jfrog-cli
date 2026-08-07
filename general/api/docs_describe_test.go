@@ -1,3 +1,10 @@
+//go:build !full
+
+// These tests assert exact values from the stub fixtures (bundle name
+// "stub", specific stub operations) and don't apply to a full build (whose
+// docs/api-spec/full/ content is populated at release time) -- same
+// rationale as docs/api-spec/parser_test.go.
+
 package api
 
 import (
