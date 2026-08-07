@@ -1,0 +1,5 @@
+{
+  "key": "${AGENT_SKILLS_LOCAL_REPO}",
+  "rclass": "local",
+  "packageType": "skills"
+}
