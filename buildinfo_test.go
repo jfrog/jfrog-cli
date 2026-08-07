@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/formats"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
@@ -664,6 +665,37 @@ func TestArtifactoryBuildCollectEnv(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryBuildPublishRecordsDuration(t *testing.T) {
+	initArtifactoryTest(t, "")
+	// Use a unique build number to avoid clashing with other tests that reuse RtBuildName1.
+	buildNumber := strconv.FormatInt(time.Now().Unix(), 10)
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+
+	// First build command - records the build's start time.
+	uploadFiles(t, "upload", "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber)
+	// Collect environment, mirroring the reported scenario (upload -> bce -> bp).
+	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("bce", tests.RtBuildName1, buildNumber))
+	runRt(t, "bp", tests.RtBuildName1, buildNumber)
+
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.RtBuildName1, buildNumber)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
+
+	assert.NotEmpty(t, buildInfo.Started, "build info should have a 'started' timestamp")
+	assert.Greater(t, buildInfo.DurationMillis, int64(0), "build duration should not be published as 0")
+
+	// Cleanup
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
 func TestBuildAddGit(t *testing.T) {
 	testBuildAddGit(t, false)
 }
@@ -1230,6 +1262,42 @@ func TestBuildPublishWithCIVcsProps(t *testing.T) {
 	// Validate CI VCS properties are set
 	assert.Greater(t, len(resultItems), 0, "No artifacts found")
 	tests.ValidateCIVcsPropsOnArtifacts(t, resultItems, "github", actualOrg, actualRepo)
+
+	cleanArtifactoryTest()
+}
+
+// TestBuildPublishWithLocalGitVcsProps verifies build-publish sets local git VCS props
+// when CI env is absent but VCS collection is enabled.
+func TestBuildPublishWithLocalGitVcsProps(t *testing.T) {
+	initArtifactoryTest(t, "")
+	buildName := tests.RtBuildName1 + "-local-git"
+	buildNumber := "1"
+
+	cleanupEnv := tests.SetupLocalGitVcsEnv(t)
+	defer cleanupEnv()
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	testDir := tests.CopyVcsGitFixture(t, tests.Temp)
+	runRt(t, "upload", filepath.Join(testDir, "a1.in"), tests.RtRepo1+"/local-git-bp/", "--flat=true",
+		"--build-name="+buildName, "--build-number="+buildNumber)
+
+	runRt(t, "build-publish", buildName, buildNumber, "--dot-git-path", testDir)
+
+	resultItems := getResultItemsFromArtifactory(tests.SearchAllRepo1, t)
+	require.Greater(t, len(resultItems), 0)
+
+	var uploaded []rtutils.ResultItem
+	for _, item := range resultItems {
+		if item.Name == "a1.in" {
+			uploaded = append(uploaded, item)
+		}
+	}
+	require.NotEmpty(t, uploaded)
+
+	tests.ValidateLocalGitVcsPropsOnArtifacts(t, uploaded,
+		tests.VcsFixtureMainURL, tests.VcsFixtureMainRevision, tests.VcsFixtureMainBranch)
 
 	cleanArtifactoryTest()
 }

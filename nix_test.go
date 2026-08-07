@@ -10,6 +10,7 @@ import (
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	biutils "github.com/jfrog/build-info-go/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
@@ -493,6 +494,60 @@ func TestNixCopy_VirtualToLocalResolution(t *testing.T) {
 	}
 
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+}
+
+func TestNixCopyWithLocalGitVcsProps(t *testing.T) {
+	initNixTest(t)
+
+	oldHomeDir, newHomeDir := prepareHomeDir(t)
+	defer func() {
+		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
+		clientTestUtils.RemoveAllAndAssert(t, newHomeDir)
+	}()
+
+	cleanupEnv := tests.SetupLocalGitVcsEnv(t)
+	defer cleanupEnv()
+
+	buildName := "nix-copy-local-git"
+	buildNumber := "1"
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	projectDir, cleanupProject := createNixProject(t, "nix-local-git", "channelproject")
+	defer cleanupProject()
+	tests.CopyGitFixtureIntoProject(t, projectDir)
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectDir)
+	defer chdirCallback()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	err = jfrogCli.Exec("nix", "nix-build", "<nixpkgs>", "-A", "hello",
+		"--build-name="+buildName, "--build-number="+buildNumber)
+	if err != nil {
+		t.Skipf("nix-build not available: %v", err)
+	}
+
+	toURL := fmt.Sprintf("https://%s:%s@%s/api/nix/%s/",
+		*tests.JfrogUser, *tests.JfrogPassword,
+		strings.TrimPrefix(strings.TrimPrefix(*tests.JfrogUrl, "https://"), "http://"),
+		tests.NixLocalRepo)
+	require.NoError(t, jfrogCli.Exec("nix", "copy", "--to", toURL, "./result",
+		"--build-name="+buildName, "--build-number="+buildNumber))
+
+	require.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	require.NoError(t, err)
+	require.True(t, found)
+
+	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
+	require.NoError(t, err)
+
+	count := tests.ValidateLocalGitVcsPropsOnBuildInfoArtifacts(t, serviceManager, publishedBuildInfo, tests.NixLocalRepo,
+		tests.VcsFixtureMainURL, tests.VcsFixtureMainRevision, tests.VcsFixtureMainBranch)
+	assert.Greater(t, count, 0)
 }
 
 func TestNixBuild_BuildOnlyNoCopy(t *testing.T) {

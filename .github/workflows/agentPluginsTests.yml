@@ -29,6 +29,8 @@ jobs:
         uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
+          # Safe: this workflow only runs after human approval via the build-gate environment.
+          allow-unsafe-pr-checkout: true
 
       - name: Setup FastCI
         if: matrix.os.name != 'macos'
@@ -46,8 +48,11 @@ jobs:
         uses: jfrog/.github/actions/install-local-artifactory@main
         with:
           RTLIC: ${{ secrets.RTLIC }}
+          # No VERSION pin: releases.jfrog.io keeps only a subset of patch
+          # releases, so pinning breaks once that version is pruned.
           RT_CONNECTION_TIMEOUT_SECONDS: ${{ env.RT_CONNECTION_TIMEOUT_SECONDS || '1200' }}
 
       - name: Run agent plugins tests
         if: matrix.os.name != 'macos'
-        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.agentPlugins
+        shell: bash
+        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 -test.agentPlugins=true

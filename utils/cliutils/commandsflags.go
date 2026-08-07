@@ -89,6 +89,8 @@ const (
 	ConanConfig            = "conan-config"
 	Conan                  = "conan"
 	Nix                    = "nix"
+	Apt                    = "apt"
+	AptSetup               = "apt-setup"
 	Ping                   = "ping"
 	RtCurl                 = "rt-curl"
 	TemplateConsumer       = "template-consumer"
@@ -136,6 +138,8 @@ const (
 	AccessTokenCreate = "access-token-create"
 	ExchangeOidcToken = "exchange-oidc-token"
 	Api               = "api"
+	ApiDocsSearch     = "api-docs-search"
+	ApiDocsDescribe   = "api-docs-describe"
 
 	// MCP commands keys
 	McpShow      = "mcp-show"
@@ -383,6 +387,13 @@ const (
 	skipLogin         = "skip-login"
 	validateSha       = "validate-sha"
 
+	// Apt-specific flags
+	aptDistribution = "dist"
+	aptComponent    = "component"
+	aptTrusted      = "trusted"
+	aptImportKey    = "import-key"
+	aptRemove       = "remove"
+
 	// Unique docker promote flags
 	dockerPromotePrefix = "docker-promote-"
 	targetDockerImage   = "target-docker-image"
@@ -616,6 +627,8 @@ const (
 	IncludeProjects = "include-projects"
 	ExcludeProjects = "exclude-projects"
 	IncludeFiles    = "include-files"
+	CreatedAfter    = "created-after"
+	DownloadedAfter = "downloaded-after"
 
 	// *** JFrog Pipelines Commands' flags ***
 	// Base flags
@@ -658,6 +671,15 @@ const (
 	apiMethod  = "api-method"
 	apiVerbose = "api-verbose"
 	apiTimeout = "api-timeout"
+
+	// API docs search command flags
+	apiDocsSearchTag    = "api-docs-search-tag"
+	apiDocsSearchMethod = "api-docs-search-method"
+	apiDocsSearchLimit  = "api-docs-search-limit"
+	apiDocsSearchFormat = "api-docs-search-format"
+
+	// API docs describe command flags
+	apiDocsDescribeFormat = "api-docs-describe-format"
 
 	// MCP command flags
 	mcpUrl        = "mcp-url"
@@ -808,6 +830,27 @@ var flagsMap = map[string]cli.Flag{
 	apiTimeout: cli.IntFlag{
 		Name:  "timeout",
 		Usage: "[Default: 0] Overall HTTP request timeout in seconds. 0 means no timeout.` `",
+	},
+	apiDocsSearchTag: cli.StringFlag{
+		Name:  "tag",
+		Usage: "[Optional] Filter results to operations whose tags include this product/tag (case-insensitive).` `",
+	},
+	apiDocsSearchMethod: cli.StringFlag{
+		Name:  "method",
+		Usage: "[Optional] Filter results to this HTTP method (GET, POST, PUT, DELETE, ...).` `",
+	},
+	apiDocsSearchLimit: cli.IntFlag{
+		Name:  "limit",
+		Value: 10,
+		Usage: "[Default: 10] Maximum number of ranked matches to return.` `",
+	},
+	apiDocsSearchFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + components.GetFormatFlagDescription([]format.OutputFormat{format.Json, format.Table}) + "` `",
+	},
+	apiDocsDescribeFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + components.GetFormatFlagDescription([]format.OutputFormat{format.Json, format.Table}) + "` `",
 	},
 	mcpShowFormat: cli.StringFlag{
 		Name:  Format,
@@ -1386,7 +1429,31 @@ var flagsMap = map[string]cli.Flag{
 	},
 	skipLogin: cli.BoolFlag{
 		Name:  skipLogin,
-		Usage: "[Default: false] Set to true if you'd like the command to skip performing docker login.` `",
+		Usage: "[Default: false] Set to true if you'd like the command to skip performing login.` `",
+	},
+	aptDistribution: cli.StringFlag{
+		Name:  aptDistribution,
+		Usage: "[apt only] [Required for apt setup] Debian distribution name (e.g. noble, jammy).` `",
+	},
+	aptComponent: cli.StringFlag{
+		Name: aptComponent,
+		// No Value default: leaving it unset lets 'jf setup apt' detect "not
+		// provided" and fire its interactive "Component ..." prompt. The effective
+		// default of "main" is applied downstream by AptSetupCommand/AptCommand
+		// SetComponent, so an unset flag still resolves to "main" non-interactively.
+		Usage: "[apt only] [Default: main] Debian component (e.g. main, contrib, non-free). Multiple components: --component \"main contrib non-free\".` `",
+	},
+	aptTrusted: cli.BoolFlag{
+		Name:  aptTrusted,
+		Usage: "[apt only] [Default: false] Skip GPG signature verification. Use only for testing when the repository has no GPG key configured. Mutually exclusive with --import-key.` `",
+	},
+	aptImportKey: cli.BoolFlag{
+		Name:  aptImportKey,
+		Usage: "[apt only] [Default: false] Fetch the Artifactory repository's GPG public key and install it to /etc/apt/keyrings/. Uses signed-by= in the sources entry for scoped trust. Mutually exclusive with --trusted.` `",
+	},
+	aptRemove: cli.BoolFlag{
+		Name:  aptRemove,
+		Usage: "[apt only] [Default: false] Remove all JFrog-managed apt source and pinning files. Combine with --dist to limit to a specific distribution.` `",
 	},
 	npmDetailedSummary: cli.BoolFlag{
 		Name:  detailedSummary,
@@ -1825,6 +1892,14 @@ var flagsMap = map[string]cli.Flag{
 		Name:  IncludeFiles,
 		Usage: "[Optional] List of semicolon-separated(;) path patterns to include in the transfer. Files will be filtered based on their directory path. Pattern examples: 'folder/subfolder/*', 'org/company/*'.` `",
 	},
+	CreatedAfter: cli.StringFlag{
+		Name:  CreatedAfter,
+		Usage: "[Optional] Transfer only files created at or after this exact UTC timestamp. Format: YYYY-MM-DDTHH:mm:ss.sssZ. When both --created-after and --downloaded-after are set, --created-after takes precedence.` `",
+	},
+	DownloadedAfter: cli.StringFlag{
+		Name:  DownloadedAfter,
+		Usage: "[Optional] Transfer only files last downloaded at or after this exact UTC timestamp. Format: YYYY-MM-DDTHH:mm:ss.sssZ. Files that were never downloaded are excluded. Ignored when --created-after is also set.` `",
+	},
 	IgnoreState: cli.BoolFlag{
 		Name:  IgnoreState,
 		Usage: "[Default: false] Set to true to ignore the saved state from previous transfer-files operations.` `",
@@ -1923,7 +1998,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	setupRepo: cli.StringFlag{
 		Name:  repo,
-		Usage: "[Optional] Specifies the Artifactory repository name for the selected package manager, replacing the interactive repository selection.` `",
+		Usage: "[Optional] Specifies the Artifactory repository name for the selected package manager, replacing the interactive repository selection. The interactive selection offers virtual repositories of the matching package type, which is normally what this should be set to. Note that gradle matches the gradle package type rather than maven, and pip, pipenv, poetry, twine and uv all match pypi.` `",
 	},
 	PromotionType: cli.StringFlag{
 		Name:  PromotionType,
@@ -2243,6 +2318,12 @@ var commandFlags = map[string][]string{
 	Nix: {
 		BuildName, BuildNumber, module, Project, serverId,
 	},
+	Apt: {
+		serverId, skipLogin, setupRepo, aptDistribution, aptComponent, aptTrusted,
+	},
+	AptSetup: {
+		serverId, setupRepo, aptDistribution, aptComponent, aptTrusted, aptImportKey, aptRemove,
+	},
 	Stats: {
 		XrFormat, accessToken, serverId,
 	},
@@ -2250,6 +2331,12 @@ var commandFlags = map[string][]string{
 		platformUrl, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
 		ClientCertKeyPath, InsecureTls, configDisableRefreshAccessToken,
 		apiHeader, apiInput, apiData, apiMethod, apiVerbose, apiTimeout,
+	},
+	ApiDocsSearch: {
+		apiDocsSearchTag, apiDocsSearchMethod, apiDocsSearchLimit, apiDocsSearchFormat,
+	},
+	ApiDocsDescribe: {
+		apiDocsDescribeFormat,
 	},
 	McpShow: {
 		platformUrl, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
@@ -2325,7 +2412,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, deleteQuiet,
 	},
 	TransferFiles: {
-		Filestore, IncludeRepos, ExcludeRepos, IncludeFiles, IgnoreState, ProxyKey, transferFilesStatus, Stop, PreChecks, transferFilesFormat,
+		Filestore, IncludeRepos, ExcludeRepos, IncludeFiles, CreatedAfter, DownloadedAfter, IgnoreState, ProxyKey, transferFilesStatus, Stop, PreChecks, transferFilesFormat,
 	},
 	TransferInstall: {
 		installPluginVersion, InstallPluginSrcDir, InstallPluginHomeDir,
@@ -2387,6 +2474,7 @@ var commandFlags = map[string][]string{
 	},
 	Setup: {
 		serverId, url, user, password, accessToken, sshPassphrase, sshKeyPath, ClientCertPath, ClientCertKeyPath, Project, setupRepo,
+		aptDistribution, aptComponent, aptTrusted, aptImportKey, aptRemove,
 	},
 	Login: {
 		serverId,

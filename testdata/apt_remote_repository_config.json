@@ -1,0 +1,8 @@
+{
+  "key": "${APT_REMOTE_REPO}",
+  "rclass": "remote",
+  "packageType": "debian",
+  "url": "http://archive.ubuntu.com/ubuntu",
+  "repoLayoutRef": "simple-default",
+  "xrayIndex": false
+}

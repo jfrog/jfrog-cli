@@ -41,6 +41,17 @@ func initNugetTest(t *testing.T) {
 	createJfrogHomeConfig(t, true)
 }
 
+// clearNuGetHTTPCache purges the client-side NuGet HTTP cache before a resolve
+// suite runs. This guards against a stale registration document from a prior
+// run (or from Artifactory's own proxy cache mid-populate) being reused and
+// causing bootstrap's transitive deps (popper.js, jQuery) to appear missing.
+func clearNuGetHTTPCache(t *testing.T) {
+	out, err := exec.Command("dotnet", "nuget", "locals", "http-cache", "--clear").CombinedOutput()
+	if err != nil {
+		t.Logf("dotnet nuget locals http-cache --clear failed (%v): %s", err, out)
+	}
+}
+
 type testDescriptor struct {
 	name                 string
 	project              string
@@ -72,24 +83,9 @@ func TestDotnetResolve(t *testing.T) {
 	testNativeNugetDotnetResolve(t, uniqueDotnetTests, tests.DotnetBuildName, project.Dotnet)
 }
 
-// jgc493SkippedResolveTests lists TestNugetResolve / TestDotnetResolve
-// subtests that intermittently miss bootstrap's transitive deps (popper.js,
-// jQuery) when nuget.exe under Mono caches an incomplete registration
-// response from Artifactory's NuGet remote. Skipped until JGC-493 is fixed.
-var jgc493SkippedResolveTests = map[string]bool{
-	"referencewithoutmodulechange":      true,
-	"referencewithmodulechange":         true,
-	"multireferencewithoutmodulechange": true,
-	"multireferencewithmodulechange":    true,
-	"multireferencewithslnpath":         true,
-	"multireferencewithslndir":          true,
-	"sln_and_proj_different_locations":  true,
-	"dotnetargswithspaces":              true,
-	"multireferencesingleprojectdir":    true,
-}
-
 func testNativeNugetDotnetResolve(t *testing.T, uniqueTests []testDescriptor, buildName string, projectType project.ProjectType) {
 	initNugetTest(t)
+	clearNuGetHTTPCache(t)
 	testDescriptors := append(slices.Clone(uniqueTests), []testDescriptor{
 		{"referencewithoutmodulechange", "reference", []string{projectType.String(), "restore"}, []string{"reference"}, []int{6}},
 		{"referencewithmodulechange", "reference", []string{projectType.String(), "restore", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{6}},
@@ -108,9 +104,6 @@ func testNativeNugetDotnetResolve(t *testing.T, uniqueTests []testDescriptor, bu
 			return
 		}
 		t.Run(test.name, func(t *testing.T) {
-			if jgc493SkippedResolveTests[test.name] {
-				t.Skip("JGC-493 - Skip until fixed")
-			}
 			testNugetCmd(t, projectPath, buildName, strconv.Itoa(buildNumber), test.expectedModules, test.args, test.expectedDependencies)
 		})
 	}
