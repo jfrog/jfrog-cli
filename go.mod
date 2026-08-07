@@ -253,4 +253,4 @@ require (
 
 replace github.com/jfrog/build-info-go => github.com/bhanurp/build-info-go v1.10.10-0.20260806064130-74d0864c5414
 
-replace github.com/jfrog/jfrog-cli-artifactory => github.com/bhanurp/jfrog-cli-artifactory v0.1.12-0.20260806082621-55bd344d6463
+replace github.com/jfrog/jfrog-cli-artifactory => github.com/bhanurp/jfrog-cli-artifactory v0.1.12-0.20260807061944-63a5fd2d8c09

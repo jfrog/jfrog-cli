@@ -12,11 +12,11 @@ import (
 	"strconv"
 	"strings"
 
+	dotnetutils "github.com/jfrog/build-info-go/build/utils/dotnet"
 	aptcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/apt"
 	conancommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/conan"
 	nixcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nix"
-  dotnetutils "github.com/jfrog/build-info-go/build/utils/dotnet"
-	nixcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nix"
+	nugetcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nuget"
 
 	"github.com/BurntSushi/toml"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/container/strategies"
