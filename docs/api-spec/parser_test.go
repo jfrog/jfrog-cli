@@ -72,6 +72,10 @@ func TestOperations_Stub(t *testing.T) {
 	require.True(t, ok)
 	assert.Equal(t, "array<string>", groups.Type)
 
+	middleName, ok := propsByName["middle_name"]
+	require.True(t, ok, "middle_name should be a flattened property of UserCreateRequest")
+	assert.Equal(t, "string", middleName.Type, "type: [string, \"null\"] should resolve to its non-null member (JGC-537)")
+
 	deleteWorker, ok := byOperationId["deleteWorker"]
 	require.True(t, ok, "deleteWorker should be present")
 	assert.Equal(t, "DELETE", deleteWorker.Method)
