@@ -92,10 +92,10 @@ func buildTestNupkg(t *testing.T, id, version string) (nupkgPath, snupkgPath str
 	nupkgPath = filepath.Join(outDir, id+"."+version+".nupkg")
 	require.FileExists(t, nupkgPath)
 
-	content, err := os.ReadFile(nupkgPath)
+	content, err := os.ReadFile(nupkgPath) // #nosec G703 -- outDir is this test's own t.TempDir(), not untrusted input
 	require.NoError(t, err)
 	snupkgPath = filepath.Join(outDir, id+"."+version+".snupkg")
-	require.NoError(t, os.WriteFile(snupkgPath, content, 0o600))
+	require.NoError(t, os.WriteFile(snupkgPath, content, 0o600)) // #nosec G703 -- same controlled outDir
 	return nupkgPath, snupkgPath
 }
 
@@ -460,7 +460,7 @@ func doAccessRequest(t *testing.T, method, url, body string) error {
 	if err != nil {
 		return err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	if res.StatusCode >= 300 {
 		respBody, _ := io.ReadAll(res.Body)
 		return fmt.Errorf("Access API request %s %s failed: %d %s", method, url, res.StatusCode, string(respBody))
@@ -729,14 +729,12 @@ func TestNugetFlexPackPushWildcardGlob(t *testing.T) {
 	defer cleanTestsHomeEnv()
 
 	dir := t.TempDir()
-	var paths []string
 	for i := 1; i <= 2; i++ {
 		nupkgPath, _ := buildTestNupkg(t, fmt.Sprintf("GlobPkg%d", i), "1.0.0")
 		dest := filepath.Join(dir, filepath.Base(nupkgPath))
-		content, err := os.ReadFile(nupkgPath)
+		content, err := os.ReadFile(nupkgPath) // #nosec G703 -- nupkgPath comes from this test's own buildTestNupkg (t.TempDir()), not untrusted input
 		require.NoError(t, err)
-		require.NoError(t, os.WriteFile(dest, content, 0o600))
-		paths = append(paths, dest)
+		require.NoError(t, os.WriteFile(dest, content, 0o600)) // #nosec G703 -- dest is under this test's own dir (t.TempDir())
 	}
 
 	wd, err := os.Getwd()
@@ -841,9 +839,9 @@ func TestNugetFlexPackLegacySymbolsFormat(t *testing.T) {
 
 	nupkgPath, _ := buildTestNupkg(t, "LegacySymbolsPkg", "1.0.0")
 	legacySymbolsPath := filepath.Join(filepath.Dir(nupkgPath), "LegacySymbolsPkg.1.0.0.symbols.nupkg")
-	content, err := os.ReadFile(nupkgPath)
+	content, err := os.ReadFile(nupkgPath) // #nosec G703 -- nupkgPath comes from this test's own buildTestNupkg (t.TempDir()), not untrusted input
 	require.NoError(t, err)
-	require.NoError(t, os.WriteFile(legacySymbolsPath, content, 0o600))
+	require.NoError(t, os.WriteFile(legacySymbolsPath, content, 0o600)) // #nosec G703 -- same controlled dir as nupkgPath
 
 	require.NoError(t, pushNupkgFlexPack(t, legacySymbolsPath, tests.NugetLocalRepo))
 	client, err := httpclient.ClientBuilder().Build()
@@ -2680,7 +2678,7 @@ func TestNugetFlexPackDependencyRangeResolvesConcreteVersion(t *testing.T) {
 		"<PackageReference Include=\"bootstrap\">\n            <Version>4.0.0</Version>",
 		"<PackageReference Include=\"bootstrap\">\n            <Version>[4.0.0, 5.0.0)</Version>", 1)
 	require.NotEqual(t, string(csprojContent), patched, "expected to find and patch the bootstrap PackageReference version")
-	require.NoError(t, os.WriteFile(csprojPath, []byte(patched), 0o600))
+	require.NoError(t, os.WriteFile(csprojPath, []byte(patched), 0o600)) // #nosec G703 -- csprojPath comes from this test's own createNugetProject (t.TempDir()), not untrusted input
 
 	wd, err := os.Getwd()
 	require.NoError(t, err)
@@ -3228,9 +3226,9 @@ func TestNugetFlexPackStandalonePackagesConfigMatchesNonSdkCsproj(t *testing.T) 
 	// Restore a standalone packages.config with no accompanying .csproj at all.
 	projectDir := t.TempDir()
 	packagesConfigSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "nuget", "packagesconfig", "packages.config")
-	content, readErr := os.ReadFile(packagesConfigSrc)
+	content, readErr := os.ReadFile(packagesConfigSrc) // #nosec G703 -- fixed path under this repo's own testdata, not untrusted input
 	require.NoError(t, readErr)
-	require.NoError(t, os.WriteFile(filepath.Join(projectDir, "packages.config"), content, 0o600))
+	require.NoError(t, os.WriteFile(filepath.Join(projectDir, "packages.config"), content, 0o600)) // #nosec G703 -- projectDir is this test's own t.TempDir()
 
 	wd, err := os.Getwd()
 	require.NoError(t, err)
