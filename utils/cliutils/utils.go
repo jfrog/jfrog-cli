@@ -103,8 +103,8 @@ func GetCliUserAgentWithAgent() string {
 	return coreutils.GetCliUserAgent() + agentUserAgentSuffix(commonCommands.DetectExecutionContext())
 }
 
-// agentUserAgentSuffix appends ai-agent / ai-client / ai-model tokens for
-// agent runs; empty for humans. Never logs or fails the command.
+// agentUserAgentSuffix appends ai-agent / ai-client / ai-model tokens when
+// IsAgent; empty when not an agent. Never logs or fails the command.
 func agentUserAgentSuffix(executionContext commonCommands.ExecutionContext) string {
 	if !executionContext.IsAgent {
 		return ""

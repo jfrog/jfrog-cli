@@ -403,7 +403,7 @@ var agentDetectorEnvVars = []string{
 	"ROO_ACTIVE", "ROO_CLI_RUNTIME", "ROO_CODE_IPC_SOCKET_PATH",
 	"CODEX_CI", "CODEX_THREAD_ID", "CODEX_SANDBOX",
 	"WINDSURF_CASCADE_TERMINAL",
-	"CLINE_ACTIVE", "OPENCODE", "OPENCODE_CLIENT",
+	"CLINE_ACTIVE", "OPENCODE", "OPENCODE_SESSION_ID", "OPENCODE_CLIENT",
 	"AMP_CURRENT_THREAD_ID", "AUGMENT_AGENT", "QWEN_CODE",
 	"ANTIGRAVITY_AGENT", "CRUSH", "IFLOW_CLI", "TRAE_AI_SHELL_ID",
 	"AI_AGENT", "AGENT",
@@ -531,8 +531,8 @@ func TestGetCliUserAgentWithAgentNoAgentDetected(t *testing.T) {
 }
 
 func TestGetCliUserAgentWithAgentPerDetector(t *testing.T) {
-	// One case per row of jfrog-cli-core's agentEnvDetectors table, plus the generic
-	// AGENT fallback that is deliberately collapsed to "unknown".
+	// Cover every detector row in jfrog-cli-core's agentEnvDetectors (at least
+	// one signal each), plus envEquals and the generic AGENT→unknown fallback.
 	testCases := []struct {
 		name      string
 		envVar    string
@@ -544,10 +544,26 @@ func TestGetCliUserAgentWithAgentPerDetector(t *testing.T) {
 		{"goose", "GOOSE_TERMINAL", "", "goose"},
 		{"cursor agent", "CURSOR_AGENT", "", "cursor"},
 		{"cursor extension host", "CURSOR_EXTENSION_HOST_ROLE", "agent-exec", "cursor"},
-		{"copilot", "COPILOT_CLI", "", "copilot"},
-		{"kilocode", "KILO_PID", "", "kilocode"},
-		{"roo code", "ROO_ACTIVE", "", "roo_code"},
-		{"codex", "CODEX_CI", "", "codex"},
+		{"copilot cli", "COPILOT_CLI", "", "copilot"},
+		{"copilot agent session", "COPILOT_AGENT_SESSION_ID", "", "copilot"},
+		{"kilocode feature", "KILOCODE_FEATURE", "", "kilocode"},
+		{"kilocode pid", "KILO_PID", "", "kilocode"},
+		{"roo active", "ROO_ACTIVE", "", "roo_code"},
+		{"roo cli runtime", "ROO_CLI_RUNTIME", "", "roo_code"},
+		{"codex ci", "CODEX_CI", "", "codex"},
+		{"codex thread", "CODEX_THREAD_ID", "", "codex"},
+		{"codex sandbox", "CODEX_SANDBOX", "", "codex"},
+		{"windsurf", "WINDSURF_CASCADE_TERMINAL", "", "windsurf"},
+		{"cline", "CLINE_ACTIVE", "", "cline"},
+		{"opencode", "OPENCODE", "", "opencode"},
+		{"opencode session id", "OPENCODE_SESSION_ID", "", "opencode"},
+		{"amp", "AMP_CURRENT_THREAD_ID", "", "amp"},
+		{"augment", "AUGMENT_AGENT", "", "augment"},
+		{"qwen", "QWEN_CODE", "", "qwen"},
+		{"antigravity", "ANTIGRAVITY_AGENT", "", "antigravity"},
+		{"crush", "CRUSH", "", "crush"},
+		{"iflow", "IFLOW_CLI", "", "iflow"},
+		{"trae", "TRAE_AI_SHELL_ID", "", "trae"},
 		{"generic agent collapses to unknown", "AGENT", "", "unknown"},
 	}
 	for _, testCase := range testCases {
@@ -608,6 +624,28 @@ func TestGetCliUserAgentWithAgentOmitsAbsentAxes(t *testing.T) {
 	corecommands.ResetExecutionContextForTest()
 
 	assert.Equal(t, "jfrog-cli-go/2.117.0 ai-agent/claude", GetCliUserAgentWithAgent())
+}
+
+func TestGetCliUserAgentWithAgentClientOnly(t *testing.T) {
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
+	t.Setenv("CURSOR_AGENT", "1")
+	t.Setenv("TERM_PROGRAM", "vscode")
+	corecommands.ResetExecutionContextForTest()
+
+	assert.Equal(t, "jfrog-cli-go/2.117.0 ai-agent/cursor ai-client/vscode",
+		GetCliUserAgentWithAgent())
+}
+
+func TestGetCliUserAgentWithAgentModelOnly(t *testing.T) {
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
+	t.Setenv("CURSOR_AGENT", "1")
+	t.Setenv("JFROG_CLI_AI_MODEL", "opus-4.7")
+	corecommands.ResetExecutionContextForTest()
+
+	assert.Equal(t, "jfrog-cli-go/2.117.0 ai-agent/cursor ai-model/opus-4.7",
+		GetCliUserAgentWithAgent())
 }
 
 func TestGetCliUserAgentWithAgentMarkerIsWellFormed(t *testing.T) {

@@ -163,12 +163,9 @@ func TestVisibility_AgentContext_E2E(t *testing.T) {
 // reset because the positive test above memoizes IsAgent=true earlier in this
 // binary.
 func TestVisibility_NoAgent_E2E(t *testing.T) {
-	corecommands.ResetExecutionContextForTest()
-	t.Cleanup(corecommands.ResetExecutionContextForTest)
-	t.Setenv("CURSOR_AGENT", "")
-	t.Setenv("CLAUDE_CODE_CHILD_SESSION", "")
-	t.Setenv("CLAUDECODE", "")
-	t.Setenv("AGENT", "")
+	// Clear the full agent-detector list so leftover process env (e.g. this
+	// test run inside Cursor/Claude) cannot flip IsAgent=true.
+	clearAgentEnvVarsForTest(t)
 
 	srv, ch := startMockServer(t)
 	defer srv.Close()
