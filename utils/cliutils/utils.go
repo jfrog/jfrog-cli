@@ -74,41 +74,49 @@ func splitAgentNameAndVersion(fullAgentName string) (string, string) {
 	return agentName, agentVersion
 }
 
-// AgentUserAgentSuffixFormat renders the detected AI agent as an additional RFC 9110
-// User-Agent product token, e.g. "jfrog-cli-go/2.117.0 ai-agent/claude".
+// User-Agent product-token formats for the Client → Agent → Model axes
+// (e.g. "jfrog-cli-go/2.117.0 ai-agent/claude ai-client/vscode ai-model/opus-4.7").
 //
-// A product token rather than a comment, for two reasons. It is the native User-Agent
-// shape (compare "Mozilla/5.0 … Chrome/120 Safari/537.36"), so anything that splits on
-// whitespace and reads name/version pairs surfaces it as a structured component instead
-// of discarding it as comment text — and being parsed is the whole point of a census
-// signal. And "ai-agent" is unambiguous, where a bare "agent" would collide with this
-// codebase's existing use of the word for the CLI itself (see SetCliUserAgentName and
-// build-info's agent name).
-//
-// The product-version slot deliberately carries the harness NAME, not a version: the
-// execution-context detector exposes no harness version. Should one ever be wanted, it
-// belongs in its own product token rather than crammed in here.
-const AgentUserAgentSuffixFormat = " ai-agent/%s"
+// Product tokens rather than comments so UA parsers that split on whitespace and
+// read name/version pairs keep the census signal. "ai-agent" avoids colliding with
+// this codebase's use of "agent" for the CLI itself (SetCliUserAgentName / build-info).
+// The version slot of each token carries the axis value (harness/app/model slug), not
+// a software version.
+const (
+	aiAgentUserAgentFormat  = " ai-agent/%s"
+	aiClientUserAgentFormat = " ai-client/%s"
+	aiModelUserAgentFormat  = " ai-model/%s"
+)
 
-// GetCliUserAgentWithAgent returns the CLI user-agent, enriched with the AI agent that
-// invoked the CLI when one was detected (AGW-86). Without this the agent identity never
+// GetCliUserAgentWithAgent returns the CLI user-agent, enriched with Client → Agent →
+// Model tokens when an AI agent is detected (AGW-86). Without this the identity never
 // leaves the machine on the request itself — it reaches the platform only as a label on
 // a separate telemetry call — so an agent and a human running the same command are
 // byte-identical on the wire.
 //
-// The value is attribution metadata, NOT a credential: it derives from harness
-// environment variables the client sets and can trivially unset or forge. Consumers must
-// treat it as a routing/census hint only.
+// Attribution metadata, not a credential: harness env vars can be unset or forged.
+// Consumers must treat it as a routing/census hint only.
 //
-// Injection-safe by construction: DetectExecutionContext returns a name from a fixed
-// table, or the literal "unknown" for the generic AGENT variable — a raw environment
-// value is never propagated.
+// Wire-safe by construction: Agent is a fixed table name (or "unknown"); Client and
+// Model are sanitizeToken'd ([a-z0-9._-], capped) in DetectExecutionContext before use.
 func GetCliUserAgentWithAgent() string {
-	userAgent := coreutils.GetCliUserAgent()
-	if executionContext := commonCommands.DetectExecutionContext(); executionContext.IsAgent {
-		userAgent += fmt.Sprintf(AgentUserAgentSuffixFormat, executionContext.Agent)
+	return coreutils.GetCliUserAgent() + agentUserAgentSuffix(commonCommands.DetectExecutionContext())
+}
+
+// agentUserAgentSuffix appends ai-agent / ai-client / ai-model tokens when
+// IsAgent; empty when not an agent. Never logs or fails the command.
+func agentUserAgentSuffix(executionContext commonCommands.ExecutionContext) string {
+	if !executionContext.IsAgent {
+		return ""
 	}
-	return userAgent
+	suffix := fmt.Sprintf(aiAgentUserAgentFormat, executionContext.Agent)
+	if executionContext.Client != "" {
+		suffix += fmt.Sprintf(aiClientUserAgentFormat, executionContext.Client)
+	}
+	if executionContext.Model != "" {
+		suffix += fmt.Sprintf(aiModelUserAgentFormat, executionContext.Model)
+	}
+	return suffix
 }
 
 func GetCliError(err error, success, failed int, failNoOp bool) error {
