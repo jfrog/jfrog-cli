@@ -166,9 +166,9 @@ func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expe
 		assert.Equal(t, expectedModule[i], bi.Modules[i].Id, "Unexpected module name")
 		assert.Len(t, module.Dependencies, expectedDependencies[i], "Incorrect number of artifacts found in the build-info")
 		if strings.HasSuffix(projectPath, "multipackagesconfig") {
-			assertNugetMultiPackagesConfigDependencies(t, module)
+			assertNugetMultiPackagesConfigDependencies(t, module, expectedModule[i])
 		} else {
-			assertNugetDependencies(t, module)
+			assertNugetDependencies(t, module, expectedModule[i])
 		}
 	}
 	chdirCallback()
@@ -182,35 +182,31 @@ func allowInsecureConnectionForTests(args *[]string) {
 	*args = append(*args, "--insecure-tls")
 }
 
-// RequestedBy paths no longer carry the trailing enclosing-module entry: every 'jf nuget'/'jf
-// dotnet' command now runs through the FlexPack build-info path (see runNugetFlexPackCmd),
-// which reports only the chain of packages that pulled a dependency in - not the project/module
-// it's already grouped under. A pure direct dependency therefore has no RequestedBy at all.
-func assertNugetDependencies(t *testing.T, module buildInfo.Module) {
+func assertNugetDependencies(t *testing.T, module buildInfo.Module, moduleName string) {
 	for _, dependency := range module.Dependencies {
 		switch dependency.Id {
 		case "Microsoft.Web.Xdt:2.1.0", "Microsoft.Web.Xdt:2.1.1":
-			assert.EqualValues(t, [][]string{{"NuGet.Core:2.14.0"}}, dependency.RequestedBy)
+			assert.EqualValues(t, [][]string{{"NuGet.Core:2.14.0", moduleName}}, dependency.RequestedBy)
 		case "popper.js:1.12.9", "jQuery:3.0.0":
-			assert.EqualValues(t, [][]string{{"bootstrap:4.0.0"}}, dependency.RequestedBy)
+			assert.EqualValues(t, [][]string{{"bootstrap:4.0.0", moduleName}}, dependency.RequestedBy)
 		case "bootstrap:4.0.0", "Newtonsoft.Json:11.0.2", "NuGet.Core:2.14.0":
-			assert.Empty(t, dependency.RequestedBy)
+			assert.EqualValues(t, [][]string{{moduleName}}, dependency.RequestedBy)
 		default:
 			assert.Fail(t, "Unexpected dependency "+dependency.Id)
 		}
 	}
 }
 
-func assertNugetMultiPackagesConfigDependencies(t *testing.T, module buildInfo.Module) {
+func assertNugetMultiPackagesConfigDependencies(t *testing.T, module buildInfo.Module, moduleName string) {
 	for _, dependency := range module.Dependencies {
 		switch dependency.Id {
 		case "Microsoft.Web.Xdt:2.1.0", "Microsoft.Web.Xdt:2.1.1":
-			assert.EqualValues(t, [][]string{{"NuGet.Core:2.14.0"}}, dependency.RequestedBy)
+			assert.EqualValues(t, [][]string{{"NuGet.Core:2.14.0", moduleName}}, dependency.RequestedBy)
 		case "jQuery:3.0.0":
-			assert.EqualValues(t, [][]string{{"bootstrap:4.0.0"}}, dependency.RequestedBy)
+			assert.EqualValues(t, [][]string{{"bootstrap:4.0.0", moduleName}}, dependency.RequestedBy)
 		case "bootstrap:4.0.0", "Newtonsoft.Json:11.0.2", "NuGet.Core:2.14.0", "StyleCop.Analyzers:1.0.2",
 			"Microsoft.VisualStudio.Setup.Configuration.Interop:1.11.2290", "popper.js:1.12.9":
-			assert.Empty(t, dependency.RequestedBy)
+			assert.EqualValues(t, [][]string{{moduleName}}, dependency.RequestedBy)
 		default:
 			assert.Fail(t, "Unexpected dependency "+dependency.Id)
 		}

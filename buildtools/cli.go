@@ -999,14 +999,20 @@ func NugetCmd(c *cli.Context) error {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	// FlexPack native mode: bypass config file requirement
-	if artutils.ShouldRunNative("") {
+	configFilePath, configExists, err := project.GetProjectConfFilePath(project.Nuget)
+	if err != nil {
+		return err
+	}
+
+	// FlexPack bypasses all config file requirements (only when no config exists)
+	if artutils.ShouldRunNative(configFilePath) && !configExists {
 		return runNugetFlexPackCmd(c, dotnetutils.Nuget)
 	}
 
-	configFilePath, err := getProjectConfigPathOrThrow(project.Nuget, "nuget", "nuget-config")
-	if err != nil {
-		return err
+	if !configExists {
+		if configFilePath, err = getProjectConfigPathOrThrow(project.Nuget, "nuget", "nuget-config"); err != nil {
+			return err
+		}
 	}
 
 	rtDetails, targetRepo, useNugetV2, err := getNugetAndDotnetConfigFields(configFilePath)
@@ -1048,15 +1054,20 @@ func DotnetCmd(c *cli.Context) error {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	// FlexPack native mode: bypass config file requirement
-	if artutils.ShouldRunNative("") {
+	configFilePath, configExists, err := project.GetProjectConfFilePath(project.Dotnet)
+	if err != nil {
+		return err
+	}
+
+	// FlexPack bypasses all config file requirements (only when no config exists)
+	if artutils.ShouldRunNative(configFilePath) && !configExists {
 		return runNugetFlexPackCmd(c, dotnetutils.DotnetCore)
 	}
 
-	// Get configuration file path.
-	configFilePath, err := getProjectConfigPathOrThrow(project.Dotnet, "dotnet", "dotnet-config")
-	if err != nil {
-		return err
+	if !configExists {
+		if configFilePath, err = getProjectConfigPathOrThrow(project.Dotnet, "dotnet", "dotnet-config"); err != nil {
+			return err
+		}
 	}
 
 	rtDetails, targetRepo, useNugetV2, err := getNugetAndDotnetConfigFields(configFilePath)
