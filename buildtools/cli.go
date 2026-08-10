@@ -1029,14 +1029,6 @@ func NugetCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	// "--insecure-tls" is the FlexPack-era flag name; strip it here too so it doesn't leak
-	// through to nuget.exe (which rejects unknown options) when a legacy config file routes
-	// the command to this path instead of runNugetFlexPackCmd.
-	insecureTls, err := cliutils.ExtractBoolFlagFromArgs(&filteredNugetArgs, "insecure-tls")
-	if err != nil {
-		return err
-	}
-	allowInsecureConnection = allowInsecureConnection || insecureTls
 
 	nugetCmd := dotnet.NewNugetCommand()
 	nugetCmd.SetServerDetails(rtDetails).
@@ -1094,14 +1086,6 @@ func DotnetCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	// "--insecure-tls" is the FlexPack-era flag name; strip it here too so it doesn't leak
-	// through to the dotnet CLI (which rejects unknown options) when a legacy config file
-	// routes the command to this path instead of runNugetFlexPackCmd.
-	insecureTls, err := cliutils.ExtractBoolFlagFromArgs(&filteredDotnetArgs, "insecure-tls")
-	if err != nil {
-		return err
-	}
-	allowInsecureConnection = allowInsecureConnection || insecureTls
 
 	// Run command.
 	dotnetCmd := dotnet.NewDotnetCoreCliCommand()
