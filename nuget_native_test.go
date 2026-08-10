@@ -2183,6 +2183,9 @@ func TestNugetFlexPackChainedPromotionPreservesBuildInfo(t *testing.T) {
 // published NuGet build reports vulnerabilities found in transitive dependencies.
 func TestNugetFlexPackBuildScanReportsVulnerabilities(t *testing.T) {
 	initNugetTest(t)
+	if !*tests.TestXray {
+		t.Skip("Skipping build-scan test, since the 'test.xray' option is missing.")
+	}
 	defer cleanTestsHomeEnv()
 
 	buildName := tests.NuGetBuildName + "-flexpack-scan"
@@ -2248,6 +2251,9 @@ func TestNugetFlexPackBuildScanFullTransitiveTree(t *testing.T) {
 // against the promoted repo's artifacts.
 func TestNugetFlexPackBuildScanAfterPromotion(t *testing.T) {
 	initNugetTest(t)
+	if !*tests.TestXray {
+		t.Skip("Skipping build-scan test, since the 'test.xray' option is missing.")
+	}
 	defer cleanTestsHomeEnv()
 
 	stagingRepo, cleanupStaging := setupNugetPromotionTargetRepo(t)
