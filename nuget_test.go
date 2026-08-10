@@ -166,9 +166,9 @@ func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expe
 		assert.Equal(t, expectedModule[i], bi.Modules[i].Id, "Unexpected module name")
 		assert.Len(t, module.Dependencies, expectedDependencies[i], "Incorrect number of artifacts found in the build-info")
 		if strings.HasSuffix(projectPath, "multipackagesconfig") {
-			assertNugetMultiPackagesConfigDependencies(t, module, expectedModule[i])
+			assertNugetMultiPackagesConfigDependencies(t, module)
 		} else {
-			assertNugetDependencies(t, module, expectedModule[i])
+			assertNugetDependencies(t, module)
 		}
 	}
 	chdirCallback()
@@ -186,7 +186,7 @@ func allowInsecureConnectionForTests(args *[]string) {
 // dotnet' command now runs through the FlexPack build-info path (see runNugetFlexPackCmd),
 // which reports only the chain of packages that pulled a dependency in - not the project/module
 // it's already grouped under. A pure direct dependency therefore has no RequestedBy at all.
-func assertNugetDependencies(t *testing.T, module buildInfo.Module, moduleName string) {
+func assertNugetDependencies(t *testing.T, module buildInfo.Module) {
 	for _, dependency := range module.Dependencies {
 		switch dependency.Id {
 		case "Microsoft.Web.Xdt:2.1.0", "Microsoft.Web.Xdt:2.1.1":
@@ -201,7 +201,7 @@ func assertNugetDependencies(t *testing.T, module buildInfo.Module, moduleName s
 	}
 }
 
-func assertNugetMultiPackagesConfigDependencies(t *testing.T, module buildInfo.Module, moduleName string) {
+func assertNugetMultiPackagesConfigDependencies(t *testing.T, module buildInfo.Module) {
 	for _, dependency := range module.Dependencies {
 		switch dependency.Id {
 		case "Microsoft.Web.Xdt:2.1.0", "Microsoft.Web.Xdt:2.1.1":
