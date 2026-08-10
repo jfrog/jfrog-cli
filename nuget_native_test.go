@@ -58,6 +58,13 @@ func runNugetFlexPack(t *testing.T, args ...string) error {
 	return jfrogCli.Exec(args...)
 }
 
+// allowInsecureConnectionForFlexPackTests adds "--insecure-tls" for tests that use a localhost
+// server. Every test in this file runs through the FlexPack path (no config file is ever
+// created), which only recognizes this flag name - not legacy's "--allow-insecure-connections".
+func allowInsecureConnectionForFlexPackTests(args *[]string) {
+	*args = append(*args, "--insecure-tls")
+}
+
 // buildTestNupkg packs a minimal, valid .nupkg using the real nuget.exe binary (so the result
 // passes nuget.exe push's own validation) and derives a sibling .snupkg by copying its content
 // under the .snupkg extension. This is sufficient for testing jf's own artifact-type/push
@@ -115,7 +122,7 @@ func TestNugetFlexPackNoBuildFlags(t *testing.T) {
 	defer chdirCallback()
 
 	args := []string{"nuget", "restore", "packagesconfig.sln", "--repo-resolve=" + tests.NugetRemoteRepo}
-	allowInsecureConnectionForTests(&args)
+	allowInsecureConnectionForFlexPackTests(&args)
 	err = runNugetFlexPack(t, args...)
 	require.NoError(t, err, "restore without build flags should still succeed natively")
 }
@@ -175,19 +182,19 @@ func TestNugetFlexPackSkipDuplicateSymbolStillPushes(t *testing.T) {
 
 	// First push: publishes the .nupkg for the first time.
 	args := []string{"nuget", "push", nupkgPath, "-SkipDuplicate", "--repo=" + tests.NugetLocalRepo}
-	allowInsecureConnectionForTests(&args)
+	allowInsecureConnectionForFlexPackTests(&args)
 	require.NoError(t, runNugetFlexPack(t, args...))
 
 	// Second push of the same .nupkg with -SkipDuplicate: nuget.exe sees the duplicate and
 	// skips it, but must still exit 0 rather than failing with a 409 Conflict.
 	args = []string{"nuget", "push", nupkgPath, "-SkipDuplicate", "--repo=" + tests.NugetLocalRepo}
-	allowInsecureConnectionForTests(&args)
+	allowInsecureConnectionForFlexPackTests(&args)
 	require.NoError(t, runNugetFlexPack(t, args...), "-SkipDuplicate push of an already-published package must still exit 0")
 
 	// The .snupkg has never been published - it must push normally regardless of the sibling
 	// .nupkg's duplicate state in this same test run.
 	args = []string{"nuget", "push", snupkgPath, "-SkipDuplicate", "--repo=" + tests.NugetLocalRepo}
-	allowInsecureConnectionForTests(&args)
+	allowInsecureConnectionForFlexPackTests(&args)
 	require.NoError(t, runNugetFlexPack(t, args...), ".snupkg push must succeed even though the sibling .nupkg was a duplicate")
 
 	// Verify both files actually landed in the repo (flat at the root - see file-header note).
@@ -225,7 +232,7 @@ func TestNugetFlexPackMultiProjectModuleAttribution(t *testing.T) {
 
 	args := []string{"nuget", "restore", "--repo-resolve=" + tests.NugetRemoteRepo,
 		"--build-name=" + buildName, "--build-number=" + buildNumber}
-	allowInsecureConnectionForTests(&args)
+	allowInsecureConnectionForFlexPackTests(&args)
 	require.NoError(t, runNugetFlexPack(t, args...))
 
 	require.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
@@ -314,7 +321,7 @@ func TestNugetFlexPackPackageSourceMapping(t *testing.T) {
 	defer func() { _ = os.Remove(userConfigPath) }()
 
 	args := []string{"nuget", "restore", "packagesconfig.sln", "--repo-resolve=" + tests.NugetRemoteRepo}
-	allowInsecureConnectionForTests(&args)
+	allowInsecureConnectionForFlexPackTests(&args)
 	err = runNugetFlexPack(t, args...)
 	assert.NoError(t, err,
 		"restore succeeded via jf's own temp config, confirming the user's packageSourceMapping "+
@@ -348,7 +355,7 @@ func TestNugetFlexPackSourceCredentialsEnvVar(t *testing.T) {
 	defer chdirCallback()
 
 	args := []string{"nuget", "restore", "packagesconfig.sln", "--repo-resolve=" + tests.NugetRemoteRepo}
-	allowInsecureConnectionForTests(&args)
+	allowInsecureConnectionForFlexPackTests(&args)
 	err = runNugetFlexPack(t, args...)
 	assert.NoError(t, err,
 		"restore must succeed using jf's own embedded credentials even when an env-var-based "+
@@ -387,7 +394,7 @@ func getFlexPackItemProps(t *testing.T, repoRelativePath string) map[string][]st
 func pushNupkgFlexPack(t *testing.T, path, repo string, extra ...string) error {
 	t.Helper()
 	args := append([]string{"nuget", "push", path, "--repo=" + repo}, extra...)
-	allowInsecureConnectionForTests(&args)
+	allowInsecureConnectionForFlexPackTests(&args)
 	return runNugetFlexPack(t, args...)
 }
 
@@ -495,7 +502,7 @@ func getBuildInfoForProject(t *testing.T, buildName, buildNumber, projectKey str
 func restoreFlexPack(t *testing.T, repoResolve string, extra ...string) error {
 	t.Helper()
 	args := append([]string{"nuget", "restore", "--repo-resolve=" + repoResolve}, extra...)
-	allowInsecureConnectionForTests(&args)
+	allowInsecureConnectionForFlexPackTests(&args)
 	return runNugetFlexPack(t, args...)
 }
 
@@ -620,7 +627,7 @@ func TestNugetFlexPackUserSourceOverride(t *testing.T) {
 	// A bogus -Source: since it's user-supplied, nuget.exe must attempt to use it (and fail,
 	// since it's unreachable) rather than silently falling back to jf's own generated source.
 	args := []string{"nuget", "push", nupkgPath, "-Source", "https://bogus.invalid/v3/index.json", "--repo=" + tests.NugetLocalRepo}
-	allowInsecureConnectionForTests(&args)
+	allowInsecureConnectionForFlexPackTests(&args)
 	err := runNugetFlexPack(t, args...)
 	assert.Error(t, err, "an explicit user -Source pointing at an unreachable host must be honored, not silently ignored")
 }
@@ -917,7 +924,7 @@ func TestNugetFlexPackDetailedSummary(t *testing.T) {
 	// detailed summary view nuget.exe prints on push is unconditional, no flag needed.
 	nupkgPath, _ := buildTestNupkg(t, "DetailedSummaryPkg", "1.0.0")
 	args := []string{"nuget", "push", nupkgPath, "--repo=" + tests.NugetLocalRepo}
-	allowInsecureConnectionForTests(&args)
+	allowInsecureConnectionForFlexPackTests(&args)
 	require.NoError(t, runNugetFlexPack(t, args...))
 	// The detailed-summary view is printed to stdout by the shared upload-summary formatter used
 	// across FlexPack package managers; a dedicated capture harness for this binary's stdout is
@@ -973,7 +980,7 @@ func TestNugetFlexPackScanBlocksVulnerablePush(t *testing.T) {
 	defer cleanTestsHomeEnv()
 	nupkgPath, _ := buildTestNupkg(t, "ScanBlockPkg", "1.0.0")
 	args := []string{"nuget", "push", nupkgPath, "--repo=" + tests.NugetLocalRepo, "--scan"}
-	allowInsecureConnectionForTests(&args)
+	allowInsecureConnectionForFlexPackTests(&args)
 	// A hand-built, dependency-free test package has nothing for Xray to flag; this asserts
 	// the --scan flag is accepted and the pipeline still completes rather than asserting a
 	// block, since reliably reproducing a "critical vulnerability" fixture is out of scope here.
@@ -1007,7 +1014,7 @@ func TestNugetFlexPackInstallLegacyPackagesConfig(t *testing.T) {
 	defer clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)()
 
 	args := []string{"nuget", "install", "packages.config", "--repo-resolve=" + tests.NugetRemoteRepo}
-	allowInsecureConnectionForTests(&args)
+	allowInsecureConnectionForFlexPackTests(&args)
 	require.NoError(t, runNugetFlexPack(t, args...))
 }
 
@@ -1690,7 +1697,7 @@ func TestNugetFlexPackVerbosityPassthrough(t *testing.T) {
 	defer clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)()
 
 	args := []string{"nuget", "install", "packages.config", "-Verbosity", "quiet", "--repo-resolve=" + tests.NugetRemoteRepo}
-	allowInsecureConnectionForTests(&args)
+	allowInsecureConnectionForFlexPackTests(&args)
 	err = runNugetFlexPack(t, args...)
 	assert.NoError(t, err, "-Verbosity=quiet must be passed through to nuget.exe, not rejected by jf")
 }
@@ -1709,7 +1716,7 @@ func TestNugetFlexPackDoubleDashSeparator(t *testing.T) {
 	// of position, so it has no '--' separator convention - confirmed live: a literal '--' is
 	// itself forwarded unstripped, which nuget.exe's own parser rejects as an empty option name.
 	args := []string{"nuget", "restore", "packagesconfig.sln", "--repo-resolve=" + tests.NugetRemoteRepo, "-Verbosity", "quiet"}
-	allowInsecureConnectionForTests(&args)
+	allowInsecureConnectionForFlexPackTests(&args)
 	err = runNugetFlexPack(t, args...)
 	assert.NoError(t, err, "native flags reach nuget.exe whether or not a '--' separator precedes them")
 }
@@ -2604,7 +2611,7 @@ func TestNugetFlexPackConcurrentRestoresDontCorruptCache(t *testing.T) {
 			cb := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
 			defer cb()
 			args := []string{dotnetUtils.Nuget.String(), "restore", "--repo-resolve=" + tests.NugetRemoteRepo}
-			allowInsecureConnectionForTests(&args)
+			allowInsecureConnectionForFlexPackTests(&args)
 			assert.NoError(t, runNugetFlexPack(t, args...), "restore round %d against the shared cache must not fail", i)
 		}()
 	}
@@ -3052,7 +3059,7 @@ func TestNugetFlexPackAnonymousPushStampSkipped(t *testing.T) {
 	// jf's own repo-tracked path authenticates access tokens (see dotnetcommand.go's auth.go).
 	sourceUrl, configPath := nugetConfigWithCredentials(t, tests.NugetLocalRepo)
 	args := []string{"nuget", "push", nupkgPath, "-Source", sourceUrl, "-ConfigFile", configPath}
-	allowInsecureConnectionForTests(&args)
+	allowInsecureConnectionForFlexPackTests(&args)
 	err := runNugetFlexPack(t, args...)
 	assert.NoError(t, err, "a push with no --repo tracked by jf must still succeed natively, with stamping simply skipped")
 }
@@ -3139,7 +3146,7 @@ func TestNugetFlexPackPushWithNoJFrogServerConfig(t *testing.T) {
 	// Credentials via a NuGet.Config, not -ApiKey/URL-embedded - see nugetConfigWithCredentials.
 	sourceUrl, configPath := nugetConfigWithCredentials(t, tests.NugetLocalRepo)
 	args := []string{"nuget", "push", nupkgPath, "-Source", sourceUrl, "-ConfigFile", configPath}
-	allowInsecureConnectionForTests(&args)
+	allowInsecureConnectionForFlexPackTests(&args)
 	err := runNugetFlexPack(t, args...)
 	assert.NoError(t, err, "push with no --repo (and so no JFrog server details resolved at all) must still succeed using the user's own -Source/credentials")
 }
