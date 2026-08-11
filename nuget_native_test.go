@@ -59,6 +59,29 @@ func runNugetFlexPack(t *testing.T, args ...string) error {
 	return jfrogCli.Exec(args...)
 }
 
+// withLifecycleRouterUrl temporarily repoints the "default" server profile at the JFrog Platform
+// router (port 8082) rather than Artifactory's own direct port (8081, *tests.JfrogUrl's default).
+// Scoped to the one test that needs it (TestNugetFlexPackReleaseBundleFromNugetBuild) rather than
+// changing the whole nuget CI job's URL: the CI job configures its local Artifactory install via
+// its direct port, which has no route for Lifecycle/onemodel endpoints - 'jf rbc' against it comes
+// back as a raw Tomcat 403 HTML page, not a JSON API error, because the request never reaches the
+// Lifecycle service at all. Rewriting only ":8081" is deliberately narrow: it is a no-op (and thus
+// safe) against an external server (e.g. ecosys) that has no such port split.
+func withLifecycleRouterUrl(t *testing.T) (restore func()) {
+	t.Helper()
+	originalUrl := *tests.JfrogUrl
+	routerUrl := strings.Replace(originalUrl, ":8081", ":8082", 1)
+	if routerUrl == originalUrl {
+		return func() {}
+	}
+	*tests.JfrogUrl = routerUrl
+	createJfrogHomeConfig(t, true)
+	return func() {
+		*tests.JfrogUrl = originalUrl
+		createJfrogHomeConfig(t, true)
+	}
+}
+
 // allowInsecureConnectionForFlexPackTests adds "--insecure-tls" for tests that use a localhost
 // server. Every test in this file runs through the FlexPack path (no config file is ever
 // created), which only recognizes this flag name - not legacy's "--allow-insecure-connections".
@@ -2297,6 +2320,8 @@ func TestNugetFlexPackReleaseBundleFromNugetBuild(t *testing.T) {
 	// once it exists, and this suite provisions/tears down repos/builds per run but never deletes
 	// release bundles themselves.
 	rbName := "flexpack-nuget-rb-" + strings.TrimPrefix(tests.NugetLocalRepo, "cli-nuget-local-")
+	restoreUrl := withLifecycleRouterUrl(t)
+	defer restoreUrl()
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 	err := jfrogCli.Exec("rbc", rbName, buildNumber, "--source-type-builds=name="+buildName+",id="+buildNumber)
 	assert.NoError(t, err, "release-bundle-create from a NuGet build must succeed")
