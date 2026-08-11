@@ -23,6 +23,7 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	cliproxy "github.com/jfrog/jfrog-cli/utils/tests/proxy/server"
 	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
+	accessServices "github.com/jfrog/jfrog-client-go/access/services"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"github.com/jfrog/jfrog-client-go/auth"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
@@ -415,11 +416,17 @@ func createThrowawayRepo(t *testing.T, packageType string) (repoName string, cle
 	}
 }
 
-// createThrowawayProject creates a minimal Access project directly via the REST API, so a
-// scenario that just needs *some* project to scope build-info to doesn't have to depend on the
-// shared tests.ProjectKey fixture that -test.artifactoryProject=true would otherwise provision as
-// part of that flag's much larger, whole-suite setup step. suffix distinguishes multiple
-// throwaway projects created within the same test run (project keys must be unique).
+// createThrowawayProject creates a minimal Access project via AccessServicesManager (the same
+// mechanism artifactory_test.go's project-scoped tests use), so a scenario that just needs *some*
+// project to scope build-info to doesn't have to depend on the shared tests.ProjectKey fixture
+// that -test.artifactoryProject=true would otherwise provision as part of that flag's much larger,
+// whole-suite setup step. suffix distinguishes multiple throwaway projects created within the
+// same test run (project keys must be unique).
+//
+// This goes through the SDK's access manager rather than a raw HTTP call with a hardcoded Bearer
+// token: the CI job configures its local server with a username/password, not an access token, so
+// serverDetails.AccessToken is empty there and a hand-rolled "Authorization: Bearer <empty>"
+// header gets a 403 - the SDK manager instead uses whichever auth serverDetails actually holds.
 func createThrowawayProject(t *testing.T, suffix string) (projectKey string, cleanup func()) {
 	t.Helper()
 	digits := strings.Map(func(r rune) rune {
@@ -432,26 +439,17 @@ func createThrowawayProject(t *testing.T, suffix string) (projectKey string, cle
 		digits = digits[len(digits)-6:]
 	}
 	projectKey = "ng" + digits + suffix
-	body := fmt.Sprintf(`{"project_key":"%s","display_name":"%s","admin_privileges":{"manage_members":true,"manage_resources":true,"index_resources":true}}`, projectKey, projectKey)
-	accessProjectsUrl := strings.TrimSuffix(accessApiBaseUrl(), "/") + "/api/v1/projects"
-	require.NoError(t, doAccessRequest(t, http.MethodPost, accessProjectsUrl, body))
+	accessManager, err := artUtils.CreateAccessServiceManager(serverDetails, false)
+	require.NoError(t, err)
+	require.NoError(t, accessManager.CreateProject(accessServices.ProjectParams{
+		ProjectDetails: accessServices.Project{
+			DisplayName: projectKey,
+			ProjectKey:  projectKey,
+		},
+	}))
 	return projectKey, func() {
-		_ = doAccessRequest(t, http.MethodDelete, accessProjectsUrl+"/"+projectKey, "")
+		_ = accessManager.DeleteProject(projectKey)
 	}
-}
-
-// accessApiBaseUrl returns the base URL for the Access API (".../access"), preferring the
-// server's own configured AccessUrl and falling back to deriving it from the platform/Artifactory
-// URL when unset (common when a server was configured pointing only at Artifactory).
-func accessApiBaseUrl() string {
-	if serverDetails.AccessUrl != "" {
-		return serverDetails.AccessUrl
-	}
-	base := serverDetails.Url
-	if base == "" {
-		base = strings.TrimSuffix(serverDetails.ArtifactoryUrl, "artifactory/")
-	}
-	return strings.TrimSuffix(base, "/") + "/access"
 }
 
 // doAccessRequest issues a raw authenticated request against the Access API. jf's own 'rt curl'
@@ -2279,6 +2277,9 @@ func TestNugetFlexPackBuildScanAfterPromotion(t *testing.T) {
 // from a single NuGet build info contains both the .nupkg and .snupkg.
 func TestNugetFlexPackReleaseBundleFromNugetBuild(t *testing.T) {
 	initNugetTest(t)
+	if !*tests.TestLifecycle {
+		t.Skip("Skipping release bundle test, since the 'test.lifecycle' option is missing.")
+	}
 	defer cleanTestsHomeEnv()
 
 	buildName := tests.NuGetBuildName + "-flexpack-rb"
