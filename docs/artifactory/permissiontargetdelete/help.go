@@ -31,5 +31,16 @@ Gotchas:
 - Removing a permission target does NOT delete the repos, users, or groups it referenced.
 - --quiet skips the confirmation prompt; useful in CI.
 
-Related: jf rt ptc, jf rt ptu`
+Related: jf rt ptc, jf rt ptu
+
+QA:
+Q: Could you guide me through the process of deleting a permission target in JFrog Artifactory considering that the permission target name is 'target1'?
+A: jf rt ptdel target1
+
+Q: Could you elucidate the approach for eradicating a permission target in JFrog Artifactory provided the permission target name is 'target3'?
+A: jf rt ptdel target3
+
+Q: Could you outline the procedure for discarding a permission target in JFrog Artifactory with the permission target name being 'target5'?
+A: jf rt ptdel target5
+`
 }

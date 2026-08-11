@@ -30,5 +30,16 @@ Gotchas:
 - No undo. Audit beforehand with 'jf api /artifactory/api/security/users'.
 - Deleting a user does NOT revoke long-lived access tokens issued to that user; rotate or revoke those separately.
 
-Related: jf rt user-create, jf rt uc, jf rt gdel`
+Related: jf rt user-create, jf rt uc, jf rt gdel
+
+QA:
+Q: Could you guide me through the process of deleting users in JFrog Artifactory considering that the usernames are 'user1,user2,user3'?
+A: jf rt udel 'user1,user2,user3'
+
+Q: Could you elucidate the approach for eradicating users in JFrog Artifactory provided the usernames are 'user7,user8,user9'?
+A: jf rt udel 'user7,user8,user9'
+
+Q: Could you outline the procedure for discarding users in JFrog Artifactory with the usernames being 'user13,user14,user15'?
+A: jf rt udel 'user13,user14,user15'
+`
 }
