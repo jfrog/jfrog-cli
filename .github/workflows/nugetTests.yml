@@ -110,4 +110,5 @@ jobs:
         if: matrix.os.name != 'macos'
         run: >-
           go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.nuget
-          ${{ env.JFROG_TESTS_IS_EXTERNAL == 'true' && format('--jfrog.url={0} --jfrog.adminToken={1}', env.JFROG_TESTS_URL, env.JFROG_TESTS_LOCAL_ACCESS_TOKEN) || '' }}
+          --jfrog.url=${{ env.JFROG_TESTS_URL || 'http://127.0.0.1:8082' }}
+          --jfrog.adminToken=${{ env.JFROG_TESTS_LOCAL_ACCESS_TOKEN }}

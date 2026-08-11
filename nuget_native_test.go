@@ -2277,9 +2277,6 @@ func TestNugetFlexPackBuildScanAfterPromotion(t *testing.T) {
 // from a single NuGet build info contains both the .nupkg and .snupkg.
 func TestNugetFlexPackReleaseBundleFromNugetBuild(t *testing.T) {
 	initNugetTest(t)
-	if !*tests.TestLifecycle {
-		t.Skip("Skipping release bundle test, since the 'test.lifecycle' option is missing.")
-	}
 	defer cleanTestsHomeEnv()
 
 	buildName := tests.NuGetBuildName + "-flexpack-rb"
