@@ -45,6 +45,10 @@ jobs:
     needs: gate
     uses: ./.github/workflows/agentSkillsTests.yml
     secrets: inherit
+  apm:
+    needs: gate
+    uses: ./.github/workflows/apmTests.yml
+    secrets: inherit
   access:
     needs: gate
     # OIDC suite: caller must grant id-token so the reusable workflow can request it.
@@ -182,6 +186,7 @@ jobs:
       - frogbot
       - agent-plugins
       - agent-skills
+      - apm
       - access
       - artifactory
       - conan

@@ -18,9 +18,9 @@ import (
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/format"
-	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli-core/v2/common/project"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
+	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/log"
@@ -77,7 +77,7 @@ func setupIntegrationTests() {
 		InitArtifactoryTests()
 	}
 
-	if *tests.TestNpm || *tests.TestPnpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv || *tests.TestPoetry || *tests.TestConan || *tests.TestHelm || *tests.TestUv || *tests.TestNix || *tests.TestApt || *tests.TestAlpine || (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
+	if *tests.TestNpm || *tests.TestPnpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv || *tests.TestPoetry || *tests.TestConan || *tests.TestHelm || *tests.TestUv || *tests.TestNix || *tests.TestApt || *tests.TestAlpine || *tests.TestApm || (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
 		InitBuildToolsTests()
 	}
 	if *tests.TestDocker || *tests.TestPodman || *tests.TestDockerScan {
@@ -125,7 +125,7 @@ func tearDownIntegrationTests() {
 	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
 		CleanArtifactoryTests()
 	}
-	if *tests.TestNpm || *tests.TestPnpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv || *tests.TestPoetry || *tests.TestConan || *tests.TestHelm || *tests.TestNix || *tests.TestApt || *tests.TestAlpine || *tests.TestDocker || *tests.TestPodman || *tests.TestDockerScan || (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
+	if *tests.TestNpm || *tests.TestPnpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv || *tests.TestPoetry || *tests.TestConan || *tests.TestHelm || *tests.TestNix || *tests.TestApt || *tests.TestAlpine || *tests.TestApm || *tests.TestDocker || *tests.TestPodman || *tests.TestDockerScan || (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
 		CleanBuildToolsTests()
 	}
 	if *tests.TestDistribution {

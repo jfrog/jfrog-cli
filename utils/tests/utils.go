@@ -75,6 +75,7 @@ var (
 	TestApt                   *bool
 	TestAgentPlugins          *bool
 	TestAgentSkills           *bool
+	TestApm                   *bool
 	TestConan                 *bool
 	TestHelm                  *bool
 	TestHuggingFace           *bool
@@ -146,6 +147,7 @@ func init() {
 	TestApt = flag.Bool("test.apt", false, "Test apt (Debian/Ubuntu package manager)")
 	TestAgentPlugins = flag.Bool("test.agentPlugins", false, "Test Agent Plugins")
 	TestAgentSkills = flag.Bool("test.agentSkills", false, "Test Agent Skills")
+	TestApm = flag.Bool("test.apm", false, "Test APM (Agent Package Manager)")
 	TestConan = flag.Bool("test.conan", false, "Test Conan")
 	TestHelm = flag.Bool("test.helm", false, "Test Helm")
 	TestHuggingFace = flag.Bool("test.huggingface", false, "Test HuggingFace")
