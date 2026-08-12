@@ -38,5 +38,16 @@ Gotchas:
 - Throughput is governed by 'jf rt transfer-settings'; defaults are conservative.
 - Idempotent on file content but not on repo property changes; re-running after a target-side delete causes redelivery.
 
-Related: jf rt transfer-config, jf rt transfer-settings, jf rt transfer-plugin-install`
+Related: jf rt transfer-config, jf rt transfer-settings, jf rt transfer-plugin-install
+
+QA:
+Q: What's the JFrog CLI command to transfer the configuration from my artifactory to the target artifactory?
+A: jf rt transfer-config source-server target-server
+
+Q: What is the command to stop the ongoing file transfer process in JFrog Artifactory?
+A: jf rt transfer-files --stop
+
+Q: What is the command to manually copy the filestore to reduce the transfer time in JFrog Artifactory?
+A: jf rt transfer-files source-server target-server --filestore
+`
 }

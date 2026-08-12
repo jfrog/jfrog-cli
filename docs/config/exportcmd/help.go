@@ -26,5 +26,10 @@ Gotchas:
 - The token embeds credentials; redact or treat as secret. Do not paste into logs or commit to version control.
 - The token is not human-readable but is reversible; security is "obfuscated", not encrypted.
 
-Related: jf c import, jf c show`
+Related: jf c import, jf c show
+
+QA:
+Q: What's the JFrog CLI command to generate a token that stores the server configuration for the server with the ID 'my-server'?
+A: jf c export my-server
+`
 }
