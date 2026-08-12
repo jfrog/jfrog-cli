@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	alpinecommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/alpine"
 	aptcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/apt"
 	conancommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/conan"
 	nixcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nix"
@@ -55,6 +56,7 @@ import (
 	terraformdocs "github.com/jfrog/jfrog-cli/docs/artifactory/terraform"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/terraformconfig"
 	twinedocs "github.com/jfrog/jfrog-cli/docs/artifactory/twine"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/apkcommand"
 	aptdocs "github.com/jfrog/jfrog-cli/docs/buildtools/apt"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/conan"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/conanconfig"
@@ -468,6 +470,19 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
 			Action:          AptCmd,
+		},
+		{
+			Name:            "apk",
+			Flags:           cliutils.GetCommandFlags(cliutils.Apk),
+			Usage:           corecommon.ResolveDescription(apkcommand.GetDescription(), apkcommand.GetAIDescription()),
+			HelpName:        corecommon.CreateUsage("apk", corecommon.ResolveDescription(apkcommand.GetDescription(), apkcommand.GetAIDescription()), apkcommand.Usage),
+			UsageText:       apkcommand.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete: corecommon.CreateBashCompletionFunc("upload", "u", "add", "upgrade", "update", "fetch",
+				"search", "del", "info", "fix", "audit", "version", "stats"),
+			Category: buildToolsCategory,
+			Action:   ApkCmd,
 		},
 		{
 			Name:         "ruby-config",
@@ -2343,6 +2358,146 @@ func aptSetupCmd(c *cli.Context) error {
 		SetImportKey(importKey)
 
 	return commands.ExecWithPackageManager(cmd, "apt")
+}
+
+func ApkCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+	if c.NArg() < 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	args := cliutils.ExtractCommand(c)
+	subcmd, remainingArgs := getCommandName(args)
+	if subcmd == "u" {
+		subcmd = "upload"
+	}
+
+	if subcmd == "help" {
+		return cli.ShowCommandHelp(c, c.Command.Name)
+	}
+	if subcmd == "upload" && apkHelpRequested(remainingArgs) {
+		return cli.ShowCommandHelp(c, c.Command.Name)
+	}
+
+	var (
+		serverID string
+		err      error
+	)
+	remainingArgs, serverID, err = coreutils.ExtractServerIdFromCommand(remainingArgs)
+	if err != nil {
+		return fmt.Errorf("failed to extract --server-id: %w", err)
+	}
+
+	remainingArgs, repoKey, err := coreutils.ExtractStringOptionFromArgs(remainingArgs, "repo")
+	if err != nil {
+		return fmt.Errorf("failed to extract --repo: %w", err)
+	}
+	remainingArgs, alpineVersion, err := coreutils.ExtractStringOptionFromArgs(remainingArgs, "alpine-version")
+	if err != nil {
+		return fmt.Errorf("failed to extract --alpine-version: %w", err)
+	}
+	remainingArgs, username, err := coreutils.ExtractStringOptionFromArgs(remainingArgs, "user")
+	if err != nil {
+		return fmt.Errorf("failed to extract --user: %w", err)
+	}
+	remainingArgs, password, err := coreutils.ExtractStringOptionFromArgs(remainingArgs, "password")
+	if err != nil {
+		return fmt.Errorf("failed to extract --password: %w", err)
+	}
+
+	serverDetails, err := resolveApkServerDetails(serverID)
+	if err != nil {
+		return err
+	}
+
+	if subcmd == "upload" {
+		return apkUploadSubCmd(c, remainingArgs, serverDetails, repoKey, alpineVersion, username, password)
+	}
+
+	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(remainingArgs)
+	if err != nil {
+		return err
+	}
+	cmd := alpinecommand.NewApkCommand(subcmd).
+		SetArgs(filteredArgs).
+		SetBuildConfiguration(buildConfiguration).
+		SetRepo(repoKey).
+		SetAlpineVersion(alpineVersion).
+		SetUsername(username).
+		SetPassword(password)
+	if serverDetails != nil {
+		cmd.SetServerDetails(serverDetails)
+	}
+	return commands.ExecWithPackageManager(cmd, "apk")
+}
+
+func apkHelpRequested(args []string) bool {
+	for _, arg := range args {
+		if arg == "--help" || arg == "-h" {
+			return true
+		}
+	}
+	return false
+}
+
+func resolveApkServerDetails(serverID string) (*coreConfig.ServerDetails, error) {
+	const excludeRefreshableTokens = true
+	if serverID != "" {
+		serverDetails, err := coreConfig.GetSpecificConfig(serverID, false, excludeRefreshableTokens)
+		if err != nil || serverDetails == nil {
+			return nil, errorutils.CheckErrorf("server ID %q not found in configuration. "+
+				"Run 'jf c add' to add it, or omit --server-id to use the default server.", serverID)
+		}
+		return serverDetails, nil
+	}
+	defaultServer, err := coreConfig.GetDefaultServerConf()
+	if err != nil {
+		return nil, err
+	}
+	if defaultServer == nil {
+		log.Warn("No JFrog server is configured — skipping credential injection. Run 'jf c add' to configure one.")
+		return nil, nil
+	}
+	return coreConfig.GetSpecificConfig("", true, excludeRefreshableTokens)
+}
+
+func apkUploadSubCmd(c *cli.Context, args []string, serverDetails *coreConfig.ServerDetails, repoKey, alpineVersion, username, password string) error {
+	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
+	if err != nil {
+		return err
+	}
+
+	filteredArgs, branch, err := coreutils.ExtractStringOptionFromArgs(filteredArgs, "branch")
+	if err != nil {
+		return fmt.Errorf("failed to extract --branch: %w", err)
+	}
+	if branch == "" {
+		branch = "main"
+	}
+	filteredArgs, arch, err := coreutils.ExtractStringOptionFromArgs(filteredArgs, "arch")
+	if err != nil {
+		return fmt.Errorf("failed to extract --arch: %w", err)
+	}
+
+	if len(filteredArgs) != 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+	filePath := filteredArgs[0]
+
+	cmd := alpinecommand.NewApkUploadCommand(filePath).
+		SetBuildConfiguration(buildConfiguration).
+		SetRepo(repoKey).
+		SetAlpineVersion(alpineVersion).
+		SetBranch(branch).
+		SetArch(arch).
+		SetUsername(username).
+		SetPassword(password)
+	if serverDetails != nil {
+		cmd.SetServerDetails(serverDetails)
+	}
+	return commands.ExecWithPackageManager(cmd, "apk")
 }
 
 func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
