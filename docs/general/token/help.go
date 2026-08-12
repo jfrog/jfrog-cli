@@ -41,8 +41,8 @@ QA:
 Q: What's the JFrog CLI command to generate an access token for the current user in the default jfrog platform?
 A: jf atc
 
-Q: I want to create an access token for the user 'frog' with the audience 'my-audience'. What's the command for that?
-A: jf atc frog --audience=my-audience
+Q: I want to create an access token for the user 'frog' with the audience 'jfrt@*'. What's the command for that?
+A: jf atc frog --audience=jfrt@*
 
 Q: What's the command to generate an access token for the user 'snake' that expires in 3600 seconds?
 A: jf atc snake --expiry=3600

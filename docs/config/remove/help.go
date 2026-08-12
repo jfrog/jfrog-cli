@@ -36,7 +36,7 @@ Gotchas:
 Related: jf c add, jf c show, jf c use
 
 QA:
-Q: What's the JFrog CLI command to eliminate a server configuration with the ID 'my-server'?
+Q: What's the JFrog CLI command to remove a server configuration with the ID 'my-server'?
 A: jf c rm my-server
 `
 }

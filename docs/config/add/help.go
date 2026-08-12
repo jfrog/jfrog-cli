@@ -33,13 +33,13 @@ Gotchas:
 Related: jf c edit, jf c show, jf c use, jf login
 
 QA:
-Q: What's the JFrog CLI command to add a new server configuration to the JFrog Platform?
+Q: What's the JFrog CLI command to configure a new JFrog Platform server?
 A: jf c add
 
 Q: I want to add a new server configuration with the URL 'https://my-jfrog-platform.com' and the username 'my-username'. What's the command for that?
 A: jf c add --url=https://my-jfrog-platform.com --user=my-username
 
-Q: What's the command to add a new server configuration with the URL 'https://my-jfrog-platform.com' the username 'my-username' the password 'my-password' and the Artifactory URL 'https://my-artifactory.com'?
-A: jf c add --url='https://my-jfrog-platform.com' --user=my-username --password='my-password' --artifactory-url='https://my-artifactory.com'
+Q: What's the command to add a new server configuration with the URL 'https://my-jfrog-platform.com' the username 'my-username' and the password 'my-password'?
+A: jf c add --url='https://my-jfrog-platform.com' --user=my-username --password='my-password'
 `
 }

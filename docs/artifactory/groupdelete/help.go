@@ -34,7 +34,7 @@ QA:
 Q: Could you guide me through the process of deleting a group in JFrog Artifactory considering that the group name is 'group1'?
 A: jf rt gdel group1
 
-Q: Could you elucidate the approach for eradicating a group in JFrog Artifactory provided the group name is 'group3'?
+Q: Could you elucidate the approach for removing a group in JFrog Artifactory provided the group name is 'group3'?
 A: jf rt gdel group3
 
 Q: Could you outline the procedure for discarding a group in JFrog Artifactory with the group name being 'group5'?

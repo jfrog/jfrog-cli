@@ -37,7 +37,7 @@ QA:
 Q: Could you guide me through the process of deleting a permission target in JFrog Artifactory considering that the permission target name is 'target1'?
 A: jf rt ptdel target1
 
-Q: Could you elucidate the approach for eradicating a permission target in JFrog Artifactory provided the permission target name is 'target3'?
+Q: Could you elucidate the approach for removing a permission target in JFrog Artifactory provided the permission target name is 'target3'?
 A: jf rt ptdel target3
 
 Q: Could you outline the procedure for discarding a permission target in JFrog Artifactory with the permission target name being 'target5'?
