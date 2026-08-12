@@ -2738,10 +2738,13 @@ func TestNugetFlexPackDependencyRangeResolvesConcreteVersion(t *testing.T) {
 	csprojPath := filepath.Join(projectPath, "reference.csproj")
 	csprojContent, err := os.ReadFile(csprojPath)
 	require.NoError(t, err)
-	patched := strings.Replace(string(csprojContent),
+	// Normalize line endings before matching: on Windows this fixture is checked out with CRLF,
+	// so a literal "\n"-based match below would silently never fire against a checked-out file.
+	normalizedContent := strings.ReplaceAll(string(csprojContent), "\r\n", "\n")
+	patched := strings.Replace(normalizedContent,
 		"<PackageReference Include=\"bootstrap\">\n            <Version>4.0.0</Version>",
 		"<PackageReference Include=\"bootstrap\">\n            <Version>[4.0.0, 5.0.0)</Version>", 1)
-	require.NotEqual(t, string(csprojContent), patched, "expected to find and patch the bootstrap PackageReference version")
+	require.NotEqual(t, normalizedContent, patched, "expected to find and patch the bootstrap PackageReference version")
 	require.NoError(t, os.WriteFile(csprojPath, []byte(patched), 0o600)) // #nosec G703 -- csprojPath comes from this test's own createNugetProject (t.TempDir()), not untrusted input
 
 	wd, err := os.Getwd()
