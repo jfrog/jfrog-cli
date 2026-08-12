@@ -91,6 +91,7 @@ const (
 	Nix                    = "nix"
 	Apt                    = "apt"
 	AptSetup               = "apt-setup"
+	Apk                    = "apk"
 	Ping                   = "ping"
 	RtCurl                 = "rt-curl"
 	TemplateConsumer       = "template-consumer"
@@ -164,6 +165,10 @@ const (
 	serverIdYarn        = "server-id-yarn"
 	serverIdNpm         = "server-id-npm"
 	disableTokenRefresh = "disable-token-refresh"
+
+	apkAlpineVersion = "alpine-version"
+	apkArch          = "arch"
+	apkBranch        = "apk-branch"
 
 	passwordStdin    = "password-stdin"
 	accessTokenStdin = "access-token-stdin"
@@ -797,6 +802,18 @@ var flagsMap = map[string]cli.Flag{
 	serverIdNpm: cli.StringFlag{
 		Name:  serverId,
 		Usage: "[Optional] Server ID configured using the 'jf config' command. Used in native mode (JFROG_RUN_NATIVE=true) to identify the JFrog server for usage reporting.` `",
+	},
+	apkAlpineVersion: cli.StringFlag{
+		Name:  apkAlpineVersion,
+		Usage: "[Optional] Alpine release version, e.g. v3.20. Used by upload (required) and to select the Artifactory path for other subcommands.` `",
+	},
+	apkArch: cli.StringFlag{
+		Name:  apkArch,
+		Usage: "[Optional, upload only] CPU architecture override (x86_64, aarch64, armhf, …). Inferred from the .apk filename by default.` `",
+	},
+	apkBranch: cli.StringFlag{
+		Name:  branch,
+		Usage: "[Default: main, upload only] Alpine repository branch to upload into, e.g. main or community.` `",
 	},
 	passwordStdin: cli.BoolFlag{
 		Name:  passwordStdin,
@@ -2323,6 +2340,9 @@ var commandFlags = map[string][]string{
 	},
 	AptSetup: {
 		serverId, setupRepo, aptDistribution, aptComponent, aptTrusted, aptImportKey, aptRemove,
+	},
+	Apk: {
+		serverId, repo, apkAlpineVersion, apkBranch, apkArch, BuildName, BuildNumber, module, Project, user, password,
 	},
 	Stats: {
 		XrFormat, accessToken, serverId,

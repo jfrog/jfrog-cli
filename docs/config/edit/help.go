@@ -26,5 +26,16 @@ Gotchas:
 - Interactive mode is on by default. Use --interactive=false for scripts.
 - Only the fields you pass are updated; omitted fields keep their previous values.
 
-Related: jf c add, jf c show, jf c use, jf c rm`
+Related: jf c add, jf c show, jf c use, jf c rm
+
+QA:
+Q: What's the JFrog CLI command to adjust a server configuration with the ID 'my-server'?
+A: jf c edit my-server
+
+Q: I want to modify the server configuration with the ID 'my-server' change the URL to 'https://new-jfrog-platform.com' and change the username to 'new-username'. What's the command for that?
+A: jf c edit my-server --url='https://new-jfrog-platform.com' --user='new-username'
+
+Q: What's the command to update the server configuration with the ID 'my-server' change the URL to 'https://new-jfrog-platform.com' change the username to 'new-username' change the password to 'new-password' and change the Artifactory URL to 'https://new-artifactory.com'?
+A: jf c edit my-server --url='https://new-jfrog-platform.com' --user='new-username' --password='new-password' --artifactory-url='https://new-artifactory.com'
+`
 }

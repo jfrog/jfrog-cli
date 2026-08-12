@@ -33,5 +33,10 @@ Gotchas:
 - No undo; re-add via 'jf c add' if removed by mistake.
 - Removing the active server leaves no default until you run 'jf c use'.
 
-Related: jf c add, jf c show, jf c use`
+Related: jf c add, jf c show, jf c use
+
+QA:
+Q: What's the JFrog CLI command to remove a server configuration with the ID 'my-server'?
+A: jf c rm my-server
+`
 }

@@ -23,5 +23,10 @@ Gotchas:
 - Fails silently from the user's perspective if the server ID does not exist; check with 'jf c show' first.
 - Setting an active server is per-machine, not per-shell; affects all subsequent jf invocations.
 
-Related: jf c add, jf c show`
+Related: jf c add, jf c show
+
+QA:
+Q: What's the JFrog CLI command to designate a server configuration with the ID 'my-server' as default?
+A: jf c use my-server
+`
 }
