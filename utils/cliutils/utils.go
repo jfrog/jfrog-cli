@@ -43,10 +43,16 @@ type githubResponse struct {
 	TagName string `json:"tag_name,omitempty"`
 }
 
+// cliUserAgentRaw is the untouched JFROG_CLI_USER_AGENT value when set.
+// Visibility product_id/product_version use the first name/version token only;
+// HTTP User-Agent keeps this raw string so rich skills/hooks UAs stay intact.
+var cliUserAgentRaw string
+
 func init() {
 	// Initialize cli-core values.
 	cliUserAgent := os.Getenv(UserAgent)
 	if cliUserAgent != "" {
+		cliUserAgentRaw = cliUserAgent
 		cliUserAgentName, cliUserAgentVersion := splitAgentNameAndVersion(cliUserAgent)
 		coreutils.SetCliUserAgentName(cliUserAgentName)
 		coreutils.SetCliUserAgentVersion(cliUserAgentVersion)
@@ -58,20 +64,24 @@ func init() {
 	coreutils.SetClientAgentVersion(CliVersion)
 }
 
-// Splits the full agent name to its name and version.
-// The full agent name needs to be the agent name and version separated by a slash ('/').
-// If the full agent name doesn't include a version, then it's returned as the agent name and an empty string is returned as the agent version.
+// splitAgentNameAndVersion returns product_id / product_version for Visibility.
+// It uses only the first whitespace-delimited product token (text before the
+// first space), then splits that token on its last '/'. This matches wrappers
+// like setup-jfrog-cli-github-action/5.1.0 and also rich skills UAs such as
+// "jfrog-skills/0.22.0 (trigger=skill; ...) jfrog-cli-go/2.120.0" →
+// product_id=jfrog-skills, product_version=0.22.0.
+// Tokens without '/' (e.g. jfrog-pipelines:1.63.0) return the whole token as
+// the name and an empty version.
 func splitAgentNameAndVersion(fullAgentName string) (string, string) {
-	var agentName, agentVersion string
-	lastSlashIndex := strings.LastIndex(fullAgentName, "/")
-	if lastSlashIndex == -1 {
-		agentName = fullAgentName
-	} else {
-		agentName = fullAgentName[:lastSlashIndex]
-		agentVersion = fullAgentName[lastSlashIndex+1:]
+	token := fullAgentName
+	if i := strings.IndexByte(token, ' '); i >= 0 {
+		token = token[:i]
 	}
-
-	return agentName, agentVersion
+	lastSlashIndex := strings.LastIndex(token, "/")
+	if lastSlashIndex == -1 {
+		return token, ""
+	}
+	return token[:lastSlashIndex], token[lastSlashIndex+1:]
 }
 
 // User-Agent product-token formats for the Client → Agent → Model axes
@@ -100,20 +110,30 @@ const (
 // Wire-safe by construction: Agent is a fixed table name (or "unknown"); Client and
 // Model are sanitizeToken'd ([a-z0-9._-], capped) in DetectExecutionContext before use.
 func GetCliUserAgentWithAgent() string {
-	return coreutils.GetCliUserAgent() + agentUserAgentSuffix(commonCommands.DetectExecutionContext())
+	base := coreutils.GetCliUserAgent()
+	if cliUserAgentRaw != "" {
+		// Preserve rich skills/hooks UA on the HTTP wire; product_* already
+		// extracted the first token in init().
+		base = cliUserAgentRaw
+	}
+	return base + agentUserAgentSuffix(base, commonCommands.DetectExecutionContext())
 }
 
 // agentUserAgentSuffix appends ai-agent / ai-client / ai-model tokens when
-// IsAgent; empty when not an agent. Never logs or fails the command.
-func agentUserAgentSuffix(executionContext commonCommands.ExecutionContext) string {
+// IsAgent; empty when not an agent. Skips any axis already present in base so
+// rich UAs that already carry ai-* are not duplicated. Never logs or fails.
+func agentUserAgentSuffix(base string, executionContext commonCommands.ExecutionContext) string {
 	if !executionContext.IsAgent {
 		return ""
 	}
-	suffix := fmt.Sprintf(aiAgentUserAgentFormat, executionContext.Agent)
-	if executionContext.Client != "" {
+	suffix := ""
+	if !strings.Contains(base, "ai-agent/") {
+		suffix += fmt.Sprintf(aiAgentUserAgentFormat, executionContext.Agent)
+	}
+	if executionContext.Client != "" && !strings.Contains(base, "ai-client/") {
 		suffix += fmt.Sprintf(aiClientUserAgentFormat, executionContext.Client)
 	}
-	if executionContext.Model != "" {
+	if executionContext.Model != "" && !strings.Contains(base, "ai-model/") {
 		suffix += fmt.Sprintf(aiModelUserAgentFormat, executionContext.Model)
 	}
 	return suffix
