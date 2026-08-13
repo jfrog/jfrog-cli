@@ -40,8 +40,8 @@ func TestSplitAgentNameAndVersion(t *testing.T) {
 		{"abc:1.2.3", "abc:1.2.3", ""},
 		{"", "", ""},
 		{"jfrog-cli-go/2.119.0 ai-agent/claude", "jfrog-cli-go", "2.119.0"},
-		{"jfrog-skills/0.22.0 (trigger=skill; tool=cursor; client=vscode; model=opus-4.7) jfrog-cli-go/2.120.0", "jfrog-skills", "0.22.0"},
-		{"jfrog-skills/0.1.0-hook (trigger=hook) jfrog-cli-go/2.119.0", "jfrog-skills", "0.1.0-hook"},
+		{"jfrog-skills/0.22.0 (tool=cursor; client=vscode; model=opus-4.7) jfrog-cli-go/2.120.0", "jfrog-skills", "0.22.0"},
+		{"jfrog-skills/0.1.0-hook (tool=cursor) jfrog-cli-go/2.119.0", "jfrog-skills", "0.1.0-hook"},
 	}
 
 	for _, test := range tests {
