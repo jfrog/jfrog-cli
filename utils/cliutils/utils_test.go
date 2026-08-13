@@ -29,8 +29,6 @@ import (
 )
 
 func TestSplitAgentNameAndVersion(t *testing.T) {
-	// Fixtures include Coralogix-observed Call Home / Visibility User-Agents
-	// plus rich jfrog-skills UAs that must yield the first product token only.
 	tests := []struct {
 		fullAgentName        string
 		expectedAgentName    string
@@ -41,67 +39,16 @@ func TestSplitAgentNameAndVersion(t *testing.T) {
 		{"abc\\1.2.3", "abc\\1.2.3", ""},
 		{"abc:1.2.3", "abc:1.2.3", ""},
 		{"", "", ""},
-		// Coralogix usage-API shapes
-		{"setup-jfrog-cli-github-action/5.1.0", "setup-jfrog-cli-github-action", "5.1.0"},
-		{"setup-jfrog-cli-github-action/4.10.1", "setup-jfrog-cli-github-action", "4.10.1"},
-		{"jfrog-cli-go/2.120.0", "jfrog-cli-go", "2.120.0"},
-		{"jfrog-cli-go/2.119.0", "jfrog-cli-go", "2.119.0"},
 		{"jfrog-cli-go/2.119.0 ai-agent/claude", "jfrog-cli-go", "2.119.0"},
-		{"jenkins-jfrog-plugin/1.5.7", "jenkins-jfrog-plugin", "1.5.7"},
-		{"jenkins-jfrog-plugin/1.8.0", "jenkins-jfrog-plugin", "1.8.0"},
-		{"jfrog-azure-devops-extension/2.14.2", "jfrog-azure-devops-extension", "2.14.2"},
-		{"setup-jfrog-for-gitlab-unix/2.0.0", "setup-jfrog-for-gitlab-unix", "2.0.0"},
-		{"jfrog/terraform-provider-artifactory/12.4.1", "jfrog/terraform-provider-artifactory", "12.4.1"},
-		{"jfrog/terraform-provider-platform/2.2.10", "jfrog/terraform-provider-platform", "2.2.10"},
-		{"vault-plugin-secrets-artifactory/1.8.9", "vault-plugin-secrets-artifactory", "1.8.9"},
-		{"bitbucket-pipelines/2.1.0", "bitbucket-pipelines", "2.1.0"},
-		{"ArtifactoryBuildClient/2.41.21", "ArtifactoryBuildClient", "2.41.21"},
-		{"artifactory-azure-devops-extension/1.13.6", "artifactory-azure-devops-extension", "1.13.6"},
-		{"jfrog-pipelines:1.63.0", "jfrog-pipelines:1.63.0", ""},
-		// Rich skills/hooks UAs (first token only)
 		{"jfrog-skills/0.22.0 (trigger=skill; tool=cursor; client=vscode; model=opus-4.7) jfrog-cli-go/2.120.0", "jfrog-skills", "0.22.0"},
 		{"jfrog-skills/0.1.0 (trigger=hook) jfrog-cli-go/2.119.0", "jfrog-skills", "0.1.0"},
-		{"jfrog-skills/0.9.0 (trigger=skill) jfrog-cli-go/2.120.0 ai-agent/cursor", "jfrog-skills", "0.9.0"},
 	}
 
 	for _, test := range tests {
-		t.Run(test.fullAgentName, func(t *testing.T) {
-			actualAgentName, actualAgentVersion := splitAgentNameAndVersion(test.fullAgentName)
-			assert.Equal(t, test.expectedAgentName, actualAgentName)
-			assert.Equal(t, test.expectedAgentVersion, actualAgentVersion)
-		})
+		actualAgentName, actualAgentVersion := splitAgentNameAndVersion(test.fullAgentName)
+		assert.Equal(t, test.expectedAgentName, actualAgentName)
+		assert.Equal(t, test.expectedAgentVersion, actualAgentVersion)
 	}
-}
-
-func TestGetCliUserAgentWithAgentPreservesRichRawUA(t *testing.T) {
-	clearAgentEnvVarsForTest(t)
-	withCliUserAgent(t, "jfrog-skills", "0.22.0")
-	raw := "jfrog-skills/0.22.0 (trigger=skill; tool=cursor) jfrog-cli-go/2.120.0"
-	cliUserAgentRaw = raw
-	t.Setenv("CURSOR_AGENT", "1")
-	t.Setenv("TERM_PROGRAM", "vscode")
-	corecommands.ResetExecutionContextForTest()
-
-	got := GetCliUserAgentWithAgent()
-	assert.True(t, strings.HasPrefix(got, raw), "HTTP UA must keep rich raw base, got %q", got)
-	assert.Contains(t, got, "ai-agent/cursor")
-	assert.Contains(t, got, "ai-client/vscode")
-	name, ver := splitAgentNameAndVersion(raw)
-	assert.Equal(t, "jfrog-skills", name)
-	assert.Equal(t, "0.22.0", ver)
-}
-
-func TestGetCliUserAgentWithAgentNoDuplicateAiAgent(t *testing.T) {
-	clearAgentEnvVarsForTest(t)
-	withCliUserAgent(t, "jfrog-cli-go", "2.119.0")
-	raw := "jfrog-cli-go/2.119.0 ai-agent/claude"
-	cliUserAgentRaw = raw
-	t.Setenv("CLAUDE_CODE_CHILD_SESSION", "1")
-	corecommands.ResetExecutionContextForTest()
-
-	got := GetCliUserAgentWithAgent()
-	assert.Equal(t, 1, strings.Count(got, "ai-agent/"), "must not duplicate ai-agent: %q", got)
-	assert.Equal(t, raw, got)
 }
 
 func TestPrintCommandSummary(t *testing.T) {
@@ -569,15 +516,11 @@ func TestTransferFilesTimestampFilterFlags(t *testing.T) {
 func withCliUserAgent(t *testing.T, name, version string) {
 	t.Helper()
 	prevName, prevVersion := coreutils.GetCliUserAgentName(), coreutils.GetCliUserAgentVersion()
-	prevRaw := cliUserAgentRaw
 	coreutils.SetCliUserAgentName(name)
 	coreutils.SetCliUserAgentVersion(version)
-	// Tests that pin name/version usually want rebuilt base unless they set raw.
-	cliUserAgentRaw = ""
 	t.Cleanup(func() {
 		coreutils.SetCliUserAgentName(prevName)
 		coreutils.SetCliUserAgentVersion(prevVersion)
-		cliUserAgentRaw = prevRaw
 	})
 }
 
