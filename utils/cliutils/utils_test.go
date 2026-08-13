@@ -516,12 +516,47 @@ func TestTransferFilesTimestampFilterFlags(t *testing.T) {
 func withCliUserAgent(t *testing.T, name, version string) {
 	t.Helper()
 	prevName, prevVersion := coreutils.GetCliUserAgentName(), coreutils.GetCliUserAgentVersion()
+	prevRaw := cliUserAgentRaw
 	coreutils.SetCliUserAgentName(name)
 	coreutils.SetCliUserAgentVersion(version)
+	// Tests that pin name/version usually want rebuilt base unless they set raw.
+	cliUserAgentRaw = ""
 	t.Cleanup(func() {
 		coreutils.SetCliUserAgentName(prevName)
 		coreutils.SetCliUserAgentVersion(prevVersion)
+		cliUserAgentRaw = prevRaw
 	})
+}
+
+func TestGetCliUserAgentWithAgentPreservesRichRawUA(t *testing.T) {
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "jfrog-skills", "0.22.0")
+	raw := "jfrog-skills/0.22.0 (trigger=skill; tool=cursor) jfrog-cli-go/2.120.0"
+	cliUserAgentRaw = raw
+	t.Setenv("CURSOR_AGENT", "1")
+	t.Setenv("TERM_PROGRAM", "vscode")
+	corecommands.ResetExecutionContextForTest()
+
+	got := GetCliUserAgentWithAgent()
+	assert.True(t, strings.HasPrefix(got, raw), "HTTP UA must keep rich raw base, got %q", got)
+	assert.Contains(t, got, "ai-agent/cursor")
+	assert.Contains(t, got, "ai-client/vscode")
+	name, ver := splitAgentNameAndVersion(raw)
+	assert.Equal(t, "jfrog-skills", name)
+	assert.Equal(t, "0.22.0", ver)
+}
+
+func TestGetCliUserAgentWithAgentNoDuplicateAiAgent(t *testing.T) {
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "jfrog-cli-go", "2.119.0")
+	raw := "jfrog-cli-go/2.119.0 ai-agent/claude"
+	cliUserAgentRaw = raw
+	t.Setenv("CLAUDE_CODE_CHILD_SESSION", "1")
+	corecommands.ResetExecutionContextForTest()
+
+	got := GetCliUserAgentWithAgent()
+	assert.Equal(t, 1, strings.Count(got, "ai-agent/"), "must not duplicate ai-agent: %q", got)
+	assert.Equal(t, raw, got)
 }
 
 func TestGetCliUserAgentWithAgentNoAgentDetected(t *testing.T) {
