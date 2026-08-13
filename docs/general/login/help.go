@@ -19,11 +19,13 @@ Prerequisites:
 
 Common patterns:
   $ jf login
+  $ jf login --disable-token-refresh
 
 Gotchas:
 - Requires Artifactory 7.64.0 or newer; older targets must use 'jf c add'.
 - Does not work in CI/headless environments — no browser to open.
 - The flow stores credentials locally under ~/.jfrog/.
+- --disable-token-refresh persists in the saved server config; omitting the flag on a later 'jf login' re-run leaves the previously saved value untouched.
 
 Related: jf c add, jf c show, jf eot, jf atc`
 }
