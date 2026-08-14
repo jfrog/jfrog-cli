@@ -75,18 +75,6 @@ func cleanApmTest(t *testing.T) {
 	tests.CleanFileSystem()
 }
 
-// normalizeRegistryURL normalizes a registry URL to ensure proper format.
-func normalizeRegistryURL(url string) string {
-	if !strings.HasSuffix(url, "/") {
-		url += "/"
-	}
-	url = strings.TrimSuffix(url, "/artifactory/")
-	if !strings.HasSuffix(url, "/") {
-		url += "/"
-	}
-	return url
-}
-
 // createApmTestProject creates a minimal APM project structure with apm.yml.
 func createApmTestProject(t *testing.T, projectDir string) {
 	err := os.MkdirAll(projectDir, dirPerms)
@@ -978,11 +966,6 @@ func TestApmIntegrationFullPipeline(t *testing.T) {
 // GAP ANALYSIS TESTS - Registry Configuration & Dependencies
 // ============================================================================
 
-// getRegistryURL returns normalized registry URL for tests.
-func getRegistryURL() string {
-	return strings.TrimSuffix(*tests.JfrogUrl, "/artifactory/")
-}
-
 // createApmProjectWithYaml creates a test project directory with apm.yml content.
 func createApmProjectWithYaml(t *testing.T, yamlContent string) string {
 	projectDir, err := os.MkdirTemp("", "apm-test-*")
@@ -1292,17 +1275,14 @@ func TestApmMultipleRegistriesInApmYml(t *testing.T) {
 	initApmTest(t)
 	defer cleanApmTest(t)
 
-	registryURL := getRegistryURL()
 	apmYaml := `version: "1.0.0"
 name: multi-registry-app
 description: App using multiple registries
 primitives:
   agents: []
 registries:
-  primary:
-    url: "` + registryURL + `"
-  secondary:
-    url: "` + registryURL + `"
+  primary: ` + tests.AgentPackagesLocalRepo + `
+  secondary: ` + tests.AgentPackagesLocalRepo + `
 dependencies:
   apm: []
 `
@@ -1329,7 +1309,6 @@ func TestApmRegistryPrecedenceDefaultFallback(t *testing.T) {
 	initApmTest(t)
 	defer cleanApmTest(t)
 
-	registryURL := getRegistryURL()
 	apmYaml := `version: "1.0.0"
 name: test-default-registry
 description: Test default registry fallback
@@ -1338,8 +1317,7 @@ primitives:
 dependencies:
   apm: []
 registries:
-  default:
-    url: "` + registryURL + `"
+  default: ` + tests.AgentPackagesLocalRepo + `
 `
 
 	projectDir := createApmProjectWithYaml(t, apmYaml)
@@ -1364,7 +1342,6 @@ func TestApmPublishWithDependencyMetadata(t *testing.T) {
 	initApmTest(t)
 	defer cleanApmTest(t)
 
-	registryURL := getRegistryURL()
 	apmYaml := `version: "1.0.0"
 name: app-with-deps
 version: 1.0.0
@@ -1374,8 +1351,7 @@ primitives:
 dependencies:
   apm: []
 registries:
-  default:
-    url: "` + registryURL + `"
+  default: ` + tests.AgentPackagesLocalRepo + `
 `
 
 	projectDir := createApmProjectWithYaml(t, apmYaml)
@@ -1558,15 +1534,13 @@ func TestApmMultiModuleWorkspace(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create workspace apm.yml
-	registryURL := getRegistryURL()
 	workspaceYaml := `version: "1.0.0"
 name: workspace-root
 workspaces:
   - path: module1
   - path: module2
 registries:
-  default:
-    url: "` + registryURL + `"
+  default: ` + tests.AgentPackagesLocalRepo + `
 `
 
 	rootYamlPath := filepath.Join(projectDir, "apm.yml")
