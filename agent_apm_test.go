@@ -111,17 +111,11 @@ primitives:
   skills: []
   models: []
   tools: []
-`
-
-	registryURL := normalizeRegistryURL(*tests.JfrogUrl)
-
-	apmYamlContent += `
 dependencies:
   apm: []
   mcp: []
 registries:
-  default:
-    url: "` + strings.TrimSuffix(registryURL, "/") + `"
+  default: ` + tests.AgentPackagesLocalRepo + `
 `
 
 	apmYamlPath := filepath.Join(projectDir, "apm.yml")
@@ -1193,13 +1187,13 @@ func getBasicApmYaml() string {
 func createApmYaml(name, version string, dependencies []string, registries map[string]string) string {
 	if registries == nil {
 		registries = map[string]string{
-			"default": getRegistryURL(),
+			"default": tests.AgentPackagesLocalRepo,
 		}
 	}
 
 	registriesSection := ""
-	for regName, regURL := range registries {
-		registriesSection += fmt.Sprintf("  %s:\n    url: \"%s\"\n", regName, regURL)
+	for regName, regValue := range registries {
+		registriesSection += fmt.Sprintf("  %s: %s\n", regName, regValue)
 	}
 
 	depsSection := ""
@@ -1224,11 +1218,12 @@ dependencies:
 // createMultiRegistryYaml creates APM YAML with multiple distinct registries
 func createMultiRegistryYaml(name string, registryRepos []string) string {
 	registriesSection := ""
-	for i, repo := range registryRepos {
+	for i := range registryRepos {
 		regName := fmt.Sprintf("registry%d", i+1)
-		regURL := fmt.Sprintf("%s/%s", getRegistryURL(), repo)
-		registriesSection += fmt.Sprintf("  %s:\n    url: \"%s\"\n", regName, regURL)
+		registriesSection += fmt.Sprintf("  %s: %s\n", regName, tests.AgentPackagesLocalRepo)
 	}
+	// Add default registry
+	registriesSection += fmt.Sprintf("  default: %s\n", tests.AgentPackagesLocalRepo)
 
 	return fmt.Sprintf(`version: "1.0.0"
 name: %s
@@ -1258,7 +1253,7 @@ func runApmInstall(buildNumber string) error {
 	if buildNumber != "" {
 		args = append(args, "--build-name", apmBuildName, "--build-number", buildNumber)
 	}
-	return artifactoryCli.Exec(args...)
+	return getApmCli().Exec(args...)
 }
 
 // runApmPublish runs publish command with optional build info
@@ -1270,7 +1265,7 @@ func runApmPublish(packagePath, buildName, buildNumber string) error {
 	if buildName != "" && buildNumber != "" {
 		args = append(args, "--build-name", buildName, "--build-number", buildNumber)
 	}
-	return artifactoryCli.Exec(args...)
+	return getApmCli().Exec(args...)
 }
 
 // runApmUpdate runs update command with optional build info
@@ -1279,7 +1274,7 @@ func runApmUpdate(buildName, buildNumber string) error {
 	if buildName != "" && buildNumber != "" {
 		args = append(args, "--build-name", buildName, "--build-number", buildNumber)
 	}
-	return artifactoryCli.Exec(args...)
+	return getApmCli().Exec(args...)
 }
 
 // deleteBuildInfo deletes build info from Artifactory
