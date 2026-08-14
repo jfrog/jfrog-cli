@@ -1,5 +1,5 @@
 {
   "key": "${AGENT_PACKAGES_LOCAL_REPO}",
   "rclass": "local",
-  "packageType": "agent_packages"
+  "packageType": "agentpackages"
 }

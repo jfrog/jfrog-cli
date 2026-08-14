@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -26,6 +27,27 @@ const (
 	filePerms    = 0644
 )
 
+// captureStdout runs fn with os.Stdout redirected to a pipe and returns everything written to
+// it. apm's own diagnostics (e.g. "HTTP 404 ...") are printed straight to os.Stdout by the
+// underlying apm subprocess and never appear in the Go error returned by CLI commands, so
+// assertions on that text must inspect captured stdout instead of err.Error().
+func captureStdout(t *testing.T, fn func() error) (string, error) {
+	t.Helper()
+	origStdout := os.Stdout
+	r, w, err := os.Pipe()
+	require.NoError(t, err)
+	os.Stdout = w
+
+	fnErr := fn()
+
+	require.NoError(t, w.Close())
+	os.Stdout = origStdout
+
+	out, readErr := io.ReadAll(r)
+	require.NoError(t, readErr)
+	return string(out), fnErr
+}
+
 // initApmTest initializes the APM test environment.
 func initApmTest(t *testing.T) {
 	if !*tests.TestApm {
@@ -47,6 +69,43 @@ func getApmCli() *coreTests.JfrogCli {
 	return coreTests.NewJfrogCli(execMain, "jfrog", "")
 }
 
+// publishApmDependencyPackage publishes a minimal, real APM package to the default registry
+// (tests.AgentPackagesLocalRepo) so other tests can declare it as a resolvable dependency
+// (via the "owner/name#version" shorthand) and exercise real install/build-info collection.
+// packageSpec is "owner/name"; version defaults to "1.0.0" semantics expected by callers.
+func publishApmDependencyPackage(t *testing.T, packageSpec, version string) {
+	t.Helper()
+	pubDir, err := os.MkdirTemp("", "apm-dep-publish-*")
+	require.NoError(t, err)
+	defer func() {
+		_ = os.RemoveAll(pubDir)
+	}()
+
+	require.NoError(t, os.MkdirAll(filepath.Join(pubDir, ".apm", "primitives"), dirPerms))
+	_, pkgName, ok := strings.Cut(packageSpec, "/")
+	require.True(t, ok, "packageSpec must be in owner/name form, got %q", packageSpec)
+
+	apmYaml := fmt.Sprintf(`version: "1.0.0"
+name: %s
+version: %s
+license: UNLICENSED
+targets:
+  - claude
+primitives:
+  agents: []
+`, pkgName, version)
+	require.NoError(t, os.WriteFile(filepath.Join(pubDir, "apm.yml"), []byte(apmYaml), filePerms))
+	require.NoError(t, os.WriteFile(filepath.Join(pubDir, ".apm", "primitives", "placeholder.txt"), []byte("placeholder content"), filePerms))
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+	clientTestUtils.ChangeDirAndAssert(t, pubDir)
+
+	require.NoError(t, getApmCli().Exec("agent", "apm", "publish", "--package", packageSpec, "--registry", tests.AgentPackagesLocalRepo),
+		"publishing dependency package %s should succeed", packageSpec)
+}
+
 // createApmRepository creates a local APM repository for testing.
 func createApmRepository(t *testing.T) {
 	if !isRepoExist(tests.AgentPackagesLocalRepo) {
@@ -55,6 +114,25 @@ func createApmRepository(t *testing.T) {
 		require.NoError(t, err)
 		execCreateRepoRest(repoConfig, tests.AgentPackagesLocalRepo)
 	}
+}
+
+// createAgentPackagesRepoWithKey creates an agent-packages local repository whose "key"
+// field matches repoName. ReplaceTemplateVariables always substitutes the ${AGENT_PACKAGES_LOCAL_REPO}
+// placeholder with the tests.AgentPackagesLocalRepo constant, so for repos with a different name
+// we patch the "key" field ourselves after substitution to avoid an Artifactory key/path conflict.
+func createAgentPackagesRepoWithKey(t *testing.T, repoName string) {
+	repoConfig := tests.GetTestResourcesPath() + tests.AgentPackagesLocalRepositoryConfig
+	repoConfig, err := tests.ReplaceTemplateVariables(repoConfig, "")
+	require.NoError(t, err)
+
+	content, err := os.ReadFile(repoConfig)
+	require.NoError(t, err)
+	patched := strings.Replace(string(content), `"key": "`+tests.AgentPackagesLocalRepo+`"`, `"key": "`+repoName+`"`, 1)
+
+	patchedPath := filepath.Join(filepath.Dir(repoConfig), repoName+"_repository_config.json")
+	require.NoError(t, os.WriteFile(patchedPath, []byte(patched), filePerms))
+
+	execCreateRepoRest(patchedPath, repoName)
 }
 
 // initApmConfig sets up the APM configuration in ~/.apm/config.json via jf setup.
@@ -115,6 +193,31 @@ dependencies:
 	dummyFile := filepath.Join(primitivesDir, "placeholder.txt")
 	err = os.WriteFile(dummyFile, []byte("placeholder content"), filePerms)
 	require.NoError(t, err)
+}
+
+// createApmTestProjectWithDependency creates the same minimal project as createApmTestProject,
+// but declares depSpec (e.g. "test/dep-pkg#1.0.0") as a real APM dependency. The caller is
+// responsible for having already published depSpec's package (see publishApmDependencyPackage)
+// so install actually resolves it and produces apm.lock.yaml / build info.
+func createApmTestProjectWithDependency(t *testing.T, projectDir, depSpec string) {
+	createApmTestProject(t, projectDir)
+
+	apmYamlContent := `version: "1.0.0"
+name: test-apm-package
+description: Test APM package for e2e testing
+license: UNLICENSED
+targets:
+  - claude
+primitives:
+  agents: []
+  skills: []
+  models: []
+  tools: []
+dependencies:
+  apm:
+    - ` + depSpec + `
+`
+	require.NoError(t, os.WriteFile(filepath.Join(projectDir, "apm.yml"), []byte(apmYamlContent), filePerms))
 }
 
 // validateApmBuildInfo validates the generated build info from an APM command.
@@ -230,13 +333,17 @@ func TestApmInstallWithBuildInfo(t *testing.T) {
 	initApmTest(t)
 	defer cleanApmTest(t)
 
+	publishApmDependencyPackage(t, "test/install-bi-dep", "1.0.0")
+
 	projectDir, err := os.MkdirTemp("", "apm-install-test-*")
 	require.NoError(t, err)
 	defer func() {
 		_ = os.RemoveAll(projectDir)
 	}()
 
-	createApmTestProject(t, projectDir)
+	// A real, resolvable dependency is required: apm only writes apm.lock.yaml (and thus only
+	// jfrog-cli only collects build-info) when the project has at least one dependency.
+	createApmTestProjectWithDependency(t, projectDir, "test/install-bi-dep#1.0.0")
 
 	buildNumber := "101"
 	wd, err := os.Getwd()
@@ -281,7 +388,7 @@ func TestApmPublishWithBuildInfo(t *testing.T) {
 	clientTestUtils.ChangeDirAndAssert(t, projectDir)
 
 	// Run apm publish with build-info capture
-	err = getApmCli().Exec("agent", "apm", "publish", "--package", "jfrog/test-apm-pkg", "--build-name", apmBuildName, "--build-number", buildNumber)
+	err = getApmCli().Exec("agent", "apm", "publish", "--package", "jfrog/test-apm-pkg", "--registry", tests.AgentPackagesLocalRepo, "--build-name", apmBuildName, "--build-number", buildNumber)
 	require.NoError(t, err, "jf agent apm publish should succeed with build-info")
 
 	// Validate build info was created with artifact
@@ -325,7 +432,7 @@ func TestApmPublishArtifactPath(t *testing.T) {
 
 	owner := "acme"
 	packageName := "my-agent-skill"
-	err = getApmCli().Exec("agent", "apm", "publish", "--package", fmt.Sprintf("%s/%s", owner, packageName))
+	err = getApmCli().Exec("agent", "apm", "publish", "--package", fmt.Sprintf("%s/%s", owner, packageName), "--registry", tests.AgentPackagesLocalRepo)
 	require.NoError(t, err, "jf agent apm publish should succeed")
 
 	// Verify artifact path: <owner>/<name>/<name>-<version>.zip
@@ -387,12 +494,16 @@ func TestApmInstallInvalidPackage(t *testing.T) {
 	err = os.MkdirAll(filepath.Join(projectDir, ".apm"), 0755)
 	require.NoError(t, err)
 
+	// APM dependency shorthand is "owner/name#version" (a plain string), resolved against the
+	// default registry. A nonexistent package fails at resolve time with a 404-style error.
 	apmYamlContent := `version: "1.0.0"
 name: test-with-missing-dep
+license: UNLICENSED
+targets:
+  - claude
 dependencies:
   apm:
-    - name: nonexistent/package
-      version: "1.0.0"
+    - nonexistent/package#1.0.0
 `
 	apmYamlPath := filepath.Join(projectDir, "apm.yml")
 	err = os.WriteFile(apmYamlPath, []byte(apmYamlContent), 0644)
@@ -404,15 +515,16 @@ dependencies:
 
 	clientTestUtils.ChangeDirAndAssert(t, projectDir)
 
-	// Attempt install with invalid package
-	// Note: This depends on APM's own error handling
-	err = getApmCli().Exec("agent", "apm", "install")
-	// Error is expected when trying to fetch nonexistent package
-	if err != nil {
-		assert.True(t,
-			strings.Contains(err.Error(), "404") || strings.Contains(err.Error(), "not found"),
-			"Error should indicate package not found")
-	}
+	// Attempt install with invalid package. apm's own diagnostics (including the "HTTP 404"
+	// detail) are printed to stdout by the apm subprocess, not embedded in the Go error, so we
+	// must capture stdout to assert on them.
+	output, cmdErr := captureStdout(t, func() error {
+		return getApmCli().Exec("agent", "apm", "install")
+	})
+	assert.Error(t, cmdErr, "install of a nonexistent package should fail")
+	assert.True(t,
+		strings.Contains(output, "404") || strings.Contains(output, "no package"),
+		"Output should indicate package not found, got: %s", output)
 }
 
 // TestApmAuthEnvironmentVariable validates APM_REGISTRY_TOKEN env var usage (P0: Scenario #33).
@@ -512,7 +624,7 @@ func TestApmBuildInfoArtifactMetadata(t *testing.T) {
 
 	clientTestUtils.ChangeDirAndAssert(t, projectDir)
 
-	err = getApmCli().Exec("agent", "apm", "publish", "--package", "test/artifact-metadata", "--build-name", apmBuildName, "--build-number", buildNumber)
+	err = getApmCli().Exec("agent", "apm", "publish", "--package", "test/artifact-metadata", "--registry", tests.AgentPackagesLocalRepo, "--build-name", apmBuildName, "--build-number", buildNumber)
 	require.NoError(t, err)
 
 	// Validate build info has complete artifact metadata
@@ -555,7 +667,7 @@ func TestApmBuildPropertiesStamping(t *testing.T) {
 
 	clientTestUtils.ChangeDirAndAssert(t, projectDir)
 
-	err = getApmCli().Exec("agent", "apm", "publish", "--package", "jfrog/props-test", "--build-name", apmBuildName, "--build-number", buildNumber)
+	err = getApmCli().Exec("agent", "apm", "publish", "--package", "jfrog/props-test", "--registry", tests.AgentPackagesLocalRepo, "--build-name", apmBuildName, "--build-number", buildNumber)
 	require.NoError(t, err)
 
 	// Publish build info
@@ -605,13 +717,15 @@ func TestApmModuleFlag(t *testing.T) {
 	initApmTest(t)
 	defer cleanApmTest(t)
 
+	publishApmDependencyPackage(t, "test/module-flag-dep", "1.0.0")
+
 	projectDir, err := os.MkdirTemp("", "apm-module-flag-test-*")
 	require.NoError(t, err)
 	defer func() {
 		_ = os.RemoveAll(projectDir)
 	}()
 
-	createApmTestProject(t, projectDir)
+	createApmTestProjectWithDependency(t, projectDir, "test/module-flag-dep#1.0.0")
 
 	buildNumber := "106"
 	customModule := "custom-apm-module"
@@ -668,7 +782,7 @@ func TestApmRoundTripPublishAndInstall(t *testing.T) {
 	pkgName := "test-package"
 
 	// Publish the package
-	err = getApmCli().Exec("agent", "apm", "publish", "--package", fmt.Sprintf("%s/%s", owner, pkgName), "--build-name", apmBuildName, "--build-number", buildNumberPublish)
+	err = getApmCli().Exec("agent", "apm", "publish", "--package", fmt.Sprintf("%s/%s", owner, pkgName), "--registry", tests.AgentPackagesLocalRepo, "--build-name", apmBuildName, "--build-number", buildNumberPublish)
 	require.NoError(t, err, "jf agent apm publish should succeed")
 
 	// Create a new directory to install from
@@ -733,7 +847,7 @@ func TestApmChecksumsInBuildInfo(t *testing.T) {
 
 	clientTestUtils.ChangeDirAndAssert(t, projectDir)
 
-	err = getApmCli().Exec("agent", "apm", "publish", "--package", "test/checksums", "--build-name", apmBuildName, "--build-number", buildNumber)
+	err = getApmCli().Exec("agent", "apm", "publish", "--package", "test/checksums", "--registry", tests.AgentPackagesLocalRepo, "--build-name", apmBuildName, "--build-number", buildNumber)
 	require.NoError(t, err)
 
 	// Get build info and verify checksums
@@ -765,13 +879,15 @@ func TestApmProjectFlag(t *testing.T) {
 	initApmTest(t)
 	defer cleanApmTest(t)
 
+	publishApmDependencyPackage(t, "test/project-flag-dep", "1.0.0")
+
 	projectDir, err := os.MkdirTemp("", "apm-project-flag-test-*")
 	require.NoError(t, err)
 	defer func() {
 		_ = os.RemoveAll(projectDir)
 	}()
 
-	createApmTestProject(t, projectDir)
+	createApmTestProjectWithDependency(t, projectDir, "test/project-flag-dep#1.0.0")
 
 	buildNumber := "108"
 	projectKey := "test-project"
@@ -798,13 +914,15 @@ func TestApmUpdateWithBuildInfo(t *testing.T) {
 	initApmTest(t)
 	defer cleanApmTest(t)
 
+	publishApmDependencyPackage(t, "test/update-bi-dep", "1.0.0")
+
 	projectDir, err := os.MkdirTemp("", "apm-update-test-*")
 	require.NoError(t, err)
 	defer func() {
 		_ = os.RemoveAll(projectDir)
 	}()
 
-	createApmTestProject(t, projectDir)
+	createApmTestProjectWithDependency(t, projectDir, "test/update-bi-dep#1.0.0")
 
 	buildNumber := "109"
 	wd, err := os.Getwd()
@@ -817,8 +935,9 @@ func TestApmUpdateWithBuildInfo(t *testing.T) {
 	err = getApmCli().Exec("agent", "apm", "install")
 	require.NoError(t, err)
 
-	// Then update with build-info capture
-	err = getApmCli().Exec("agent", "apm", "update", "--build-name", apmBuildName, "--build-number", buildNumber)
+	// Then update with build-info capture. --yes is required: apm update shows a
+	// confirmation plan and exits 1 without it, even in CI/non-interactive shells.
+	err = getApmCli().Exec("agent", "apm", "update", "--yes", "--build-name", apmBuildName, "--build-number", buildNumber)
 	require.NoError(t, err, "jf agent apm update should succeed with build-info")
 
 	// Validate build info was created
@@ -847,8 +966,8 @@ func TestApmNativeFlags(t *testing.T) {
 
 	clientTestUtils.ChangeDirAndAssert(t, projectDir)
 
-	// Test --dry-run flag with -- escape
-	err = getApmCli().Exec("agent", "apm", "publish", "--package", "test/native-flags", "--", "--dry-run")
+	// Test --dry-run native APM flag (passed directly, not via -- escape)
+	err = getApmCli().Exec("agent", "apm", "publish", "--package", "test/native-flags", "--registry", tests.AgentPackagesLocalRepo, "--dry-run")
 	require.NoError(t, err, "jf agent apm publish with --dry-run should succeed")
 
 	// Verify no artifact was uploaded for dry-run
@@ -881,7 +1000,7 @@ func TestApmBuildInfoRead(t *testing.T) {
 	clientTestUtils.ChangeDirAndAssert(t, projectDir)
 
 	// Create build info first
-	err = getApmCli().Exec("agent", "apm", "publish", "--package", "test/bi-read", "--build-name", apmBuildName, "--build-number", buildNumber)
+	err = getApmCli().Exec("agent", "apm", "publish", "--package", "test/bi-read", "--registry", tests.AgentPackagesLocalRepo, "--build-name", apmBuildName, "--build-number", buildNumber)
 	require.NoError(t, err)
 
 	// Publish to Artifactory
@@ -925,7 +1044,7 @@ func TestApmIntegrationFullPipeline(t *testing.T) {
 	require.NoError(t, err, "Step 1: Install should succeed")
 
 	// Step 2: Publish (with build-info)
-	err = getApmCli().Exec("agent", "apm", "publish", "--package", "e2e/pipeline", "--build-name", buildName, "--build-number", buildNumber)
+	err = getApmCli().Exec("agent", "apm", "publish", "--package", "e2e/pipeline", "--registry", tests.AgentPackagesLocalRepo, "--build-name", buildName, "--build-number", buildNumber)
 	require.NoError(t, err, "Step 2: Publish should succeed")
 
 	// Step 3: Publish build info
@@ -993,7 +1112,9 @@ func TestApmInstallWithDependenciesInBuildInfo(t *testing.T) {
 	initApmTest(t)
 	defer cleanApmTest(t)
 
-	projectDir := createProjectWithDependencies(t, "app-with-deps", []string{"apm"})
+	publishApmDependencyPackage(t, "test/install-with-deps-bi", "1.0.0")
+
+	projectDir := createProjectWithDependencies(t, "app-with-deps", []string{"test/install-with-deps-bi#1.0.0"})
 	defer func() {
 		_ = os.RemoveAll(projectDir)
 	}()
@@ -1032,7 +1153,9 @@ func TestApmBuildInfoWithArtifactsAndDependencies(t *testing.T) {
 	initApmTest(t)
 	defer cleanApmTest(t)
 
-	projectDir := createProjectWithDependencies(t, "complete-app", []string{"apm"})
+	publishApmDependencyPackage(t, "test/complete-app-dep", "1.0.0")
+
+	projectDir := createProjectWithDependencies(t, "complete-app", []string{"test/complete-app-dep#1.0.0"})
 	defer func() {
 		_ = os.RemoveAll(projectDir)
 	}()
@@ -1098,14 +1221,20 @@ func TestApmAuthEnvVarNotExposed(t *testing.T) {
 	}()
 	defer setupTestWorkingDirectory(t, projectDir)()
 
-	// Env var should exist after command runs (we're not removing it)
-	// The test verifies the command worked with the env var auth
-	err := getApmCli().Exec("agent", "apm", "install")
-	require.NoError(t, err, "install should work with env var auth")
+	// Auth via APM_REGISTRY_TOKEN_<REGISTRY> env var (same mechanism as TestApmAuthEnvironmentVariable).
+	registryName := "default"
+	tokenEnvVar := fmt.Sprintf("APM_REGISTRY_TOKEN_%s", strings.ToUpper(registryName))
+	require.NoError(t, os.Setenv(tokenEnvVar, *tests.JfrogAccessToken))
+	defer func() {
+		_ = os.Unsetenv(tokenEnvVar)
+	}()
 
-	// Verify env var still set (commands don't clear environment)
-	jfrogUrl := os.Getenv("JFROG_URL")
-	assert.NotEmpty(t, jfrogUrl, "JFROG_URL should still be set")
+	// The token must be usable for auth but never echoed back in apm's own stdout/log output.
+	output, err := captureStdout(t, func() error {
+		return getApmCli().Exec("agent", "apm", "install")
+	})
+	require.NoError(t, err, "install should work with env var auth")
+	assert.NotContains(t, output, *tests.JfrogAccessToken, "access token should not be exposed in command output")
 }
 
 // TestApmDifferentRegistriesAsArtifactoryRepos validates multiple distinct Artifactory repos
@@ -1117,11 +1246,22 @@ func TestApmDifferentRegistriesAsArtifactoryRepos(t *testing.T) {
 	repos := []string{"apm-registry-1", "apm-registry-2"}
 	for _, repoName := range repos {
 		if !isRepoExist(repoName) {
-			repoConfig := tests.GetTestResourcesPath() + tests.AgentPackagesLocalRepositoryConfig
-			repoConfig, err := tests.ReplaceTemplateVariables(repoConfig, "")
-			require.NoError(t, err)
-			execCreateRepoRest(repoConfig, repoName)
+			createAgentPackagesRepoWithKey(t, repoName)
 		}
+	}
+	defer func() {
+		for _, repoName := range repos {
+			deleteRepo(repoName)
+		}
+	}()
+
+	// Register each repo as its own named APM registry in ~/.apm/config.json.
+	// "jfrog setup agent-apm --repo X" names the registry after the repo (registry.X.*),
+	// so calling it once per repo yields multiple distinct, independently addressable registries.
+	setupCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+	for _, repoName := range repos {
+		err := setupCli.Exec("setup", "agent-apm", "--repo", repoName)
+		require.NoError(t, err, "setup should succeed for repo %s", repoName)
 	}
 
 	projectDir := createProjectWithRegistries(t, "multi-repo-app", repos)
@@ -1143,16 +1283,19 @@ func getBasicApmYaml() string {
 	return createApmYaml("test-app", "1.0.0", []string{}, nil)
 }
 
-// createApmYaml creates customizable APM YAML with parameters
-func createApmYaml(name, version string, dependencies []string, registries map[string]string) string {
+// createApmYaml creates customizable APM YAML with parameters. apmDeps are real APM dependency
+// specs in "owner/name#version" shorthand (see publishApmDependencyPackage); an empty slice
+// yields an empty "apm: []" dependency list.
+func createApmYaml(name, version string, apmDeps []string, registries map[string]string) string {
 	// Note: registries parameter is deprecated - registries are configured globally via setup command
-	depsSection := ""
-	if len(dependencies) > 0 {
-		for _, dep := range dependencies {
-			depsSection += fmt.Sprintf("  %s: []\n", dep)
+	depsSection := "  apm: []\n"
+	if len(apmDeps) > 0 {
+		var b strings.Builder
+		b.WriteString("  apm:\n")
+		for _, dep := range apmDeps {
+			_, _ = fmt.Fprintf(&b, "    - %s\n", dep)
 		}
-	} else {
-		depsSection = "  apm: []\n"
+		depsSection = b.String()
 	}
 
 	return fmt.Sprintf(`version: "1.0.0"
@@ -1203,11 +1346,13 @@ func runApmInstall(buildNumber string) error {
 	return getApmCli().Exec(args...)
 }
 
-// runApmPublish runs publish command with optional build info
+// runApmPublish runs publish command with optional build info. --registry is passed
+// explicitly since publish (unlike install) refuses to guess when more than one registry
+// happens to be configured in ~/.apm/config.json (a real risk on any shared machine/CI runner).
 func runApmPublish(packagePath, buildName, buildNumber string) error {
 	args := []string{"agent", "apm", "publish"}
 	if packagePath != "" {
-		args = append(args, "--package", packagePath)
+		args = append(args, "--package", packagePath, "--registry", tests.AgentPackagesLocalRepo)
 	}
 	if buildName != "" && buildNumber != "" {
 		args = append(args, "--build-name", buildName, "--build-number", buildNumber)
@@ -1215,9 +1360,10 @@ func runApmPublish(packagePath, buildName, buildNumber string) error {
 	return getApmCli().Exec(args...)
 }
 
-// runApmUpdate runs update command with optional build info
+// runApmUpdate runs update command with optional build info. --yes is required: apm update
+// shows a confirmation plan and exits 1 without it, even in CI/non-interactive shells.
 func runApmUpdate(buildName, buildNumber string) error {
-	args := []string{"agent", "apm", "update"}
+	args := []string{"agent", "apm", "update", "--yes"}
 	if buildName != "" && buildNumber != "" {
 		args = append(args, "--build-name", buildName, "--build-number", buildNumber)
 	}
@@ -1333,7 +1479,7 @@ dependencies:
 
 	buildNumber := "202"
 	// Publish should capture dependency metadata
-	err = getApmCli().Exec("agent", "apm", "publish", "--package", "test/app-with-deps",
+	err = getApmCli().Exec("agent", "apm", "publish", "--package", "test/app-with-deps", "--registry", tests.AgentPackagesLocalRepo,
 		"--build-name", apmBuildName, "--build-number", buildNumber)
 	require.NoError(t, err, "publish should succeed with dependencies")
 
@@ -1376,8 +1522,9 @@ func TestApmUpdateChangesLockfile(t *testing.T) {
 	lockfilePath := filepath.Join(projectDir, "apm.lock.yaml")
 	assert.FileExists(t, lockfilePath, "apm.lock.yaml should exist after install")
 
-	// Update with build-info
-	err = getApmCli().Exec("agent", "apm", "update", "--build-name", apmBuildName, "--build-number", buildNumber)
+	// Update with build-info. --yes is required: apm update shows a confirmation plan and
+	// exits 1 without it, even in CI/non-interactive shells.
+	err = getApmCli().Exec("agent", "apm", "update", "--yes", "--build-name", apmBuildName, "--build-number", buildNumber)
 	require.NoError(t, err, "update should succeed")
 
 	// Verify lockfile still exists (update should maintain it)
@@ -1437,7 +1584,7 @@ func TestApmInstallAndPublishWithBuildInfoComplete(t *testing.T) {
 	validateApmBuildInfo(t, buildName, buildNumber, 0)
 
 	// Step 2: Publish with build-info
-	err = getApmCli().Exec("agent", "apm", "publish", "--package", "complete/workflow",
+	err = getApmCli().Exec("agent", "apm", "publish", "--package", "complete/workflow", "--registry", tests.AgentPackagesLocalRepo,
 		"--build-name", buildName, "--build-number", buildNumber)
 	require.NoError(t, err, "publish with build-info should succeed")
 
@@ -1470,7 +1617,7 @@ func TestApmDryRunNoArtifacts(t *testing.T) {
 	defer setupTestWorkingDirectory(t, projectDir)()
 
 	// Dry-run publish should not upload artifacts
-	err = getApmCli().Exec("agent", "apm", "publish", "--package", "dryrun/test", "--", "--dry-run")
+	err = getApmCli().Exec("agent", "apm", "publish", "--package", "dryrun/test", "--registry", tests.AgentPackagesLocalRepo, "--dry-run")
 	require.NoError(t, err, "dry-run publish should succeed")
 
 	// Verify nothing was uploaded
