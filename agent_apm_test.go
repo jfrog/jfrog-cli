@@ -8,12 +8,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/build"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
-	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -140,8 +140,7 @@ func validateApmBuildInfo(t *testing.T, buildName, buildNumber string, expectedA
 		// Verify all artifacts have checksums
 		for _, artifact := range module.Artifacts {
 			assert.NotEmpty(t, artifact.Sha256, "Artifact should have SHA256 checksum")
-			assert.NotEmpty(t, artifact.Name, "Artifact should have name")
-			assert.NotZero(t, artifact.Size, "Artifact should have size")
+			assert.NotEmpty(t, artifact.Path, "Artifact should have path")
 		}
 
 		// Verify dependencies if present
@@ -178,7 +177,7 @@ func validateBuildInfoArtifacts(t *testing.T, buildName, buildNumber string, exp
 	require.Len(t, module.Artifacts, expectedCount, "Artifacts count should match expected")
 
 	for _, artifact := range module.Artifacts {
-		assert.NotEmpty(t, artifact.Name, "Artifact should have name")
+		assert.NotEmpty(t, artifact.Path, "Artifact should have path")
 		assert.NotEmpty(t, artifact.Sha256, "Artifact should have checksum")
 	}
 }
@@ -336,8 +335,8 @@ func TestApmPublishArtifactPath(t *testing.T) {
 	// Verify artifact name format
 	if len(artifacts) > 0 {
 		assert.True(t,
-			strings.Contains(artifacts[0].Name, packageName+"-") && strings.HasSuffix(artifacts[0].Name, ".zip"),
-			"Artifact name should follow pattern: <name>-<version>.zip")
+			strings.Contains(artifacts[0].Path, packageName+"-") && strings.HasSuffix(artifacts[0].Path, ".zip"),
+			"Artifact path should follow pattern: <name>-<version>.zip")
 	}
 
 	// Clean up
@@ -523,10 +522,9 @@ func TestApmBuildInfoArtifactMetadata(t *testing.T) {
 	module := buildResult.Modules[0]
 	for _, artifact := range module.Artifacts {
 		// Verify metadata fields are present
-		assert.NotEmpty(t, artifact.Name, "Artifact name should be present")
+		assert.NotEmpty(t, artifact.Path, "Artifact path should be present")
 		assert.NotEmpty(t, artifact.Type, "Artifact type should be present")
 		assert.NotEmpty(t, artifact.Sha256, "Artifact SHA256 should be present")
-		assert.NotZero(t, artifact.Size, "Artifact size should be present")
 	}
 
 	// Clean up
@@ -568,19 +566,23 @@ func TestApmBuildPropertiesStamping(t *testing.T) {
 
 	// Verify properties contain build info
 	artifact := artifacts[0]
-	assert.NotEmpty(t, artifact.Properties, "Artifact should have properties")
+	assert.NotEmpty(t, artifact.Props, "Artifact should have properties")
 
 	// Check for build name/number in properties
 	foundBuildName := false
 	foundBuildNumber := false
-	for _, prop := range artifact.Properties {
-		if prop.Key == "build.name" {
+	for buildPropKey, buildPropVals := range artifact.Props {
+		if buildPropKey == "build.name" {
 			foundBuildName = true
-			assert.Contains(t, prop.Value, apmBuildName)
+			for _, val := range buildPropVals {
+				assert.Contains(t, val, apmBuildName)
+			}
 		}
-		if prop.Key == "build.number" {
+		if buildPropKey == "build.number" {
 			foundBuildNumber = true
-			assert.Contains(t, prop.Value, buildNumber)
+			for _, val := range buildPropVals {
+				assert.Contains(t, val, buildNumber)
+			}
 		}
 	}
 
@@ -1529,4 +1531,35 @@ primitives:
 	validateApmBuildInfo(t, apmBuildName, buildNumber, 0)
 
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, apmBuildName, artHttpDetails)
+}
+
+// createRepoIfNotExist creates a repository if it doesn't already exist in Artifactory.
+func createRepoIfNotExist(t *testing.T, repoName, repoConfig string) {
+	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, 0, false)
+	require.NoError(t, err)
+
+	// Check if repo exists
+	exists, err := servicesManager.IsRepoExists(repoName)
+	require.NoError(t, err)
+
+	if !exists {
+		// Create the repository from config
+		configPath := tests.GetFilePathForArtifactory(repoConfig)
+		configContent, err := os.ReadFile(configPath)
+		require.NoError(t, err)
+
+		// Parse JSON config into a generic map
+		var repoParams map[string]interface{}
+		err = json.Unmarshal(configContent, &repoParams)
+		require.NoError(t, err)
+
+		// Ensure the repo key is set
+		if _, exists := repoParams["key"]; !exists {
+			repoParams["key"] = repoName
+		}
+
+		// Create the repository using the parsed params
+		err = servicesManager.CreateRepositoryWithParams(repoParams, repoName)
+		require.NoError(t, err, "Failed to create repository: "+repoName)
+	}
 }

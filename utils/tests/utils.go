@@ -281,6 +281,35 @@ func DeleteFiles(deleteSpec *spec.SpecFiles, serverDetails *config.ServerDetails
 	return deleteCommand.DeleteFiles(reader)
 }
 
+// SearchFiles searches for files in Artifactory using the provided spec and server details.
+// Returns search results as SearchResult items and a count.
+func SearchFiles(searchSpec *spec.SpecFiles, serverDetails *config.ServerDetails) (searchResults []artUtils.SearchResult, count int, err error) {
+	servicesManager, err := artUtils.CreateServiceManager(serverDetails, -1, 0, false)
+	if err != nil {
+		return nil, 0, err
+	}
+	
+	// Use the search utilities from jfrog-cli-core
+	readers, _, err := artUtils.SearchFiles(servicesManager, searchSpec)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer func() {
+		for _, r := range readers {
+			ioutils.Close(r, &err)
+		}
+	}()
+	
+	// Process search results from readers
+	for _, reader := range readers {
+		for item := new(artUtils.SearchResult); reader.NextRecord(item) == nil; item = new(artUtils.SearchResult) {
+			searchResults = append(searchResults, *item)
+		}
+	}
+	
+	return searchResults, len(searchResults), nil
+}
+
 // This function makes no assertion, caller is responsible to assert as needed.
 func GetBuildInfo(serverDetails *config.ServerDetails, buildName, buildNumber string) (pbi *buildinfo.PublishedBuildInfo, found bool, err error) {
 	servicesManager, err := artUtils.CreateServiceManager(serverDetails, -1, 0, false)
@@ -418,6 +447,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestApt:                {&AptLocalRepo, &AptRemoteRepo, &AptDebianRemoteRepo},
 		TestAgentPlugins:       {&AgentPluginsLocalRepo},
 		TestAgentSkills:        {&AgentSkillsLocalRepo},
+		TestApm:                {&AgentPackagesLocalRepo},
 		TestConan:              {&ConanLocalRepo, &ConanRemoteRepo},
 		TestHelm:               {&HelmLocalRepo},
 		TestHuggingFace:        {&HuggingFaceLocalRepo},
