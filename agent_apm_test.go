@@ -210,8 +210,9 @@ func TestApmSetupAndConfig(t *testing.T) {
 	require.NoError(t, err)
 	apmConfigPath := filepath.Join(homeDir, ".apm", "config.json")
 
-	// First setup call
-	err = artifactoryCli.Exec("setup", "agent-apm", "--repo", tests.AgentPackagesLocalRepo)
+	// First setup call (use correct CLI prefix: jfrog, not jfrog rt)
+	setupCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+	err = setupCli.Exec("setup", "agent-apm", "--repo", tests.AgentPackagesLocalRepo)
 	require.NoError(t, err, "jf setup agent-apm should succeed")
 
 	// Verify config file was created
@@ -229,8 +230,9 @@ func TestApmSetupAndConfig(t *testing.T) {
 	assert.True(t, ok, "Config should have registries section")
 	assert.NotEmpty(t, registries, "Registries section should not be empty")
 
-	// Verify idempotency - second call should not fail
-	err = artifactoryCli.Exec("setup", "agent-apm", "--repo", tests.AgentPackagesLocalRepo)
+	// Verify idempotency - second call should not fail (use correct CLI prefix)
+	setupCli = coreTests.NewJfrogCli(execMain, "jfrog", "")
+	err = setupCli.Exec("setup", "agent-apm", "--repo", tests.AgentPackagesLocalRepo)
 	require.NoError(t, err, "jf setup agent-apm should be idempotent")
 }
 
