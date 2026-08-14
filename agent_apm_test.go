@@ -94,6 +94,7 @@ func createApmTestProject(t *testing.T, projectDir string) {
 	apmYamlContent := `version: "1.0.0"
 name: test-apm-package
 description: Test APM package for e2e testing
+license: UNLICENSED
 targets:
   - claude
 primitives:
@@ -1157,6 +1158,7 @@ func createApmYaml(name, version string, dependencies []string, registries map[s
 	return fmt.Sprintf(`version: "1.0.0"
 name: %s
 version: %s
+license: UNLICENSED
 targets:
   - claude
 primitives:
@@ -1170,6 +1172,7 @@ dependencies:
 func createMultiRegistryYaml(name string, registryRepos []string) string {
 	return fmt.Sprintf(`version: "1.0.0"
 name: %s
+license: UNLICENSED
 targets:
   - claude
 primitives:
@@ -1239,6 +1242,7 @@ func TestApmMultipleRegistriesInApmYml(t *testing.T) {
 	apmYaml := `version: "1.0.0"
 name: multi-registry-app
 description: App using multiple registries
+license: UNLICENSED
 targets:
   - claude
 primitives:
@@ -1272,6 +1276,7 @@ func TestApmRegistryPrecedenceDefaultFallback(t *testing.T) {
 	apmYaml := `version: "1.0.0"
 name: test-default-registry
 description: Test default registry fallback
+license: UNLICENSED
 targets:
   - claude
 primitives:
@@ -1306,6 +1311,7 @@ func TestApmPublishWithDependencyMetadata(t *testing.T) {
 name: app-with-deps
 version: 1.0.0
 description: App with explicit dependencies
+license: UNLICENSED
 targets:
   - claude
 primitives:
@@ -1496,6 +1502,7 @@ func TestApmMultiModuleWorkspace(t *testing.T) {
 	// Create workspace apm.yml
 	workspaceYaml := `version: "1.0.0"
 name: workspace-root
+license: UNLICENSED
 targets:
   - claude
 workspaces:
@@ -1510,6 +1517,7 @@ workspaces:
 	// Create module manifests
 	module1Yaml := `name: module1
 version: 1.0.0
+license: UNLICENSED
 targets:
   - claude
 primitives:
@@ -1517,6 +1525,7 @@ primitives:
 `
 	module2Yaml := `name: module2
 version: 1.0.0
+license: UNLICENSED
 targets:
   - claude
 primitives:
