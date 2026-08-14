@@ -8,8 +8,8 @@ import (
 	"github.com/jfrog/jfrog-cli-artifactory/cliutils/flagkit"
 
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
-	"github.com/jfrog/jfrog-cli-core/v2/plugins/components"
 	"github.com/jfrog/jfrog-cli-core/v2/common/format"
+	"github.com/jfrog/jfrog-cli-core/v2/plugins/components"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -88,6 +88,10 @@ const (
 	RubyConfig             = "ruby-config"
 	ConanConfig            = "conan-config"
 	Conan                  = "conan"
+	Nix                    = "nix"
+	Apt                    = "apt"
+	AptSetup               = "apt-setup"
+	Apk                    = "apk"
 	Ping                   = "ping"
 	RtCurl                 = "rt-curl"
 	TemplateConsumer       = "template-consumer"
@@ -135,10 +139,20 @@ const (
 	AccessTokenCreate = "access-token-create"
 	ExchangeOidcToken = "exchange-oidc-token"
 	Api               = "api"
+	ApiDocsSearch     = "api-docs-search"
+	ApiDocsDescribe   = "api-docs-describe"
+
+	// MCP commands keys
+	McpShow      = "mcp-show"
+	McpInstall   = "mcp-install"
+	McpUninstall = "mcp-uninstall"
 
 	// Plugin commands keys
 	PluginInstall = "plugin-install"
 	PluginPublish = "plugin-publish"
+
+	// Login command key
+	Login = "login"
 
 	// *** Artifactory Commands' flags ***
 	// Base flags
@@ -149,7 +163,12 @@ const (
 	accessToken         = "access-token"
 	serverId            = "server-id"
 	serverIdYarn        = "server-id-yarn"
+	serverIdNpm         = "server-id-npm"
 	disableTokenRefresh = "disable-token-refresh"
+
+	apkAlpineVersion = "alpine-version"
+	apkArch          = "arch"
+	apkBranch        = "apk-branch"
 
 	passwordStdin    = "password-stdin"
 	accessTokenStdin = "access-token-stdin"
@@ -218,6 +237,7 @@ const (
 	EncPassword   = "enc-password"
 	BasicAuthOnly = "basic-auth-only"
 	Overwrite     = "overwrite"
+	Legacy        = "legacy"
 
 	// Unique upload flags
 	uploadPrefix      = "upload-"
@@ -373,6 +393,13 @@ const (
 	skipLogin         = "skip-login"
 	validateSha       = "validate-sha"
 
+	// Apt-specific flags
+	aptDistribution = "dist"
+	aptComponent    = "component"
+	aptTrusted      = "trusted"
+	aptImportKey    = "import-key"
+	aptRemove       = "remove"
+
 	// Unique docker promote flags
 	dockerPromotePrefix = "docker-promote-"
 	targetDockerImage   = "target-docker-image"
@@ -509,17 +536,17 @@ const (
 
 	// Per-command format flag map keys. All share Name: "format" but restrict
 	// the description to the formats that command actually supports.
-	configShowFormat          = "config-show-format"
-	accessTokenCreateFormat   = "access-token-create-format"
-	exchangeOidcTokenFormat   = "exchange-oidc-token-format"
-	licenseAcquireFormat      = "license-acquire-format"
-	licenseDeployFormat       = "license-deploy-format"
-	jpdAddFormat              = "jpd-add-format"
-	pluginInstallFormat       = "plugin-install-format"
-	pluginPublishFormat       = "plugin-publish-format"
-	plStatusFormat            = "pl-status-format"
-	plTriggerFormat           = "pl-trigger-format"
-	plSyncFormat              = "pl-sync-format"
+	configShowFormat             = "config-show-format"
+	accessTokenCreateFormat      = "access-token-create-format"
+	exchangeOidcTokenFormat      = "exchange-oidc-token-format"
+	licenseAcquireFormat         = "license-acquire-format"
+	licenseDeployFormat          = "license-deploy-format"
+	jpdAddFormat                 = "jpd-add-format"
+	pluginInstallFormat          = "plugin-install-format"
+	pluginPublishFormat          = "plugin-publish-format"
+	plStatusFormat               = "pl-status-format"
+	plTriggerFormat              = "pl-trigger-format"
+	plSyncFormat                 = "pl-sync-format"
 	plSyncStatusFormat           = "pl-sync-status-format"
 	permissionTargetCreateFormat = "permission-target-create-format"
 	permissionTargetUpdateFormat = "permission-target-update-format"
@@ -606,6 +633,8 @@ const (
 	IncludeProjects = "include-projects"
 	ExcludeProjects = "exclude-projects"
 	IncludeFiles    = "include-files"
+	CreatedAfter    = "created-after"
+	DownloadedAfter = "downloaded-after"
 
 	// *** JFrog Pipelines Commands' flags ***
 	// Base flags
@@ -642,12 +671,31 @@ const (
 	RepoKey              = "repo-key"
 
 	// API command flags
-	apiHeader   = "api-header"
-	apiInput    = "api-input"
-	apiData     = "api-data"
-	apiMethod   = "api-method"
-	apiVerbose  = "api-verbose"
-	apiTimeout  = "api-timeout"
+	apiHeader  = "api-header"
+	apiInput   = "api-input"
+	apiData    = "api-data"
+	apiMethod  = "api-method"
+	apiVerbose = "api-verbose"
+	apiTimeout = "api-timeout"
+
+	// API docs search command flags
+	apiDocsSearchTag    = "api-docs-search-tag"
+	apiDocsSearchMethod = "api-docs-search-method"
+	apiDocsSearchLimit  = "api-docs-search-limit"
+	apiDocsSearchFormat = "api-docs-search-format"
+
+	// API docs describe command flags
+	apiDocsDescribeFormat = "api-docs-describe-format"
+
+	// MCP command flags
+	mcpUrl        = "mcp-url"
+	mcpAgent      = "mcp-agent"
+	mcpGlobal     = "mcp-global"
+	mcpProjectDir = "mcp-project-dir"
+	mcpName       = "mcp-name"
+	mcpDryRun     = "mcp-dry-run"
+	mcpSkipCheck  = "mcp-skip-check"
+	mcpShowFormat = "mcp-show-format"
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -752,6 +800,22 @@ var flagsMap = map[string]cli.Flag{
 		Name:  serverId,
 		Usage: "[Optional] Server ID configured using the 'jf config' command. Supported from yarn v4+ in native mode (JFROG_RUN_NATIVE=true).` `",
 	},
+	serverIdNpm: cli.StringFlag{
+		Name:  serverId,
+		Usage: "[Optional] Server ID configured using the 'jf config' command. Used in native mode (JFROG_RUN_NATIVE=true) to identify the JFrog server for usage reporting.` `",
+	},
+	apkAlpineVersion: cli.StringFlag{
+		Name:  apkAlpineVersion,
+		Usage: "[Optional] Alpine release version, e.g. v3.20. Used by upload (required) and to select the Artifactory path for other subcommands.` `",
+	},
+	apkArch: cli.StringFlag{
+		Name:  apkArch,
+		Usage: "[Optional, upload only] CPU architecture override (x86_64, aarch64, armhf, …). Inferred from the .apk filename by default.` `",
+	},
+	apkBranch: cli.StringFlag{
+		Name:  branch,
+		Usage: "[Default: main, upload only] Alpine repository branch to upload into, e.g. main or community.` `",
+	},
 	passwordStdin: cli.BoolFlag{
 		Name:  passwordStdin,
 		Usage: "[Default: false] Set to true to provide the password via stdin.` `",
@@ -784,6 +848,59 @@ var flagsMap = map[string]cli.Flag{
 	apiTimeout: cli.IntFlag{
 		Name:  "timeout",
 		Usage: "[Default: 0] Overall HTTP request timeout in seconds. 0 means no timeout.` `",
+	},
+	apiDocsSearchTag: cli.StringFlag{
+		Name:  "tag",
+		Usage: "[Optional] Filter results to operations whose tags include this product/tag (case-insensitive).` `",
+	},
+	apiDocsSearchMethod: cli.StringFlag{
+		Name:  "method",
+		Usage: "[Optional] Filter results to this HTTP method (GET, POST, PUT, DELETE, ...).` `",
+	},
+	apiDocsSearchLimit: cli.IntFlag{
+		Name:  "limit",
+		Value: 10,
+		Usage: "[Default: 10] Maximum number of ranked matches to return.` `",
+	},
+	apiDocsSearchFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + components.GetFormatFlagDescription([]format.OutputFormat{format.Json, format.Table}) + "` `",
+	},
+	apiDocsDescribeFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + components.GetFormatFlagDescription([]format.OutputFormat{format.Json, format.Table}) + "` `",
+	},
+	mcpShowFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + components.GetFormatFlagDescription([]format.OutputFormat{format.Table, format.Json}) + "` `",
+	},
+	mcpUrl: cli.StringFlag{
+		Name:  "mcp-url",
+		Usage: "[Optional] Remote MCP server endpoint. Overrides the value derived from the platform URL (<platform-url>/mcp) and the " + JfrogCliMcpUrl + " environment variable.` `",
+	},
+	mcpAgent: cli.StringFlag{
+		Name:  "agent",
+		Usage: "[Optional] Target AI agent to configure: 'cursor' or 'claude'.` `",
+	},
+	mcpGlobal: cli.BoolFlag{
+		Name:  "global",
+		Usage: "[Default: false] Configure the MCP server in the agent's global (user-level) configuration instead of the current project.` `",
+	},
+	mcpProjectDir: cli.StringFlag{
+		Name:  "project-dir",
+		Usage: "[Default: current directory] Project directory whose agent configuration should be updated. Ignored when --global is set.` `",
+	},
+	mcpName: cli.StringFlag{
+		Name:  "name",
+		Usage: "[Default: jfrog] Name of the MCP server entry written to the agent configuration.` `",
+	},
+	mcpDryRun: cli.BoolFlag{
+		Name:  "dry-run",
+		Usage: "[Default: false] Print the resulting agent configuration without writing it to disk.` `",
+	},
+	mcpSkipCheck: cli.BoolFlag{
+		Name:  "skip-check",
+		Usage: "[Default: false] Skip the readiness check that verifies the MCP server is reachable before configuring the agent.` `",
 	},
 	// Artifactory's commands flags
 	url: cli.StringFlag{
@@ -906,6 +1023,10 @@ var flagsMap = map[string]cli.Flag{
 	interactive: cli.BoolTFlag{
 		Name:  interactive,
 		Usage: "[Default: true, unless $CI is true] Set to false if you don't want the config command to be interactive. If true, the --url option becomes optional.` `",
+	},
+	Legacy: cli.BoolFlag{
+		Name:  Legacy,
+		Usage: "[Default: false] Set to true to configure or log in to a JFrog Platform where products don't share a single unified URL, such as Artifactory 6.x self-hosted. When set, you'll be prompted to review or override each service's URL (Artifactory, Distribution, Xray, Mission Control, Pipelines), and 'jf login' will use standard authentication instead of the browser-based web login.` `",
 	},
 	EncPassword: cli.BoolTFlag{
 		Name:  EncPassword,
@@ -1330,7 +1451,31 @@ var flagsMap = map[string]cli.Flag{
 	},
 	skipLogin: cli.BoolFlag{
 		Name:  skipLogin,
-		Usage: "[Default: false] Set to true if you'd like the command to skip performing docker login.` `",
+		Usage: "[Default: false] Set to true if you'd like the command to skip performing login.` `",
+	},
+	aptDistribution: cli.StringFlag{
+		Name:  aptDistribution,
+		Usage: "[apt only] [Required for apt setup] Debian distribution name (e.g. noble, jammy).` `",
+	},
+	aptComponent: cli.StringFlag{
+		Name: aptComponent,
+		// No Value default: leaving it unset lets 'jf setup apt' detect "not
+		// provided" and fire its interactive "Component ..." prompt. The effective
+		// default of "main" is applied downstream by AptSetupCommand/AptCommand
+		// SetComponent, so an unset flag still resolves to "main" non-interactively.
+		Usage: "[apt only] [Default: main] Debian component (e.g. main, contrib, non-free). Multiple components: --component \"main contrib non-free\".` `",
+	},
+	aptTrusted: cli.BoolFlag{
+		Name:  aptTrusted,
+		Usage: "[apt only] [Default: false] Skip GPG signature verification. Use only for testing when the repository has no GPG key configured. Mutually exclusive with --import-key.` `",
+	},
+	aptImportKey: cli.BoolFlag{
+		Name:  aptImportKey,
+		Usage: "[apt only] [Default: false] Fetch the Artifactory repository's GPG public key and install it to /etc/apt/keyrings/. Uses signed-by= in the sources entry for scoped trust. Mutually exclusive with --trusted.` `",
+	},
+	aptRemove: cli.BoolFlag{
+		Name:  aptRemove,
+		Usage: "[apt only] [Default: false] Remove all JFrog-managed apt source and pinning files. Combine with --dist to limit to a specific distribution.` `",
 	},
 	npmDetailedSummary: cli.BoolFlag{
 		Name:  detailedSummary,
@@ -1769,6 +1914,14 @@ var flagsMap = map[string]cli.Flag{
 		Name:  IncludeFiles,
 		Usage: "[Optional] List of semicolon-separated(;) path patterns to include in the transfer. Files will be filtered based on their directory path. Pattern examples: 'folder/subfolder/*', 'org/company/*'.` `",
 	},
+	CreatedAfter: cli.StringFlag{
+		Name:  CreatedAfter,
+		Usage: "[Optional] Transfer only files created at or after this exact UTC timestamp. Format: YYYY-MM-DDTHH:mm:ss.sssZ. When both --created-after and --downloaded-after are set, --created-after takes precedence.` `",
+	},
+	DownloadedAfter: cli.StringFlag{
+		Name:  DownloadedAfter,
+		Usage: "[Optional] Transfer only files last downloaded at or after this exact UTC timestamp. Format: YYYY-MM-DDTHH:mm:ss.sssZ. Files that were never downloaded are excluded. Ignored when --created-after is also set.` `",
+	},
 	IgnoreState: cli.BoolFlag{
 		Name:  IgnoreState,
 		Usage: "[Default: false] Set to true to ignore the saved state from previous transfer-files operations.` `",
@@ -1867,7 +2020,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	setupRepo: cli.StringFlag{
 		Name:  repo,
-		Usage: "[Optional] Specifies the Artifactory repository name for the selected package manager, replacing the interactive repository selection.` `",
+		Usage: "[Optional] Specifies the Artifactory repository name for the selected package manager, replacing the interactive repository selection. The interactive selection offers virtual repositories of the matching package type, which is normally what this should be set to. Note that gradle matches the gradle package type rather than maven, and pip, pipenv, poetry, twine and uv all match pypi.` `",
 	},
 	PromotionType: cli.StringFlag{
 		Name:  PromotionType,
@@ -1931,11 +2084,11 @@ var commandFlags = map[string][]string{
 	AddConfig: {
 		interactive, EncPassword, configPlatformUrl, configRtUrl, configDistUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, sshPassphrase, ClientCertPath,
 		ClientCertKeyPath, BasicAuthOnly, configInsecureTls, Overwrite, passwordStdin, accessTokenStdin, OidcTokenID,
-		OidcProviderName, OidcAudience, OidcProviderType, ApplicationKey, configDisableRefreshAccessToken,
+		OidcProviderName, OidcAudience, OidcProviderType, ApplicationKey, configDisableRefreshAccessToken, Legacy,
 	},
 	EditConfig: {
 		interactive, EncPassword, configPlatformUrl, configRtUrl, configDistUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, sshPassphrase, ClientCertPath,
-		ClientCertKeyPath, BasicAuthOnly, configInsecureTls, passwordStdin, accessTokenStdin, configDisableRefreshAccessToken,
+		ClientCertKeyPath, BasicAuthOnly, configInsecureTls, passwordStdin, accessTokenStdin, configDisableRefreshAccessToken, Legacy,
 	},
 	DeleteConfig: {
 		deleteQuiet,
@@ -2081,10 +2234,10 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	NpmInstallCi: {
-		BuildName, BuildNumber, module, Project, runNative,
+		BuildName, BuildNumber, module, Project, runNative, serverIdNpm,
 	},
 	NpmPublish: {
-		BuildName, BuildNumber, module, Project, npmDetailedSummary, xrayScan, XrFormat, runNative, npmWorkspaces,
+		BuildName, BuildNumber, module, Project, npmDetailedSummary, xrayScan, XrFormat, runNative, npmWorkspaces, serverIdNpm,
 	},
 	PnpmConfig: {
 		global, serverIdResolve, repoResolve,
@@ -2184,6 +2337,18 @@ var commandFlags = map[string][]string{
 	Conan: {
 		BuildName, BuildNumber, module, Project,
 	},
+	Nix: {
+		BuildName, BuildNumber, module, Project, serverId,
+	},
+	Apt: {
+		serverId, skipLogin, setupRepo, aptDistribution, aptComponent, aptTrusted,
+	},
+	AptSetup: {
+		serverId, setupRepo, aptDistribution, aptComponent, aptTrusted, aptImportKey, aptRemove,
+	},
+	Apk: {
+		serverId, repo, apkAlpineVersion, apkBranch, apkArch, BuildName, BuildNumber, module, Project, user, password,
+	},
 	Stats: {
 		XrFormat, accessToken, serverId,
 	},
@@ -2191,6 +2356,27 @@ var commandFlags = map[string][]string{
 		platformUrl, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
 		ClientCertKeyPath, InsecureTls, configDisableRefreshAccessToken,
 		apiHeader, apiInput, apiData, apiMethod, apiVerbose, apiTimeout,
+	},
+	ApiDocsSearch: {
+		apiDocsSearchTag, apiDocsSearchMethod, apiDocsSearchLimit, apiDocsSearchFormat,
+	},
+	ApiDocsDescribe: {
+		apiDocsDescribeFormat,
+	},
+	McpShow: {
+		platformUrl, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
+		ClientCertKeyPath, InsecureTls, configDisableRefreshAccessToken,
+		mcpUrl, mcpShowFormat,
+	},
+	McpInstall: {
+		platformUrl, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
+		ClientCertKeyPath, InsecureTls, configDisableRefreshAccessToken,
+		mcpUrl, mcpAgent, mcpGlobal, mcpProjectDir, mcpName, mcpDryRun, mcpSkipCheck,
+	},
+	McpUninstall: {
+		platformUrl, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
+		ClientCertKeyPath, InsecureTls, configDisableRefreshAccessToken,
+		mcpAgent, mcpGlobal, mcpProjectDir, mcpName, mcpDryRun,
 	},
 	TemplateConsumer: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
@@ -2251,7 +2437,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, deleteQuiet,
 	},
 	TransferFiles: {
-		Filestore, IncludeRepos, ExcludeRepos, IncludeFiles, IgnoreState, ProxyKey, transferFilesStatus, Stop, PreChecks, transferFilesFormat,
+		Filestore, IncludeRepos, ExcludeRepos, IncludeFiles, CreatedAfter, DownloadedAfter, IgnoreState, ProxyKey, transferFilesStatus, Stop, PreChecks, transferFilesFormat,
 	},
 	TransferInstall: {
 		installPluginVersion, InstallPluginSrcDir, InstallPluginHomeDir,
@@ -2313,6 +2499,10 @@ var commandFlags = map[string][]string{
 	},
 	Setup: {
 		serverId, url, user, password, accessToken, sshPassphrase, sshKeyPath, ClientCertPath, ClientCertKeyPath, Project, setupRepo,
+		aptDistribution, aptComponent, aptTrusted, aptImportKey, aptRemove,
+	},
+	Login: {
+		serverId, configDisableRefreshAccessToken, Legacy,
 	},
 }
 

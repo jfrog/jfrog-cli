@@ -1,0 +1,119 @@
+# Trimmed excerpt of JFrog's public Platform Artifactory System API reference,
+# kept as an OSS test fixture for the jfrog-cli apispec package (JGC-525). Not the
+# full spec — see docs/api-spec/full/ (populated only in JFrog's internal release
+# build).
+openapi: 3.1.0
+info:
+  title: JFrog Platform - Artifactory System API
+  description: >
+    Artifactory system configuration APIs for the JFrog Platform.
+
+
+    **Authentication:**
+
+    - Basic authentication using username and password
+
+    - Access Tokens instead of password for basic authentication
+
+    - Access Tokens as bearer token in authorization header (Authorization:
+    Bearer <token>)
+  version: 1.0.0
+  contact:
+    name: JFrog Support
+servers:
+  - url: https://{jfrog_url}
+    description: JFrog Platform
+    variables:
+      jfrog_url:
+        default: myserver.jfrog.io
+        description: Your JFrog Platform hostname (e.g., mycompany.jfrog.io)
+tags:
+  - name: Artifactory System
+    description: Artifactory system configuration APIs.
+security:
+  - BearerAuth: []
+paths:
+  /artifactory/api/system/ping:
+    get:
+      tags:
+        - Artifactory System
+      summary: Artifactory Ping
+      description: |
+        Get a simple status response about the state of Artifactory.
+
+        **Since:** 2.3.0
+
+        **Security:** Requires a valid user (can be anonymous).
+      operationId: artifactoryPing
+      security: []
+      responses:
+        '200':
+          description: Artifactory is alive and working properly
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: OK
+        '500':
+          description: Internal Server Error
+  /artifactory/api/system/version:
+    get:
+      tags:
+        - Artifactory System
+      summary: Get Artifactory Version
+      description: >
+        Return information about the current Artifactory version, revision, and
+        currently installed Add-ons.
+
+
+        **Since:** 2.2.2
+
+
+        **Security:** Requires a valid user (can be anonymous).
+      operationId: getArtifactoryVersion
+      security: []
+      responses:
+        '200':
+          description: Artifactory version, revision, and list of installed add-ons
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  version:
+                    type: string
+                    description: Artifactory version
+                  revision:
+                    type: string
+                    description: Revision number
+                  addons:
+                    type: array
+                    items:
+                      type: string
+                    description: List of addons
+            application/vnd.org.jfrog.artifactory.system.Version+json:
+              schema:
+                type: object
+                properties:
+                  version:
+                    type: string
+                  revision:
+                    type: string
+                  addons:
+                    type: array
+                    items:
+                      type: string
+        '401':
+          description: Bad Credentials - Invalid credentials
+components:
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: basic
+      description: Basic authentication using username and password
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: Access Token as bearer token
+x-readme:
+  explorer-enabled: false

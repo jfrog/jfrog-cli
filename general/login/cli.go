@@ -6,9 +6,16 @@ import (
 	"github.com/urfave/cli"
 )
 
+const disableTokenRefreshFlag = "disable-token-refresh"
+
 func LoginCmd(c *cli.Context) error {
 	if c.NArg() > 0 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
-	return coreLogin.NewLoginCommand().Run()
+	loginCmd := coreLogin.NewLoginCommand().SetServerId(c.String("server-id")).SetLegacy(c.Bool(cliutils.Legacy))
+	if c.IsSet(disableTokenRefreshFlag) {
+		disableTokenRefresh := c.Bool(disableTokenRefreshFlag)
+		loginCmd.SetDisableTokenRefresh(&disableTokenRefresh)
+	}
+	return loginCmd.Run()
 }

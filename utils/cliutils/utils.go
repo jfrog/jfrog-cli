@@ -74,6 +74,51 @@ func splitAgentNameAndVersion(fullAgentName string) (string, string) {
 	return agentName, agentVersion
 }
 
+// User-Agent product-token formats for the Client → Agent → Model axes
+// (e.g. "jfrog-cli-go/2.117.0 ai-agent/claude ai-client/vscode ai-model/opus-4.7").
+//
+// Product tokens rather than comments so UA parsers that split on whitespace and
+// read name/version pairs keep the census signal. "ai-agent" avoids colliding with
+// this codebase's use of "agent" for the CLI itself (SetCliUserAgentName / build-info).
+// The version slot of each token carries the axis value (harness/app/model slug), not
+// a software version.
+const (
+	aiAgentUserAgentFormat  = " ai-agent/%s"
+	aiClientUserAgentFormat = " ai-client/%s"
+	aiModelUserAgentFormat  = " ai-model/%s"
+)
+
+// GetCliUserAgentWithAgent returns the CLI user-agent, enriched with Client → Agent →
+// Model tokens when an AI agent is detected (AGW-86). Without this the identity never
+// leaves the machine on the request itself — it reaches the platform only as a label on
+// a separate telemetry call — so an agent and a human running the same command are
+// byte-identical on the wire.
+//
+// Attribution metadata, not a credential: harness env vars can be unset or forged.
+// Consumers must treat it as a routing/census hint only.
+//
+// Wire-safe by construction: Agent is a fixed table name (or "unknown"); Client and
+// Model are sanitizeToken'd ([a-z0-9._-], capped) in DetectExecutionContext before use.
+func GetCliUserAgentWithAgent() string {
+	return coreutils.GetCliUserAgent() + agentUserAgentSuffix(commonCommands.DetectExecutionContext())
+}
+
+// agentUserAgentSuffix appends ai-agent / ai-client / ai-model tokens when
+// IsAgent; empty when not an agent. Never logs or fails the command.
+func agentUserAgentSuffix(executionContext commonCommands.ExecutionContext) string {
+	if !executionContext.IsAgent {
+		return ""
+	}
+	suffix := fmt.Sprintf(aiAgentUserAgentFormat, executionContext.Agent)
+	if executionContext.Client != "" {
+		suffix += fmt.Sprintf(aiClientUserAgentFormat, executionContext.Client)
+	}
+	if executionContext.Model != "" {
+		suffix += fmt.Sprintf(aiModelUserAgentFormat, executionContext.Model)
+	}
+	return suffix
+}
+
 func GetCliError(err error, success, failed int, failNoOp bool) error {
 	switch coreutils.GetExitCode(err, success, failed, failNoOp) {
 	case coreutils.ExitCodeError:
@@ -777,8 +822,9 @@ func GetJFrogApplicationKey(c *cli.Context) string {
 	return applicationKey
 }
 
-// ShouldHideSurveyLink checks if the survey should be hidden based on the JFROG_CLI_HIDE_SURVEY and CI environment variables
+// ShouldHideSurveyLink checks if the survey should be hidden based on the JFROG_CLI_HIDE_SURVEY
+// and CI environment variables, or when the CLI is invoked by an AI agent.
 // Returns true if the survey should be hidden, false otherwise
 func ShouldHideSurveyLink() bool {
-	return getCiValue() || os.Getenv(JfrogCliHideSurvey) == "true"
+	return getCiValue() || os.Getenv(JfrogCliHideSurvey) == "true" || commonCommands.DetectExecutionContext().IsAgent
 }

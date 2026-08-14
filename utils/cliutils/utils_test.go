@@ -13,6 +13,7 @@ import (
 	"time"
 
 	biutils "github.com/jfrog/build-info-go/utils"
+	corecommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	configtests "github.com/jfrog/jfrog-cli-core/v2/utils/config/tests"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
@@ -385,6 +386,41 @@ func (t *redirectingTransport) RoundTrip(req *http.Request) (*http.Response, err
 	return t.baseTransport.RoundTrip(req)
 }
 
+// agentDetectorEnvVars lists every env var jfrog-cli-core's agent detector consults
+// (see ExecutionContext in jfrog-cli-core/common/commands). Tests clear these so
+// ShouldHideSurveyLink's agent check is deterministic regardless of the shell
+// running `go test` (e.g. running inside Claude Code, Cursor, etc.).
+var agentDetectorEnvVars = []string{
+	"CLAUDE_CODE_CHILD_SESSION",
+	// Cleared even though no longer detectors — leftover process env must not
+	// bleed into human / strong-signal assertions.
+	"CLAUDECODE", "CLAUDE_CODE", "CLAUDE_CODE_ENTRYPOINT",
+	"GEMINI_CLI",
+	"GOOSE_TERMINAL",
+	"CURSOR_AGENT", "CURSOR_TRACE_ID", "CURSOR_EXTENSION_HOST_ROLE", "CURSOR_CLI",
+	"COPILOT_CLI", "COPILOT_AGENT_SESSION_ID", "COPILOT_MODEL", "COPILOT_ALLOW_ALL",
+	"KILOCODE_FEATURE", "KILO_PID", "KILO_IPC_SOCKET_PATH", "KILO_SERVER_PASSWORD",
+	"ROO_ACTIVE", "ROO_CLI_RUNTIME", "ROO_CODE_IPC_SOCKET_PATH",
+	"CODEX_CI", "CODEX_THREAD_ID", "CODEX_SANDBOX",
+	"WINDSURF_CASCADE_TERMINAL",
+	"CLINE_ACTIVE", "OPENCODE", "OPENCODE_SESSION_ID", "OPENCODE_CLIENT",
+	"AMP_CURRENT_THREAD_ID", "AUGMENT_AGENT", "QWEN_CODE",
+	"ANTIGRAVITY_AGENT", "CRUSH", "IFLOW_CLI", "TRAE_AI_SHELL_ID",
+	"AI_AGENT", "AGENT",
+	// Host editor and model axes — cleared so the wire format is deterministic
+	// regardless of the shell running `go test`.
+	"TERM_PROGRAM", "JFROG_CLI_AI_MODEL",
+}
+
+func clearAgentEnvVarsForTest(t *testing.T) {
+	t.Helper()
+	for _, e := range agentDetectorEnvVars {
+		t.Setenv(e, "")
+	}
+	corecommands.ResetExecutionContextForTest()
+	t.Cleanup(corecommands.ResetExecutionContextForTest)
+}
+
 // TestGetHasDisplayedSurveyLink tests the survey link environment variable check with parametrized test cases
 func TestGetHasDisplayedSurveyLink(t *testing.T) {
 	testCases := []struct {
@@ -411,6 +447,7 @@ func TestGetHasDisplayedSurveyLink(t *testing.T) {
 	t.Setenv(coreutils.CI, "")
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			clearAgentEnvVarsForTest(t)
 			t.Setenv(JfrogCliHideSurvey, tc.envValue)
 
 			shouldHide := ShouldHideSurveyLink()
@@ -428,4 +465,201 @@ func TestSettingCIFlagRemovesSurvey(t *testing.T) {
 	t.Setenv(coreutils.CI, "true")
 	shouldHide := ShouldHideSurveyLink()
 	assert.True(t, shouldHide, "Expected survey to be hidden when CI flag is set")
+}
+
+func TestSurveyHiddenForAgent(t *testing.T) {
+	t.Setenv(coreutils.CI, "")
+	t.Setenv(JfrogCliHideSurvey, "")
+	clearAgentEnvVarsForTest(t)
+	t.Setenv("CLAUDE_CODE_CHILD_SESSION", "true")
+	corecommands.ResetExecutionContextForTest()
+
+	assert.True(t, ShouldHideSurveyLink(), "Expected survey to be hidden when invoked by an agent")
+}
+
+func TestLoginCommandFlagsIncludeServerId(t *testing.T) {
+	flags := GetCommandFlags(Login)
+	assert.NotEmpty(t, flags, "Expected login command to have flags")
+
+	var flagNames []string
+	for _, f := range flags {
+		flagNames = append(flagNames, f.GetName())
+	}
+	assert.Contains(t, flagNames, "server-id", "Expected login command flags to include 'server-id'")
+}
+
+func TestTransferFilesTimestampFilterFlags(t *testing.T) {
+	flags := GetCommandFlags(TransferFiles)
+	assert.NotEmpty(t, flags)
+
+	var flagNames []string
+	usageByName := map[string]string{}
+	for _, f := range flags {
+		flagNames = append(flagNames, f.GetName())
+		usageByName[f.GetName()] = f.String()
+	}
+
+	assert.Contains(t, flagNames, CreatedAfter)
+	assert.Contains(t, flagNames, DownloadedAfter)
+	assert.Contains(t, usageByName[CreatedAfter], "YYYY-MM-DDTHH:mm:ss.sssZ")
+	assert.Contains(t, usageByName[DownloadedAfter], "YYYY-MM-DDTHH:mm:ss.sssZ")
+}
+
+// --- AGW-86: User-Agent enrichment with the detected AI agent ---
+
+// withCliUserAgent pins the CLI user-agent name/version for one test. The real values are
+// set once in init() from JFROG_CLI_USER_AGENT, so tests drive the setters directly rather
+// than trying to re-run init.
+func withCliUserAgent(t *testing.T, name, version string) {
+	t.Helper()
+	prevName, prevVersion := coreutils.GetCliUserAgentName(), coreutils.GetCliUserAgentVersion()
+	coreutils.SetCliUserAgentName(name)
+	coreutils.SetCliUserAgentVersion(version)
+	t.Cleanup(func() {
+		coreutils.SetCliUserAgentName(prevName)
+		coreutils.SetCliUserAgentVersion(prevVersion)
+	})
+}
+
+func TestGetCliUserAgentWithAgentNoAgentDetected(t *testing.T) {
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
+	corecommands.ResetExecutionContextForTest()
+
+	assert.Equal(t, "jfrog-cli-go/2.117.0", GetCliUserAgentWithAgent(),
+		"a human invocation must stay byte-identical to today's behaviour")
+}
+
+func TestGetCliUserAgentWithAgentPerDetector(t *testing.T) {
+	// Cover every detector row in jfrog-cli-core's agentEnvDetectors (at least
+	// one signal each), plus envEquals and the generic AGENT→unknown fallback.
+	testCases := []struct {
+		name      string
+		envVar    string
+		envValue  string // empty → "1"
+		wantAgent string
+	}{
+		{"claude child session", "CLAUDE_CODE_CHILD_SESSION", "", "claude"},
+		{"gemini", "GEMINI_CLI", "", "gemini"},
+		{"goose", "GOOSE_TERMINAL", "", "goose"},
+		{"cursor agent", "CURSOR_AGENT", "", "cursor"},
+		{"cursor extension host", "CURSOR_EXTENSION_HOST_ROLE", "agent-exec", "cursor"},
+		{"copilot cli", "COPILOT_CLI", "", "copilot"},
+		{"copilot agent session", "COPILOT_AGENT_SESSION_ID", "", "copilot"},
+		{"kilocode feature", "KILOCODE_FEATURE", "", "kilocode"},
+		{"kilocode pid", "KILO_PID", "", "kilocode"},
+		{"roo active", "ROO_ACTIVE", "", "roo_code"},
+		{"roo cli runtime", "ROO_CLI_RUNTIME", "", "roo_code"},
+		{"codex ci", "CODEX_CI", "", "codex"},
+		{"codex thread", "CODEX_THREAD_ID", "", "codex"},
+		{"codex sandbox", "CODEX_SANDBOX", "", "codex"},
+		{"windsurf", "WINDSURF_CASCADE_TERMINAL", "", "windsurf"},
+		{"cline", "CLINE_ACTIVE", "", "cline"},
+		{"opencode", "OPENCODE", "", "opencode"},
+		{"opencode session id", "OPENCODE_SESSION_ID", "", "opencode"},
+		{"amp", "AMP_CURRENT_THREAD_ID", "", "amp"},
+		{"augment", "AUGMENT_AGENT", "", "augment"},
+		{"qwen", "QWEN_CODE", "", "qwen"},
+		{"antigravity", "ANTIGRAVITY_AGENT", "", "antigravity"},
+		{"crush", "CRUSH", "", "crush"},
+		{"iflow", "IFLOW_CLI", "", "iflow"},
+		{"trae", "TRAE_AI_SHELL_ID", "", "trae"},
+		{"generic agent collapses to unknown", "AGENT", "", "unknown"},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			clearAgentEnvVarsForTest(t)
+			withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
+			val := testCase.envValue
+			if val == "" {
+				val = "1"
+			}
+			t.Setenv(testCase.envVar, val)
+			corecommands.ResetExecutionContextForTest()
+
+			assert.Equal(t, "jfrog-cli-go/2.117.0 ai-agent/"+testCase.wantAgent, GetCliUserAgentWithAgent())
+		})
+	}
+}
+
+func TestGetCliUserAgentWithAgentPreservesCustomUserAgent(t *testing.T) {
+	// JFROG_CLI_USER_AGENT lets an operator replace the product token entirely. The agent
+	// marker must be appended to whatever that resolves to, never replace it.
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "my-wrapper", "9.9.9")
+	t.Setenv("CLAUDE_CODE_CHILD_SESSION", "true")
+	corecommands.ResetExecutionContextForTest()
+
+	assert.Equal(t, "my-wrapper/9.9.9 ai-agent/claude", GetCliUserAgentWithAgent())
+}
+
+func TestGetCliUserAgentWithAgentNoVersion(t *testing.T) {
+	// GetCliUserAgent omits the slash when no version is set; the marker still appends.
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "jfrog-cli-go", "")
+	t.Setenv("CLAUDE_CODE_CHILD_SESSION", "true")
+	corecommands.ResetExecutionContextForTest()
+
+	assert.Equal(t, "jfrog-cli-go ai-agent/claude", GetCliUserAgentWithAgent())
+}
+
+func TestGetCliUserAgentWithAgentAppendsHostAndModel(t *testing.T) {
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
+	t.Setenv("CURSOR_AGENT", "1")
+	t.Setenv("TERM_PROGRAM", "vscode")
+	t.Setenv("JFROG_CLI_AI_MODEL", "opus-4.7")
+	corecommands.ResetExecutionContextForTest()
+
+	assert.Equal(t, "jfrog-cli-go/2.117.0 ai-agent/cursor ai-client/vscode ai-model/opus-4.7",
+		GetCliUserAgentWithAgent())
+}
+
+func TestGetCliUserAgentWithAgentOmitsAbsentAxes(t *testing.T) {
+	// Host and model are optional: with neither advertised, the suffix is just
+	// the agent token — byte-identical to the pre-host/model behaviour.
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
+	t.Setenv("CLAUDE_CODE_CHILD_SESSION", "1")
+	corecommands.ResetExecutionContextForTest()
+
+	assert.Equal(t, "jfrog-cli-go/2.117.0 ai-agent/claude", GetCliUserAgentWithAgent())
+}
+
+func TestGetCliUserAgentWithAgentClientOnly(t *testing.T) {
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
+	t.Setenv("CURSOR_AGENT", "1")
+	t.Setenv("TERM_PROGRAM", "vscode")
+	corecommands.ResetExecutionContextForTest()
+
+	assert.Equal(t, "jfrog-cli-go/2.117.0 ai-agent/cursor ai-client/vscode",
+		GetCliUserAgentWithAgent())
+}
+
+func TestGetCliUserAgentWithAgentModelOnly(t *testing.T) {
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
+	t.Setenv("CURSOR_AGENT", "1")
+	t.Setenv("JFROG_CLI_AI_MODEL", "opus-4.7")
+	corecommands.ResetExecutionContextForTest()
+
+	assert.Equal(t, "jfrog-cli-go/2.117.0 ai-agent/cursor ai-model/opus-4.7",
+		GetCliUserAgentWithAgent())
+}
+
+func TestGetCliUserAgentWithAgentMarkerIsWellFormed(t *testing.T) {
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
+	t.Setenv("CURSOR_AGENT", "1")
+	corecommands.ResetExecutionContextForTest()
+
+	userAgent := GetCliUserAgentWithAgent()
+	// The product token stays first, so parsers that read only it are unaffected.
+	assert.True(t, strings.HasPrefix(userAgent, "jfrog-cli-go/2.117.0"), "got %q", userAgent)
+	assert.True(t, strings.HasSuffix(userAgent, "ai-agent/cursor"), "got %q", userAgent)
+	// The detector only ever returns fixed table names, so no raw env value — and
+	// therefore no header-splitting sequence — can reach the wire.
+	assert.NotContains(t, userAgent, "\n")
+	assert.NotContains(t, userAgent, "\r")
 }

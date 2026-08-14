@@ -6,6 +6,31 @@ func GetDescription() string {
 	return "Run native Helm command with build-info collection support."
 }
 
+func GetAIDescription() string {
+	return `Run a Helm command (package, push, pull, dependency update) through JFrog with build-info collection. Wraps the local helm binary; arguments pass through.
+
+When to use:
+- Packaging and pushing Helm charts to an Artifactory OCI Helm repository.
+- Resolving chart dependencies through Artifactory with build-info tracking.
+
+Prerequisites:
+- A local helm binary (Helm 3+).
+- A configured server.
+- For build-info: --build-name and --build-number passed together.
+
+Common patterns:
+  $ jf helm package ./mychart --build-name=my-build --build-number=1
+  $ jf helm push mychart-0.1.0.tgz oci://myrepo.jfrog.io/helm-local --build-name=my-build --build-number=1
+  $ jf helm dependency update ./mychart --build-name=my-build --build-number=1
+
+Gotchas:
+- Only 'package', 'push', and 'dependency' contribute to build-info; other commands are pure passthroughs.
+- OCI registries require the URL prefix oci://; HTTP-based Helm repos use the helm-repo URL form.
+- --repository-cache lets you override the chart cache location, useful in CI.
+
+Related: jf rt build-publish, jf docker push`
+}
+
 func GetArguments() string {
 	return `	helm arguments
 		Helm command and arguments to execute. All standard Helm commands are supported.

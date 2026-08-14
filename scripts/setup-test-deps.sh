@@ -155,7 +155,7 @@ case "${SUITE}" in
     ;;
   huggingface)
     install_python 3.11
-    pip install huggingface_hub
+    pip install "huggingface_hub==1.19.0"
     ;;
   distribution)
     # Go-only (uses platform secrets, not local RT)

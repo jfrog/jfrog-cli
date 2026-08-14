@@ -1,0 +1,8 @@
+{
+  "key": "${NIX_VIRTUAL_REPO}",
+  "rclass": "virtual",
+  "packageType": "nix",
+  "repositories": [
+    "${NIX_REMOTE_REPO}"
+  ]
+}

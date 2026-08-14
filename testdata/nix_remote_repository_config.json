@@ -1,0 +1,6 @@
+{
+  "key": "${NIX_REMOTE_REPO}",
+  "rclass": "remote",
+  "packageType": "nix",
+  "url": "https://cache.nixos.org"
+}

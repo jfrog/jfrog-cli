@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -12,6 +13,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	testhelpers "github.com/jfrog/jfrog-cli/utils/tests"
+	"github.com/jfrog/jfrog-cli/utils/usage"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/stretchr/testify/assert"
@@ -534,6 +536,71 @@ func TestApiTimeoutExpired(t *testing.T) {
 	assert.Error(t, err, "expected a timeout error")
 }
 
+// TestApiDispatch_LeadingSlashDocsPathReachesParentAction is a permanent guard
+// for the "jf api docs search" dispatch design: urfave/cli v1.22.17 matches a
+// subcommand against the leftover positional arg *string*, not against path
+// semantics, so a leading-slash path like "/docs" must fall through to api's
+// own Action rather than being swallowed by the "docs" subcommand. This drives
+// the real vendored urfave/cli library (not a mock), so a future dependency
+// bump that changes this behavior would fail here.
+func TestApiDispatch_LeadingSlashDocsPathReachesParentAction(t *testing.T) {
+	var gotArgs []string
+	app := cli.NewApp()
+	app.Commands = []cli.Command{
+		{
+			Name:  "api",
+			Flags: []cli.Flag{cli.StringFlag{Name: "method, X"}},
+			Action: func(c *cli.Context) error {
+				gotArgs = c.Args()
+				return nil
+			},
+			Subcommands: []cli.Command{
+				{
+					Name: "docs",
+					Action: func(c *cli.Context) error {
+						t.Fatal("docs subcommand must not be invoked for a leading-slash path")
+						return nil
+					},
+				},
+			},
+		},
+	}
+
+	require.NoError(t, app.Run([]string{"jf", "api", "-X", "GET", "/docs"}))
+	require.Equal(t, []string{"/docs"}, gotArgs)
+}
+
+// TestApiDispatch_BareDocsRoutesToSubcommand is the mirror image: the bare,
+// slash-less literal "docs" is the one case that *is* intercepted by the new
+// subcommand. Documented as an accepted caveat, not a bug.
+func TestApiDispatch_BareDocsRoutesToSubcommand(t *testing.T) {
+	var parentCalled, docsCalled bool
+	app := cli.NewApp()
+	app.Commands = []cli.Command{
+		{
+			Name:  "api",
+			Flags: []cli.Flag{cli.StringFlag{Name: "method, X"}},
+			Action: func(c *cli.Context) error {
+				parentCalled = true
+				return nil
+			},
+			Subcommands: []cli.Command{
+				{
+					Name: "docs",
+					Action: func(c *cli.Context) error {
+						docsCalled = true
+						return nil
+					},
+				},
+			},
+		},
+	}
+
+	require.NoError(t, app.Run([]string{"jf", "api", "docs"}))
+	assert.True(t, docsCalled, "bare 'docs' literal should route to the docs subcommand")
+	assert.False(t, parentCalled, "api's own Action should not run when 'docs' subcommand matches")
+}
+
 type commandArgs struct {
 	path    string
 	method  string
@@ -650,13 +717,13 @@ func (mc *mockContext) setInt(name string, value int) {
 	mc.setMap[name] = true
 }
 
-// swapReportUsageFn replaces reportUsageFn for the duration of the test and
-// restores it on cleanup. Tests using this must not run in parallel.
+// swapReportUsageFn replaces the shared usage.ReportUsageFn for the duration of
+// the test and restores it on cleanup. Tests using this must not run in parallel.
 func swapReportUsageFn(t *testing.T, fn func(string, *coreConfig.ServerDetails, chan<- bool)) {
 	t.Helper()
-	prev := reportUsageFn
-	reportUsageFn = fn
-	t.Cleanup(func() { reportUsageFn = prev })
+	prev := usage.ReportUsageFn
+	usage.ReportUsageFn = fn
+	t.Cleanup(func() { usage.ReportUsageFn = prev })
 }
 
 // newTestServer starts an httptest server that returns 200/OK and serverDetails
@@ -691,33 +758,6 @@ func TestRunApiCmd_CollectsMetrics(t *testing.T) {
 	assert.Equal(t, flags, got.Flags)
 }
 
-func TestWaitForUsageReport(t *testing.T) {
-	t.Run("non-positive timeout waits for signal", func(t *testing.T) {
-		ch := make(chan bool, 1)
-		ch <- true
-		start := time.Now()
-		waitForUsageReport(ch, 0)
-		assert.Less(t, time.Since(start), 50*time.Millisecond)
-	})
-
-	t.Run("returns immediately when signaled before timeout", func(t *testing.T) {
-		ch := make(chan bool, 1)
-		ch <- true
-		start := time.Now()
-		waitForUsageReport(ch, time.Second)
-		assert.Less(t, time.Since(start), 50*time.Millisecond)
-	})
-
-	t.Run("returns at timeout when never signaled", func(t *testing.T) {
-		ch := make(chan bool)
-		start := time.Now()
-		waitForUsageReport(ch, 100*time.Millisecond)
-		elapsed := time.Since(start)
-		assert.GreaterOrEqual(t, elapsed, 100*time.Millisecond)
-		assert.Less(t, elapsed, 500*time.Millisecond)
-	})
-}
-
 func TestRunApiCmd_UsageReportDisabled(t *testing.T) {
 	t.Setenv("JFROG_CLI_REPORT_USAGE", "false")
 
@@ -729,20 +769,6 @@ func TestRunApiCmd_UsageReportDisabled(t *testing.T) {
 	require.NoError(t, runApiCmd(ctx, serverDetails, &stdOut, nil))
 	// With reporting disabled the real reporter is a near-instant no-op.
 	assert.Less(t, time.Since(start), 2*time.Second)
-}
-
-func TestStartUsageReport_PanicIsRecovered(t *testing.T) {
-	swapReportUsageFn(t, func(_ string, _ *coreConfig.ServerDetails, _ chan<- bool) {
-		panic("boom")
-	})
-
-	ch := startUsageReport(&coreConfig.ServerDetails{})
-	select {
-	case <-ch:
-		// Channel was closed by the recover path; receive returns the zero value.
-	case <-time.After(time.Second):
-		t.Fatal("startUsageReport did not unblock after panic")
-	}
 }
 
 func TestRunApiCmd_UsageReportTimeout(t *testing.T) {
@@ -776,4 +802,84 @@ func TestRunApiCmd_UsageReportCompletes(t *testing.T) {
 	require.NoError(t, runApiCmd(ctx, serverDetails, &stdOut, nil))
 	// Reporter signals immediately, so the call should not approach the timeout.
 	assert.Less(t, time.Since(start), 2*time.Second)
+}
+
+// newTestServerWithStatus starts an httptest server returning the given status
+// and body. Used to drive the HTTP-error code path in `jf api`.
+func newTestServerWithStatus(t *testing.T, status int, body []byte, contentType string) *coreConfig.ServerDetails {
+	t.Helper()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		if contentType != "" {
+			w.Header().Set("Content-Type", contentType)
+		}
+		w.WriteHeader(status)
+		if _, err := w.Write(body); err != nil {
+			t.Log(err)
+		}
+	}))
+	t.Cleanup(srv.Close)
+	return &coreConfig.ServerDetails{Url: srv.URL, AccessToken: "my-token"}
+}
+
+// TestApiJSONErrorMode_EmitsJSONOnStdout verifies that when the opt-in
+// JFROG_CLI_ERROR_OUTPUT_FORMAT=json env var is set, `jf api` emits a
+// structured JSON object describing the HTTP error on stdout (the data
+// channel) rather than the raw body. Stderr keeps its log lines untouched.
+func TestApiJSONErrorMode_EmitsJSONOnStdout(t *testing.T) {
+	t.Setenv("JFROG_CLI_ERROR_OUTPUT_FORMAT", "json")
+
+	body := []byte(`{"errors":[{"code":"UNAUTHORIZED","message":"bad creds"}]}`)
+	serverDetails := newTestServerWithStatus(t, http.StatusUnauthorized, body, "application/json")
+	ctx := newMockContext(&commandArgs{path: "/unauthorized"})
+
+	var stdOut bytes.Buffer
+	err := runApiCmd(ctx, serverDetails, &stdOut, nil)
+
+	// Must signal failure (urfave/cli ExitError with code 1, empty message).
+	assert.Error(t, err)
+
+	// stdout must contain a parseable JSON object with the structured fields —
+	// not the raw response body as in legacy mode.
+	var out map[string]interface{}
+	require.NoError(t, json.Unmarshal(stdOut.Bytes(), &out), "stdout must be parseable JSON")
+	assert.EqualValues(t, http.StatusUnauthorized, out["status_code"])
+	assert.Equal(t, "401 Unauthorized", out["status"])
+	bodyOut, ok := out["body"].(map[string]interface{})
+	require.True(t, ok, "body field must be a nested JSON object")
+	errorsArr, ok := bodyOut["errors"].([]interface{})
+	require.True(t, ok)
+	assert.NotEmpty(t, errorsArr)
+}
+
+// TestApiJSONErrorMode_SuccessUnchanged verifies that 2xx responses still
+// write the body to stdout even when the env var is set — JSON mode only
+// changes the error path.
+func TestApiJSONErrorMode_SuccessUnchanged(t *testing.T) {
+	t.Setenv("JFROG_CLI_ERROR_OUTPUT_FORMAT", "json")
+
+	body := []byte(`{"ok":true}`)
+	serverDetails := newTestServerWithStatus(t, http.StatusOK, body, "application/json")
+	ctx := newMockContext(&commandArgs{path: "/ok"})
+
+	var stdOut bytes.Buffer
+	require.NoError(t, runApiCmd(ctx, serverDetails, &stdOut, nil))
+	assert.Equal(t, string(body), strings.TrimSpace(stdOut.String()))
+}
+
+// TestApiDefaultMode_ErrorStillDumpsBody guards against regressing the legacy
+// curl-like behavior: with the env var unset, errors still dump the body to
+// stdout and the command exits non-zero.
+func TestApiDefaultMode_ErrorStillDumpsBody(t *testing.T) {
+	t.Setenv("JFROG_CLI_ERROR_OUTPUT_FORMAT", "")
+
+	// 4xx is returned as a non-retried response; 5xx would trip the client's
+	// retry loop and never reach the body-write branch under test.
+	body := []byte(`{"errors":["nope"]}`)
+	serverDetails := newTestServerWithStatus(t, http.StatusUnauthorized, body, "application/json")
+	ctx := newMockContext(&commandArgs{path: "/unauthorized-default"})
+
+	var stdOut bytes.Buffer
+	err := runApiCmd(ctx, serverDetails, &stdOut, nil)
+	assert.Error(t, err)
+	assert.Equal(t, string(body), strings.TrimSpace(stdOut.String()))
 }

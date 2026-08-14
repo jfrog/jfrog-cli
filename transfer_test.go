@@ -422,7 +422,7 @@ func TestTransferConfigMerge(t *testing.T) {
 	// The module type only exist in Artifactory 7
 	if projectsSupported {
 		// Create project on Source server
-		deleteProject := createTestProject(t)
+		deleteProject := createTestProject(t, tests.ProjectKey)
 		if deleteProject != nil {
 			defer func() {
 				assert.NoError(t, deleteProject())
@@ -537,11 +537,11 @@ func validateCsvConflicts(t *testing.T, csvPath string, projectsSupported bool) 
 	}
 }
 
-func createTestProject(t *testing.T) func() error {
+func createTestProject(t *testing.T, projectKey string) func() error {
 	accessManager, err := rtUtils.CreateAccessServiceManager(serverDetails, false)
 	assert.NoError(t, err)
 	// Delete the project if already exists
-	deleteProjectIfExists(t, accessManager, tests.ProjectKey)
+	deleteProjectIfExists(t, accessManager, projectKey)
 
 	// Create new project
 	adminPrivileges := accessServices.AdminPrivileges{
@@ -550,17 +550,17 @@ func createTestProject(t *testing.T) func() error {
 		IndexResources:  utils.Pointer(false),
 	}
 	projectDetails := accessServices.Project{
-		DisplayName:       tests.ProjectKey + "MyProject",
+		DisplayName:       projectKey + "MyProject",
 		Description:       "My Test Project",
 		AdminPrivileges:   &adminPrivileges,
 		SoftLimit:         utils.Pointer(false),
 		StorageQuotaBytes: 1073741825,
-		ProjectKey:        tests.ProjectKey,
+		ProjectKey:        projectKey,
 	}
 
 	if assert.NoError(t, accessManager.CreateProject(accessServices.ProjectParams{ProjectDetails: projectDetails})) {
 		return func() error {
-			return accessManager.DeleteProject(tests.ProjectKey)
+			return accessManager.DeleteProject(projectKey)
 		}
 	}
 	return nil

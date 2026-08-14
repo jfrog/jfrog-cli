@@ -110,7 +110,8 @@ const (
 
 	JfrogCliHideSurvey = `    JFROG_CLI_HIDE_SURVEY
 		[Default: false]
-		Set to true to hide the survey link that appears after successful command execution.`
+		Set to true to hide the survey link that appears after successful command execution.
+		The survey is also automatically hidden when JFrog CLI is invoked by a detected AI agent.`
 )
 
 var (

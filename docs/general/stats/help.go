@@ -10,7 +10,7 @@ func GetDescription() string {
 }
 
 func GetArguments() string {
-	return `	 
+	return `
 	Product (Mandatory)
 	The Product name for which you want to display statistics for now, only artifactory(rt) is supported.
 
@@ -23,4 +23,28 @@ func GetArguments() string {
 	--access-token(optional)
 	The access token using which you want statistics will be fetched from jfrog instance. By default, logged user access token is used. For some products, like JFrog Platform Deployments and projects, you need to provide an admin token.
 `
+}
+
+func GetAIDescription() string {
+	return `Display platform statistics for a given JFrog product on the configured server. Currently only the 'rt' (Artifactory) product is supported. Useful for inspecting storage, repository counts, and similar metrics.
+
+When to use:
+- Auditing platform usage from a script.
+- Capturing structured metrics for dashboards (--format=json).
+
+Prerequisites:
+- A configured server (jf c add or jf login) or --server-id, --access-token.
+- For some metrics (JPDs, projects), an admin-scoped token.
+
+Common patterns:
+  $ jf st rt
+  $ jf st rt --format=json
+  $ jf st rt --server-id=my-prod --access-token=eyJ...
+
+Gotchas:
+- Only 'rt' is accepted as the product argument today.
+- Some metrics require admin privileges; a user-scoped token returns partial or empty data.
+- Default output is text; pass --format for json or table.
+
+Related: jf api, jf c show`
 }
