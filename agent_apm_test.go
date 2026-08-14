@@ -102,8 +102,6 @@ primitives:
 dependencies:
   apm: []
   mcp: []
-registries:
-  default: ` + tests.AgentPackagesLocalRepo + `
 `
 
 	apmYamlPath := filepath.Join(projectDir, "apm.yml")
@@ -386,24 +384,12 @@ func TestApmInstallInvalidPackage(t *testing.T) {
 	err = os.MkdirAll(filepath.Join(projectDir, ".apm"), 0755)
 	require.NoError(t, err)
 
-	registryURL := *tests.JfrogUrl
-	if !strings.HasSuffix(registryURL, "/") {
-		registryURL += "/"
-	}
-	registryURL = strings.TrimSuffix(registryURL, "/artifactory/")
-	if !strings.HasSuffix(registryURL, "/") {
-		registryURL += "/"
-	}
-
 	apmYamlContent := `version: "1.0.0"
 name: test-with-missing-dep
 dependencies:
   apm:
     - name: nonexistent/package
       version: "1.0.0"
-registries:
-  default:
-    url: "` + strings.TrimSuffix(registryURL, "/") + `"
 `
 	apmYamlPath := filepath.Join(projectDir, "apm.yml")
 	err = os.WriteFile(apmYamlPath, []byte(apmYamlContent), 0644)
@@ -690,24 +676,12 @@ func TestApmRoundTripPublishAndInstall(t *testing.T) {
 	}()
 
 	// Create a project that depends on the published package
-	registryURL := *tests.JfrogUrl
-	if !strings.HasSuffix(registryURL, "/") {
-		registryURL += "/"
-	}
-	registryURL = strings.TrimSuffix(registryURL, "/artifactory/")
-	if !strings.HasSuffix(registryURL, "/") {
-		registryURL += "/"
-	}
-
 	installApmYaml := `version: "1.0.0"
 name: test-consumer
 description: Consumer of published APM package
 dependencies:
   apm:
     - name: ` + owner + `/` + pkgName + `
-registries:
-  default:
-    url: "` + strings.TrimSuffix(registryURL, "/") + `"
 `
 
 	err = os.MkdirAll(filepath.Join(installProjectDir, ".apm"), 0755)
@@ -1168,17 +1142,7 @@ func getBasicApmYaml() string {
 
 // createApmYaml creates customizable APM YAML with parameters
 func createApmYaml(name, version string, dependencies []string, registries map[string]string) string {
-	if registries == nil {
-		registries = map[string]string{
-			"default": tests.AgentPackagesLocalRepo,
-		}
-	}
-
-	registriesSection := ""
-	for regName, regValue := range registries {
-		registriesSection += fmt.Sprintf("  %s: %s\n", regName, regValue)
-	}
-
+	// Note: registries parameter is deprecated - registries are configured globally via setup command
 	depsSection := ""
 	if len(dependencies) > 0 {
 		for _, dep := range dependencies {
@@ -1194,28 +1158,19 @@ version: %s
 primitives:
   agents: []
 dependencies:
-%sregistries:
-%s`, name, version, depsSection, registriesSection)
+%s`, name, version, depsSection)
 }
 
 // createMultiRegistryYaml creates APM YAML with multiple distinct registries
+// Note: Registries are configured globally via setup command, not in apm.yml
 func createMultiRegistryYaml(name string, registryRepos []string) string {
-	registriesSection := ""
-	for i := range registryRepos {
-		regName := fmt.Sprintf("registry%d", i+1)
-		registriesSection += fmt.Sprintf("  %s: %s\n", regName, tests.AgentPackagesLocalRepo)
-	}
-	// Add default registry
-	registriesSection += fmt.Sprintf("  default: %s\n", tests.AgentPackagesLocalRepo)
-
 	return fmt.Sprintf(`version: "1.0.0"
 name: %s
 primitives:
   agents: []
 dependencies:
   apm: []
-registries:
-%s`, name, registriesSection)
+`, name)
 }
 
 // createProjectWithDependencies creates a project directory with specified dependencies
@@ -1280,9 +1235,6 @@ name: multi-registry-app
 description: App using multiple registries
 primitives:
   agents: []
-registries:
-  primary: ` + tests.AgentPackagesLocalRepo + `
-  secondary: ` + tests.AgentPackagesLocalRepo + `
 dependencies:
   apm: []
 `
@@ -1316,8 +1268,6 @@ primitives:
   agents: []
 dependencies:
   apm: []
-registries:
-  default: ` + tests.AgentPackagesLocalRepo + `
 `
 
 	projectDir := createApmProjectWithYaml(t, apmYaml)
@@ -1350,8 +1300,6 @@ primitives:
   agents: []
 dependencies:
   apm: []
-registries:
-  default: ` + tests.AgentPackagesLocalRepo + `
 `
 
 	projectDir := createApmProjectWithYaml(t, apmYaml)
@@ -1539,8 +1487,6 @@ name: workspace-root
 workspaces:
   - path: module1
   - path: module2
-registries:
-  default: ` + tests.AgentPackagesLocalRepo + `
 `
 
 	rootYamlPath := filepath.Join(projectDir, "apm.yml")
