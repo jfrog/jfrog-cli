@@ -87,6 +87,7 @@ var (
 	TestEvidence              *bool
 	TestApi                   *bool
 	TestGhostFrog             *bool
+	TestIde                   *bool
 	HideUnitTestLog           *bool
 	ciRunId                   *string
 	InstallDataTransferPlugin *bool
@@ -159,6 +160,7 @@ func init() {
 	TestEvidence = flag.Bool("test.evidence", false, "Test evidence")
 	TestApi = flag.Bool("test.api", false, "Test api command")
 	TestGhostFrog = flag.Bool("test.ghostFrog", false, "Test Ghost Frog package alias")
+	TestIde = flag.Bool("test.ide", false, "Test IDE (VS Code / Cursor / Windsurf / Kiro / JetBrains) setup commands")
 	ContainerRegistry = flag.String("test.containerRegistry", "localhost:8082", "Container registry")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
 	InstallDataTransferPlugin = flag.Bool("test.installDataTransferPlugin", false, "Install data-transfer plugin on the source Artifactory server")
@@ -288,7 +290,7 @@ func SearchFiles(searchSpec *spec.SpecFiles, serverDetails *config.ServerDetails
 	if err != nil {
 		return nil, 0, err
 	}
-	
+
 	// Use the search utilities from jfrog-cli-core
 	readers, _, err := artUtils.SearchFiles(servicesManager, searchSpec)
 	if err != nil {
@@ -299,14 +301,14 @@ func SearchFiles(searchSpec *spec.SpecFiles, serverDetails *config.ServerDetails
 			ioutils.Close(r, &err)
 		}
 	}()
-	
+
 	// Process search results from readers
 	for _, reader := range readers {
 		for item := new(artUtils.SearchResult); reader.NextRecord(item) == nil; item = new(artUtils.SearchResult) {
 			searchResults = append(searchResults, *item)
 		}
 	}
-	
+
 	return searchResults, len(searchResults), nil
 }
 

@@ -81,22 +81,65 @@ func authenticateAccess() string {
 func TestRefreshableAccessTokens(t *testing.T) {
 	initAccessTest(t)
 
-	server := &config.ServerDetails{Url: *tests.JfrogUrl, AccessToken: *tests.JfrogAccessToken}
-	err := generateNewLongTermRefreshableAccessToken(server)
+	artifactoryCommandExecutor := coreTests.NewJfrogCli(execMain, "jfrog rt", "")
+	uploadedFiles := 0
+
+	// A token whose total lifetime falls under the fixed 30-minute refresh floor (see
+	// auth.CalculateProportionalRefreshThreshold) is always due for refresh, regardless of
+	// auth.RefreshPlatformTokenBeforeExpiryMinutes. Use one to verify a refresh actually happens.
+	shortLivedServer := &config.ServerDetails{Url: *tests.JfrogUrl, AccessToken: *tests.JfrogAccessToken}
+	err := generateShortLivedRefreshableAccessToken(shortLivedServer)
 	assert.NoError(t, err)
-	assert.NotEmpty(t, server.RefreshToken)
-	configCmd := commands.NewConfigCommand(commands.AddOrEdit, tests.ServerId).SetDetails(server).SetInteractive(false)
+	assert.NotEmpty(t, shortLivedServer.RefreshToken)
+	configCmd := commands.NewConfigCommand(commands.AddOrEdit, tests.ServerId).SetDetails(shortLivedServer).SetInteractive(false)
 	assert.NoError(t, configCmd.Run())
-	defer deleteServerConfig(t)
 
 	// Upload a file and assert the refreshable tokens were generated.
-	artifactoryCommandExecutor := coreTests.NewJfrogCli(execMain, "jfrog rt", "")
-	uploadedFiles := 1
+	uploadedFiles++
 	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, "testdata/a/a1.in", uploadedFiles)
 	if !assert.NoError(t, err) {
+		deleteServerConfig(t)
 		return
 	}
 	curAccessToken, curRefreshToken, curArtifactoryRefreshToken, err := getTokensFromConfig(t)
+	if !assert.NoError(t, err) {
+		deleteServerConfig(t)
+		return
+	}
+	assert.NotEmpty(t, curAccessToken)
+	assert.NotEmpty(t, curRefreshToken)
+	assert.Empty(t, curArtifactoryRefreshToken)
+
+	// Upload another file and assert tokens were refreshed, since the short-lived token is always due.
+	uploadedFiles++
+	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, "testdata/a/a2.in", uploadedFiles)
+	if !assert.NoError(t, err) {
+		deleteServerConfig(t)
+		return
+	}
+	_, _, err = assertAccessTokensChanged(t, curAccessToken, curRefreshToken)
+	if !assert.NoError(t, err) {
+		deleteServerConfig(t)
+		return
+	}
+
+	// A long-lived token's proportional threshold (10% of its own lifetime) is always well above
+	// RefreshPlatformTokenBeforeExpiryMinutes=0, so it's never due for refresh. Reuse the same
+	// server ID with fresh, long-lived credentials to verify a refresh does NOT happen.
+	longLivedServer := &config.ServerDetails{Url: *tests.JfrogUrl, AccessToken: *tests.JfrogAccessToken}
+	err = generateNewLongTermRefreshableAccessToken(longLivedServer)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, longLivedServer.RefreshToken)
+	configCmd = commands.NewConfigCommand(commands.AddOrEdit, tests.ServerId).SetDetails(longLivedServer).SetInteractive(false)
+	assert.NoError(t, configCmd.Run())
+	defer deleteServerConfig(t)
+
+	uploadedFiles++
+	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, "testdata/a/b/b2.in", uploadedFiles)
+	if !assert.NoError(t, err) {
+		return
+	}
+	curAccessToken, curRefreshToken, curArtifactoryRefreshToken, err = getTokensFromConfig(t)
 	if !assert.NoError(t, err) {
 		return
 	}
@@ -104,24 +147,10 @@ func TestRefreshableAccessTokens(t *testing.T) {
 	assert.NotEmpty(t, curRefreshToken)
 	assert.Empty(t, curArtifactoryRefreshToken)
 
-	// Make the token always refresh.
-	auth.RefreshPlatformTokenBeforeExpiryMinutes = 365 * 24 * 60
-
-	// Upload a file and assert tokens were refreshed.
-	uploadedFiles++
-	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, "testdata/a/a2.in", uploadedFiles)
-	if !assert.NoError(t, err) {
-		return
-	}
-	curAccessToken, curRefreshToken, err = assertAccessTokensChanged(t, curAccessToken, curRefreshToken)
-	if !assert.NoError(t, err) {
-		return
-	}
-
 	// Make the token not refresh. Verify Tokens did not refresh.
 	auth.RefreshPlatformTokenBeforeExpiryMinutes = 0
 	uploadedFiles++
-	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, "testdata/a/b/b2.in", uploadedFiles)
+	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, "testdata/a/b/b3.in", uploadedFiles)
 	if !assert.NoError(t, err) {
 		return
 	}
@@ -164,6 +193,39 @@ func createLongExpirationRefreshableTokenParams() *services.CreateTokenParams {
 	params := services.CreateTokenParams{}
 	// Using the platform's default expiration (1 year by default).
 	params.ExpiresIn = nil
+	params.Refreshable = clientUtils.Pointer(true)
+	params.Audience = "*@*"
+	return &params
+}
+
+// Take the short-lived token and generate a refreshable accessToken whose own total lifetime is
+// short enough (well under 300 minutes) to always fall under the fixed 30-minute refresh floor in
+// auth.CalculateProportionalRefreshThreshold, making it unconditionally due for refresh.
+func generateShortLivedRefreshableAccessToken(server *config.ServerDetails) (err error) {
+	accessManager, err := utils.CreateAccessServiceManager(server, false)
+	if err != nil {
+		return
+	}
+	params := createShortExpirationRefreshableTokenParams()
+	token, err := accessManager.CreateAccessToken(*params)
+	if err != nil && isInvalidFormattedNameError(err) {
+		if username, ok := getCloudCompatibleUsername(*tests.JfrogAccessToken); ok {
+			params.Username = username
+			token, err = accessManager.CreateAccessToken(*params)
+		}
+	}
+	if err != nil {
+		return
+	}
+	server.AccessToken = token.AccessToken
+	server.RefreshToken = token.RefreshToken
+	return
+}
+
+func createShortExpirationRefreshableTokenParams() *services.CreateTokenParams {
+	params := services.CreateTokenParams{}
+	// One minute — far below the 30-minute refresh floor, so the token is always due for refresh.
+	params.ExpiresIn = clientUtils.Pointer(uint(60))
 	params.Refreshable = clientUtils.Pointer(true)
 	params.Audience = "*@*"
 	return &params

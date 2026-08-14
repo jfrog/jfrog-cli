@@ -34,5 +34,16 @@ Gotchas:
 - The JSON schema is strict; missing required fields produce a 400 from the server.
 - --vars allows templated variable substitution (key=value pairs).
 
-Related: jf rt ptt, jf rt ptu, jf rt ptdel`
+Related: jf rt ptt, jf rt ptu, jf rt ptdel
+
+QA:
+Q: Could you guide me through the process of creating a permission target in JFrog Artifactory considering that the template path is 'template1.json'?
+A: jf rt ptc template1.json
+
+Q: Could you elucidate the approach for forming a permission target in JFrog Artifactory provided the template path is 'template3.json'?
+A: jf rt ptc template3.json
+
+Q: Could you outline the procedure for constructing a permission target in JFrog Artifactory with the template path being 'template5.json'?
+A: jf rt ptc template5.json
+`
 }

@@ -73,7 +73,7 @@ func normalizeRegistryURL(url string) string {
 }
 
 // createApmTestProject creates a minimal APM project structure with apm.yml.
-func createApmTestProject(t *testing.T, projectDir string, withDependencies bool) {
+func createApmTestProject(t *testing.T, projectDir string) {
 	err := os.MkdirAll(projectDir, dirPerms)
 	require.NoError(t, err)
 
@@ -98,10 +98,9 @@ primitives:
   tools: []
 `
 
-	if withDependencies {
-		registryURL := normalizeRegistryURL(*tests.JfrogUrl)
+	registryURL := normalizeRegistryURL(*tests.JfrogUrl)
 
-		apmYamlContent += `
+	apmYamlContent += `
 dependencies:
   apm: []
   mcp: []
@@ -109,7 +108,6 @@ registries:
   default:
     url: "` + strings.TrimSuffix(registryURL, "/") + `"
 `
-	}
 
 	apmYamlPath := filepath.Join(projectDir, "apm.yml")
 	err = os.WriteFile(apmYamlPath, []byte(apmYamlContent), filePerms)
@@ -234,9 +232,11 @@ func TestApmInstallWithBuildInfo(t *testing.T) {
 
 	projectDir, err := os.MkdirTemp("", "apm-install-test-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(projectDir)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
 
-	createApmTestProject(t, projectDir, true)
+	createApmTestProject(t, projectDir)
 
 	buildNumber := "101"
 	wd, err := os.Getwd()
@@ -267,9 +267,11 @@ func TestApmPublishWithBuildInfo(t *testing.T) {
 
 	projectDir, err := os.MkdirTemp("", "apm-publish-test-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(projectDir)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
 
-	createApmTestProject(t, projectDir, true)
+	createApmTestProject(t, projectDir)
 
 	buildNumber := "102"
 	wd, err := os.Getwd()
@@ -298,7 +300,7 @@ func TestApmPublishWithBuildInfo(t *testing.T) {
 	assert.NotEmpty(t, artifacts, "Published APM package should be found in repository")
 
 	// Clean up
-	tests.DeleteFiles(deleteSpec, serverDetails)
+	_, _, _ = tests.DeleteFiles(deleteSpec, serverDetails)
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, apmBuildName, artHttpDetails)
 }
 
@@ -309,9 +311,11 @@ func TestApmPublishArtifactPath(t *testing.T) {
 
 	projectDir, err := os.MkdirTemp("", "apm-publish-path-test-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(projectDir)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
 
-	createApmTestProject(t, projectDir, true)
+	createApmTestProject(t, projectDir)
 
 	wd, err := os.Getwd()
 	require.NoError(t, err)
@@ -340,7 +344,7 @@ func TestApmPublishArtifactPath(t *testing.T) {
 	}
 
 	// Clean up
-	tests.DeleteFiles(searchSpec, serverDetails)
+	_, _, _ = tests.DeleteFiles(searchSpec, serverDetails)
 }
 
 // TestApmPublishRequiresPackageFlag validates that --package flag is required (P0: Scenario #23).
@@ -350,9 +354,11 @@ func TestApmPublishRequiresPackageFlag(t *testing.T) {
 
 	projectDir, err := os.MkdirTemp("", "apm-publish-no-pkg-test-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(projectDir)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
 
-	createApmTestProject(t, projectDir, true)
+	createApmTestProject(t, projectDir)
 
 	wd, err := os.Getwd()
 	require.NoError(t, err)
@@ -373,7 +379,9 @@ func TestApmInstallInvalidPackage(t *testing.T) {
 
 	projectDir, err := os.MkdirTemp("", "apm-invalid-pkg-test-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(projectDir)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
 
 	// Create project with invalid dependency
 	err = os.MkdirAll(filepath.Join(projectDir, ".apm"), 0755)
@@ -426,9 +434,11 @@ func TestApmAuthEnvironmentVariable(t *testing.T) {
 
 	projectDir, err := os.MkdirTemp("", "apm-auth-env-test-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(projectDir)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
 
-	createApmTestProject(t, projectDir, true)
+	createApmTestProject(t, projectDir)
 
 	buildNumber := "103"
 	wd, err := os.Getwd()
@@ -441,7 +451,9 @@ func TestApmAuthEnvironmentVariable(t *testing.T) {
 	registryName := "default"
 	err = os.Setenv(fmt.Sprintf("APM_REGISTRY_TOKEN_%s", strings.ToUpper(registryName)), *tests.JfrogAccessToken)
 	require.NoError(t, err)
-	defer os.Unsetenv(fmt.Sprintf("APM_REGISTRY_TOKEN_%s", strings.ToUpper(registryName)))
+	defer func() {
+		_ = os.Unsetenv(fmt.Sprintf("APM_REGISTRY_TOKEN_%s", strings.ToUpper(registryName)))
+	}()
 
 	// Run install with env var auth
 	err = artifactoryCli.Exec("agent", "apm", "install", "--build-name", apmBuildName, "--build-number", buildNumber)
@@ -458,9 +470,11 @@ func TestApmMissingCredentials(t *testing.T) {
 
 	projectDir, err := os.MkdirTemp("", "apm-no-creds-test-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(projectDir)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
 
-	createApmTestProject(t, projectDir, true)
+	createApmTestProject(t, projectDir)
 
 	wd, err := os.Getwd()
 	require.NoError(t, err)
@@ -481,7 +495,7 @@ func TestApmMissingCredentials(t *testing.T) {
 	for _, envVar := range os.Environ() {
 		if strings.Contains(envVar, "APM_REGISTRY") {
 			key := strings.Split(envVar, "=")[0]
-			os.Unsetenv(key)
+			_ = os.Unsetenv(key)
 		}
 	}
 
@@ -497,9 +511,11 @@ func TestApmBuildInfoArtifactMetadata(t *testing.T) {
 
 	projectDir, err := os.MkdirTemp("", "apm-artifact-metadata-test-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(projectDir)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
 
-	createApmTestProject(t, projectDir, true)
+	createApmTestProject(t, projectDir)
 
 	buildNumber := "104"
 	wd, err := os.Getwd()
@@ -538,9 +554,11 @@ func TestApmBuildPropertiesStamping(t *testing.T) {
 
 	projectDir, err := os.MkdirTemp("", "apm-props-test-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(projectDir)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
 
-	createApmTestProject(t, projectDir, true)
+	createApmTestProject(t, projectDir)
 
 	buildNumber := "105"
 	wd, err := os.Getwd()
@@ -590,7 +608,7 @@ func TestApmBuildPropertiesStamping(t *testing.T) {
 	assert.True(t, foundBuildNumber, "Artifact should have build.number property")
 
 	// Clean up
-	tests.DeleteFiles(searchSpec, serverDetails)
+	_, _, _ = tests.DeleteFiles(searchSpec, serverDetails)
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, apmBuildName, artHttpDetails)
 }
 
@@ -601,9 +619,11 @@ func TestApmModuleFlag(t *testing.T) {
 
 	projectDir, err := os.MkdirTemp("", "apm-module-flag-test-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(projectDir)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
 
-	createApmTestProject(t, projectDir, true)
+	createApmTestProject(t, projectDir)
 
 	buildNumber := "106"
 	customModule := "custom-apm-module"
@@ -643,9 +663,11 @@ func TestApmRoundTripPublishAndInstall(t *testing.T) {
 	// Create and publish a package
 	publishProjectDir, err := os.MkdirTemp("", "apm-roundtrip-publish-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(publishProjectDir)
+	defer func() {
+		_ = os.RemoveAll(publishProjectDir)
+	}()
 
-	createApmTestProject(t, publishProjectDir, true)
+	createApmTestProject(t, publishProjectDir)
 
 	buildNumberPublish := "201"
 	wd, err := os.Getwd()
@@ -664,7 +686,9 @@ func TestApmRoundTripPublishAndInstall(t *testing.T) {
 	// Create a new directory to install from
 	installProjectDir, err := os.MkdirTemp("", "apm-roundtrip-install-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(installProjectDir)
+	defer func() {
+		_ = os.RemoveAll(installProjectDir)
+	}()
 
 	// Create a project that depends on the published package
 	registryURL := *tests.JfrogUrl
@@ -709,7 +733,7 @@ registries:
 	searchSpec := spec.NewBuilder().
 		Pattern(apmRepo + "/" + owner + "/" + pkgName + "/*.zip").
 		BuildSpec()
-	tests.DeleteFiles(searchSpec, serverDetails)
+	_, _, _ = tests.DeleteFiles(searchSpec, serverDetails)
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, apmBuildName, artHttpDetails)
 }
 
@@ -720,9 +744,11 @@ func TestApmChecksumsInBuildInfo(t *testing.T) {
 
 	projectDir, err := os.MkdirTemp("", "apm-checksums-test-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(projectDir)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
 
-	createApmTestProject(t, projectDir, true)
+	createApmTestProject(t, projectDir)
 
 	buildNumber := "107"
 	wd, err := os.Getwd()
@@ -765,9 +791,11 @@ func TestApmProjectFlag(t *testing.T) {
 
 	projectDir, err := os.MkdirTemp("", "apm-project-flag-test-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(projectDir)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
 
-	createApmTestProject(t, projectDir, true)
+	createApmTestProject(t, projectDir)
 
 	buildNumber := "108"
 	projectKey := "test-project"
@@ -796,9 +824,11 @@ func TestApmUpdateWithBuildInfo(t *testing.T) {
 
 	projectDir, err := os.MkdirTemp("", "apm-update-test-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(projectDir)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
 
-	createApmTestProject(t, projectDir, true)
+	createApmTestProject(t, projectDir)
 
 	buildNumber := "109"
 	wd, err := os.Getwd()
@@ -829,9 +859,11 @@ func TestApmNativeFlags(t *testing.T) {
 
 	projectDir, err := os.MkdirTemp("", "apm-native-flags-test-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(projectDir)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
 
-	createApmTestProject(t, projectDir, true)
+	createApmTestProject(t, projectDir)
 
 	wd, err := os.Getwd()
 	require.NoError(t, err)
@@ -859,9 +891,11 @@ func TestApmBuildInfoRead(t *testing.T) {
 
 	projectDir, err := os.MkdirTemp("", "apm-bi-read-test-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(projectDir)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
 
-	createApmTestProject(t, projectDir, true)
+	createApmTestProject(t, projectDir)
 
 	buildNumber := "110"
 	wd, err := os.Getwd()
@@ -883,7 +917,7 @@ func TestApmBuildInfoRead(t *testing.T) {
 	require.NoError(t, err, "jf rt bi should succeed reading published build info")
 
 	// Clean up
-	tests.DeleteFiles(
+	_, _, _ = tests.DeleteFiles(
 		spec.NewBuilder().Pattern(apmRepo+"/test/bi-read/*.zip").BuildSpec(),
 		serverDetails)
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, apmBuildName, artHttpDetails)
@@ -896,9 +930,11 @@ func TestApmIntegrationFullPipeline(t *testing.T) {
 
 	projectDir, err := os.MkdirTemp("", "apm-e2e-pipeline-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(projectDir)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
 
-	createApmTestProject(t, projectDir, true)
+	createApmTestProject(t, projectDir)
 
 	buildName := "apm-e2e-pipeline"
 	buildNumber := "300"
@@ -921,7 +957,7 @@ func TestApmIntegrationFullPipeline(t *testing.T) {
 	require.NoError(t, err, "Step 3: Publish build info should succeed")
 
 	// Clean up
-	tests.DeleteFiles(
+	_, _, _ = tests.DeleteFiles(
 		spec.NewBuilder().Pattern(apmRepo+"/e2e/pipeline/*.zip").BuildSpec(),
 		serverDetails)
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
@@ -967,7 +1003,9 @@ func TestApmBuildFlagsRequired(t *testing.T) {
 	defer cleanApmTest(t)
 
 	projectDir := createApmProjectWithYaml(t, getBasicApmYaml())
-	defer os.RemoveAll(projectDir)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
 	defer setupTestWorkingDirectory(t, projectDir)()
 
 	// Test missing build-number
@@ -985,15 +1023,17 @@ func TestApmInstallWithDependenciesInBuildInfo(t *testing.T) {
 	defer cleanApmTest(t)
 
 	projectDir := createProjectWithDependencies(t, "app-with-deps", []string{"apm"})
-	defer os.RemoveAll(projectDir)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
 	defer setupTestWorkingDirectory(t, projectDir)()
 
 	buildNumber := "400"
-	err := runApmInstall(t, apmBuildName, buildNumber)
+	err := runApmInstall(apmBuildName, buildNumber)
 	require.NoError(t, err, "install should succeed")
 
 	validateBuildInfoDependencies(t, apmBuildName, buildNumber)
-	deleteBuildInfo(t, apmBuildName)
+	deleteBuildInfo(apmBuildName)
 }
 
 // TestApmPublishWithArtifactsInBuildInfo validates artifacts captured in build info
@@ -1002,16 +1042,18 @@ func TestApmPublishWithArtifactsInBuildInfo(t *testing.T) {
 	defer cleanApmTest(t)
 
 	projectDir := createApmProjectWithYaml(t, getBasicApmYaml())
-	defer os.RemoveAll(projectDir)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
 	defer setupTestWorkingDirectory(t, projectDir)()
 
 	buildNumber := "401"
-	err := runApmPublish(t, "test/artifacts-demo", apmBuildName, buildNumber)
+	err := runApmPublish("test/artifacts-demo", apmBuildName, buildNumber)
 	require.NoError(t, err, "publish should succeed")
 
 	validateBuildInfoArtifacts(t, apmBuildName, buildNumber, 1)
-	deleteArtifacts(t, apmRepo+"/test/artifacts-demo/*.zip")
-	deleteBuildInfo(t, apmBuildName)
+	_ = deleteArtifacts(apmRepo + "/test/artifacts-demo/*.zip")
+	deleteBuildInfo(apmBuildName)
 }
 
 // TestApmBuildInfoWithArtifactsAndDependencies validates both artifacts and dependencies
@@ -1020,24 +1062,26 @@ func TestApmBuildInfoWithArtifactsAndDependencies(t *testing.T) {
 	defer cleanApmTest(t)
 
 	projectDir := createProjectWithDependencies(t, "complete-app", []string{"apm"})
-	defer os.RemoveAll(projectDir)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
 	defer setupTestWorkingDirectory(t, projectDir)()
 
 	buildNumber := "402"
 
 	// Step 1: Install (captures dependencies)
-	err := runApmInstall(t, apmBuildName, buildNumber)
+	err := runApmInstall(apmBuildName, buildNumber)
 	require.NoError(t, err)
 
 	// Step 2: Publish (adds artifacts)
-	err = runApmPublish(t, "complete/demo", apmBuildName, buildNumber)
+	err = runApmPublish("complete/demo", apmBuildName, buildNumber)
 	require.NoError(t, err)
 
 	// Validate both exist
 	validateBuildInfoHasBothArtifactsAndDependencies(t, apmBuildName, buildNumber)
 
-	deleteArtifacts(t, apmRepo+"/complete/demo/*.zip")
-	deleteBuildInfo(t, apmBuildName)
+	_ = deleteArtifacts(apmRepo + "/complete/demo/*.zip")
+	deleteBuildInfo(apmBuildName)
 }
 
 // TestApmUpdateWithVersionChange validates update captures new version in build info
@@ -1046,20 +1090,22 @@ func TestApmUpdateWithVersionChange(t *testing.T) {
 	defer cleanApmTest(t)
 
 	projectDir := createApmProjectWithYaml(t, getBasicApmYaml())
-	defer os.RemoveAll(projectDir)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
 	defer setupTestWorkingDirectory(t, projectDir)()
 
 	buildNumber := "403"
 
 	// Step 1: Install
-	err := runApmInstall(t, apmBuildName, buildNumber)
+	err := runApmInstall(apmBuildName, buildNumber)
 	require.NoError(t, err, "install should succeed")
 
 	builds1, err := build.GetGeneratedBuildsInfo(apmBuildName, buildNumber, "")
 	require.NoError(t, err)
 
 	// Step 2: Update
-	err = runApmUpdate(t, apmBuildName, buildNumber)
+	err = runApmUpdate(apmBuildName, buildNumber)
 	require.NoError(t, err, "update should succeed")
 
 	builds2, err := build.GetGeneratedBuildsInfo(apmBuildName, buildNumber, "")
@@ -1067,7 +1113,7 @@ func TestApmUpdateWithVersionChange(t *testing.T) {
 
 	assert.Equal(t, len(builds1), len(builds2), "Build info should reflect update")
 
-	deleteBuildInfo(t, apmBuildName)
+	deleteBuildInfo(apmBuildName)
 }
 
 // TestApmAuthEnvVarNotExposed validates credentials stay in env (not leaked in logs)
@@ -1076,7 +1122,9 @@ func TestApmAuthEnvVarNotExposed(t *testing.T) {
 	defer cleanApmTest(t)
 
 	projectDir := createApmProjectWithYaml(t, getBasicApmYaml())
-	defer os.RemoveAll(projectDir)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
 	defer setupTestWorkingDirectory(t, projectDir)()
 
 	// Env var should exist after command runs (we're not removing it)
@@ -1099,15 +1147,17 @@ func TestApmDifferentRegistriesAsArtifactoryRepos(t *testing.T) {
 	createRegistriesInArtifactory(t, repos)
 
 	projectDir := createProjectWithRegistries(t, "multi-repo-app", repos)
-	defer os.RemoveAll(projectDir)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
 	defer setupTestWorkingDirectory(t, projectDir)()
 
 	buildNumber := "404"
-	err := runApmInstall(t, apmBuildName, buildNumber)
+	err := runApmInstall(apmBuildName, buildNumber)
 	require.NoError(t, err, "install should succeed with multiple distinct registries")
 
 	validateApmBuildInfo(t, apmBuildName, buildNumber, 0)
-	deleteBuildInfo(t, apmBuildName)
+	deleteBuildInfo(apmBuildName)
 }
 
 // getBasicApmYaml returns basic APM YAML
@@ -1179,7 +1229,7 @@ func createProjectWithRegistries(t *testing.T, name string, registryRepos []stri
 }
 
 // runApmInstall runs install command with optional build info
-func runApmInstall(t *testing.T, buildName, buildNumber string) error {
+func runApmInstall(buildName, buildNumber string) error {
 	args := []string{"agent", "apm", "install"}
 	if buildName != "" && buildNumber != "" {
 		args = append(args, "--build-name", buildName, "--build-number", buildNumber)
@@ -1188,7 +1238,7 @@ func runApmInstall(t *testing.T, buildName, buildNumber string) error {
 }
 
 // runApmPublish runs publish command with optional build info
-func runApmPublish(t *testing.T, packagePath, buildName, buildNumber string) error {
+func runApmPublish(packagePath, buildName, buildNumber string) error {
 	args := []string{"agent", "apm", "publish"}
 	if packagePath != "" {
 		args = append(args, "--package", packagePath)
@@ -1200,7 +1250,7 @@ func runApmPublish(t *testing.T, packagePath, buildName, buildNumber string) err
 }
 
 // runApmUpdate runs update command with optional build info
-func runApmUpdate(t *testing.T, buildName, buildNumber string) error {
+func runApmUpdate(buildName, buildNumber string) error {
 	args := []string{"agent", "apm", "update"}
 	if buildName != "" && buildNumber != "" {
 		args = append(args, "--build-name", buildName, "--build-number", buildNumber)
@@ -1217,22 +1267,15 @@ func createRegistriesInArtifactory(t *testing.T, repoNames []string) {
 }
 
 // deleteBuildInfo deletes build info from Artifactory
-func deleteBuildInfo(t *testing.T, buildName string) {
+func deleteBuildInfo(buildName string) {
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 }
 
 // deleteArtifacts deletes artifacts from repository
-func deleteArtifacts(t *testing.T, pattern string) error {
+func deleteArtifacts(pattern string) error {
 	spec := spec.NewBuilder().Pattern(pattern).BuildSpec()
 	_, _, err := tests.DeleteFiles(spec, serverDetails)
 	return err
-}
-
-// runApmCommand runs generic APM command with args
-func runApmCommand(t *testing.T, args ...string) error {
-	fullArgs := []string{"agent", "apm"}
-	fullArgs = append(fullArgs, args...)
-	return artifactoryCli.Exec(fullArgs...)
 }
 func TestApmMultipleRegistriesInApmYml(t *testing.T) {
 	initApmTest(t)
@@ -1254,7 +1297,9 @@ dependencies:
 `
 
 	projectDir := createApmProjectWithYaml(t, apmYaml)
-	defer os.RemoveAll(projectDir)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
 
 	defer setupTestWorkingDirectory(t, projectDir)()
 
@@ -1287,7 +1332,9 @@ registries:
 `
 
 	projectDir := createApmProjectWithYaml(t, apmYaml)
-	defer os.RemoveAll(projectDir)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
 
 	defer setupTestWorkingDirectory(t, projectDir)()
 
@@ -1321,7 +1368,9 @@ registries:
 `
 
 	projectDir := createApmProjectWithYaml(t, apmYaml)
-	defer os.RemoveAll(projectDir)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
 
 	dummyFile := filepath.Join(projectDir, ".apm", "primitives", "skill.json")
 	err := os.WriteFile(dummyFile, []byte(`{"type": "agent"}`), filePerms)
@@ -1344,7 +1393,7 @@ registries:
 	assert.NotEmpty(t, module.Artifacts, "Should have artifact metadata")
 
 	// Clean up
-	tests.DeleteFiles(
+	_, _, _ = tests.DeleteFiles(
 		spec.NewBuilder().Pattern(apmRepo+"/test/app-with-deps/*.zip").BuildSpec(),
 		serverDetails)
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, apmBuildName, artHttpDetails)
@@ -1357,9 +1406,11 @@ func TestApmUpdateChangesLockfile(t *testing.T) {
 
 	projectDir, err := os.MkdirTemp("", "apm-update-lock-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(projectDir)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
 
-	createApmTestProject(t, projectDir, true)
+	createApmTestProject(t, projectDir)
 
 	defer setupTestWorkingDirectory(t, projectDir)()
 
@@ -1391,9 +1442,11 @@ func TestApmFrozenModeWithDependencies(t *testing.T) {
 
 	projectDir, err := os.MkdirTemp("", "apm-frozen-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(projectDir)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
 
-	createApmTestProject(t, projectDir, true)
+	createApmTestProject(t, projectDir)
 
 	defer setupTestWorkingDirectory(t, projectDir)()
 
@@ -1413,9 +1466,11 @@ func TestApmInstallAndPublishWithBuildInfoComplete(t *testing.T) {
 
 	projectDir, err := os.MkdirTemp("", "apm-complete-flow-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(projectDir)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
 
-	createApmTestProject(t, projectDir, true)
+	createApmTestProject(t, projectDir)
 
 	buildName := "apm-complete-flow"
 	buildNumber := "204"
@@ -1440,7 +1495,7 @@ func TestApmInstallAndPublishWithBuildInfoComplete(t *testing.T) {
 	require.NoError(t, err, "build-info publish should succeed")
 
 	// Clean up
-	tests.DeleteFiles(
+	_, _, _ = tests.DeleteFiles(
 		spec.NewBuilder().Pattern(apmRepo+"/complete/workflow/*.zip").BuildSpec(),
 		serverDetails)
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
@@ -1453,9 +1508,11 @@ func TestApmDryRunNoArtifacts(t *testing.T) {
 
 	projectDir, err := os.MkdirTemp("", "apm-dryrun-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(projectDir)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
 
-	createApmTestProject(t, projectDir, true)
+	createApmTestProject(t, projectDir)
 
 	defer setupTestWorkingDirectory(t, projectDir)()
 
@@ -1479,7 +1536,9 @@ func TestApmMultiModuleWorkspace(t *testing.T) {
 
 	projectDir, err := os.MkdirTemp("", "apm-workspace-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(projectDir)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
 
 	// Create workspace structure
 	err = os.MkdirAll(filepath.Join(projectDir, "module1", ".apm", "primitives"), dirPerms)
