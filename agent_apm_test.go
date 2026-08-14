@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -30,6 +31,9 @@ func initApmTest(t *testing.T) {
 	if !*tests.TestApm {
 		t.Skip("Skipping APM tests. To run APM test add the '-test.apm=true' option.")
 	}
+	// Ensure APM is installed
+	_, err := exec.LookPath("apm")
+	require.NoError(t, err, "APM must be installed to run APM tests. Install from: https://github.com/microsoft/apm/releases")
 	// Ensure JFROG_RUN_NATIVE is not set (clean state for non-native tests)
 	_ = os.Unsetenv("JFROG_RUN_NATIVE")
 	createJfrogHomeConfig(t, true)
@@ -54,6 +58,7 @@ func initApmConfig(t *testing.T) {
 	err := setupCli.Exec("setup", "agent-apm", "--repo", tests.AgentPackagesLocalRepo)
 	require.NoError(t, err, "jf setup agent-apm should succeed")
 }
+
 
 // cleanApmTest cleans up resources after APM tests.
 func cleanApmTest(t *testing.T) {

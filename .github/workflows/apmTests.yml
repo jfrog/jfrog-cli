@@ -55,6 +55,37 @@ jobs:
         if: matrix.os.name != 'macos'
         uses: jfrog/.github/actions/install-go-with-cache@main
 
+      - name: Install APM (Linux)
+        if: matrix.os.name == 'ubuntu'
+        run: |
+          APM_VERSION="v0.28.0"
+          OS="linux"
+          ARCH="x86_64"
+          curl -sL "https://github.com/microsoft/apm/releases/download/${APM_VERSION}/apm-${OS}-${ARCH}.tar.gz" -o apm.tar.gz
+          tar -xzf apm.tar.gz
+          sudo mkdir -p /opt/apm
+          sudo mv apm-${OS}-${ARCH}/* /opt/apm/
+          sudo chmod +x /opt/apm/apm
+          echo "/opt/apm" >> $GITHUB_PATH
+          rm -rf apm-${OS}-${ARCH} apm.tar.gz
+          /opt/apm/apm --version
+
+      - name: Install APM (Windows)
+        if: matrix.os.name == 'windows'
+        shell: pwsh
+        run: |
+          $APM_VERSION = "v0.28.0"
+          $OS = "windows"
+          $ARCH = "x86_64"
+          $APM_URL = "https://github.com/microsoft/apm/releases/download/${APM_VERSION}/apm-${OS}-${ARCH}.zip"
+          curl.exe -sL "$APM_URL" -o apm.zip
+          Expand-Archive -Path apm.zip -DestinationPath .
+          New-Item -ItemType Directory -Path "C:\tools\apm" -Force | Out-Null
+          Move-Item -Path "apm-${OS}-${ARCH}\*" -Destination "C:\tools\apm\" -Force
+          Add-Content -Path $env:GITHUB_PATH -Value "C:\tools\apm"
+          Remove-Item -Path "apm-${OS}-${ARCH}", "apm.zip" -Recurse -Force
+          & "C:\tools\apm\apm.exe" --version
+
       - name: Install local Artifactory
         if: matrix.os.name != 'macos'
         uses: jfrog/.github/actions/install-local-artifactory@main
