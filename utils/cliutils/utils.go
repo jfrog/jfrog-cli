@@ -43,16 +43,16 @@ type githubResponse struct {
 	TagName string `json:"tag_name,omitempty"`
 }
 
-// cliUserAgentRaw is the untouched JFROG_CLI_USER_AGENT value when set.
-// Visibility product_id/product_version use the first name/version token only;
+// rawCliUserAgent is the untouched JFROG_CLI_USER_AGENT value when set.
+// Visibility product_id/product_version use the first name/version segment only;
 // HTTP User-Agent keeps this raw string so rich skills/hooks UAs stay intact.
-var cliUserAgentRaw string
+var rawCliUserAgent string
 
 func init() {
 	// Initialize cli-core values.
 	cliUserAgent := os.Getenv(UserAgent)
 	if cliUserAgent != "" {
-		cliUserAgentRaw = cliUserAgent
+		rawCliUserAgent = cliUserAgent
 		cliUserAgentName, cliUserAgentVersion := splitAgentNameAndVersion(cliUserAgent)
 		coreutils.SetCliUserAgentName(cliUserAgentName)
 		coreutils.SetCliUserAgentVersion(cliUserAgentVersion)
@@ -65,27 +65,27 @@ func init() {
 }
 
 // splitAgentNameAndVersion returns product_id / product_version for Visibility.
-// It uses only the first whitespace-delimited product token, then splits that
-// token on its last '/'. Rich skills UAs such as
+// It uses only the first whitespace-delimited product segment, then splits that
+// segment on its last '/'. Rich skills UAs such as
 // "jfrog-skills/0.22.0 (trigger=skill; ...) jfrog-cli-go/2.120.0" →
 // product_id=jfrog-skills, product_version=0.22.0.
-// Tokens without '/' return the whole token as the name and an empty version.
+// Segments without '/' return the whole segment as the name and an empty version.
 func splitAgentNameAndVersion(fullAgentName string) (string, string) {
-	token, _, _ := strings.Cut(fullAgentName, " ")
-	lastSlashIndex := strings.LastIndex(token, "/")
+	segment, _, _ := strings.Cut(fullAgentName, " ")
+	lastSlashIndex := strings.LastIndex(segment, "/")
 	if lastSlashIndex == -1 {
-		return token, ""
+		return segment, ""
 	}
-	return token[:lastSlashIndex], token[lastSlashIndex+1:]
+	return segment[:lastSlashIndex], segment[lastSlashIndex+1:]
 }
 
-// User-Agent product-token formats for the Client → Agent → Model axes
+// User-Agent product-entry formats for the Client → Agent → Model axes
 // (e.g. "jfrog-cli-go/2.117.0 ai-agent/claude ai-client/vscode ai-model/opus-4.7").
 //
-// Product tokens rather than comments so UA parsers that split on whitespace and
+// Product entries rather than comments so UA parsers that split on whitespace and
 // read name/version pairs keep the census signal. "ai-agent" avoids colliding with
 // this codebase's use of "agent" for the CLI itself (SetCliUserAgentName / build-info).
-// The version slot of each token carries the axis value (harness/app/model slug), not
+// The version part of each entry carries the axis value (harness/app/model slug), not
 // a software version.
 const (
 	aiAgentUserAgentFormat  = " ai-agent/%s"
@@ -94,7 +94,7 @@ const (
 )
 
 // GetCliUserAgentWithAgent returns the CLI user-agent, enriched with Client → Agent →
-// Model tokens when an AI agent is detected (AGW-86). Without this the identity never
+// Model entries when an AI agent is detected (AGW-86). Without this the identity never
 // leaves the machine on the request itself — it reaches the platform only as a label on
 // a separate telemetry call — so an agent and a human running the same command are
 // byte-identical on the wire.
@@ -106,29 +106,25 @@ const (
 // Model are sanitizeToken'd ([a-z0-9._-], capped) in DetectExecutionContext before use.
 func GetCliUserAgentWithAgent() string {
 	base := coreutils.GetCliUserAgent()
-	if cliUserAgentRaw != "" {
+	if rawCliUserAgent != "" {
 		// Preserve rich skills/hooks UA on the HTTP wire; product_* already
-		// extracted the first token in init().
-		base = cliUserAgentRaw
+		// extracted the first segment in init().
+		base = rawCliUserAgent
 	}
-	return base + agentUserAgentSuffix(base, commonCommands.DetectExecutionContext())
+	return base + agentUserAgentSuffix(commonCommands.DetectExecutionContext())
 }
 
-// agentUserAgentSuffix appends ai-agent / ai-client / ai-model tokens when
-// IsAgent; empty when not an agent. Skips any axis already present in base so
-// rich UAs that already carry ai-* are not duplicated. Never logs or fails.
-func agentUserAgentSuffix(base string, executionContext commonCommands.ExecutionContext) string {
+// agentUserAgentSuffix appends ai-agent / ai-client / ai-model entries when
+// IsAgent; empty when not an agent. Never logs or fails the command.
+func agentUserAgentSuffix(executionContext commonCommands.ExecutionContext) string {
 	if !executionContext.IsAgent {
 		return ""
 	}
-	suffix := ""
-	if !strings.Contains(base, "ai-agent/") {
-		suffix += fmt.Sprintf(aiAgentUserAgentFormat, executionContext.Agent)
-	}
-	if executionContext.Client != "" && !strings.Contains(base, "ai-client/") {
+	suffix := fmt.Sprintf(aiAgentUserAgentFormat, executionContext.Agent)
+	if executionContext.Client != "" {
 		suffix += fmt.Sprintf(aiClientUserAgentFormat, executionContext.Client)
 	}
-	if executionContext.Model != "" && !strings.Contains(base, "ai-model/") {
+	if executionContext.Model != "" {
 		suffix += fmt.Sprintf(aiModelUserAgentFormat, executionContext.Model)
 	}
 	return suffix
