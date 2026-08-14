@@ -40,7 +40,7 @@ func initApmTest(t *testing.T) {
 
 // createApmRepository creates a local APM repository for testing.
 func createApmRepository(t *testing.T) {
-	repoConfig := tests.AgentPackagesLocalRepositoryConfig
+	repoConfig := tests.GetTestResourcesPath() + tests.AgentPackagesLocalRepositoryConfig
 	createRepoIfNotExist(t, apmRepo, repoConfig)
 }
 
@@ -1029,11 +1029,11 @@ func TestApmInstallWithDependenciesInBuildInfo(t *testing.T) {
 	defer setupTestWorkingDirectory(t, projectDir)()
 
 	buildNumber := "400"
-	err := runApmInstall(apmBuildName, buildNumber)
+	err := runApmInstall(buildNumber)
 	require.NoError(t, err, "install should succeed")
 
 	validateBuildInfoDependencies(t, apmBuildName, buildNumber)
-	deleteBuildInfo(apmBuildName)
+	deleteBuildInfo()
 }
 
 // TestApmPublishWithArtifactsInBuildInfo validates artifacts captured in build info
@@ -1053,7 +1053,7 @@ func TestApmPublishWithArtifactsInBuildInfo(t *testing.T) {
 
 	validateBuildInfoArtifacts(t, apmBuildName, buildNumber, 1)
 	_ = deleteArtifacts(apmRepo + "/test/artifacts-demo/*.zip")
-	deleteBuildInfo(apmBuildName)
+	deleteBuildInfo()
 }
 
 // TestApmBuildInfoWithArtifactsAndDependencies validates both artifacts and dependencies
@@ -1070,7 +1070,7 @@ func TestApmBuildInfoWithArtifactsAndDependencies(t *testing.T) {
 	buildNumber := "402"
 
 	// Step 1: Install (captures dependencies)
-	err := runApmInstall(apmBuildName, buildNumber)
+	err := runApmInstall(buildNumber)
 	require.NoError(t, err)
 
 	// Step 2: Publish (adds artifacts)
@@ -1081,7 +1081,7 @@ func TestApmBuildInfoWithArtifactsAndDependencies(t *testing.T) {
 	validateBuildInfoHasBothArtifactsAndDependencies(t, apmBuildName, buildNumber)
 
 	_ = deleteArtifacts(apmRepo + "/complete/demo/*.zip")
-	deleteBuildInfo(apmBuildName)
+	deleteBuildInfo()
 }
 
 // TestApmUpdateWithVersionChange validates update captures new version in build info
@@ -1098,7 +1098,7 @@ func TestApmUpdateWithVersionChange(t *testing.T) {
 	buildNumber := "403"
 
 	// Step 1: Install
-	err := runApmInstall(apmBuildName, buildNumber)
+	err := runApmInstall(buildNumber)
 	require.NoError(t, err, "install should succeed")
 
 	builds1, err := build.GetGeneratedBuildsInfo(apmBuildName, buildNumber, "")
@@ -1113,7 +1113,7 @@ func TestApmUpdateWithVersionChange(t *testing.T) {
 
 	assert.Equal(t, len(builds1), len(builds2), "Build info should reflect update")
 
-	deleteBuildInfo(apmBuildName)
+	deleteBuildInfo()
 }
 
 // TestApmAuthEnvVarNotExposed validates credentials stay in env (not leaked in logs)
@@ -1153,11 +1153,11 @@ func TestApmDifferentRegistriesAsArtifactoryRepos(t *testing.T) {
 	defer setupTestWorkingDirectory(t, projectDir)()
 
 	buildNumber := "404"
-	err := runApmInstall(apmBuildName, buildNumber)
+	err := runApmInstall(buildNumber)
 	require.NoError(t, err, "install should succeed with multiple distinct registries")
 
 	validateApmBuildInfo(t, apmBuildName, buildNumber, 0)
-	deleteBuildInfo(apmBuildName)
+	deleteBuildInfo()
 }
 
 // getBasicApmYaml returns basic APM YAML
@@ -1229,10 +1229,10 @@ func createProjectWithRegistries(t *testing.T, name string, registryRepos []stri
 }
 
 // runApmInstall runs install command with optional build info
-func runApmInstall(buildName, buildNumber string) error {
+func runApmInstall(buildNumber string) error {
 	args := []string{"agent", "apm", "install"}
-	if buildName != "" && buildNumber != "" {
-		args = append(args, "--build-name", buildName, "--build-number", buildNumber)
+	if buildNumber != "" {
+		args = append(args, "--build-name", apmBuildName, "--build-number", buildNumber)
 	}
 	return artifactoryCli.Exec(args...)
 }
@@ -1260,15 +1260,15 @@ func runApmUpdate(buildName, buildNumber string) error {
 
 // createRegistriesInArtifactory creates multiple distinct repos
 func createRegistriesInArtifactory(t *testing.T, repoNames []string) {
-	repoConfig := tests.AgentPackagesLocalRepositoryConfig
+	repoConfig := tests.GetTestResourcesPath() + tests.AgentPackagesLocalRepositoryConfig
 	for _, repoName := range repoNames {
 		createRepoIfNotExist(t, repoName, repoConfig)
 	}
 }
 
 // deleteBuildInfo deletes build info from Artifactory
-func deleteBuildInfo(buildName string) {
-	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+func deleteBuildInfo() {
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, apmBuildName, artHttpDetails)
 }
 
 // deleteArtifacts deletes artifacts from repository
@@ -1603,8 +1603,7 @@ func createRepoIfNotExist(t *testing.T, repoName, repoConfig string) {
 
 	if !exists {
 		// Create the repository from config
-		configPath := tests.GetFilePathForArtifactory(repoConfig)
-		configContent, err := os.ReadFile(configPath)
+		configContent, err := os.ReadFile(repoConfig)
 		require.NoError(t, err)
 
 		// Parse JSON config into a generic map
