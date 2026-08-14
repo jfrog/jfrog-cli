@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jfrog/jfrog-cli-core/v2/common/build"
+	buildinfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
@@ -72,7 +72,7 @@ func getApmCli() *coreTests.JfrogCli {
 // publishApmDependencyPackage publishes a minimal, real APM package to the default registry
 // (tests.AgentPackagesLocalRepo) so other tests can declare it as a resolvable dependency
 // (via the "owner/name#version" shorthand) and exercise real install/build-info collection.
-// packageSpec is "owner/name"; version defaults to "1.0.0" semantics expected by callers.
+// packageSpec is "owner/name"; version is the version to publish (e.g. "1.0.0").
 func publishApmDependencyPackage(t *testing.T, packageSpec, version string) {
 	t.Helper()
 	pubDir, err := os.MkdirTemp("", "apm-dep-publish-*")
@@ -142,7 +142,6 @@ func initApmConfig(t *testing.T) {
 	err := setupCli.Exec("setup", "agent-apm", "--repo", tests.AgentPackagesLocalRepo)
 	require.NoError(t, err, "jf setup agent-apm should succeed")
 }
-
 
 // cleanApmTest cleans up resources after APM tests.
 func cleanApmTest(t *testing.T) {
@@ -220,14 +219,43 @@ dependencies:
 	require.NoError(t, os.WriteFile(filepath.Join(projectDir, "apm.yml"), []byte(apmYamlContent), filePerms))
 }
 
-// validateApmBuildInfo validates the generated build info from an APM command.
-func validateApmBuildInfo(t *testing.T, buildName, buildNumber string, expectedArtifacts int) {
-	builds, err := build.GetGeneratedBuildsInfo(buildName, buildNumber, "")
-	require.NoError(t, err)
-	require.Len(t, builds, 1, "Expected exactly one build info")
+// fetchPublishedApmBuildInfo publishes the locally-collected build info to Artifactory
+// (jf rt bp) and reads it back from the server.
+//
+// apm's install/publish/update commands only ever call Build.AddArtifacts /
+// Build.SavePartialBuildInfo, which write *partial* build-info files under
+// <buildDir>/partials/ - they never call Build.SaveBuildInfo to materialize a combined,
+// "generated" build info directly under <buildDir> (the file build.GetGeneratedBuildsInfo
+// reads). That's consistent with the rest of jfrog-cli's build-info design: jf rt bp
+// itself calls Build.ToBuildInfo(), which reads the same partials and assembles the
+// final build info at publish time - GetGeneratedBuildsInfo is for package managers whose
+// commands call Build.SaveBuildInfo directly (npm, docker, conan, etc.), not for reading
+// pre-publish partials. So build.GetGeneratedBuildsInfo(name, number, "") is always
+// guaranteed to return zero results for apm and cannot be used to validate its build info
+// pre-publish; publish-then-verify-on-server is required.
+func fetchPublishedApmBuildInfo(t *testing.T, buildName, buildNumber string) *buildinfo.BuildInfo {
+	t.Helper()
+	return fetchPublishedApmBuildInfoInProject(t, buildName, buildNumber, "")
+}
 
-	buildResult := builds[0]
-	require.NotNil(t, buildResult)
+// fetchPublishedApmBuildInfoInProject is fetchPublishedApmBuildInfo scoped to an Artifactory project key.
+func fetchPublishedApmBuildInfoInProject(t *testing.T, buildName, buildNumber, projectKey string) *buildinfo.BuildInfo {
+	t.Helper()
+	bpArgs := []string{"bp", buildName, buildNumber}
+	if projectKey != "" {
+		bpArgs = append(bpArgs, "--project", projectKey)
+	}
+	require.NoError(t, artifactoryCli.Exec(bpArgs...), "jf rt bp should succeed")
+
+	published, found, err := tests.GetBuildInfoInProject(serverDetails, buildName, buildNumber, projectKey)
+	require.NoError(t, err)
+	require.True(t, found, "published build info should be found on the server")
+	return &published.BuildInfo
+}
+
+// validateApmBuildInfo publishes and validates the build info collected by an APM command.
+func validateApmBuildInfo(t *testing.T, buildName, buildNumber string, expectedArtifacts int) {
+	buildResult := fetchPublishedApmBuildInfo(t, buildName, buildNumber)
 
 	// Verify build properties
 	assert.Equal(t, buildName, buildResult.Name)
@@ -250,14 +278,12 @@ func validateApmBuildInfo(t *testing.T, buildName, buildNumber string, expectedA
 	}
 }
 
-// validateBuildInfoDependencies validates dependencies exist in build info
+// validateBuildInfoDependencies validates dependencies exist in the published build info
 func validateBuildInfoDependencies(t *testing.T, buildName, buildNumber string) {
-	builds, err := build.GetGeneratedBuildsInfo(buildName, buildNumber, "")
-	require.NoError(t, err, "Should retrieve build info without error")
-	require.Len(t, builds, 1, "Should have exactly one build")
-	require.Len(t, builds[0].Modules, 1, "Build should have at least one module")
+	buildResult := fetchPublishedApmBuildInfo(t, buildName, buildNumber)
+	require.Len(t, buildResult.Modules, 1, "Build should have at least one module")
 
-	module := builds[0].Modules[0]
+	module := buildResult.Modules[0]
 	require.NotEmpty(t, module.Dependencies, "Dependencies should be present in build info")
 
 	for _, dep := range module.Dependencies {
@@ -265,14 +291,12 @@ func validateBuildInfoDependencies(t *testing.T, buildName, buildNumber string) 
 	}
 }
 
-// validateBuildInfoArtifacts validates artifacts in build info
+// validateBuildInfoArtifacts validates artifacts in the published build info
 func validateBuildInfoArtifacts(t *testing.T, buildName, buildNumber string, expectedCount int) {
-	builds, err := build.GetGeneratedBuildsInfo(buildName, buildNumber, "")
-	require.NoError(t, err, "Should retrieve build info without error")
-	require.Len(t, builds, 1, "Should have exactly one build")
-	require.Len(t, builds[0].Modules, 1, "Build should have at least one module")
+	buildResult := fetchPublishedApmBuildInfo(t, buildName, buildNumber)
+	require.Len(t, buildResult.Modules, 1, "Build should have at least one module")
 
-	module := builds[0].Modules[0]
+	module := buildResult.Modules[0]
 	require.Len(t, module.Artifacts, expectedCount, "Artifacts count should match expected")
 
 	for _, artifact := range module.Artifacts {
@@ -281,14 +305,12 @@ func validateBuildInfoArtifacts(t *testing.T, buildName, buildNumber string, exp
 	}
 }
 
-// validateBuildInfoHasBothArtifactsAndDependencies validates both exist
+// validateBuildInfoHasBothArtifactsAndDependencies validates both exist in the published build info
 func validateBuildInfoHasBothArtifactsAndDependencies(t *testing.T, buildName, buildNumber string) {
-	builds, err := build.GetGeneratedBuildsInfo(buildName, buildNumber, "")
-	require.NoError(t, err, "Should retrieve build info without error")
-	require.Len(t, builds, 1, "Should have exactly one build")
-	require.Len(t, builds[0].Modules, 1, "Build should have at least one module")
+	buildResult := fetchPublishedApmBuildInfo(t, buildName, buildNumber)
+	require.Len(t, buildResult.Modules, 1, "Build should have at least one module")
 
-	module := builds[0].Modules[0]
+	module := buildResult.Modules[0]
 	require.NotEmpty(t, module.Dependencies, "Build info should have dependencies")
 	require.NotEmpty(t, module.Artifacts, "Build info should have artifacts")
 }
@@ -314,11 +336,11 @@ func TestApmSetupAndConfig(t *testing.T) {
 	configData, err := os.ReadFile(apmConfigPath)
 	require.NoError(t, err)
 
-	var config map[string]interface{}
+	var config map[string]any
 	err = json.Unmarshal(configData, &config)
 	require.NoError(t, err)
 
-	registries, ok := config["registries"].(map[string]interface{})
+	registries, ok := config["registries"].(map[string]any)
 	assert.True(t, ok, "Config should have registries section")
 	assert.NotEmpty(t, registries, "Registries section should not be empty")
 
@@ -360,7 +382,7 @@ func TestApmInstallWithBuildInfo(t *testing.T) {
 	validateApmBuildInfo(t, apmBuildName, buildNumber, 0)
 
 	// Publish the build info
-	err = artifactoryCli.Exec("rt", "bp", apmBuildName, buildNumber)
+	err = artifactoryCli.Exec("bp", apmBuildName, buildNumber)
 	require.NoError(t, err, "jf rt bp should succeed")
 
 	// Clean up build info
@@ -395,7 +417,7 @@ func TestApmPublishWithBuildInfo(t *testing.T) {
 	validateApmBuildInfo(t, apmBuildName, buildNumber, 1)
 
 	// Publish the build info
-	err = artifactoryCli.Exec("rt", "bp", apmBuildName, buildNumber)
+	err = artifactoryCli.Exec("bp", apmBuildName, buildNumber)
 	require.NoError(t, err, "jf rt bp should succeed")
 
 	// Verify artifact was uploaded to Artifactory
@@ -628,11 +650,7 @@ func TestApmBuildInfoArtifactMetadata(t *testing.T) {
 	require.NoError(t, err)
 
 	// Validate build info has complete artifact metadata
-	builds, err := build.GetGeneratedBuildsInfo(apmBuildName, buildNumber, "")
-	require.NoError(t, err)
-	require.Len(t, builds, 1)
-
-	buildResult := builds[0]
+	buildResult := fetchPublishedApmBuildInfo(t, apmBuildName, buildNumber)
 	require.NotEmpty(t, buildResult.Modules)
 
 	module := buildResult.Modules[0]
@@ -671,7 +689,7 @@ func TestApmBuildPropertiesStamping(t *testing.T) {
 	require.NoError(t, err)
 
 	// Publish build info
-	err = artifactoryCli.Exec("rt", "bp", apmBuildName, buildNumber)
+	err = artifactoryCli.Exec("bp", apmBuildName, buildNumber)
 	require.NoError(t, err)
 
 	// Verify build properties were stamped on artifacts
@@ -739,11 +757,7 @@ func TestApmModuleFlag(t *testing.T) {
 	require.NoError(t, err, "jf agent apm install with --module flag should succeed")
 
 	// Validate custom module name in build info
-	builds, err := build.GetGeneratedBuildsInfo(apmBuildName, buildNumber, "")
-	require.NoError(t, err)
-	require.Len(t, builds, 1)
-
-	buildResult := builds[0]
+	buildResult := fetchPublishedApmBuildInfo(t, apmBuildName, buildNumber)
 	var foundModule bool
 	for _, module := range buildResult.Modules {
 		if module.Id == customModule {
@@ -851,12 +865,10 @@ func TestApmChecksumsInBuildInfo(t *testing.T) {
 	require.NoError(t, err)
 
 	// Get build info and verify checksums
-	builds, err := build.GetGeneratedBuildsInfo(apmBuildName, buildNumber, "")
-	require.NoError(t, err)
-	require.Len(t, builds, 1)
+	buildResult := fetchPublishedApmBuildInfo(t, apmBuildName, buildNumber)
 
-	if len(builds[0].Modules) > 0 {
-		module := builds[0].Modules[0]
+	if len(buildResult.Modules) > 0 {
+		module := buildResult.Modules[0]
 		for _, artifact := range module.Artifacts {
 			// SHA256 is required
 			assert.NotEmpty(t, artifact.Sha256, "Artifact should have SHA256")
@@ -890,7 +902,7 @@ func TestApmProjectFlag(t *testing.T) {
 	createApmTestProjectWithDependency(t, projectDir, "test/project-flag-dep#1.0.0")
 
 	buildNumber := "108"
-	projectKey := "test-project"
+	projectKey := tests.ProjectKey
 	wd, err := os.Getwd()
 	require.NoError(t, err)
 	defer clientTestUtils.ChangeDirAndAssert(t, wd)
@@ -901,9 +913,8 @@ func TestApmProjectFlag(t *testing.T) {
 	require.NoError(t, err, "jf agent apm install with --project flag should succeed")
 
 	// Validate build info is scoped to project
-	builds, err := build.GetGeneratedBuildsInfo(apmBuildName, buildNumber, projectKey)
-	require.NoError(t, err)
-	require.Len(t, builds, 1, "Build should be found when queried with correct project key")
+	buildResult := fetchPublishedApmBuildInfoInProject(t, apmBuildName, buildNumber, projectKey)
+	require.NotNil(t, buildResult, "Build should be found when queried with correct project key")
 
 	// Clean up
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, apmBuildName, artHttpDetails)
@@ -1004,11 +1015,11 @@ func TestApmBuildInfoRead(t *testing.T) {
 	require.NoError(t, err)
 
 	// Publish to Artifactory
-	err = artifactoryCli.Exec("rt", "bp", apmBuildName, buildNumber)
+	err = artifactoryCli.Exec("bp", apmBuildName, buildNumber)
 	require.NoError(t, err)
 
 	// Read build info
-	err = artifactoryCli.Exec("rt", "bi", apmBuildName, buildNumber)
+	err = artifactoryCli.Exec("bi", apmBuildName, buildNumber)
 	require.NoError(t, err, "jf rt bi should succeed reading published build info")
 
 	// Clean up
@@ -1048,7 +1059,7 @@ func TestApmIntegrationFullPipeline(t *testing.T) {
 	require.NoError(t, err, "Step 2: Publish should succeed")
 
 	// Step 3: Publish build info
-	err = artifactoryCli.Exec("rt", "bp", buildName, buildNumber)
+	err = artifactoryCli.Exec("bp", buildName, buildNumber)
 	require.NoError(t, err, "Step 3: Publish build info should succeed")
 
 	// Clean up
@@ -1178,34 +1189,45 @@ func TestApmBuildInfoWithArtifactsAndDependencies(t *testing.T) {
 	deleteBuildInfo()
 }
 
-// TestApmUpdateWithVersionChange validates update captures new version in build info
+// TestApmUpdateWithVersionChange validates update captures a new dependency version in build info.
+// A bare "#1.0.0" pin is exact and apm update never moves it; only a semver range like "^1.0.0"
+// is a floating constraint update can re-resolve, so this uses "^1.0.0" and republishes the
+// dependency at 1.0.1 in between install and update (matching the documented apmbughunt flow).
 func TestApmUpdateWithVersionChange(t *testing.T) {
 	initApmTest(t)
 	defer cleanApmTest(t)
 
-	projectDir := createApmProjectWithYaml(t, getBasicApmYaml())
+	publishApmDependencyPackage(t, "test/version-change-dep", "1.0.0")
+
+	projectDir, err := os.MkdirTemp("", "apm-update-version-test-*")
+	require.NoError(t, err)
 	defer func() {
 		_ = os.RemoveAll(projectDir)
 	}()
+	createApmTestProjectWithDependency(t, projectDir, "test/version-change-dep#^1.0.0")
 	defer setupTestWorkingDirectory(t, projectDir)()
 
 	buildNumber := "403"
 
-	// Step 1: Install
-	err := runApmInstall(buildNumber)
+	// Step 1: Install at 1.0.0
+	err = runApmInstall(buildNumber)
 	require.NoError(t, err, "install should succeed")
 
-	builds1, err := build.GetGeneratedBuildsInfo(apmBuildName, buildNumber, "")
-	require.NoError(t, err)
+	installResult := fetchPublishedApmBuildInfo(t, apmBuildName, buildNumber)
+	require.NotEmpty(t, installResult.Modules, "install build info should have a module")
+	assert.Contains(t, installResult.Modules[0].Dependencies[0].Id, "1.0.0", "install should resolve the dependency at 1.0.0")
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, apmBuildName, artHttpDetails)
 
-	// Step 2: Update
+	// Bump and republish the dependency so update has something new to pick up.
+	publishApmDependencyPackage(t, "test/version-change-dep", "1.0.1")
+
+	// Step 2: Update should re-resolve the floating range to 1.0.1
 	err = runApmUpdate(apmBuildName, buildNumber)
 	require.NoError(t, err, "update should succeed")
 
-	builds2, err := build.GetGeneratedBuildsInfo(apmBuildName, buildNumber, "")
-	require.NoError(t, err)
-
-	assert.Equal(t, len(builds1), len(builds2), "Build info should reflect update")
+	updateResult := fetchPublishedApmBuildInfo(t, apmBuildName, buildNumber)
+	require.NotEmpty(t, updateResult.Modules, "update build info should have a module")
+	assert.Contains(t, updateResult.Modules[0].Dependencies[0].Id, "1.0.1", "update should resolve the dependency at 1.0.1")
 
 	deleteBuildInfo()
 }
@@ -1264,7 +1286,7 @@ func TestApmDifferentRegistriesAsArtifactoryRepos(t *testing.T) {
 		require.NoError(t, err, "setup should succeed for repo %s", repoName)
 	}
 
-	projectDir := createProjectWithRegistries(t, "multi-repo-app", repos)
+	projectDir := createProjectWithRegistries(t, "multi-repo-app")
 	defer func() {
 		_ = os.RemoveAll(projectDir)
 	}()
@@ -1280,14 +1302,14 @@ func TestApmDifferentRegistriesAsArtifactoryRepos(t *testing.T) {
 
 // getBasicApmYaml returns basic APM YAML
 func getBasicApmYaml() string {
-	return createApmYaml("test-app", "1.0.0", []string{}, nil)
+	return createApmYaml("test-app", "1.0.0", nil)
 }
 
 // createApmYaml creates customizable APM YAML with parameters. apmDeps are real APM dependency
 // specs in "owner/name#version" shorthand (see publishApmDependencyPackage); an empty slice
-// yields an empty "apm: []" dependency list.
-func createApmYaml(name, version string, apmDeps []string, registries map[string]string) string {
-	// Note: registries parameter is deprecated - registries are configured globally via setup command
+// yields an empty "apm: []" dependency list. Registries are never declared here - they're
+// configured globally via "jf setup agent-apm", not per-project.
+func createApmYaml(name, version string, apmDeps []string) string {
 	depsSection := "  apm: []\n"
 	if len(apmDeps) > 0 {
 		var b strings.Builder
@@ -1310,9 +1332,9 @@ dependencies:
 %s`, name, version, depsSection)
 }
 
-// createMultiRegistryYaml creates APM YAML with multiple distinct registries
-// Note: Registries are configured globally via setup command, not in apm.yml
-func createMultiRegistryYaml(name string, registryRepos []string) string {
+// createMultiRegistryYaml creates a minimal apm.yml for tests exercising multiple registries.
+// Registries are configured globally via "jf setup agent-apm", not declared in apm.yml itself.
+func createMultiRegistryYaml(name string) string {
 	return fmt.Sprintf(`version: "1.0.0"
 name: %s
 license: UNLICENSED
@@ -1327,14 +1349,16 @@ dependencies:
 
 // createProjectWithDependencies creates a project directory with specified dependencies
 func createProjectWithDependencies(t *testing.T, name string, deps []string) string {
-	apmYaml := createApmYaml(name, "1.0.0", deps, nil)
+	apmYaml := createApmYaml(name, "1.0.0", deps)
 	return createApmProjectWithYaml(t, apmYaml)
 }
 
-// createProjectWithRegistries creates a project with multiple distinct registries
-func createProjectWithRegistries(t *testing.T, name string, registryRepos []string) string {
-	apmYaml := createMultiRegistryYaml(name, registryRepos)
-	return createApmProjectWithYaml(t, apmYaml)
+// createProjectWithRegistries creates a project used by tests that register multiple named
+// Artifactory repos as registries (see createAgentPackagesRepoWithKey / TestApmDifferentRegistriesAsArtifactoryRepos).
+// The apm.yml itself never lists them - only "jf setup agent-apm" does that - so no registry
+// names need to flow into the generated YAML here.
+func createProjectWithRegistries(t *testing.T, name string) string {
+	return createApmProjectWithYaml(t, createMultiRegistryYaml(name))
 }
 
 // runApmInstall runs install command with optional build info
@@ -1484,11 +1508,10 @@ dependencies:
 	require.NoError(t, err, "publish should succeed with dependencies")
 
 	// Validate build info includes dependency metadata
-	builds, err := build.GetGeneratedBuildsInfo(apmBuildName, buildNumber, "")
-	require.NoError(t, err)
-	require.Len(t, builds, 1)
+	buildResult := fetchPublishedApmBuildInfo(t, apmBuildName, buildNumber)
+	require.NotEmpty(t, buildResult.Modules)
 
-	module := builds[0].Modules[0]
+	module := buildResult.Modules[0]
 	assert.NotEmpty(t, module.Artifacts, "Should have artifact metadata")
 
 	// Clean up
@@ -1591,7 +1614,7 @@ func TestApmInstallAndPublishWithBuildInfoComplete(t *testing.T) {
 	validateApmBuildInfo(t, buildName, buildNumber, 1)
 
 	// Step 3: Publish build info to Artifactory
-	err = artifactoryCli.Exec("rt", "bp", buildName, buildNumber)
+	err = artifactoryCli.Exec("bp", buildName, buildNumber)
 	require.NoError(t, err, "build-info publish should succeed")
 
 	// Clean up
