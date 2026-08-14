@@ -87,8 +87,7 @@ func publishApmDependencyPackage(t *testing.T, packageSpec, version string) {
 	_, pkgName, ok := strings.Cut(packageSpec, "/")
 	require.True(t, ok, "packageSpec must be in owner/name form, got %q", packageSpec)
 
-	apmYaml := fmt.Sprintf(`version: "1.0.0"
-name: %s
+	apmYaml := fmt.Sprintf(`name: %s
 version: %s
 license: UNLICENSED
 targets:
@@ -132,7 +131,7 @@ func createAgentPackagesRepoWithKey(t *testing.T, repoName string) {
 	patched := strings.Replace(string(content), `"key": "`+tests.AgentPackagesLocalRepo+`"`, `"key": "`+repoName+`"`, 1)
 
 	patchedPath := filepath.Join(filepath.Dir(repoConfig), repoName+"_repository_config.json")
-	require.NoError(t, os.WriteFile(patchedPath, []byte(patched), filePerms))
+	require.NoError(t, os.WriteFile(patchedPath, []byte(patched), filePerms)) // #nosec G703 -- repoName is always one of this test's own hardcoded literals, not external input
 
 	execCreateRepoRest(patchedPath, repoName)
 }
@@ -1362,8 +1361,7 @@ func createApmYaml(name, version string, apmDeps []string) string {
 		depsSection = b.String()
 	}
 
-	return fmt.Sprintf(`version: "1.0.0"
-name: %s
+	return fmt.Sprintf(`name: %s
 version: %s
 license: UNLICENSED
 targets:
@@ -1519,8 +1517,7 @@ func TestApmPublishWithDependencyMetadata(t *testing.T) {
 	initApmTest(t)
 	defer cleanApmTest(t)
 
-	apmYaml := `version: "1.0.0"
-name: app-with-deps
+	apmYaml := `name: app-with-deps
 version: 1.0.0
 description: App with explicit dependencies
 license: UNLICENSED
@@ -1568,13 +1565,17 @@ func TestApmUpdateChangesLockfile(t *testing.T) {
 	initApmTest(t)
 	defer cleanApmTest(t)
 
+	// A real dependency is required: apm only writes apm.lock.yaml when the project has at
+	// least one dependency to resolve.
+	publishApmDependencyPackage(t, "test/update-lock-dep", "1.0.0")
+
 	projectDir, err := os.MkdirTemp("", "apm-update-lock-*")
 	require.NoError(t, err)
 	defer func() {
 		_ = os.RemoveAll(projectDir)
 	}()
 
-	createApmTestProject(t, projectDir)
+	createApmTestProjectWithDependency(t, projectDir, "test/update-lock-dep#1.0.0")
 
 	defer setupTestWorkingDirectory(t, projectDir)()
 
@@ -1605,13 +1606,15 @@ func TestApmFrozenModeWithDependencies(t *testing.T) {
 	initApmTest(t)
 	defer cleanApmTest(t)
 
+	publishApmDependencyPackage(t, "test/frozen-mode-dep", "1.0.0")
+
 	projectDir, err := os.MkdirTemp("", "apm-frozen-*")
 	require.NoError(t, err)
 	defer func() {
 		_ = os.RemoveAll(projectDir)
 	}()
 
-	createApmTestProject(t, projectDir)
+	createApmTestProjectWithDependency(t, projectDir, "test/frozen-mode-dep#1.0.0")
 
 	defer setupTestWorkingDirectory(t, projectDir)()
 
@@ -1619,8 +1622,10 @@ func TestApmFrozenModeWithDependencies(t *testing.T) {
 	err = getApmCli().Exec("agent", "apm", "install")
 	require.NoError(t, err)
 
-	// Frozen install should succeed (lockfile exists and is up-to-date)
-	err = getApmCli().Exec("agent", "apm", "install", "--", "--frozen")
+	// Frozen install should succeed (lockfile exists and is up-to-date). --frozen must be
+	// passed directly, not after a "--" escape: apm parses anything after "--" as a
+	// positional package argument, not a flag (see TestApmNativeFlags for the same bug).
+	err = getApmCli().Exec("agent", "apm", "install", "--frozen")
 	require.NoError(t, err, "frozen install should succeed with existing lockfile")
 }
 
