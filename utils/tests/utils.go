@@ -363,6 +363,7 @@ var reposConfigMap = map[*string]string{
 	&UvVirtualRepo:                  UvVirtualRepositoryConfig,
 	&AgentPluginsLocalRepo:          AgentPluginsLocalRepositoryConfig,
 	&AgentSkillsLocalRepo:           AgentSkillsLocalRepositoryConfig,
+	&AgentPackagesLocalRepo:         AgentPackagesLocalRepositoryConfig,
 	&NixLocalRepo:                   NixLocalRepositoryConfig,
 	&NixRemoteRepo:                  NixRemoteRepositoryConfig,
 	&NixVirtualRepo:                 NixVirtualRepositoryConfig,

@@ -11,6 +11,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/common/build"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
@@ -20,7 +21,6 @@ import (
 
 const (
 	apmBuildName = "apm-test-build"
-	apmRepo      = "apm-local"
 	dirPerms     = 0755
 	filePerms    = 0644
 )
@@ -39,23 +39,26 @@ func initApmTest(t *testing.T) {
 
 // createApmRepository creates a local APM repository for testing.
 func createApmRepository(t *testing.T) {
-	repoConfig := tests.GetTestResourcesPath() + tests.AgentPackagesLocalRepositoryConfig
-	repoConfig, err := tests.ReplaceTemplateVariables(repoConfig, "")
-	require.NoError(t, err)
-	execCreateRepoRest(repoConfig, tests.AgentPackagesLocalRepo)
+	if !isRepoExist(tests.AgentPackagesLocalRepo) {
+		repoConfig := tests.GetTestResourcesPath() + tests.AgentPackagesLocalRepositoryConfig
+		repoConfig, err := tests.ReplaceTemplateVariables(repoConfig, "")
+		require.NoError(t, err)
+		execCreateRepoRest(repoConfig, tests.AgentPackagesLocalRepo)
+	}
 }
 
 // initApmConfig sets up the APM configuration in ~/.apm/config.json via jf setup.
 func initApmConfig(t *testing.T) {
-	// Use jf setup to configure APM
-	err := artifactoryCli.Exec("setup", "agent-apm", "--repo", apmRepo)
+	// Use jf setup to configure APM (not jf rt setup)
+	setupCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+	err := setupCli.Exec("setup", "agent-apm", "--repo", tests.AgentPackagesLocalRepo)
 	require.NoError(t, err, "jf setup agent-apm should succeed")
 }
 
 // cleanApmTest cleans up resources after APM tests.
 func cleanApmTest(t *testing.T) {
 	clientTestUtils.UnSetEnvAndAssert(t, coreutils.HomeDir)
-	deleteSpec := spec.NewBuilder().Pattern(apmRepo).BuildSpec()
+	deleteSpec := spec.NewBuilder().Pattern(tests.AgentPackagesLocalRepo).BuildSpec()
 	_, _, err := tests.DeleteFiles(deleteSpec, serverDetails)
 	require.NoError(t, err, "cleanup should remove test artifacts")
 	tests.CleanFileSystem()
@@ -203,7 +206,7 @@ func TestApmSetupAndConfig(t *testing.T) {
 	apmConfigPath := filepath.Join(homeDir, ".apm", "config.json")
 
 	// First setup call
-	err = artifactoryCli.Exec("setup", "agent-apm", "--repo", apmRepo)
+	err = artifactoryCli.Exec("setup", "agent-apm", "--repo", tests.AgentPackagesLocalRepo)
 	require.NoError(t, err, "jf setup agent-apm should succeed")
 
 	// Verify config file was created
@@ -222,7 +225,7 @@ func TestApmSetupAndConfig(t *testing.T) {
 	assert.NotEmpty(t, registries, "Registries section should not be empty")
 
 	// Verify idempotency - second call should not fail
-	err = artifactoryCli.Exec("setup", "agent-apm", "--repo", apmRepo)
+	err = artifactoryCli.Exec("setup", "agent-apm", "--repo", tests.AgentPackagesLocalRepo)
 	require.NoError(t, err, "jf setup agent-apm should be idempotent")
 }
 
@@ -294,7 +297,7 @@ func TestApmPublishWithBuildInfo(t *testing.T) {
 
 	// Verify artifact was uploaded to Artifactory
 	deleteSpec := spec.NewBuilder().
-		Pattern(apmRepo + "/jfrog/test-apm-pkg/*.zip").
+		Pattern(tests.AgentPackagesLocalRepo + "/jfrog/test-apm-pkg/*.zip").
 		BuildSpec()
 	artifacts, _, err := tests.SearchFiles(deleteSpec, serverDetails)
 	require.NoError(t, err)
@@ -331,7 +334,7 @@ func TestApmPublishArtifactPath(t *testing.T) {
 
 	// Verify artifact path: <owner>/<name>/<name>-<version>.zip
 	searchSpec := spec.NewBuilder().
-		Pattern(fmt.Sprintf("%s/%s/%s/*.zip", apmRepo, owner, packageName)).
+		Pattern(fmt.Sprintf("%s/%s/%s/*.zip", tests.AgentPackagesLocalRepo, owner, packageName)).
 		BuildSpec()
 	artifacts, _, err := tests.SearchFiles(searchSpec, serverDetails)
 	require.NoError(t, err)
@@ -577,7 +580,7 @@ func TestApmBuildPropertiesStamping(t *testing.T) {
 
 	// Verify build properties were stamped on artifacts
 	searchSpec := spec.NewBuilder().
-		Pattern(apmRepo + "/jfrog/props-test/*.zip").
+		Pattern(tests.AgentPackagesLocalRepo + "/jfrog/props-test/*.zip").
 		BuildSpec()
 	artifacts, _, err := tests.SearchFiles(searchSpec, serverDetails)
 	require.NoError(t, err)
@@ -732,7 +735,7 @@ registries:
 
 	// Clean up
 	searchSpec := spec.NewBuilder().
-		Pattern(apmRepo + "/" + owner + "/" + pkgName + "/*.zip").
+		Pattern(tests.AgentPackagesLocalRepo + "/" + owner + "/" + pkgName + "/*.zip").
 		BuildSpec()
 	_, _, _ = tests.DeleteFiles(searchSpec, serverDetails)
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, apmBuildName, artHttpDetails)
@@ -878,7 +881,7 @@ func TestApmNativeFlags(t *testing.T) {
 
 	// Verify no artifact was uploaded for dry-run
 	searchSpec := spec.NewBuilder().
-		Pattern(apmRepo + "/test/native-flags/*.zip").
+		Pattern(tests.AgentPackagesLocalRepo + "/test/native-flags/*.zip").
 		BuildSpec()
 	artifacts, _, err := tests.SearchFiles(searchSpec, serverDetails)
 	require.NoError(t, err)
@@ -919,7 +922,7 @@ func TestApmBuildInfoRead(t *testing.T) {
 
 	// Clean up
 	_, _, _ = tests.DeleteFiles(
-		spec.NewBuilder().Pattern(apmRepo+"/test/bi-read/*.zip").BuildSpec(),
+		spec.NewBuilder().Pattern(tests.AgentPackagesLocalRepo+"/test/bi-read/*.zip").BuildSpec(),
 		serverDetails)
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, apmBuildName, artHttpDetails)
 }
@@ -959,7 +962,7 @@ func TestApmIntegrationFullPipeline(t *testing.T) {
 
 	// Clean up
 	_, _, _ = tests.DeleteFiles(
-		spec.NewBuilder().Pattern(apmRepo+"/e2e/pipeline/*.zip").BuildSpec(),
+		spec.NewBuilder().Pattern(tests.AgentPackagesLocalRepo+"/e2e/pipeline/*.zip").BuildSpec(),
 		serverDetails)
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 }
@@ -1053,7 +1056,7 @@ func TestApmPublishWithArtifactsInBuildInfo(t *testing.T) {
 	require.NoError(t, err, "publish should succeed")
 
 	validateBuildInfoArtifacts(t, apmBuildName, buildNumber, 1)
-	_ = deleteArtifacts(apmRepo + "/test/artifacts-demo/*.zip")
+	_ = deleteArtifacts(tests.AgentPackagesLocalRepo + "/test/artifacts-demo/*.zip")
 	deleteBuildInfo()
 }
 
@@ -1081,7 +1084,7 @@ func TestApmBuildInfoWithArtifactsAndDependencies(t *testing.T) {
 	// Validate both exist
 	validateBuildInfoHasBothArtifactsAndDependencies(t, apmBuildName, buildNumber)
 
-	_ = deleteArtifacts(apmRepo + "/complete/demo/*.zip")
+	_ = deleteArtifacts(tests.AgentPackagesLocalRepo + "/complete/demo/*.zip")
 	deleteBuildInfo()
 }
 
@@ -1146,10 +1149,12 @@ func TestApmDifferentRegistriesAsArtifactoryRepos(t *testing.T) {
 	// Create two different repos
 	repos := []string{"apm-registry-1", "apm-registry-2"}
 	for _, repoName := range repos {
-		repoConfig := tests.GetTestResourcesPath() + tests.AgentPackagesLocalRepositoryConfig
-		repoConfig, err := tests.ReplaceTemplateVariables(repoConfig, "")
-		require.NoError(t, err)
-		execCreateRepoRest(repoConfig, repoName)
+		if !isRepoExist(repoName) {
+			repoConfig := tests.GetTestResourcesPath() + tests.AgentPackagesLocalRepositoryConfig
+			repoConfig, err := tests.ReplaceTemplateVariables(repoConfig, "")
+			require.NoError(t, err)
+			execCreateRepoRest(repoConfig, repoName)
+		}
 	}
 
 	projectDir := createProjectWithRegistries(t, "multi-repo-app", repos)
@@ -1392,7 +1397,7 @@ registries:
 
 	// Clean up
 	_, _, _ = tests.DeleteFiles(
-		spec.NewBuilder().Pattern(apmRepo+"/test/app-with-deps/*.zip").BuildSpec(),
+		spec.NewBuilder().Pattern(tests.AgentPackagesLocalRepo+"/test/app-with-deps/*.zip").BuildSpec(),
 		serverDetails)
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, apmBuildName, artHttpDetails)
 }
@@ -1494,7 +1499,7 @@ func TestApmInstallAndPublishWithBuildInfoComplete(t *testing.T) {
 
 	// Clean up
 	_, _, _ = tests.DeleteFiles(
-		spec.NewBuilder().Pattern(apmRepo+"/complete/workflow/*.zip").BuildSpec(),
+		spec.NewBuilder().Pattern(tests.AgentPackagesLocalRepo+"/complete/workflow/*.zip").BuildSpec(),
 		serverDetails)
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 }
@@ -1520,7 +1525,7 @@ func TestApmDryRunNoArtifacts(t *testing.T) {
 
 	// Verify nothing was uploaded
 	searchSpec := spec.NewBuilder().
-		Pattern(apmRepo + "/dryrun/test/*.zip").
+		Pattern(tests.AgentPackagesLocalRepo + "/dryrun/test/*.zip").
 		BuildSpec()
 	artifacts, _, err := tests.SearchFiles(searchSpec, serverDetails)
 	require.NoError(t, err)
