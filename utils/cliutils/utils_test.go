@@ -39,6 +39,9 @@ func TestSplitAgentNameAndVersion(t *testing.T) {
 		{"abc\\1.2.3", "abc\\1.2.3", ""},
 		{"abc:1.2.3", "abc:1.2.3", ""},
 		{"", "", ""},
+		{"jfrog-cli-go/2.119.0 ai-agent/claude", "jfrog-cli-go", "2.119.0"},
+		{"jfrog-skills/0.22.0 (trigger=skill; tool=cursor; client=vscode; model=opus-4.7) jfrog-cli-go/2.120.0", "jfrog-skills", "0.22.0"},
+		{"jfrog-skills/0.1.0 (trigger=hook; tool=cursor) jfrog-cli-go/2.119.0", "jfrog-skills", "0.1.0"},
 	}
 
 	for _, test := range tests {
@@ -513,12 +516,30 @@ func TestTransferFilesTimestampFilterFlags(t *testing.T) {
 func withCliUserAgent(t *testing.T, name, version string) {
 	t.Helper()
 	prevName, prevVersion := coreutils.GetCliUserAgentName(), coreutils.GetCliUserAgentVersion()
+	prevRaw := rawCliUserAgent
 	coreutils.SetCliUserAgentName(name)
 	coreutils.SetCliUserAgentVersion(version)
+	// Tests that pin name/version usually want rebuilt base unless they set raw.
+	rawCliUserAgent = ""
 	t.Cleanup(func() {
 		coreutils.SetCliUserAgentName(prevName)
 		coreutils.SetCliUserAgentVersion(prevVersion)
+		rawCliUserAgent = prevRaw
 	})
+}
+
+func TestGetCliUserAgentWithAgentPreservesRichRawUA(t *testing.T) {
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "jfrog-skills", "0.22.0")
+	raw := "jfrog-skills/0.22.0 (trigger=skill; tool=cursor) jfrog-cli-go/2.120.0"
+	rawCliUserAgent = raw
+	t.Setenv("CURSOR_AGENT", "1")
+	t.Setenv("TERM_PROGRAM", "vscode")
+	corecommands.ResetExecutionContextForTest()
+
+	got := GetCliUserAgentWithAgent()
+	assert.Equal(t, raw+" ai-agent/cursor ai-client/vscode", got,
+		"HTTP UA must keep the rich raw value and existing agent suffix behavior")
 }
 
 func TestGetCliUserAgentWithAgentNoAgentDetected(t *testing.T) {
@@ -583,7 +604,7 @@ func TestGetCliUserAgentWithAgentPerDetector(t *testing.T) {
 }
 
 func TestGetCliUserAgentWithAgentPreservesCustomUserAgent(t *testing.T) {
-	// JFROG_CLI_USER_AGENT lets an operator replace the product token entirely. The agent
+	// JFROG_CLI_USER_AGENT lets an operator replace the product entry entirely. The agent
 	// marker must be appended to whatever that resolves to, never replace it.
 	clearAgentEnvVarsForTest(t)
 	withCliUserAgent(t, "my-wrapper", "9.9.9")
@@ -617,7 +638,7 @@ func TestGetCliUserAgentWithAgentAppendsHostAndModel(t *testing.T) {
 
 func TestGetCliUserAgentWithAgentOmitsAbsentAxes(t *testing.T) {
 	// Host and model are optional: with neither advertised, the suffix is just
-	// the agent token — byte-identical to the pre-host/model behaviour.
+	// the agent entry — byte-identical to the pre-host/model behaviour.
 	clearAgentEnvVarsForTest(t)
 	withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
 	t.Setenv("CLAUDE_CODE_CHILD_SESSION", "1")
@@ -655,7 +676,7 @@ func TestGetCliUserAgentWithAgentMarkerIsWellFormed(t *testing.T) {
 	corecommands.ResetExecutionContextForTest()
 
 	userAgent := GetCliUserAgentWithAgent()
-	// The product token stays first, so parsers that read only it are unaffected.
+	// The product entry stays first, so parsers that read only it are unaffected.
 	assert.True(t, strings.HasPrefix(userAgent, "jfrog-cli-go/2.117.0"), "got %q", userAgent)
 	assert.True(t, strings.HasSuffix(userAgent, "ai-agent/cursor"), "got %q", userAgent)
 	// The detector only ever returns fixed table names, so no raw env value — and
