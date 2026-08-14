@@ -314,6 +314,12 @@ func SearchFiles(searchSpec *spec.SpecFiles, serverDetails *config.ServerDetails
 
 // This function makes no assertion, caller is responsible to assert as needed.
 func GetBuildInfo(serverDetails *config.ServerDetails, buildName, buildNumber string) (pbi *buildinfo.PublishedBuildInfo, found bool, err error) {
+	return GetBuildInfoInProject(serverDetails, buildName, buildNumber, "")
+}
+
+// GetBuildInfoInProject is GetBuildInfo scoped to an Artifactory project key.
+// This function makes no assertion, caller is responsible to assert as needed.
+func GetBuildInfoInProject(serverDetails *config.ServerDetails, buildName, buildNumber, projectKey string) (pbi *buildinfo.PublishedBuildInfo, found bool, err error) {
 	servicesManager, err := artUtils.CreateServiceManager(serverDetails, -1, 0, false)
 	if err != nil {
 		return nil, false, err
@@ -321,6 +327,7 @@ func GetBuildInfo(serverDetails *config.ServerDetails, buildName, buildNumber st
 	params := services.NewBuildInfoParams()
 	params.BuildName = buildName
 	params.BuildNumber = buildNumber
+	params.ProjectKey = projectKey
 	return servicesManager.GetBuildInfo(params)
 }
 
