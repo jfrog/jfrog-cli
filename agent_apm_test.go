@@ -11,11 +11,13 @@ import (
 	"testing"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
+	artUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
+	accessServices "github.com/jfrog/jfrog-client-go/access/services"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -133,6 +135,29 @@ func createAgentPackagesRepoWithKey(t *testing.T, repoName string) {
 	require.NoError(t, os.WriteFile(patchedPath, []byte(patched), filePerms))
 
 	execCreateRepoRest(patchedPath, repoName)
+}
+
+// ensureApmTestProjectExists creates (or recreates) the shared tests.ProjectKey Artifactory
+// project and assigns tests.AgentPackagesLocalRepo to it. "--project" scoping on jf commands
+// (e.g. jf rt bp --project=X) requires a real Project entity server-side - it's not just a
+// local metadata tag - so tests exercising project scoping must provision one first, same as
+// TestArtifactoryDownloadByBuildUsingSimpleDownloadWithProject does for the non-apm case.
+func ensureApmTestProjectExists(t *testing.T) {
+	t.Helper()
+	accessManager, err := artUtils.CreateAccessServiceManager(serverDetails, false)
+	require.NoError(t, err)
+
+	if err := accessManager.DeleteProject(tests.ProjectKey); err != nil && !strings.Contains(err.Error(), "Could not find project") {
+		t.Fatalf("delete pre-existing project %s: %v", tests.ProjectKey, err)
+	}
+
+	require.NoError(t, accessManager.CreateProject(accessServices.ProjectParams{
+		ProjectDetails: accessServices.Project{
+			DisplayName: "apm test project " + tests.ProjectKey,
+			ProjectKey:  tests.ProjectKey,
+		},
+	}))
+	require.NoError(t, accessManager.AssignRepoToProject(tests.AgentPackagesLocalRepo, tests.ProjectKey, true))
 }
 
 // initApmConfig sets up the APM configuration in ~/.apm/config.json via jf setup.
@@ -465,11 +490,12 @@ func TestApmPublishArtifactPath(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotEmpty(t, artifacts, "Artifact should be found at expected path: <owner>/<name>/<name>-<version>.zip")
 
-	// Verify artifact name format
+	// Verify artifact name format. Note: ResultItem.Path is the artifact's *directory* (e.g.
+	// "acme/my-agent-skill"); the filename itself is a separate field, Name.
 	if len(artifacts) > 0 {
 		assert.True(t,
-			strings.Contains(artifacts[0].Path, packageName+"-") && strings.HasSuffix(artifacts[0].Path, ".zip"),
-			"Artifact path should follow pattern: <name>-<version>.zip")
+			strings.HasPrefix(artifacts[0].Name, packageName+"-") && strings.HasSuffix(artifacts[0].Name, ".zip"),
+			"Artifact name should follow pattern: <name>-<version>.zip, got %q", artifacts[0].Name)
 	}
 
 	// Clean up
@@ -702,23 +728,19 @@ func TestApmBuildPropertiesStamping(t *testing.T) {
 
 	// Verify properties contain build info
 	artifact := artifacts[0]
-	assert.NotEmpty(t, artifact.Props, "Artifact should have properties")
+	assert.NotEmpty(t, artifact.Properties, "Artifact should have properties")
 
 	// Check for build name/number in properties
 	foundBuildName := false
 	foundBuildNumber := false
-	for buildPropKey, buildPropVals := range artifact.Props {
-		if buildPropKey == "build.name" {
+	for _, prop := range artifact.Properties {
+		switch prop.Key {
+		case "build.name":
 			foundBuildName = true
-			for _, val := range buildPropVals {
-				assert.Contains(t, val, apmBuildName)
-			}
-		}
-		if buildPropKey == "build.number" {
+			assert.Contains(t, prop.Value, apmBuildName)
+		case "build.number":
 			foundBuildNumber = true
-			for _, val := range buildPropVals {
-				assert.Contains(t, val, buildNumber)
-			}
+			assert.Contains(t, prop.Value, buildNumber)
 		}
 	}
 
@@ -810,9 +832,12 @@ func TestApmRoundTripPublishAndInstall(t *testing.T) {
 	installApmYaml := `version: "1.0.0"
 name: test-consumer
 description: Consumer of published APM package
+license: UNLICENSED
+targets:
+  - claude
 dependencies:
   apm:
-    - name: ` + owner + `/` + pkgName + `
+    - ` + owner + `/` + pkgName + `#1.0.0
 `
 
 	err = os.MkdirAll(filepath.Join(installProjectDir, ".apm"), 0755)
@@ -891,6 +916,7 @@ func TestApmProjectFlag(t *testing.T) {
 	initApmTest(t)
 	defer cleanApmTest(t)
 
+	ensureApmTestProjectExists(t)
 	publishApmDependencyPackage(t, "test/project-flag-dep", "1.0.0")
 
 	projectDir, err := os.MkdirTemp("", "apm-project-flag-test-*")
