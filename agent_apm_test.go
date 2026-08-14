@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/build"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -41,7 +40,9 @@ func initApmTest(t *testing.T) {
 // createApmRepository creates a local APM repository for testing.
 func createApmRepository(t *testing.T) {
 	repoConfig := tests.GetTestResourcesPath() + tests.AgentPackagesLocalRepositoryConfig
-	createRepoIfNotExist(t, apmRepo, repoConfig)
+	repoConfig, err := tests.ReplaceTemplateVariables(repoConfig, "")
+	require.NoError(t, err)
+	execCreateRepoRest(repoConfig, tests.AgentPackagesLocalRepo)
 }
 
 // initApmConfig sets up the APM configuration in ~/.apm/config.json via jf setup.
@@ -1144,7 +1145,12 @@ func TestApmDifferentRegistriesAsArtifactoryRepos(t *testing.T) {
 
 	// Create two different repos
 	repos := []string{"apm-registry-1", "apm-registry-2"}
-	createRegistriesInArtifactory(t, repos)
+	for _, repoName := range repos {
+		repoConfig := tests.GetTestResourcesPath() + tests.AgentPackagesLocalRepositoryConfig
+		repoConfig, err := tests.ReplaceTemplateVariables(repoConfig, "")
+		require.NoError(t, err)
+		execCreateRepoRest(repoConfig, repoName)
+	}
 
 	projectDir := createProjectWithRegistries(t, "multi-repo-app", repos)
 	defer func() {
@@ -1256,14 +1262,6 @@ func runApmUpdate(buildName, buildNumber string) error {
 		args = append(args, "--build-name", buildName, "--build-number", buildNumber)
 	}
 	return artifactoryCli.Exec(args...)
-}
-
-// createRegistriesInArtifactory creates multiple distinct repos
-func createRegistriesInArtifactory(t *testing.T, repoNames []string) {
-	repoConfig := tests.GetTestResourcesPath() + tests.AgentPackagesLocalRepositoryConfig
-	for _, repoName := range repoNames {
-		createRepoIfNotExist(t, repoName, repoConfig)
-	}
 }
 
 // deleteBuildInfo deletes build info from Artifactory
@@ -1590,34 +1588,4 @@ primitives:
 	validateApmBuildInfo(t, apmBuildName, buildNumber, 0)
 
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, apmBuildName, artHttpDetails)
-}
-
-// createRepoIfNotExist creates a repository if it doesn't already exist in Artifactory.
-func createRepoIfNotExist(t *testing.T, repoName, repoConfig string) {
-	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, 0, false)
-	require.NoError(t, err)
-
-	// Check if repo exists
-	exists, err := servicesManager.IsRepoExists(repoName)
-	require.NoError(t, err)
-
-	if !exists {
-		// Create the repository from config
-		configContent, err := os.ReadFile(repoConfig)
-		require.NoError(t, err)
-
-		// Parse JSON config into a generic map
-		var repoParams map[string]interface{}
-		err = json.Unmarshal(configContent, &repoParams)
-		require.NoError(t, err)
-
-		// Ensure the repo key is set
-		if _, exists := repoParams["key"]; !exists {
-			repoParams["key"] = repoName
-		}
-
-		// Create the repository using the parsed params
-		err = servicesManager.CreateRepositoryWithParams(repoParams, repoName)
-		require.NoError(t, err, "Failed to create repository: "+repoName)
-	}
 }

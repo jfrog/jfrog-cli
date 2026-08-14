@@ -597,6 +597,7 @@ func getSubstitutionMap() map[string]string {
 		"${UV_VIRTUAL_REPO}":           UvVirtualRepo,
 		"${AGENT_PLUGINS_LOCAL_REPO}":  AgentPluginsLocalRepo,
 		"${AGENT_SKILLS_LOCAL_REPO}":   AgentSkillsLocalRepo,
+		"${AGENT_PACKAGES_LOCAL_REPO}": AgentPackagesLocalRepo,
 		"${NIX_LOCAL_REPO}":            NixLocalRepo,
 		"${NIX_REMOTE_REPO}":           NixRemoteRepo,
 		"${NIX_VIRTUAL_REPO}":          NixVirtualRepo,
