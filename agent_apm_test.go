@@ -41,6 +41,12 @@ func initApmTest(t *testing.T) {
 	initApmConfig(t)
 }
 
+// getApmCli returns a CLI configured for APM commands (without "rt" prefix).
+// APM commands are: jfrog agent apm ..., not jfrog rt agent apm ...
+func getApmCli() *coreTests.JfrogCli {
+	return coreTests.NewJfrogCli(execMain, "jfrog", "")
+}
+
 // createApmRepository creates a local APM repository for testing.
 func createApmRepository(t *testing.T) {
 	if !isRepoExist(tests.AgentPackagesLocalRepo) {
@@ -257,7 +263,7 @@ func TestApmInstallWithBuildInfo(t *testing.T) {
 	clientTestUtils.ChangeDirAndAssert(t, projectDir)
 
 	// Run apm install with build-info capture
-	err = artifactoryCli.Exec("agent", "apm", "install", "--build-name", apmBuildName, "--build-number", buildNumber)
+	err = getApmCli().Exec("agent", "apm", "install", "--build-name", apmBuildName, "--build-number", buildNumber)
 	require.NoError(t, err, "jf agent apm install should succeed with build-info")
 
 	// Validate build info was created
@@ -292,7 +298,7 @@ func TestApmPublishWithBuildInfo(t *testing.T) {
 	clientTestUtils.ChangeDirAndAssert(t, projectDir)
 
 	// Run apm publish with build-info capture
-	err = artifactoryCli.Exec("agent", "apm", "publish", "--package", "jfrog/test-apm-pkg", "--build-name", apmBuildName, "--build-number", buildNumber)
+	err = getApmCli().Exec("agent", "apm", "publish", "--package", "jfrog/test-apm-pkg", "--build-name", apmBuildName, "--build-number", buildNumber)
 	require.NoError(t, err, "jf agent apm publish should succeed with build-info")
 
 	// Validate build info was created with artifact
@@ -336,7 +342,7 @@ func TestApmPublishArtifactPath(t *testing.T) {
 
 	owner := "acme"
 	packageName := "my-agent-skill"
-	err = artifactoryCli.Exec("agent", "apm", "publish", "--package", fmt.Sprintf("%s/%s", owner, packageName))
+	err = getApmCli().Exec("agent", "apm", "publish", "--package", fmt.Sprintf("%s/%s", owner, packageName))
 	require.NoError(t, err, "jf agent apm publish should succeed")
 
 	// Verify artifact path: <owner>/<name>/<name>-<version>.zip
@@ -378,7 +384,7 @@ func TestApmPublishRequiresPackageFlag(t *testing.T) {
 	clientTestUtils.ChangeDirAndAssert(t, projectDir)
 
 	// Attempt publish without --package flag
-	err = artifactoryCli.Exec("agent", "apm", "publish")
+	err = getApmCli().Exec("agent", "apm", "publish")
 	assert.Error(t, err, "jf agent apm publish without --package should fail")
 	assert.Contains(t, err.Error(), "package", "Error message should mention --package flag")
 }
@@ -429,7 +435,7 @@ registries:
 
 	// Attempt install with invalid package
 	// Note: This depends on APM's own error handling
-	err = artifactoryCli.Exec("agent", "apm", "install")
+	err = getApmCli().Exec("agent", "apm", "install")
 	// Error is expected when trying to fetch nonexistent package
 	if err != nil {
 		assert.True(t,
@@ -467,7 +473,7 @@ func TestApmAuthEnvironmentVariable(t *testing.T) {
 	}()
 
 	// Run install with env var auth
-	err = artifactoryCli.Exec("agent", "apm", "install", "--build-name", apmBuildName, "--build-number", buildNumber)
+	err = getApmCli().Exec("agent", "apm", "install", "--build-name", apmBuildName, "--build-number", buildNumber)
 	require.NoError(t, err, "jf agent apm install should succeed with env var auth")
 
 	// Clean up build info
@@ -511,7 +517,7 @@ func TestApmMissingCredentials(t *testing.T) {
 	}
 
 	// Attempt install without credentials
-	err = artifactoryCli.Exec("agent", "apm", "install")
+	err = getApmCli().Exec("agent", "apm", "install")
 	assert.Error(t, err, "jf agent apm install without credentials should fail")
 }
 
@@ -535,7 +541,7 @@ func TestApmBuildInfoArtifactMetadata(t *testing.T) {
 
 	clientTestUtils.ChangeDirAndAssert(t, projectDir)
 
-	err = artifactoryCli.Exec("agent", "apm", "publish", "--package", "test/artifact-metadata", "--build-name", apmBuildName, "--build-number", buildNumber)
+	err = getApmCli().Exec("agent", "apm", "publish", "--package", "test/artifact-metadata", "--build-name", apmBuildName, "--build-number", buildNumber)
 	require.NoError(t, err)
 
 	// Validate build info has complete artifact metadata
@@ -578,7 +584,7 @@ func TestApmBuildPropertiesStamping(t *testing.T) {
 
 	clientTestUtils.ChangeDirAndAssert(t, projectDir)
 
-	err = artifactoryCli.Exec("agent", "apm", "publish", "--package", "jfrog/props-test", "--build-name", apmBuildName, "--build-number", buildNumber)
+	err = getApmCli().Exec("agent", "apm", "publish", "--package", "jfrog/props-test", "--build-name", apmBuildName, "--build-number", buildNumber)
 	require.NoError(t, err)
 
 	// Publish build info
@@ -644,7 +650,7 @@ func TestApmModuleFlag(t *testing.T) {
 
 	clientTestUtils.ChangeDirAndAssert(t, projectDir)
 
-	err = artifactoryCli.Exec("agent", "apm", "install", "--module", customModule, "--build-name", apmBuildName, "--build-number", buildNumber)
+	err = getApmCli().Exec("agent", "apm", "install", "--module", customModule, "--build-name", apmBuildName, "--build-number", buildNumber)
 	require.NoError(t, err, "jf agent apm install with --module flag should succeed")
 
 	// Validate custom module name in build info
@@ -691,7 +697,7 @@ func TestApmRoundTripPublishAndInstall(t *testing.T) {
 	pkgName := "test-package"
 
 	// Publish the package
-	err = artifactoryCli.Exec("agent", "apm", "publish", "--package", fmt.Sprintf("%s/%s", owner, pkgName), "--build-name", apmBuildName, "--build-number", buildNumberPublish)
+	err = getApmCli().Exec("agent", "apm", "publish", "--package", fmt.Sprintf("%s/%s", owner, pkgName), "--build-name", apmBuildName, "--build-number", buildNumberPublish)
 	require.NoError(t, err, "jf agent apm publish should succeed")
 
 	// Create a new directory to install from
@@ -733,7 +739,7 @@ registries:
 	buildNumberInstall := "202"
 
 	// Install the published package
-	err = artifactoryCli.Exec("agent", "apm", "install", "--build-name", apmBuildName, "--build-number", buildNumberInstall)
+	err = getApmCli().Exec("agent", "apm", "install", "--build-name", apmBuildName, "--build-number", buildNumberInstall)
 	require.NoError(t, err, "jf agent apm install should succeed with published package")
 
 	// Validate both build infos
@@ -768,7 +774,7 @@ func TestApmChecksumsInBuildInfo(t *testing.T) {
 
 	clientTestUtils.ChangeDirAndAssert(t, projectDir)
 
-	err = artifactoryCli.Exec("agent", "apm", "publish", "--package", "test/checksums", "--build-name", apmBuildName, "--build-number", buildNumber)
+	err = getApmCli().Exec("agent", "apm", "publish", "--package", "test/checksums", "--build-name", apmBuildName, "--build-number", buildNumber)
 	require.NoError(t, err)
 
 	// Get build info and verify checksums
@@ -816,7 +822,7 @@ func TestApmProjectFlag(t *testing.T) {
 
 	clientTestUtils.ChangeDirAndAssert(t, projectDir)
 
-	err = artifactoryCli.Exec("agent", "apm", "install", "--project", projectKey, "--build-name", apmBuildName, "--build-number", buildNumber)
+	err = getApmCli().Exec("agent", "apm", "install", "--project", projectKey, "--build-name", apmBuildName, "--build-number", buildNumber)
 	require.NoError(t, err, "jf agent apm install with --project flag should succeed")
 
 	// Validate build info is scoped to project
@@ -849,11 +855,11 @@ func TestApmUpdateWithBuildInfo(t *testing.T) {
 	clientTestUtils.ChangeDirAndAssert(t, projectDir)
 
 	// First, install to have a lockfile
-	err = artifactoryCli.Exec("agent", "apm", "install")
+	err = getApmCli().Exec("agent", "apm", "install")
 	require.NoError(t, err)
 
 	// Then update with build-info capture
-	err = artifactoryCli.Exec("agent", "apm", "update", "--build-name", apmBuildName, "--build-number", buildNumber)
+	err = getApmCli().Exec("agent", "apm", "update", "--build-name", apmBuildName, "--build-number", buildNumber)
 	require.NoError(t, err, "jf agent apm update should succeed with build-info")
 
 	// Validate build info was created
@@ -883,7 +889,7 @@ func TestApmNativeFlags(t *testing.T) {
 	clientTestUtils.ChangeDirAndAssert(t, projectDir)
 
 	// Test --dry-run flag with -- escape
-	err = artifactoryCli.Exec("agent", "apm", "publish", "--package", "test/native-flags", "--", "--dry-run")
+	err = getApmCli().Exec("agent", "apm", "publish", "--package", "test/native-flags", "--", "--dry-run")
 	require.NoError(t, err, "jf agent apm publish with --dry-run should succeed")
 
 	// Verify no artifact was uploaded for dry-run
@@ -916,7 +922,7 @@ func TestApmBuildInfoRead(t *testing.T) {
 	clientTestUtils.ChangeDirAndAssert(t, projectDir)
 
 	// Create build info first
-	err = artifactoryCli.Exec("agent", "apm", "publish", "--package", "test/bi-read", "--build-name", apmBuildName, "--build-number", buildNumber)
+	err = getApmCli().Exec("agent", "apm", "publish", "--package", "test/bi-read", "--build-name", apmBuildName, "--build-number", buildNumber)
 	require.NoError(t, err)
 
 	// Publish to Artifactory
@@ -956,11 +962,11 @@ func TestApmIntegrationFullPipeline(t *testing.T) {
 	clientTestUtils.ChangeDirAndAssert(t, projectDir)
 
 	// Step 1: Install (with build-info)
-	err = artifactoryCli.Exec("agent", "apm", "install", "--build-name", buildName, "--build-number", buildNumber)
+	err = getApmCli().Exec("agent", "apm", "install", "--build-name", buildName, "--build-number", buildNumber)
 	require.NoError(t, err, "Step 1: Install should succeed")
 
 	// Step 2: Publish (with build-info)
-	err = artifactoryCli.Exec("agent", "apm", "publish", "--package", "e2e/pipeline", "--build-name", buildName, "--build-number", buildNumber)
+	err = getApmCli().Exec("agent", "apm", "publish", "--package", "e2e/pipeline", "--build-name", buildName, "--build-number", buildNumber)
 	require.NoError(t, err, "Step 2: Publish should succeed")
 
 	// Step 3: Publish build info
@@ -1020,11 +1026,11 @@ func TestApmBuildFlagsRequired(t *testing.T) {
 	defer setupTestWorkingDirectory(t, projectDir)()
 
 	// Test missing build-number
-	err := artifactoryCli.Exec("agent", "apm", "install", "--build-name", "test-build")
+	err := getApmCli().Exec("agent", "apm", "install", "--build-name", "test-build")
 	assert.Error(t, err, "Should error when build-number missing but build-name provided")
 
 	// Test missing build-name
-	err = artifactoryCli.Exec("agent", "apm", "install", "--build-number", "1")
+	err = getApmCli().Exec("agent", "apm", "install", "--build-number", "1")
 	assert.Error(t, err, "Should error when build-name missing but build-number provided")
 }
 
@@ -1140,7 +1146,7 @@ func TestApmAuthEnvVarNotExposed(t *testing.T) {
 
 	// Env var should exist after command runs (we're not removing it)
 	// The test verifies the command worked with the env var auth
-	err := artifactoryCli.Exec("agent", "apm", "install")
+	err := getApmCli().Exec("agent", "apm", "install")
 	require.NoError(t, err, "install should work with env var auth")
 
 	// Verify env var still set (commands don't clear environment)
@@ -1315,7 +1321,7 @@ dependencies:
 
 	buildNumber := "200"
 	// Install should work with multiple registries defined
-	err := artifactoryCli.Exec("agent", "apm", "install", "--build-name", apmBuildName, "--build-number", buildNumber)
+	err := getApmCli().Exec("agent", "apm", "install", "--build-name", apmBuildName, "--build-number", buildNumber)
 	require.NoError(t, err, "install should succeed with multiple registries")
 
 	validateApmBuildInfo(t, apmBuildName, buildNumber, 0)
@@ -1350,7 +1356,7 @@ registries:
 
 	buildNumber := "201"
 	// Install should use default registry when no explicit registry specified
-	err := artifactoryCli.Exec("agent", "apm", "install", "--build-name", apmBuildName, "--build-number", buildNumber)
+	err := getApmCli().Exec("agent", "apm", "install", "--build-name", apmBuildName, "--build-number", buildNumber)
 	require.NoError(t, err, "install should use default registry")
 
 	validateApmBuildInfo(t, apmBuildName, buildNumber, 0)
@@ -1390,7 +1396,7 @@ registries:
 
 	buildNumber := "202"
 	// Publish should capture dependency metadata
-	err = artifactoryCli.Exec("agent", "apm", "publish", "--package", "test/app-with-deps",
+	err = getApmCli().Exec("agent", "apm", "publish", "--package", "test/app-with-deps",
 		"--build-name", apmBuildName, "--build-number", buildNumber)
 	require.NoError(t, err, "publish should succeed with dependencies")
 
@@ -1426,7 +1432,7 @@ func TestApmUpdateChangesLockfile(t *testing.T) {
 
 	buildNumber := "203"
 	// First install to create initial lockfile
-	err = artifactoryCli.Exec("agent", "apm", "install")
+	err = getApmCli().Exec("agent", "apm", "install")
 	require.NoError(t, err)
 
 	// Verify lockfile created
@@ -1434,7 +1440,7 @@ func TestApmUpdateChangesLockfile(t *testing.T) {
 	assert.FileExists(t, lockfilePath, "apm.lock.yaml should exist after install")
 
 	// Update with build-info
-	err = artifactoryCli.Exec("agent", "apm", "update", "--build-name", apmBuildName, "--build-number", buildNumber)
+	err = getApmCli().Exec("agent", "apm", "update", "--build-name", apmBuildName, "--build-number", buildNumber)
 	require.NoError(t, err, "update should succeed")
 
 	// Verify lockfile still exists (update should maintain it)
@@ -1461,11 +1467,11 @@ func TestApmFrozenModeWithDependencies(t *testing.T) {
 	defer setupTestWorkingDirectory(t, projectDir)()
 
 	// First install to create lockfile
-	err = artifactoryCli.Exec("agent", "apm", "install")
+	err = getApmCli().Exec("agent", "apm", "install")
 	require.NoError(t, err)
 
 	// Frozen install should succeed (lockfile exists and is up-to-date)
-	err = artifactoryCli.Exec("agent", "apm", "install", "--", "--frozen")
+	err = getApmCli().Exec("agent", "apm", "install", "--", "--frozen")
 	require.NoError(t, err, "frozen install should succeed with existing lockfile")
 }
 
@@ -1488,13 +1494,13 @@ func TestApmInstallAndPublishWithBuildInfoComplete(t *testing.T) {
 	defer setupTestWorkingDirectory(t, projectDir)()
 
 	// Step 1: Install with build-info
-	err = artifactoryCli.Exec("agent", "apm", "install", "--build-name", buildName, "--build-number", buildNumber)
+	err = getApmCli().Exec("agent", "apm", "install", "--build-name", buildName, "--build-number", buildNumber)
 	require.NoError(t, err, "install with build-info should succeed")
 
 	validateApmBuildInfo(t, buildName, buildNumber, 0)
 
 	// Step 2: Publish with build-info
-	err = artifactoryCli.Exec("agent", "apm", "publish", "--package", "complete/workflow",
+	err = getApmCli().Exec("agent", "apm", "publish", "--package", "complete/workflow",
 		"--build-name", buildName, "--build-number", buildNumber)
 	require.NoError(t, err, "publish with build-info should succeed")
 
@@ -1527,7 +1533,7 @@ func TestApmDryRunNoArtifacts(t *testing.T) {
 	defer setupTestWorkingDirectory(t, projectDir)()
 
 	// Dry-run publish should not upload artifacts
-	err = artifactoryCli.Exec("agent", "apm", "publish", "--package", "dryrun/test", "--", "--dry-run")
+	err = getApmCli().Exec("agent", "apm", "publish", "--package", "dryrun/test", "--", "--dry-run")
 	require.NoError(t, err, "dry-run publish should succeed")
 
 	// Verify nothing was uploaded
@@ -1594,7 +1600,7 @@ primitives:
 	defer setupTestWorkingDirectory(t, projectDir)()
 
 	// Install workspace should process all modules
-	err = artifactoryCli.Exec("agent", "apm", "install", "--build-name", apmBuildName, "--build-number", buildNumber)
+	err = getApmCli().Exec("agent", "apm", "install", "--build-name", apmBuildName, "--build-number", buildNumber)
 	require.NoError(t, err, "workspace install should succeed")
 
 	validateApmBuildInfo(t, apmBuildName, buildNumber, 0)
