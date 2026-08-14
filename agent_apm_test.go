@@ -94,6 +94,8 @@ func createApmTestProject(t *testing.T, projectDir string) {
 	apmYamlContent := `version: "1.0.0"
 name: test-apm-package
 description: Test APM package for e2e testing
+targets:
+  - claude
 primitives:
   agents: []
   skills: []
@@ -1155,6 +1157,8 @@ func createApmYaml(name, version string, dependencies []string, registries map[s
 	return fmt.Sprintf(`version: "1.0.0"
 name: %s
 version: %s
+targets:
+  - claude
 primitives:
   agents: []
 dependencies:
@@ -1166,6 +1170,8 @@ dependencies:
 func createMultiRegistryYaml(name string, registryRepos []string) string {
 	return fmt.Sprintf(`version: "1.0.0"
 name: %s
+targets:
+  - claude
 primitives:
   agents: []
 dependencies:
@@ -1233,6 +1239,8 @@ func TestApmMultipleRegistriesInApmYml(t *testing.T) {
 	apmYaml := `version: "1.0.0"
 name: multi-registry-app
 description: App using multiple registries
+targets:
+  - claude
 primitives:
   agents: []
 dependencies:
@@ -1264,6 +1272,8 @@ func TestApmRegistryPrecedenceDefaultFallback(t *testing.T) {
 	apmYaml := `version: "1.0.0"
 name: test-default-registry
 description: Test default registry fallback
+targets:
+  - claude
 primitives:
   agents: []
 dependencies:
@@ -1296,6 +1306,8 @@ func TestApmPublishWithDependencyMetadata(t *testing.T) {
 name: app-with-deps
 version: 1.0.0
 description: App with explicit dependencies
+targets:
+  - claude
 primitives:
   agents: []
 dependencies:
@@ -1484,6 +1496,8 @@ func TestApmMultiModuleWorkspace(t *testing.T) {
 	// Create workspace apm.yml
 	workspaceYaml := `version: "1.0.0"
 name: workspace-root
+targets:
+  - claude
 workspaces:
   - path: module1
   - path: module2
@@ -1496,11 +1510,15 @@ workspaces:
 	// Create module manifests
 	module1Yaml := `name: module1
 version: 1.0.0
+targets:
+  - claude
 primitives:
   agents: []
 `
 	module2Yaml := `name: module2
 version: 1.0.0
+targets:
+  - claude
 primitives:
   agents: []
 `

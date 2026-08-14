@@ -58,7 +58,7 @@ jobs:
       - name: Install APM (Linux)
         if: matrix.os.name == 'ubuntu'
         run: |
-          APM_VERSION="v0.28.0"
+          APM_VERSION="v0.23.1"
           OS="linux"
           ARCH="x86_64"
           curl -sL "https://github.com/microsoft/apm/releases/download/${APM_VERSION}/apm-${OS}-${ARCH}.tar.gz" -o apm.tar.gz
