@@ -284,8 +284,14 @@ func DeleteFiles(deleteSpec *spec.SpecFiles, serverDetails *config.ServerDetails
 }
 
 // SearchFiles searches for files in Artifactory using the provided spec and server details.
-// Returns search results as SearchResult items and a count.
-func SearchFiles(searchSpec *spec.SpecFiles, serverDetails *config.ServerDetails) (searchResults []artUtils.SearchResult, count int, err error) {
+// Returns search results as utils.ResultItem (repo/path/name/properties/checksums) and a count.
+//
+// Deliberately decodes into utils.ResultItem, not artUtils.SearchResult: the latter has no Name
+// field at all and a Props field shaped/tagged for a different JSON payload than what the AQL
+// search reader actually emits, so it silently comes back with an empty filename and empty
+// properties on every record - see ConvertArtifactsSearchDetailsToBuildInfoArtifacts in
+// jfrog-cli-core for the same reader decoded into the same, correct type.
+func SearchFiles(searchSpec *spec.SpecFiles, serverDetails *config.ServerDetails) (searchResults []utils.ResultItem, count int, err error) {
 	servicesManager, err := artUtils.CreateServiceManager(serverDetails, -1, 0, false)
 	if err != nil {
 		return nil, 0, err
@@ -304,7 +310,7 @@ func SearchFiles(searchSpec *spec.SpecFiles, serverDetails *config.ServerDetails
 
 	// Process search results from readers
 	for _, reader := range readers {
-		for item := new(artUtils.SearchResult); reader.NextRecord(item) == nil; item = new(artUtils.SearchResult) {
+		for item := new(utils.ResultItem); reader.NextRecord(item) == nil; item = new(utils.ResultItem) {
 			searchResults = append(searchResults, *item)
 		}
 	}
