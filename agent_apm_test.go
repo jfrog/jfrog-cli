@@ -350,6 +350,31 @@ func validateBuildInfoHasBothArtifactsAndDependencies(t *testing.T, buildName, b
 }
 
 // TestApmSetupAndConfig validates APM setup with apm config file persistence (P0: Scenario #1).
+// apmRegistryEntry mirrors one entry under ~/.apm/config.json's "registries" map. Default is
+// only ever present (and true) on whichever registry "jf setup agent-apm" most recently
+// configured - apm's own config command clears it from any previously-default entry, so at most
+// one registry has Default == true at a time.
+type apmRegistryEntry struct {
+	URL     string `json:"url"`
+	Token   string `json:"token"`
+	Default bool   `json:"default"`
+}
+
+// readApmRegistries parses ~/.apm/config.json's registries map.
+func readApmRegistries(t *testing.T) map[string]apmRegistryEntry {
+	t.Helper()
+	homeDir, err := os.UserHomeDir()
+	require.NoError(t, err)
+	configData, err := os.ReadFile(filepath.Join(homeDir, ".apm", "config.json"))
+	require.NoError(t, err)
+
+	var config struct {
+		Registries map[string]apmRegistryEntry `json:"registries"`
+	}
+	require.NoError(t, json.Unmarshal(configData, &config))
+	return config.Registries
+}
+
 func TestApmSetupAndConfig(t *testing.T) {
 	initApmTest(t)
 	defer cleanApmTest(t)
@@ -363,25 +388,54 @@ func TestApmSetupAndConfig(t *testing.T) {
 	err = setupCli.Exec("setup", "agent-apm", "--repo", tests.AgentPackagesLocalRepo)
 	require.NoError(t, err, "jf setup agent-apm should succeed")
 
-	// Verify config file was created
 	assert.FileExists(t, apmConfigPath, "APM config file should be created")
 
-	// Verify config contains registry reference
-	configData, err := os.ReadFile(apmConfigPath)
-	require.NoError(t, err)
+	// Verify --repo maps to an actual registry entry (not just "some registries exist"), with a
+	// URL that references the repo and a token, and that it's the default registry.
+	registries := readApmRegistries(t)
+	primary, ok := registries[tests.AgentPackagesLocalRepo]
+	require.True(t, ok, "registries should contain an entry named after --repo (%s)", tests.AgentPackagesLocalRepo)
+	assert.Contains(t, primary.URL, tests.AgentPackagesLocalRepo, "registry URL should reference the configured repo")
+	assert.NotEmpty(t, primary.Token, "registry entry should have a token")
+	assert.True(t, primary.Default, "the just-configured repo should be the default registry")
 
-	var config map[string]any
-	err = json.Unmarshal(configData, &config)
-	require.NoError(t, err)
+	// Second setup call against a DIFFERENT repo should flip the default to it, and clear
+	// Default from the previously-default entry - proving "default" tracks the most recently
+	// configured repo, not just whichever was configured first.
+	//
+	// ~/.apm/config.json is a real user-global file, not scoped per test, and several other
+	// tests in this file install without an explicit --registry (relying on default
+	// resolution) - so restore tests.AgentPackagesLocalRepo as the default before returning,
+	// regardless of how this test's own assertions turn out.
+	secondRepo := "apm-setup-config-test-repo"
+	if !isRepoExist(secondRepo) {
+		createAgentPackagesRepoWithKey(t, secondRepo)
+	}
+	defer deleteRepo(secondRepo)
+	defer func() {
+		_ = setupCli.Exec("setup", "agent-apm", "--repo", tests.AgentPackagesLocalRepo)
+	}()
 
-	registries, ok := config["registries"].(map[string]any)
-	assert.True(t, ok, "Config should have registries section")
-	assert.NotEmpty(t, registries, "Registries section should not be empty")
+	err = setupCli.Exec("setup", "agent-apm", "--repo", secondRepo)
+	require.NoError(t, err, "jf setup agent-apm should succeed against a second, different repo")
 
-	// Verify idempotency - second call should not fail (use correct CLI prefix)
-	setupCli = coreTests.NewJfrogCli(execMain, "jfrog", "")
+	registries = readApmRegistries(t)
+	second, ok := registries[secondRepo]
+	require.True(t, ok, "registries should now contain an entry named after the second --repo (%s)", secondRepo)
+	assert.Contains(t, second.URL, secondRepo, "second registry URL should reference the second repo")
+	assert.True(t, second.Default, "the most recently configured repo should be the default registry")
+
+	if first, ok := registries[tests.AgentPackagesLocalRepo]; ok {
+		assert.False(t, first.Default, "the previously-default registry should no longer be marked default")
+	}
+
+	// Verify idempotency - re-running setup for the same (now non-default) repo should still
+	// succeed and flip default back to it.
 	err = setupCli.Exec("setup", "agent-apm", "--repo", tests.AgentPackagesLocalRepo)
 	require.NoError(t, err, "jf setup agent-apm should be idempotent")
+
+	registries = readApmRegistries(t)
+	assert.True(t, registries[tests.AgentPackagesLocalRepo].Default, "re-running setup for the primary repo should make it the default again")
 }
 
 // TestApmInstallWithBuildInfo validates `jf agent apm install` with build-info capture (P0: Scenario #13).
