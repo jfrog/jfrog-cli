@@ -1711,3 +1711,110 @@ func TestApmDryRunNoArtifacts(t *testing.T) {
 	require.NoError(t, err)
 	assert.Empty(t, artifacts, "dry-run should not create artifacts in repository")
 }
+
+// TestApmNativeCliWorksWithJfSetupCredentials validates that once "jf setup agent-apm" has run,
+// the native apm binary can be invoked directly - bypassing "jf agent apm ..." entirely, with no
+// build-name/build-number, no build-info collection at all - and still authenticate
+// successfully. jf setup agent-apm persists credentials into ~/.apm/config.json; that's a
+// different mechanism from BuildApmEnv's APM_REGISTRY_TOKEN_<NAME> env-var injection, which only
+// happens when jf itself invokes apm as a subprocess. A user running the plain "apm" command in
+// their own shell gets none of that env-var wiring, so this test strips any leftover
+// APM_REGISTRY_* env vars first, to prove config.json alone is sufficient.
+//
+// Exit code from apm is not enough evidence either way, so both halves check real server state:
+// publish is verified by searching Artifactory for the uploaded artifact (not just that apm
+// returned 0), and install is verified by asserting the resulting apm.lock.yaml actually
+// references the package and version that was just published (not just that a lockfile exists).
+func TestApmNativeCliWorksWithJfSetupCredentials(t *testing.T) {
+	initApmTest(t)
+	defer cleanApmTest(t)
+
+	// initApmTest already ran "jf setup agent-apm --repo <repo>" (via initApmConfig), writing
+	// credentials into ~/.apm/config.json. Strip any APM_REGISTRY_* env vars a prior test in
+	// this process may have left behind, so a passing result here can only be explained by that
+	// config file.
+	for _, envVar := range os.Environ() {
+		if strings.HasPrefix(envVar, "APM_REGISTRY_") {
+			_ = os.Unsetenv(strings.SplitN(envVar, "=", 2)[0])
+		}
+	}
+
+	owner, pkgName := "test", "native-cli-pkg"
+
+	// Step 1: publish using the native apm binary directly (no "jf agent apm publish", no
+	// --build-name/--build-number).
+	publishDir, err := os.MkdirTemp("", "apm-native-publish-*")
+	require.NoError(t, err)
+	defer func() {
+		_ = os.RemoveAll(publishDir)
+	}()
+	require.NoError(t, os.MkdirAll(filepath.Join(publishDir, ".apm", "primitives"), dirPerms))
+	apmYaml := fmt.Sprintf(`name: %s
+version: 1.0.0
+license: UNLICENSED
+targets:
+  - claude
+primitives:
+  agents: []
+`, pkgName)
+	require.NoError(t, os.WriteFile(filepath.Join(publishDir, "apm.yml"), []byte(apmYaml), filePerms))
+	require.NoError(t, os.WriteFile(filepath.Join(publishDir, ".apm", "primitives", "placeholder.txt"), []byte("placeholder content"), filePerms))
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+	clientTestUtils.ChangeDirAndAssert(t, publishDir)
+
+	nativePublish := exec.Command("apm", "publish", "--package", owner+"/"+pkgName, "--registry", tests.AgentPackagesLocalRepo) // #nosec G204 -- fixed argv, no shell, no user input
+	nativePublish.Stdout = os.Stdout
+	nativePublish.Stderr = os.Stderr
+	require.NoError(t, nativePublish.Run(), "native apm publish (no jf wrapper) should succeed using jf setup agent-apm's persisted credentials")
+
+	// Verify the package was genuinely uploaded to Artifactory - not just that apm exited 0.
+	searchSpec := spec.NewBuilder().
+		Pattern(tests.AgentPackagesLocalRepo + "/" + owner + "/" + pkgName + "/*.zip").
+		BuildSpec()
+	publishedArtifacts, _, err := tests.SearchFiles(searchSpec, serverDetails)
+	require.NoError(t, err)
+	require.NotEmpty(t, publishedArtifacts, "native apm publish should have uploaded the package to Artifactory")
+	assert.True(t,
+		strings.HasPrefix(publishedArtifacts[0].Name, pkgName+"-") && strings.HasSuffix(publishedArtifacts[0].Name, ".zip"),
+		"published artifact name should follow <name>-<version>.zip, got %q", publishedArtifacts[0].Name)
+
+	// Step 2: install that same package using the native apm binary, from a separate consumer
+	// project (no "jf agent apm install").
+	installDir, err := os.MkdirTemp("", "apm-native-install-*")
+	require.NoError(t, err)
+	defer func() {
+		_ = os.RemoveAll(installDir)
+	}()
+	consumerYaml := fmt.Sprintf(`version: "1.0.0"
+name: native-cli-consumer
+license: UNLICENSED
+targets:
+  - claude
+dependencies:
+  apm:
+    - %s/%s#1.0.0
+`, owner, pkgName)
+	require.NoError(t, os.MkdirAll(filepath.Join(installDir, ".apm"), dirPerms))
+	require.NoError(t, os.WriteFile(filepath.Join(installDir, "apm.yml"), []byte(consumerYaml), filePerms))
+
+	clientTestUtils.ChangeDirAndAssert(t, installDir)
+
+	nativeInstall := exec.Command("apm", "install") // #nosec G204 -- fixed argv, no shell, no user input
+	nativeInstall.Stdout = os.Stdout
+	nativeInstall.Stderr = os.Stderr
+	require.NoError(t, nativeInstall.Run(), "native apm install (no jf wrapper) should succeed using jf setup agent-apm's persisted credentials")
+
+	// Verify the package was genuinely resolved from Artifactory - not just that apm exited 0.
+	lockfilePath := filepath.Join(installDir, "apm.lock.yaml")
+	require.FileExists(t, lockfilePath, "apm.lock.yaml should exist after native apm install")
+	lockfileContent, err := os.ReadFile(lockfilePath)
+	require.NoError(t, err)
+	assert.Contains(t, string(lockfileContent), pkgName, "lockfile should reference the installed package")
+	assert.Contains(t, string(lockfileContent), "1.0.0", "lockfile should record the resolved version")
+
+	// Clean up the published artifact from Artifactory.
+	_, _, _ = tests.DeleteFiles(searchSpec, serverDetails)
+}
