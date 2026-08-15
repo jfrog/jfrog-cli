@@ -1684,6 +1684,95 @@ dependencies:
 	deleteBuildInfo()
 }
 
+// TestApmMixedRegistryDependenciesInOneInstall validates that a SINGLE install can resolve
+// dependencies from two DIFFERENT registries at once - one dependency from apm-registry-1,
+// another from apm-registry-2, both declared in the same apm.yml via the object-form
+// dependency's explicit "registry:" field. TestApmDifferentRegistriesAsArtifactoryRepos proves
+// a single non-default registry resolves correctly; this proves apm doesn't collapse onto one
+// registry for the whole install and genuinely routes each dependency independently.
+func TestApmMixedRegistryDependenciesInOneInstall(t *testing.T) {
+	initApmTest(t)
+	defer cleanApmTest(t)
+
+	repos := []string{"apm-registry-1", "apm-registry-2"}
+	for _, repoName := range repos {
+		if !isRepoExist(repoName) {
+			createAgentPackagesRepoWithKey(t, repoName)
+		}
+	}
+	defer func() {
+		for _, repoName := range repos {
+			deleteRepo(repoName)
+		}
+	}()
+
+	setupCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+	for _, repoName := range repos {
+		err := setupCli.Exec("setup", "agent-apm", "--repo", repoName)
+		require.NoError(t, err, "setup should succeed for repo %s", repoName)
+	}
+	defer func() {
+		_ = setupCli.Exec("setup", "agent-apm", "--repo", tests.AgentPackagesLocalRepo)
+	}()
+
+	// Publish one dependency to each registry.
+	owner := "test"
+	pkgA, pkgB := "mixed-registry-dep-a", "mixed-registry-dep-b"
+	publishApmDependencyPackageToRegistry(t, owner+"/"+pkgA, "1.0.0", repos[0])
+	publishApmDependencyPackageToRegistry(t, owner+"/"+pkgB, "1.0.0", repos[1])
+
+	// Consumer project depends on both, each via the object-form dependency's explicit registry:
+	// field naming its own, different registry.
+	projectDir, err := os.MkdirTemp("", "apm-mixed-registry-*")
+	require.NoError(t, err)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
+	require.NoError(t, os.MkdirAll(filepath.Join(projectDir, ".apm", "primitives"), dirPerms))
+	apmYaml := fmt.Sprintf(`name: mixed-registry-consumer
+version: 1.0.0
+license: UNLICENSED
+targets:
+  - claude
+dependencies:
+  apm:
+    - id: %s/%s
+      version: "1.0.0"
+      registry: %s
+    - id: %s/%s
+      version: "1.0.0"
+      registry: %s
+`, owner, pkgA, repos[0], owner, pkgB, repos[1])
+	require.NoError(t, os.WriteFile(filepath.Join(projectDir, "apm.yml"), []byte(apmYaml), filePerms))
+
+	defer setupTestWorkingDirectory(t, projectDir)()
+
+	buildNumber := "405"
+	err = runApmInstall(buildNumber)
+	require.NoError(t, err, "install should resolve both dependencies, each from its own distinct registry")
+
+	buildResult := fetchPublishedApmBuildInfo(t, apmBuildName, buildNumber)
+	require.NotEmpty(t, buildResult.Modules, "build info should have a module")
+	module := buildResult.Modules[0]
+	require.Len(t, module.Dependencies, 2, "both mixed-registry dependencies should be captured")
+
+	var foundA, foundB bool
+	for _, dep := range module.Dependencies {
+		switch {
+		case strings.Contains(dep.Id, pkgA):
+			foundA = true
+			assert.NotEmpty(t, dep.Sha256, "dependency from registry 1 should have a SHA256 checksum")
+		case strings.Contains(dep.Id, pkgB):
+			foundB = true
+			assert.NotEmpty(t, dep.Sha256, "dependency from registry 2 should have a SHA256 checksum")
+		}
+	}
+	assert.True(t, foundA, "dependency published to %s should be present in build info", repos[0])
+	assert.True(t, foundB, "dependency published to %s should be present in build info", repos[1])
+
+	deleteBuildInfo()
+}
+
 // getBasicApmYaml returns basic APM YAML
 func getBasicApmYaml() string {
 	return createApmYaml("test-app", "1.0.0", nil)
