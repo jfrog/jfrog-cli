@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/md5"  // #nosec G501 -- checksum verification against Artifactory's own reported MD5, not security-sensitive
+	"crypto/sha1" // #nosec G505 -- checksum verification against Artifactory's own reported SHA1, not security-sensitive
 	"encoding/json"
 	"fmt"
 	"io"
@@ -48,6 +50,30 @@ func captureStdout(t *testing.T, fn func() error) (string, error) {
 	out, readErr := io.ReadAll(r)
 	require.NoError(t, readErr)
 	return string(out), fnErr
+}
+
+// computeFileSHA1 and computeFileMD5 mirror apk_test.go's computeFileSHA256 (same package) for
+// the other two checksums build-info round-trip tests need to independently verify.
+func computeFileSHA1(t *testing.T, path string) string {
+	t.Helper()
+	f, err := os.Open(path) // #nosec G304 -- path is always a test-controlled temp download destination
+	require.NoError(t, err, "open file for SHA1: %s", path)
+	defer func() { require.NoError(t, f.Close()) }()
+	h := sha1.New() // #nosec G401 -- checksum verification, not a security-relevant crypto use
+	_, err = io.Copy(h, f)
+	require.NoError(t, err, "compute SHA1 for: %s", path)
+	return fmt.Sprintf("%x", h.Sum(nil))
+}
+
+func computeFileMD5(t *testing.T, path string) string {
+	t.Helper()
+	f, err := os.Open(path) // #nosec G304 -- path is always a test-controlled temp download destination
+	require.NoError(t, err, "open file for MD5: %s", path)
+	defer func() { require.NoError(t, f.Close()) }()
+	h := md5.New() // #nosec G401 -- checksum verification, not a security-relevant crypto use
+	_, err = io.Copy(h, f)
+	require.NoError(t, err, "compute MD5 for: %s", path)
+	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
 // initApmTest initializes the APM test environment.
@@ -320,8 +346,14 @@ func validateBuildInfoDependencies(t *testing.T, buildName, buildNumber string) 
 	module := buildResult.Modules[0]
 	require.NotEmpty(t, module.Dependencies, "Dependencies should be present in build info")
 
+	// Dependency checksums come from the same HEAD-based resolution as artifact checksums (see
+	// resolveChecksumsByHead in jfrog-cli-artifactory), so all three are required here too, not
+	// merely the ID.
 	for _, dep := range module.Dependencies {
 		assert.NotEmpty(t, dep.Id, "Dependency should have ID")
+		assert.NotEmpty(t, dep.Sha256, "Dependency should have SHA256")
+		assert.Len(t, dep.Sha1, 40, "Dependency should have a 40 hex-character SHA1")
+		assert.Len(t, dep.Md5, 32, "Dependency should have a 32 hex-character MD5")
 	}
 }
 
@@ -335,11 +367,14 @@ func validateBuildInfoArtifacts(t *testing.T, buildName, buildNumber string, exp
 
 	for _, artifact := range module.Artifacts {
 		assert.NotEmpty(t, artifact.Path, "Artifact should have path")
-		assert.NotEmpty(t, artifact.Sha256, "Artifact should have checksum")
+		assert.NotEmpty(t, artifact.Sha256, "Artifact should have SHA256")
+		assert.Len(t, artifact.Sha1, 40, "Artifact should have a 40 hex-character SHA1")
+		assert.Len(t, artifact.Md5, 32, "Artifact should have a 32 hex-character MD5")
 	}
 }
 
-// validateBuildInfoHasBothArtifactsAndDependencies validates both exist in the published build info
+// validateBuildInfoHasBothArtifactsAndDependencies validates both exist in the published build
+// info, with checksums on each - not just presence of the two lists.
 func validateBuildInfoHasBothArtifactsAndDependencies(t *testing.T, buildName, buildNumber string) {
 	buildResult := fetchPublishedApmBuildInfo(t, buildName, buildNumber)
 	require.Len(t, buildResult.Modules, 1, "Build should have at least one module")
@@ -347,6 +382,13 @@ func validateBuildInfoHasBothArtifactsAndDependencies(t *testing.T, buildName, b
 	module := buildResult.Modules[0]
 	require.NotEmpty(t, module.Dependencies, "Build info should have dependencies")
 	require.NotEmpty(t, module.Artifacts, "Build info should have artifacts")
+
+	for _, dep := range module.Dependencies {
+		assert.NotEmpty(t, dep.Sha256, "Dependency should have SHA256")
+	}
+	for _, artifact := range module.Artifacts {
+		assert.NotEmpty(t, artifact.Sha256, "Artifact should have SHA256")
+	}
 }
 
 // TestApmSetupAndConfig validates APM setup with apm config file persistence (P0: Scenario #1).
@@ -759,11 +801,15 @@ func TestApmBuildInfoArtifactMetadata(t *testing.T) {
 	require.NotEmpty(t, buildResult.Modules)
 
 	module := buildResult.Modules[0]
+	require.NotEmpty(t, module.Artifacts, "build info should have an artifact")
 	for _, artifact := range module.Artifacts {
-		// Verify metadata fields are present
+		// Verify metadata fields are present. Checksum correctness (not just presence) is
+		// covered separately by TestApmChecksumsInBuildInfo's download-and-recompute round trip.
 		assert.NotEmpty(t, artifact.Path, "Artifact path should be present")
 		assert.NotEmpty(t, artifact.Type, "Artifact type should be present")
 		assert.NotEmpty(t, artifact.Sha256, "Artifact SHA256 should be present")
+		assert.Len(t, artifact.Sha1, 40, "Artifact should have a 40 hex-character SHA1")
+		assert.Len(t, artifact.Md5, 32, "Artifact should have a 32 hex-character MD5")
 	}
 
 	// Clean up
@@ -946,6 +992,13 @@ dependencies:
 }
 
 // TestApmChecksumsInBuildInfo validates SHA256 checksums are recorded (P0: Scenario #18).
+// TestApmChecksumsInBuildInfo validates that build info's checksums are not merely present with
+// the right format, but actually correct. A well-formed-but-wrong checksum (e.g. from a bug that
+// happens to produce a same-shaped value) would pass a presence/length-only check, so this
+// downloads the published artifact back from Artifactory and independently recomputes SHA256,
+// SHA1, and MD5 locally, then asserts build info's reported values match exactly - the same
+// round-trip principle as apk_test.go's TestApkUpload_ChecksumRoundTrip, extended to cross-check
+// against build info's own claims rather than only comparing two local files.
 func TestApmChecksumsInBuildInfo(t *testing.T) {
 	initApmTest(t)
 	defer cleanApmTest(t)
@@ -965,22 +1018,42 @@ func TestApmChecksumsInBuildInfo(t *testing.T) {
 
 	clientTestUtils.ChangeDirAndAssert(t, projectDir)
 
-	err = getApmCli().Exec("agent", "apm", "publish", "--package", "test/checksums", "--registry", tests.AgentPackagesLocalRepo, "--build-name", apmBuildName, "--build-number", buildNumber)
+	owner, pkgName := "test", "checksums"
+	err = getApmCli().Exec("agent", "apm", "publish", "--package", owner+"/"+pkgName, "--registry", tests.AgentPackagesLocalRepo, "--build-name", apmBuildName, "--build-number", buildNumber)
 	require.NoError(t, err)
 
-	// Get build info and verify checksums. Artifactory always computes and returns all three
-	// checksums together for a stored artifact (the HEAD lookup apm's checksum resolution uses -
-	// see resolveChecksumsByHead in jfrog-cli-artifactory - reads X-Checksum-Sha1/Sha256/Md5 off
-	// the same response), so all three are required here, not merely "present if available".
+	// Get build info. Artifactory always computes and returns all three checksums together for
+	// a stored artifact (the HEAD lookup apm's checksum resolution uses - see
+	// resolveChecksumsByHead in jfrog-cli-artifactory - reads X-Checksum-Sha1/Sha256/Md5 off the
+	// same response), so all three are required, not merely "present if available".
 	buildResult := fetchPublishedApmBuildInfo(t, apmBuildName, buildNumber)
 	require.NotEmpty(t, buildResult.Modules, "build info should have a module")
 
 	module := buildResult.Modules[0]
 	require.NotEmpty(t, module.Artifacts, "build info should have an artifact")
+
+	// Download the published artifact and independently recompute its checksums.
+	downloadDir, err := os.MkdirTemp("", "apm-checksums-download-*")
+	require.NoError(t, err)
+	defer func() {
+		_ = os.RemoveAll(downloadDir)
+	}()
+	artifactPattern := fmt.Sprintf("%s/%s/%s/*.zip", tests.AgentPackagesLocalRepo, owner, pkgName)
+	require.NoError(t, artifactoryCli.Exec("dl", artifactPattern, downloadDir+"/", "--flat"))
+
+	downloadedFiles, err := os.ReadDir(downloadDir)
+	require.NoError(t, err)
+	require.Len(t, downloadedFiles, 1, "exactly one artifact should have been downloaded")
+	downloadedPath := filepath.Join(downloadDir, downloadedFiles[0].Name())
+
+	actualSha256 := computeFileSHA256(t, downloadedPath)
+	actualSha1 := computeFileSHA1(t, downloadedPath)
+	actualMd5 := computeFileMD5(t, downloadedPath)
+
 	for _, artifact := range module.Artifacts {
-		assert.NotEmpty(t, artifact.Sha256, "Artifact should have SHA256")
-		assert.Len(t, artifact.Sha1, 40, "Artifact should have a 40 hex-character SHA1")
-		assert.Len(t, artifact.Md5, 32, "Artifact should have a 32 hex-character MD5")
+		assert.Equal(t, actualSha256, artifact.Sha256, "build info SHA256 should match the actual downloaded artifact")
+		assert.Equal(t, actualSha1, artifact.Sha1, "build info SHA1 should match the actual downloaded artifact")
+		assert.Equal(t, actualMd5, artifact.Md5, "build info MD5 should match the actual downloaded artifact")
 	}
 
 	// Clean up
@@ -1871,4 +1944,59 @@ dependencies:
 
 	// Clean up the published artifact from Artifactory.
 	_, _, _ = tests.DeleteFiles(searchSpec, serverDetails)
+}
+
+// TestApmInstallPositionalPackageWithBuildInfo validates
+// "jf agent apm install <owner>/<name>#<version>" - naming the dependency directly on the
+// command line, which both adds it to apm.yml and installs it in one step. Every other
+// install-with-dependency test in this file pre-declares the dependency in apm.yml's
+// dependencies: block first and calls plain "install"; this is the one CLI-driven path.
+func TestApmInstallPositionalPackageWithBuildInfo(t *testing.T) {
+	initApmTest(t)
+	defer cleanApmTest(t)
+
+	publishApmDependencyPackage(t, "test/positional-install-dep", "1.0.0")
+
+	projectDir, err := os.MkdirTemp("", "apm-positional-install-*")
+	require.NoError(t, err)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
+
+	createApmTestProject(t, projectDir)
+
+	buildNumber := "111"
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	clientTestUtils.ChangeDirAndAssert(t, projectDir)
+
+	// Install by naming the package directly on the command line, not by pre-declaring it in
+	// apm.yml first.
+	err = getApmCli().Exec("agent", "apm", "install", "test/positional-install-dep#1.0.0", "--build-name", apmBuildName, "--build-number", buildNumber)
+	require.NoError(t, err, "jf agent apm install <owner>/<name>#<version> should succeed")
+
+	// apm.yml should have been updated with the new dependency as a side effect.
+	apmYamlContent, err := os.ReadFile(filepath.Join(projectDir, "apm.yml"))
+	require.NoError(t, err)
+	assert.Contains(t, string(apmYamlContent), "test/positional-install-dep", "apm.yml should be updated with the positionally-installed dependency")
+
+	// Verify the dependency is captured in build info, with a real checksum - not just that the
+	// install command itself succeeded.
+	buildResult := fetchPublishedApmBuildInfo(t, apmBuildName, buildNumber)
+	require.NotEmpty(t, buildResult.Modules, "build info should have a module")
+	module := buildResult.Modules[0]
+	require.NotEmpty(t, module.Dependencies, "build info should have a dependency")
+
+	var found bool
+	for _, dep := range module.Dependencies {
+		if strings.Contains(dep.Id, "positional-install-dep") {
+			found = true
+			assert.NotEmpty(t, dep.Sha256, "positionally-installed dependency should have a SHA256 checksum")
+		}
+	}
+	assert.True(t, found, "build info dependency list should include the positionally-installed package")
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, apmBuildName, artHttpDetails)
 }
