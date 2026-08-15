@@ -14,6 +14,7 @@ import (
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	artUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	buildUtils "github.com/jfrog/jfrog-cli-core/v2/common/build"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
@@ -319,6 +320,37 @@ func fetchPublishedApmBuildInfoInProject(t *testing.T, buildName, buildNumber, p
 	require.NoError(t, err)
 	require.True(t, found, "published build info should be found on the server")
 	return &published.BuildInfo
+}
+
+// readLocalApmPartialBuildInfo reads locally-collected build info directly via
+// Build.ToBuildInfo(), which assembles it from partial files without touching the server or
+// clearing anything - the same mechanism pnpm_test.go/npm_test.go use to validate build info
+// collection. Unlike fetchPublishedApmBuildInfo, this must be used for INTERMEDIATE checks
+// within a multi-step test: "jf rt bp" calls Build.Clean() after a successful publish, wiping
+// local partials for that exact build name/number. Calling fetchPublishedApmBuildInfo (or any
+// validate* built on it) more than once for the same build/number silently loses whatever an
+// earlier step wrote - confirmed live: a dependency captured after install disappeared from a
+// later "has both artifacts and dependencies" check, once an intervening bp call for that same
+// build/number had already run and cleared it. Reserve the server round-trip for a single,
+// final check per build/number.
+func readLocalApmPartialBuildInfo(t *testing.T, buildName, buildNumber string) *buildinfo.BuildInfo {
+	t.Helper()
+	buildInfoService := buildUtils.CreateBuildInfoService()
+	apmBuild, err := buildInfoService.GetOrCreateBuildWithProject(buildName, buildNumber, "")
+	require.NoError(t, err)
+	bi, err := apmBuild.ToBuildInfo()
+	require.NoError(t, err)
+	return bi
+}
+
+// apmRegistryURL builds the real registry URL for repoName, matching exactly what
+// AgentPackagesBaseURL in jfrog-cli-artifactory constructs from serverDetails
+// (<ArtifactoryUrl>/api/agentpackages/<repo>/). A registry declared in apm.yml's own
+// registries: block is used by apm as its literal API base URL for that registry - not merely
+// matched by host for credential discovery - so it must be this exact form, not just any URL on
+// the right host, or apm's own HTTP requests 404/403 against the wrong path.
+func apmRegistryURL(repoName string) string {
+	return strings.TrimSuffix(*tests.JfrogUrl, "/") + "/artifactory/api/agentpackages/" + repoName + "/"
 }
 
 // validateApmBuildInfo publishes and validates the build info collected by an APM command.
@@ -688,56 +720,85 @@ dependencies:
 		"Output should indicate package not found, got: %s", output)
 }
 
-// TestApmAuthEnvironmentVariable validates APM_REGISTRY_TOKEN env var usage (P0: Scenario #33).
-func TestApmAuthEnvironmentVariable(t *testing.T) {
+// TestApmAuthEnvVarBehavior validates two distinct env-var-auth scenarios (both via
+// APM_REGISTRY_TOKEN_<REGISTRY>, agent/apm/common/apmenv.go) as subtests sharing one
+// initApmTest/cleanApmTest cycle instead of two separate test functions.
+func TestApmAuthEnvVarBehavior(t *testing.T) {
 	initApmTest(t)
 	defer cleanApmTest(t)
 
-	projectDir, err := os.MkdirTemp("", "apm-auth-env-test-*")
-	require.NoError(t, err)
-	defer func() {
-		_ = os.RemoveAll(projectDir)
-	}()
+	// The registry name apm actually knows about is the repo key itself ("cli-agent-packages-local"),
+	// not a literal name "default" - jf setup agent-apm calls ConfigureApmRegistryPersistent(repoName),
+	// which writes registry.<repoName>.{url,token,default} into ~/.apm/config.json using repoName
+	// verbatim. apm sanitizes that name into its env var form the same way jf does
+	// (sanitizeApmEnvName in apmenv.go: uppercase, "-"/"." -> "_"). Using any other name here (e.g.
+	// the earlier "default") produces an env var apm never looks at for this registry, so a "wrong
+	// token" set under that name is silently never consulted - confirmed live, this is exactly why
+	// the wrong-token subtest below kept passing for the wrong reason before this fix.
+	registryName := tests.AgentPackagesLocalRepo
+	tokenEnvVar := fmt.Sprintf("APM_REGISTRY_TOKEN_%s", strings.ToUpper(strings.ReplaceAll(registryName, "-", "_")))
 
-	createApmTestProject(t, projectDir)
+	t.Run("wrong token is honored instead of silently overridden", func(t *testing.T) {
+		// jf's own BuildApmEnv (agent/apm/common/apmenv.go) always auto-injects
+		// APM_REGISTRY_TOKEN_<NAME> from the configured server before running apm - a plain
+		// install with the CORRECT token set ourselves would succeed identically whether or not
+		// jf actually reads our value or silently substitutes its own, so that alone wouldn't
+		// prove anything. Setting an intentionally WRONG token instead only fails if jf genuinely
+		// leaves our value alone (injectRegistryCredentialEnv's "respecting existing value" branch)
+		// instead of overriding it with the correct one - which is exactly what this proves.
+		//
+		// (A debug-log assertion on "credential env var already set" was tried here first, but
+		// log.SetDefaultLogger() - which reads JFROG_CLI_LOG_LEVEL - is only called from
+		// main(), not execMain(); this test harness invokes execMain() directly in-process, so
+		// the log level set via os.Setenv here is never actually picked up. Confirmed live: the
+		// log line never appeared no matter what level was set.)
+		publishApmDependencyPackage(t, "test/auth-env-wrong-token-dep", "1.0.0")
 
-	buildNumber := "103"
-	wd, err := os.Getwd()
-	require.NoError(t, err)
-	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+		// Belt and braces: apm's own docs say an env var token outranks ~/.apm/config.json's
+		// stored one, but remove the stored token for this registry anyway so there is no valid
+		// fallback credential at all - the only credential apm can possibly use is the wrong one
+		// set below. Restored afterward by re-running jf setup agent-apm (initApmConfig), which
+		// every other test in this file also depends on having a correctly configured registry.
+		require.NoError(t, exec.Command("apm", "config", "unset", fmt.Sprintf("registry.%s.token", registryName)).Run(), // #nosec G204 -- fixed argv, no user input
+			"removing the stored registry token should succeed")
+		defer initApmConfig(t)
 
-	clientTestUtils.ChangeDirAndAssert(t, projectDir)
+		projectDir, err := os.MkdirTemp("", "apm-auth-env-wrong-*")
+		require.NoError(t, err)
+		defer func() {
+			_ = os.RemoveAll(projectDir)
+		}()
+		createApmTestProjectWithDependency(t, projectDir, "test/auth-env-wrong-token-dep#1.0.0")
+		defer setupTestWorkingDirectory(t, projectDir)()
 
-	// jf's own BuildApmEnv (agent/apm/common/apmenv.go) always auto-injects
-	// APM_REGISTRY_TOKEN_<NAME> from the configured server before running apm - a plain install
-	// would succeed identically whether or not we set this ourselves, so that alone wouldn't
-	// distinguish "the env var we set was honored" from "jf authenticated some other way". The
-	// one thing that does distinguish it: injectRegistryCredentialEnv only takes its
-	// "respecting existing value" branch (and logs it) when the caller has already exported the
-	// same env var, which is exactly this scenario. Enable debug logging and assert on that log
-	// line so this test actually exercises that code path instead of just re-testing "install
-	// succeeds" (already covered elsewhere).
-	registryName := "default"
-	tokenEnvVar := fmt.Sprintf("APM_REGISTRY_TOKEN_%s", strings.ToUpper(registryName))
-	require.NoError(t, os.Setenv(tokenEnvVar, *tests.JfrogAccessToken))
-	defer func() {
-		_ = os.Unsetenv(tokenEnvVar)
-	}()
-	require.NoError(t, os.Setenv(coreutils.LogLevel, "DEBUG"))
-	defer func() {
-		_ = os.Unsetenv(coreutils.LogLevel)
-	}()
+		require.NoError(t, os.Setenv(tokenEnvVar, "definitely-not-a-real-token"))
+		defer func() {
+			_ = os.Unsetenv(tokenEnvVar)
+		}()
 
-	// Run install with env var auth
-	output, err := captureStdout(t, func() error {
-		return getApmCli().Exec("agent", "apm", "install", "--build-name", apmBuildName, "--build-number", buildNumber)
+		err = getApmCli().Exec("agent", "apm", "install", "--build-name", apmBuildName, "--build-number", "103")
+		assert.Error(t, err, "install should fail when the pre-set (invalid) token env var is honored instead of silently overridden")
 	})
-	require.NoError(t, err, "jf agent apm install should succeed with env var auth")
-	assert.Contains(t, output, "credential env var already set",
-		"jf should respect the pre-set token env var instead of silently overriding it")
 
-	// Clean up build info
-	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, apmBuildName, artHttpDetails)
+	t.Run("correct token is not exposed in output", func(t *testing.T) {
+		projectDir := createApmProjectWithYaml(t, getBasicApmYaml())
+		defer func() {
+			_ = os.RemoveAll(projectDir)
+		}()
+		defer setupTestWorkingDirectory(t, projectDir)()
+
+		require.NoError(t, os.Setenv(tokenEnvVar, *tests.JfrogAccessToken))
+		defer func() {
+			_ = os.Unsetenv(tokenEnvVar)
+		}()
+
+		// The token must be usable for auth but never echoed back in apm's own stdout/log output.
+		output, err := captureStdout(t, func() error {
+			return getApmCli().Exec("agent", "apm", "install")
+		})
+		require.NoError(t, err, "install should work with env var auth")
+		assert.NotContains(t, output, *tests.JfrogAccessToken, "access token should not be exposed in command output")
+	})
 }
 
 // TestApmMissingCredentials validates that install fails when there is no registry to discover
@@ -794,54 +855,77 @@ func TestApmMissingCredentials(t *testing.T) {
 		"the failure should specifically be 'no registry found', not some unrelated error")
 }
 
-// TestApmInstallSucceedsWithRegistryDeclaredInApmYml validates that apm.yml's own registries:
-// block (a url: only - see manifest.go's ManifestRegistry - matched to jf's configured server by
-// host, via discoverMatchingRegistries) is sufficient on its own for registry discovery, even
-// with ~/.apm/config.json entirely absent. jf still injects the actual token from its own
-// configured server (serverDetails); apm.yml never carries a token itself, only the name->URL
-// mapping that tells jf which registry name to inject that token under.
-func TestApmInstallSucceedsWithRegistryDeclaredInApmYml(t *testing.T) {
+// TestApmRegistriesDeclaredInApmYml validates that apm.yml's own registries: block (a url: only -
+// see manifest.go's ManifestRegistry - matched to jf's configured server by host, via
+// discoverMatchingRegistries) is sufficient on its own for registry discovery: with a single
+// entry and ~/.apm/config.json entirely absent, and with multiple entries declared at once
+// alongside a present config.json. jf still injects the actual token from its own configured
+// server (serverDetails) in both cases; apm.yml never carries a token itself, only the name->URL
+// mapping that tells jf which registry name to inject that token under. Both cases share one
+// initApmTest/cleanApmTest cycle as subtests rather than two separate test functions.
+func TestApmRegistriesDeclaredInApmYml(t *testing.T) {
 	initApmTest(t)
 	defer cleanApmTest(t)
 
-	projectDir, err := os.MkdirTemp("", "apm-registry-in-yaml-*")
-	require.NoError(t, err)
-	defer func() {
-		_ = os.RemoveAll(projectDir)
-	}()
+	cases := []struct {
+		name            string
+		registryNames   []string
+		removeApmConfig bool
+	}{
+		{
+			name:            "single registry, config.json absent",
+			registryNames:   []string{tests.AgentPackagesLocalRepo},
+			removeApmConfig: true,
+		},
+		{
+			name:          "multiple registries, config.json present",
+			registryNames: []string{"registry-one", "registry-two"},
+		},
+	}
 
-	require.NoError(t, os.MkdirAll(filepath.Join(projectDir, ".apm", "primitives"), dirPerms))
-	apmYaml := fmt.Sprintf(`name: registry-in-yaml-project
+	for i, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var registriesYaml strings.Builder
+			for _, name := range tc.registryNames {
+				_, _ = fmt.Fprintf(&registriesYaml, "  %s:\n    url: \"%s\"\n", name, apmRegistryURL(tests.AgentPackagesLocalRepo))
+			}
+			apmYaml := fmt.Sprintf(`name: registry-in-yaml-project
 version: 1.0.0
 license: UNLICENSED
 targets:
   - claude
 registries:
-  %s:
-    url: "%s"
-dependencies:
+%sdependencies:
   apm: []
-`, tests.AgentPackagesLocalRepo, *tests.JfrogUrl)
-	require.NoError(t, os.WriteFile(filepath.Join(projectDir, "apm.yml"), []byte(apmYaml), filePerms))
+`, registriesYaml.String())
 
-	wd, err := os.Getwd()
-	require.NoError(t, err)
-	defer clientTestUtils.ChangeDirAndAssert(t, wd)
-	clientTestUtils.ChangeDirAndAssert(t, projectDir)
+			projectDir := createApmProjectWithYaml(t, apmYaml)
+			defer func() {
+				_ = os.RemoveAll(projectDir)
+			}()
+			defer setupTestWorkingDirectory(t, projectDir)()
 
-	// Remove ~/.apm/config.json entirely - the registry above must be discoverable purely from
-	// apm.yml's own registries: block, matched by host to the configured jf server.
-	homeDir, err := os.UserHomeDir()
-	require.NoError(t, err)
-	apmConfigPath := filepath.Join(homeDir, ".apm", "config.json")
-	removeErr := os.Remove(apmConfigPath)
-	if removeErr != nil && !os.IsNotExist(removeErr) {
-		require.NoError(t, removeErr)
+			if tc.removeApmConfig {
+				// The registry above must be discoverable purely from apm.yml's own registries:
+				// block, matched by host to the configured jf server.
+				homeDir, err := os.UserHomeDir()
+				require.NoError(t, err)
+				apmConfigPath := filepath.Join(homeDir, ".apm", "config.json")
+				removeErr := os.Remove(apmConfigPath)
+				if removeErr != nil && !os.IsNotExist(removeErr) {
+					require.NoError(t, removeErr)
+				}
+				defer initApmConfig(t) // restore for the next subtest/test regardless of outcome
+			}
+
+			buildNumber := fmt.Sprintf("20%d", i)
+			err := getApmCli().Exec("agent", "apm", "install", "--build-name", apmBuildName, "--build-number", buildNumber)
+			require.NoError(t, err, "install should succeed using apm.yml's own registries: block")
+
+			validateApmBuildInfo(t, apmBuildName, buildNumber, 0)
+			inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, apmBuildName, artHttpDetails)
+		})
 	}
-	defer initApmConfig(t) // restore ~/.apm/config.json for later tests regardless of outcome
-
-	err = getApmCli().Exec("agent", "apm", "install")
-	require.NoError(t, err, "install should succeed using apm.yml's own registries: block, even with ~/.apm/config.json absent")
 }
 
 // TestApmBuildInfoArtifactMetadata validates artifact metadata (P0: Scenario #6).
@@ -1288,7 +1372,6 @@ func TestApmBuildInfoRead(t *testing.T) {
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, apmBuildName, artHttpDetails)
 }
 
-// TestApmIntegrationFullPipeline validates end-to-end workflow (P1: Scenario #50).
 // TestApmIntegrationFullPipeline validates end-to-end install->publish->build-publish, checking
 // real state after each step rather than only exit codes.
 // TestApmInstallAndPublishWithBuildInfoComplete covers the same shape without a dependency; this
@@ -1315,21 +1398,26 @@ func TestApmIntegrationFullPipeline(t *testing.T) {
 
 	clientTestUtils.ChangeDirAndAssert(t, projectDir)
 
-	// Step 1: Install (with build-info) - verify the dependency was actually captured.
+	// Step 1: Install (with build-info) - verify the dependency was captured LOCALLY (no server
+	// round-trip yet). "jf rt bp" clears local partials for this exact build name/number after a
+	// successful publish (Build.Clean() in build-info-go), so checking via the server here would
+	// erase this step's dependency before Step 2's artifact could join it in one combined check.
 	err = getApmCli().Exec("agent", "apm", "install", "--build-name", buildName, "--build-number", buildNumber)
 	require.NoError(t, err, "Step 1: Install should succeed")
-	validateBuildInfoDependencies(t, buildName, buildNumber)
+	localAfterInstall := readLocalApmPartialBuildInfo(t, buildName, buildNumber)
+	require.NotEmpty(t, localAfterInstall.Modules, "locally-collected build info should have a module after install")
+	assert.NotEmpty(t, localAfterInstall.Modules[0].Dependencies, "locally-collected build info should have the dependency after install")
 
-	// Step 2: Publish (with build-info) - verify both the dependency and the new artifact
-	// are captured together.
+	// Step 2: Publish (with build-info) - the dependency (Step 1) and the new artifact are both
+	// still in local partials at this point (no bp call has run yet for this build/number), so
+	// this first server round-trip sees both together.
 	err = getApmCli().Exec("agent", "apm", "publish", "--package", "e2e/pipeline", "--registry", tests.AgentPackagesLocalRepo, "--build-name", buildName, "--build-number", buildNumber)
 	require.NoError(t, err, "Step 2: Publish should succeed")
 	validateBuildInfoHasBothArtifactsAndDependencies(t, buildName, buildNumber)
 
-	// Step 3: Publish build info, then verify the package actually landed in Artifactory.
-	err = artifactoryCli.Exec("bp", buildName, buildNumber)
-	require.NoError(t, err, "Step 3: Publish build info should succeed")
-
+	// Step 3: Verify the published package actually landed in Artifactory. (Build info was
+	// already published as part of Step 2's check above; a second "jf rt bp" here would just
+	// republish an empty build, since Clean() already cleared local partials.)
 	searchSpec := spec.NewBuilder().Pattern(tests.AgentPackagesLocalRepo + "/e2e/pipeline/*.zip").BuildSpec()
 	artifacts, _, err := tests.SearchFiles(searchSpec, serverDetails)
 	require.NoError(t, err)
@@ -1503,33 +1591,6 @@ func TestApmUpdateWithVersionChange(t *testing.T) {
 	deleteBuildInfo()
 }
 
-// TestApmAuthEnvVarNotExposed validates credentials stay in env (not leaked in logs)
-func TestApmAuthEnvVarNotExposed(t *testing.T) {
-	initApmTest(t)
-	defer cleanApmTest(t)
-
-	projectDir := createApmProjectWithYaml(t, getBasicApmYaml())
-	defer func() {
-		_ = os.RemoveAll(projectDir)
-	}()
-	defer setupTestWorkingDirectory(t, projectDir)()
-
-	// Auth via APM_REGISTRY_TOKEN_<REGISTRY> env var (same mechanism as TestApmAuthEnvironmentVariable).
-	registryName := "default"
-	tokenEnvVar := fmt.Sprintf("APM_REGISTRY_TOKEN_%s", strings.ToUpper(registryName))
-	require.NoError(t, os.Setenv(tokenEnvVar, *tests.JfrogAccessToken))
-	defer func() {
-		_ = os.Unsetenv(tokenEnvVar)
-	}()
-
-	// The token must be usable for auth but never echoed back in apm's own stdout/log output.
-	output, err := captureStdout(t, func() error {
-		return getApmCli().Exec("agent", "apm", "install")
-	})
-	require.NoError(t, err, "install should work with env var auth")
-	assert.NotContains(t, output, *tests.JfrogAccessToken, "access token should not be exposed in command output")
-}
-
 // TestApmAuthWithoutEnvVarSucceeds validates the common, default case every other auth test in
 // this file deliberately sets an env var to test around: install, publish, and update must all
 // succeed with NO APM_REGISTRY_* env var set at all, relying purely on jf's own automatic
@@ -1609,87 +1670,16 @@ func TestApmCommandsFailWithoutJfServerConfig(t *testing.T) {
 	assert.Error(t, getApmCli().Exec("agent", "apm", "update", "--yes"), "update should fail without a configured jf server")
 }
 
-// TestApmDifferentRegistriesAsArtifactoryRepos validates multiple distinct Artifactory repos
-// TestApmDifferentRegistriesAsArtifactoryRepos validates that a dependency can be resolved from
-// a SPECIFIC, non-default registry when multiple distinct Artifactory repos are configured -
-// not merely that configuring several registries doesn't break an unrelated install. Publishes
-// a real package to the second repo specifically, then installs it via the object-form
-// dependency's "registry:" field, naming that repo explicitly - confirmed live (a local,
-// parse-only apm install dry-run against unreachable ports) that this is the real schema:
-// "id: owner/name" + "registry: <name>" resolves against exactly the named registry, not
-// whichever is default.
-func TestApmDifferentRegistriesAsArtifactoryRepos(t *testing.T) {
-	initApmTest(t)
-	defer cleanApmTest(t)
-
-	// Create two different repos
-	repos := []string{"apm-registry-1", "apm-registry-2"}
-	for _, repoName := range repos {
-		if !isRepoExist(repoName) {
-			createAgentPackagesRepoWithKey(t, repoName)
-		}
-	}
-	defer func() {
-		for _, repoName := range repos {
-			deleteRepo(repoName)
-		}
-	}()
-
-	// Register each repo as its own named APM registry in ~/.apm/config.json.
-	// "jfrog setup agent-apm --repo X" names the registry after the repo (registry.X.*), so
-	// calling it once per repo yields multiple distinct, independently addressable registries.
-	// Restore the primary repo as default afterward regardless of outcome - other tests rely on
-	// default-registry resolution.
-	setupCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
-	for _, repoName := range repos {
-		err := setupCli.Exec("setup", "agent-apm", "--repo", repoName)
-		require.NoError(t, err, "setup should succeed for repo %s", repoName)
-	}
-	defer func() {
-		_ = setupCli.Exec("setup", "agent-apm", "--repo", tests.AgentPackagesLocalRepo)
-	}()
-
-	// Publish a real package specifically to the SECOND registry.
-	owner, pkgName := "test", "cross-registry-dep"
-	publishApmDependencyPackageToRegistry(t, owner+"/"+pkgName, "1.0.0", repos[1])
-
-	// Consumer project depends on it via the object-form dependency's explicit registry: field,
-	// naming the non-default registry by name.
-	projectDir, err := os.MkdirTemp("", "apm-cross-registry-*")
-	require.NoError(t, err)
-	defer func() {
-		_ = os.RemoveAll(projectDir)
-	}()
-	require.NoError(t, os.MkdirAll(filepath.Join(projectDir, ".apm", "primitives"), dirPerms))
-	apmYaml := fmt.Sprintf(`name: cross-registry-consumer
-version: 1.0.0
-license: UNLICENSED
-targets:
-  - claude
-dependencies:
-  apm:
-    - id: %s/%s
-      version: "1.0.0"
-      registry: %s
-`, owner, pkgName, repos[1])
-	require.NoError(t, os.WriteFile(filepath.Join(projectDir, "apm.yml"), []byte(apmYaml), filePerms))
-
-	defer setupTestWorkingDirectory(t, projectDir)()
-
-	buildNumber := "404"
-	err = runApmInstall(buildNumber)
-	require.NoError(t, err, "install should resolve the dependency from the explicitly-named, non-default registry")
-
-	validateBuildInfoDependencies(t, apmBuildName, buildNumber)
-	deleteBuildInfo()
-}
-
 // TestApmMixedRegistryDependenciesInOneInstall validates that a SINGLE install can resolve
-// dependencies from two DIFFERENT registries at once - one dependency from apm-registry-1,
-// another from apm-registry-2, both declared in the same apm.yml via the object-form
-// dependency's explicit "registry:" field. TestApmDifferentRegistriesAsArtifactoryRepos proves
-// a single non-default registry resolves correctly; this proves apm doesn't collapse onto one
-// registry for the whole install and genuinely routes each dependency independently.
+// dependencies from two DIFFERENT registries at once - one dependency from apm-registry-1
+// (non-default at install time), another from apm-registry-2 (the default, since
+// "jf setup agent-apm --repo X" makes the most-recently-configured repo the default and this
+// test configures repos[1] last) - both declared in the same apm.yml via the object-form
+// dependency's explicit "registry:" field, confirmed live (a local, parse-only apm install
+// dry-run against unreachable ports) to be the real schema: "id: owner/name" +
+// "registry: <name>" resolves against exactly the named registry. Covers both the
+// non-default-registry and default-registry cases via its two dependencies, so a separate
+// single-dependency "different registry" test would only be a strict subset of this one.
 func TestApmMixedRegistryDependenciesInOneInstall(t *testing.T) {
 	initApmTest(t)
 	defer cleanApmTest(t)
@@ -1855,44 +1845,6 @@ func deleteArtifacts(pattern string) error {
 	return err
 }
 
-// TestApmMultipleRegistriesInApmYml validates that apm.yml's own registries: block can declare
-// MULTIPLE named entries at once (see TestApmInstallSucceedsWithRegistryDeclaredInApmYml for the
-// single-entry case) and install still succeeds, discovering credentials for each by host match
-// (manifest.go's ManifestRegistry / discoverMatchingRegistries in jfrog-cli-artifactory).
-func TestApmMultipleRegistriesInApmYml(t *testing.T) {
-	initApmTest(t)
-	defer cleanApmTest(t)
-
-	apmYaml := fmt.Sprintf(`name: multi-registry-app
-version: 1.0.0
-license: UNLICENSED
-targets:
-  - claude
-registries:
-  registry-one:
-    url: "%s"
-  registry-two:
-    url: "%s"
-dependencies:
-  apm: []
-`, *tests.JfrogUrl, *tests.JfrogUrl)
-
-	projectDir := createApmProjectWithYaml(t, apmYaml)
-	defer func() {
-		_ = os.RemoveAll(projectDir)
-	}()
-
-	defer setupTestWorkingDirectory(t, projectDir)()
-
-	buildNumber := "200"
-	err := getApmCli().Exec("agent", "apm", "install", "--build-name", apmBuildName, "--build-number", buildNumber)
-	require.NoError(t, err, "install should succeed with multiple registries declared in apm.yml's own registries: block")
-
-	validateApmBuildInfo(t, apmBuildName, buildNumber, 0)
-
-	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, apmBuildName, artHttpDetails)
-}
-
 // TestApmRegistryPrecedenceDefaultFallback validates that apm.yml's own "registries: default:
 // <name>" sibling key (a real, distinct field from any per-registry "default" flag in
 // ~/.apm/config.json - see manifest.go's ManifestRegistries.Default / its custom UnmarshalYAML)
@@ -1954,7 +1906,7 @@ registries:
 dependencies:
   apm:
     - %s/%s#1.0.0
-`, repos[0], *tests.JfrogUrl, repos[1], *tests.JfrogUrl, repos[1], owner, pkgName)
+`, repos[0], apmRegistryURL(repos[0]), repos[1], apmRegistryURL(repos[1]), repos[1], owner, pkgName)
 	require.NoError(t, os.WriteFile(filepath.Join(projectDir, "apm.yml"), []byte(apmYaml), filePerms))
 
 	defer setupTestWorkingDirectory(t, projectDir)()
