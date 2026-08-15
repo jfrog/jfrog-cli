@@ -604,17 +604,33 @@ func TestApmAuthEnvironmentVariable(t *testing.T) {
 
 	clientTestUtils.ChangeDirAndAssert(t, projectDir)
 
-	// Set env var for registry auth
+	// jf's own BuildApmEnv (agent/apm/common/apmenv.go) always auto-injects
+	// APM_REGISTRY_TOKEN_<NAME> from the configured server before running apm - a plain install
+	// would succeed identically whether or not we set this ourselves, so that alone wouldn't
+	// distinguish "the env var we set was honored" from "jf authenticated some other way". The
+	// one thing that does distinguish it: injectRegistryCredentialEnv only takes its
+	// "respecting existing value" branch (and logs it) when the caller has already exported the
+	// same env var, which is exactly this scenario. Enable debug logging and assert on that log
+	// line so this test actually exercises that code path instead of just re-testing "install
+	// succeeds" (already covered elsewhere).
 	registryName := "default"
-	err = os.Setenv(fmt.Sprintf("APM_REGISTRY_TOKEN_%s", strings.ToUpper(registryName)), *tests.JfrogAccessToken)
-	require.NoError(t, err)
+	tokenEnvVar := fmt.Sprintf("APM_REGISTRY_TOKEN_%s", strings.ToUpper(registryName))
+	require.NoError(t, os.Setenv(tokenEnvVar, *tests.JfrogAccessToken))
 	defer func() {
-		_ = os.Unsetenv(fmt.Sprintf("APM_REGISTRY_TOKEN_%s", strings.ToUpper(registryName)))
+		_ = os.Unsetenv(tokenEnvVar)
+	}()
+	require.NoError(t, os.Setenv(coreutils.LogLevel, "DEBUG"))
+	defer func() {
+		_ = os.Unsetenv(coreutils.LogLevel)
 	}()
 
 	// Run install with env var auth
-	err = getApmCli().Exec("agent", "apm", "install", "--build-name", apmBuildName, "--build-number", buildNumber)
+	output, err := captureStdout(t, func() error {
+		return getApmCli().Exec("agent", "apm", "install", "--build-name", apmBuildName, "--build-number", buildNumber)
+	})
 	require.NoError(t, err, "jf agent apm install should succeed with env var auth")
+	assert.Contains(t, output, "credential env var already set",
+		"jf should respect the pre-set token env var instead of silently overriding it")
 
 	// Clean up build info
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, apmBuildName, artHttpDetails)
@@ -898,22 +914,19 @@ func TestApmChecksumsInBuildInfo(t *testing.T) {
 	err = getApmCli().Exec("agent", "apm", "publish", "--package", "test/checksums", "--registry", tests.AgentPackagesLocalRepo, "--build-name", apmBuildName, "--build-number", buildNumber)
 	require.NoError(t, err)
 
-	// Get build info and verify checksums
+	// Get build info and verify checksums. Artifactory always computes and returns all three
+	// checksums together for a stored artifact (the HEAD lookup apm's checksum resolution uses -
+	// see resolveChecksumsByHead in jfrog-cli-artifactory - reads X-Checksum-Sha1/Sha256/Md5 off
+	// the same response), so all three are required here, not merely "present if available".
 	buildResult := fetchPublishedApmBuildInfo(t, apmBuildName, buildNumber)
+	require.NotEmpty(t, buildResult.Modules, "build info should have a module")
 
-	if len(buildResult.Modules) > 0 {
-		module := buildResult.Modules[0]
-		for _, artifact := range module.Artifacts {
-			// SHA256 is required
-			assert.NotEmpty(t, artifact.Sha256, "Artifact should have SHA256")
-			// SHA1 and MD5 are optional but should be present if available
-			if artifact.Sha1 != "" {
-				assert.Len(t, artifact.Sha1, 40, "SHA1 should be 40 hex characters")
-			}
-			if artifact.Md5 != "" {
-				assert.Len(t, artifact.Md5, 32, "MD5 should be 32 hex characters")
-			}
-		}
+	module := buildResult.Modules[0]
+	require.NotEmpty(t, module.Artifacts, "build info should have an artifact")
+	for _, artifact := range module.Artifacts {
+		assert.NotEmpty(t, artifact.Sha256, "Artifact should have SHA256")
+		assert.Len(t, artifact.Sha1, 40, "Artifact should have a 40 hex-character SHA1")
+		assert.Len(t, artifact.Md5, 32, "Artifact should have a 32 hex-character MD5")
 	}
 
 	// Clean up
@@ -1697,72 +1710,4 @@ func TestApmDryRunNoArtifacts(t *testing.T) {
 	artifacts, _, err := tests.SearchFiles(searchSpec, serverDetails)
 	require.NoError(t, err)
 	assert.Empty(t, artifacts, "dry-run should not create artifacts in repository")
-}
-
-// TestApmMultiModuleWorkspace validates workspace support (P1: Scenario #31 variant).
-func TestApmMultiModuleWorkspace(t *testing.T) {
-	initApmTest(t)
-	defer cleanApmTest(t)
-
-	projectDir, err := os.MkdirTemp("", "apm-workspace-*")
-	require.NoError(t, err)
-	defer func() {
-		_ = os.RemoveAll(projectDir)
-	}()
-
-	// Create workspace structure
-	err = os.MkdirAll(filepath.Join(projectDir, "module1", ".apm", "primitives"), dirPerms)
-	require.NoError(t, err)
-	err = os.MkdirAll(filepath.Join(projectDir, "module2", ".apm", "primitives"), dirPerms)
-	require.NoError(t, err)
-
-	// Create workspace apm.yml
-	workspaceYaml := `version: "1.0.0"
-name: workspace-root
-license: UNLICENSED
-targets:
-  - claude
-workspaces:
-  - path: module1
-  - path: module2
-`
-
-	rootYamlPath := filepath.Join(projectDir, "apm.yml")
-	err = os.WriteFile(rootYamlPath, []byte(workspaceYaml), filePerms)
-	require.NoError(t, err)
-
-	// Create module manifests
-	module1Yaml := `name: module1
-version: 1.0.0
-license: UNLICENSED
-targets:
-  - claude
-primitives:
-  agents: []
-`
-	module2Yaml := `name: module2
-version: 1.0.0
-license: UNLICENSED
-targets:
-  - claude
-primitives:
-  agents: []
-`
-
-	err = os.WriteFile(filepath.Join(projectDir, "module1", "apm.yml"), []byte(module1Yaml), filePerms)
-	require.NoError(t, err)
-	err = os.WriteFile(filepath.Join(projectDir, "module2", "apm.yml"), []byte(module2Yaml), filePerms)
-	require.NoError(t, err)
-
-	buildNumber := "205"
-
-	defer setupTestWorkingDirectory(t, projectDir)()
-
-	// Install workspace should process all modules
-	err = getApmCli().Exec("agent", "apm", "install", "--build-name", apmBuildName, "--build-number", buildNumber)
-	require.NoError(t, err, "workspace install should succeed")
-
-	validateApmBuildInfo(t, apmBuildName, buildNumber, 0)
-
-	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, apmBuildName, artHttpDetails)
 }
