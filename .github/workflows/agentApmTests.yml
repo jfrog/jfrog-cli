@@ -1,4 +1,4 @@
-name: APM Tests
+name: Agent APM Tests
 
 on:
   workflow_call:
@@ -16,8 +16,8 @@ on:
         default: ""
 
 jobs:
-  APM-Tests:
-    name: APM tests (${{ matrix.os.name }})
+  Agent-APM-Tests:
+    name: agent-apm ${{ matrix.os.name }}
     strategy:
       fail-fast: false
       matrix:
@@ -95,7 +95,7 @@ jobs:
           JFROG_ADMIN_TOKEN: ${{ inputs.jfrog_admin_token }}
           RT_CONNECTION_TIMEOUT_SECONDS: ${{ env.RT_CONNECTION_TIMEOUT_SECONDS || '1200' }}
 
-      - name: Run APM tests
+      - name: Run agent apm tests
         if: matrix.os.name != 'macos'
         run: >-
           go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.apm

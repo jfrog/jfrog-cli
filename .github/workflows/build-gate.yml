@@ -45,9 +45,9 @@ jobs:
     needs: gate
     uses: ./.github/workflows/agentSkillsTests.yml
     secrets: inherit
-  apm:
+  agent-apm:
     needs: gate
-    uses: ./.github/workflows/apmTests.yml
+    uses: ./.github/workflows/agentApmTests.yml
     secrets: inherit
   access:
     needs: gate
@@ -186,7 +186,7 @@ jobs:
       - frogbot
       - agent-plugins
       - agent-skills
-      - apm
+      - agent-apm
       - access
       - artifactory
       - conan

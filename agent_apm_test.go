@@ -109,7 +109,7 @@ func publishApmDependencyPackage(t *testing.T, packageSpec, version string) {
 
 // publishApmDependencyPackageToRegistry is publishApmDependencyPackage targeting a specific,
 // already-configured registry name (e.g. one of several distinct repos set up via
-// "jf setup agent-apm --repo <name>"), instead of always the default tests.AgentPackagesLocalRepo.
+// "jf setup apm --repo <name>"), instead of always the default tests.AgentPackagesLocalRepo.
 func publishApmDependencyPackageToRegistry(t *testing.T, packageSpec, version, registryName string) {
 	t.Helper()
 	pubDir, err := os.MkdirTemp("", "apm-dep-publish-*")
@@ -208,8 +208,8 @@ func ensureApmTestProjectExists(t *testing.T) {
 func initApmConfig(t *testing.T) {
 	// Use jf setup to configure APM (not jf rt setup)
 	setupCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
-	err := setupCli.Exec("setup", "agent-apm", "--repo", tests.AgentPackagesLocalRepo)
-	require.NoError(t, err, "jf setup agent-apm should succeed")
+	err := setupCli.Exec("setup", "apm", "--repo", tests.AgentPackagesLocalRepo)
+	require.NoError(t, err, "jf setup apm should succeed")
 }
 
 // cleanApmTest cleans up resources after APM tests.
@@ -433,7 +433,7 @@ func validateBuildInfoHasBothArtifactsAndDependencies(t *testing.T, buildName, b
 
 // TestApmSetupAndConfig validates APM setup with apm config file persistence (P0: Scenario #1).
 // apmRegistryEntry mirrors one entry under ~/.apm/config.json's "registries" map. Default is
-// only ever present (and true) on whichever registry "jf setup agent-apm" most recently
+// only ever present (and true) on whichever registry "jf setup apm" most recently
 // configured - apm's own config command clears it from any previously-default entry, so at most
 // one registry has Default == true at a time.
 type apmRegistryEntry struct {
@@ -467,8 +467,8 @@ func TestApmSetupAndConfig(t *testing.T) {
 
 	// First setup call (use correct CLI prefix: jfrog, not jfrog rt)
 	setupCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
-	err = setupCli.Exec("setup", "agent-apm", "--repo", tests.AgentPackagesLocalRepo)
-	require.NoError(t, err, "jf setup agent-apm should succeed")
+	err = setupCli.Exec("setup", "apm", "--repo", tests.AgentPackagesLocalRepo)
+	require.NoError(t, err, "jf setup apm should succeed")
 
 	assert.FileExists(t, apmConfigPath, "APM config file should be created")
 
@@ -495,11 +495,11 @@ func TestApmSetupAndConfig(t *testing.T) {
 	}
 	defer deleteRepo(secondRepo)
 	defer func() {
-		_ = setupCli.Exec("setup", "agent-apm", "--repo", tests.AgentPackagesLocalRepo)
+		_ = setupCli.Exec("setup", "apm", "--repo", tests.AgentPackagesLocalRepo)
 	}()
 
-	err = setupCli.Exec("setup", "agent-apm", "--repo", secondRepo)
-	require.NoError(t, err, "jf setup agent-apm should succeed against a second, different repo")
+	err = setupCli.Exec("setup", "apm", "--repo", secondRepo)
+	require.NoError(t, err, "jf setup apm should succeed against a second, different repo")
 
 	registries = readApmRegistries(t)
 	second, ok := registries[secondRepo]
@@ -513,8 +513,8 @@ func TestApmSetupAndConfig(t *testing.T) {
 
 	// Verify idempotency - re-running setup for the same (now non-default) repo should still
 	// succeed and flip default back to it.
-	err = setupCli.Exec("setup", "agent-apm", "--repo", tests.AgentPackagesLocalRepo)
-	require.NoError(t, err, "jf setup agent-apm should be idempotent")
+	err = setupCli.Exec("setup", "apm", "--repo", tests.AgentPackagesLocalRepo)
+	require.NoError(t, err, "jf setup apm should be idempotent")
 
 	registries = readApmRegistries(t)
 	assert.True(t, registries[tests.AgentPackagesLocalRepo].Default, "re-running setup for the primary repo should make it the default again")
@@ -728,7 +728,7 @@ func TestApmAuthEnvVarBehavior(t *testing.T) {
 	defer cleanApmTest(t)
 
 	// The registry name apm actually knows about is the repo key itself ("cli-agent-packages-local"),
-	// not a literal name "default" - jf setup agent-apm calls ConfigureApmRegistryPersistent(repoName),
+	// not a literal name "default" - jf setup apm calls ConfigureApmRegistryPersistent(repoName),
 	// which writes registry.<repoName>.{url,token,default} into ~/.apm/config.json using repoName
 	// verbatim. apm sanitizes that name into its env var form the same way jf does
 	// (sanitizeApmEnvName in apmenv.go: uppercase, "-"/"." -> "_"). Using any other name here (e.g.
@@ -757,7 +757,7 @@ func TestApmAuthEnvVarBehavior(t *testing.T) {
 		// Belt and braces: apm's own docs say an env var token outranks ~/.apm/config.json's
 		// stored one, but remove the stored token for this registry anyway so there is no valid
 		// fallback credential at all - the only credential apm can possibly use is the wrong one
-		// set below. Restored afterward by re-running jf setup agent-apm (initApmConfig), which
+		// set below. Restored afterward by re-running jf setup apm (initApmConfig), which
 		// every other test in this file also depends on having a correctly configured registry.
 		require.NoError(t, exec.Command("apm", "config", "unset", fmt.Sprintf("registry.%s.token", registryName)).Run(), // #nosec G204 -- fixed argv, no user input
 			"removing the stored registry token should succeed")
@@ -1673,7 +1673,7 @@ func TestApmCommandsFailWithoutJfServerConfig(t *testing.T) {
 // TestApmMixedRegistryDependenciesInOneInstall validates that a SINGLE install can resolve
 // dependencies from two DIFFERENT registries at once - one dependency from apm-registry-1
 // (non-default at install time), another from apm-registry-2 (the default, since
-// "jf setup agent-apm --repo X" makes the most-recently-configured repo the default and this
+// "jf setup apm --repo X" makes the most-recently-configured repo the default and this
 // test configures repos[1] last) - both declared in the same apm.yml via the object-form
 // dependency's explicit "registry:" field, confirmed live (a local, parse-only apm install
 // dry-run against unreachable ports) to be the real schema: "id: owner/name" +
@@ -1698,11 +1698,11 @@ func TestApmMixedRegistryDependenciesInOneInstall(t *testing.T) {
 
 	setupCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 	for _, repoName := range repos {
-		err := setupCli.Exec("setup", "agent-apm", "--repo", repoName)
+		err := setupCli.Exec("setup", "apm", "--repo", repoName)
 		require.NoError(t, err, "setup should succeed for repo %s", repoName)
 	}
 	defer func() {
-		_ = setupCli.Exec("setup", "agent-apm", "--repo", tests.AgentPackagesLocalRepo)
+		_ = setupCli.Exec("setup", "apm", "--repo", tests.AgentPackagesLocalRepo)
 	}()
 
 	// Publish one dependency to each registry.
@@ -1771,7 +1771,7 @@ func getBasicApmYaml() string {
 // createApmYaml creates customizable APM YAML with parameters. apmDeps are real APM dependency
 // specs in "owner/name#version" shorthand (see publishApmDependencyPackage); an empty slice
 // yields an empty "apm: []" dependency list. Registries are never declared here - they're
-// configured globally via "jf setup agent-apm", not per-project.
+// configured globally via "jf setup apm", not per-project.
 func createApmYaml(name, version string, apmDeps []string) string {
 	depsSection := "  apm: []\n"
 	if len(apmDeps) > 0 {
@@ -1872,11 +1872,11 @@ func TestApmRegistryPrecedenceDefaultFallback(t *testing.T) {
 
 	setupCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 	for _, repoName := range repos {
-		err := setupCli.Exec("setup", "agent-apm", "--repo", repoName)
+		err := setupCli.Exec("setup", "apm", "--repo", repoName)
 		require.NoError(t, err, "setup should succeed for repo %s", repoName)
 	}
 	defer func() {
-		_ = setupCli.Exec("setup", "agent-apm", "--repo", tests.AgentPackagesLocalRepo)
+		_ = setupCli.Exec("setup", "apm", "--repo", tests.AgentPackagesLocalRepo)
 	}()
 
 	// Publish a real package to the SECOND repo only.
@@ -2106,10 +2106,10 @@ func TestApmDryRunNoArtifacts(t *testing.T) {
 	assert.Empty(t, artifacts, "dry-run should not create artifacts in repository")
 }
 
-// TestApmNativeCliWorksWithJfSetupCredentials validates that once "jf setup agent-apm" has run,
+// TestApmNativeCliWorksWithJfSetupCredentials validates that once "jf setup apm" has run,
 // the native apm binary can be invoked directly - bypassing "jf agent apm ..." entirely, with no
 // build-name/build-number, no build-info collection at all - and still authenticate
-// successfully. jf setup agent-apm persists credentials into ~/.apm/config.json; that's a
+// successfully. jf setup apm persists credentials into ~/.apm/config.json; that's a
 // different mechanism from BuildApmEnv's APM_REGISTRY_TOKEN_<NAME> env-var injection, which only
 // happens when jf itself invokes apm as a subprocess. A user running the plain "apm" command in
 // their own shell gets none of that env-var wiring, so this test strips any leftover
@@ -2123,7 +2123,7 @@ func TestApmNativeCliWorksWithJfSetupCredentials(t *testing.T) {
 	initApmTest(t)
 	defer cleanApmTest(t)
 
-	// initApmTest already ran "jf setup agent-apm --repo <repo>" (via initApmConfig), writing
+	// initApmTest already ran "jf setup apm --repo <repo>" (via initApmConfig), writing
 	// credentials into ~/.apm/config.json. Strip any APM_REGISTRY_* env vars a prior test in
 	// this process may have left behind, so a passing result here can only be explained by that
 	// config file.
@@ -2162,7 +2162,7 @@ primitives:
 	nativePublish := exec.Command("apm", "publish", "--package", owner+"/"+pkgName, "--registry", tests.AgentPackagesLocalRepo) // #nosec G204 -- fixed argv, no shell, no user input
 	nativePublish.Stdout = os.Stdout
 	nativePublish.Stderr = os.Stderr
-	require.NoError(t, nativePublish.Run(), "native apm publish (no jf wrapper) should succeed using jf setup agent-apm's persisted credentials")
+	require.NoError(t, nativePublish.Run(), "native apm publish (no jf wrapper) should succeed using jf setup apm's persisted credentials")
 
 	// Verify the package was genuinely uploaded to Artifactory - not just that apm exited 0.
 	searchSpec := spec.NewBuilder().
@@ -2199,7 +2199,7 @@ dependencies:
 	nativeInstall := exec.Command("apm", "install") // #nosec G204 -- fixed argv, no shell, no user input
 	nativeInstall.Stdout = os.Stdout
 	nativeInstall.Stderr = os.Stderr
-	require.NoError(t, nativeInstall.Run(), "native apm install (no jf wrapper) should succeed using jf setup agent-apm's persisted credentials")
+	require.NoError(t, nativeInstall.Run(), "native apm install (no jf wrapper) should succeed using jf setup apm's persisted credentials")
 
 	// Verify the package was genuinely resolved from Artifactory - not just that apm exited 0.
 	lockfilePath := filepath.Join(installDir, "apm.lock.yaml")
