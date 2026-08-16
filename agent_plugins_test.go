@@ -37,6 +37,11 @@ import (
 // Init / cleanup
 // ---------------------------------------------------------------------------
 
+// InitAgentPluginsTests sets up the e2e test environment. .github/workflows/agentPluginsTests.yml
+// installs real claude-code and codex binaries onto PATH, so plugincommon's default
+// LookPath*/*Exec hooks (which shell out to "claude"/"codex" on PATH) work as-is in CI. Until
+// that workflow change is merged - and for local runs where neither CLI is installed -
+// ensureNativeAgentCLIs falls back to a stub binary per missing agent.
 func InitAgentPluginsTests() {
 	initArtifactoryCli()
 	cleanUpOldRepositories()
@@ -57,7 +62,7 @@ func initAgentPluginsTest(t *testing.T) {
 	// The test Artifactory instance has no evidence/One-Model service configured.
 	// Disable the quiet-failure evidence gate so install commands don't block on 403.
 	t.Setenv("JFROG_AGENT_PLUGINS_DISABLE_QUIET_FAILURE", "true")
-	stubNativeAgentCLIs(t)
+	ensureNativeAgentCLIs(t)
 }
 
 func cleanAgentPluginsTest() {
@@ -255,9 +260,69 @@ func createTestHarnessPlugin(t *testing.T, slug, version string, harnesses []str
 	return pluginPath
 }
 
+// ensureNativeAgentCLIs makes sure both "claude" and "codex" are runnable for the CLI under
+// test. It prefers the real CLIs - installed onto PATH by .github/workflows/agentPluginsTests.yml
+// in CI - and only falls back to a stub binary, per agent, when that agent's real CLI isn't
+// found (e.g. locally, or before that workflow change has been merged). Leaving the real CLI
+// alone when present means CI still exercises actual claude/codex behavior.
+func ensureNativeAgentCLIs(t *testing.T) {
+	t.Helper()
+	ensureNativeAgentCLI(t, "claude", plugincommon.LookPathClaude, func(bin string) func() {
+		prevLook, prevExec := plugincommon.LookPathClaude, plugincommon.ClaudeExec
+		plugincommon.LookPathClaude = func() (string, error) { return bin, nil }
+		plugincommon.ClaudeExec = func(args ...string) error {
+			return exec.Command(bin, args...).Run() // #nosec G204 -- test stub binary
+		}
+		return func() {
+			plugincommon.LookPathClaude = prevLook
+			plugincommon.ClaudeExec = prevExec
+		}
+	})
+	ensureNativeAgentCLI(t, "codex", plugincommon.LookPathCodex, func(bin string) func() {
+		prevLook, prevExec := plugincommon.LookPathCodex, plugincommon.CodexExec
+		plugincommon.LookPathCodex = func() (string, error) { return bin, nil }
+		plugincommon.CodexExec = func(args ...string) error {
+			return exec.Command(bin, args...).Run() // #nosec G204 -- test stub binary
+		}
+		return func() {
+			plugincommon.LookPathCodex = prevLook
+			plugincommon.CodexExec = prevExec
+		}
+	})
+}
+
+// ensureNativeAgentCLI checks lookPath (the agent's current LookPath hook); if it already
+// resolves, the real CLI is left untouched. Otherwise it installs the shared stub binary under
+// the given name and calls wire to point the agent's LookPath/Exec hooks at it, restoring the
+// previous hooks via t.Cleanup.
+func ensureNativeAgentCLI(t *testing.T, name string, lookPath func() (string, error), wire func(bin string) (restore func())) {
+	t.Helper()
+	if _, err := lookPath(); err == nil {
+		return // real CLI already on PATH (installed by CI, or present locally) - nothing to do
+	}
+
+	data, err := nativeAgentStubBinary()
+	require.NoError(t, err)
+
+	binDir := t.TempDir()
+	bin := filepath.Join(binDir, name)
+	if runtime.GOOS == "windows" {
+		bin += ".exe"
+	}
+	require.NoError(t, os.WriteFile(bin, data, 0755)) // #nosec G306 -- test stub binary path is under t.TempDir
+
+	// jfrog-cli-artifactory's native-registry lookups (claudePluginListJSON/codexPluginListJSON,
+	// used by "list --check-updates" and uninstall-detection) shell out to the literal
+	// "claude"/"codex" command via OS PATH resolution, not through the exported LookPath/Exec
+	// hooks wired below - so the stub must also be reachable on PATH under its bare name.
+	t.Setenv("PATH", binDir+string(os.PathListSeparator)+os.Getenv("PATH"))
+
+	t.Cleanup(wire(bin))
+}
+
 // nativeAgentStubOnce builds the shared claude/codex stub binary once per process.
-// stubNativeAgentCLIs copies that binary into each test's PATH dir so we avoid
-// recompiling on every initAgentPluginsTest (~99 times across the suite).
+// ensureNativeAgentCLI copies that binary into each test's fallback bin dir so we avoid
+// recompiling on every initAgentPluginsTest call.
 var (
 	nativeAgentStubOnce sync.Once
 	nativeAgentStubData []byte
@@ -296,48 +361,6 @@ func nativeAgentStubBinary() ([]byte, error) {
 		nativeAgentStubData, nativeAgentStubErr = os.ReadFile(outBin) // #nosec G304 -- path under MkdirTemp
 	})
 	return nativeAgentStubData, nativeAgentStubErr
-}
-
-// stubNativeAgentCLIs installs cross-platform stub claude/codex binaries on PATH and wires
-// LookPath/Exec hooks so install/list/update do not depend on real native CLIs.
-func stubNativeAgentCLIs(t *testing.T) {
-	t.Helper()
-
-	data, err := nativeAgentStubBinary()
-	require.NoError(t, err)
-
-	binDir := t.TempDir()
-	claudeBin := filepath.Join(binDir, "claude")
-	codexBin := filepath.Join(binDir, "codex")
-	if runtime.GOOS == "windows" {
-		claudeBin += ".exe"
-		codexBin += ".exe"
-	}
-	require.NoError(t, os.WriteFile(claudeBin, data, 0755)) // #nosec G306 -- test stub binary path is under t.TempDir
-	require.NoError(t, os.WriteFile(codexBin, data, 0755))  // #nosec G306 -- test stub binary path is under t.TempDir
-
-	prevPath := os.Getenv("PATH")
-	t.Setenv("PATH", binDir+string(os.PathListSeparator)+prevPath)
-
-	prevLookClaude := plugincommon.LookPathClaude
-	prevLookCodex := plugincommon.LookPathCodex
-	prevClaudeExec := plugincommon.ClaudeExec
-	prevCodexExec := plugincommon.CodexExec
-	t.Cleanup(func() {
-		plugincommon.LookPathClaude = prevLookClaude
-		plugincommon.LookPathCodex = prevLookCodex
-		plugincommon.ClaudeExec = prevClaudeExec
-		plugincommon.CodexExec = prevCodexExec
-	})
-
-	plugincommon.LookPathClaude = func() (string, error) { return claudeBin, nil }
-	plugincommon.LookPathCodex = func() (string, error) { return codexBin, nil }
-	plugincommon.ClaudeExec = func(args ...string) error {
-		return exec.Command(claudeBin, args...).Run() // #nosec G204 -- test stub binary
-	}
-	plugincommon.CodexExec = func(args ...string) error {
-		return exec.Command(codexBin, args...).Run() // #nosec G204 -- test stub binary
-	}
 }
 
 // nativeAgentCLIStubSource is a tiny stdlib-only program that pretends to be claude/codex.
@@ -613,6 +636,42 @@ func TestAgentPluginsPublishWithBuildInfo(t *testing.T) {
 	module := publishedBuildInfo.BuildInfo.Modules[0]
 	require.NotEmpty(t, module.Artifacts, "published zip should appear as an artifact in build info")
 	assert.NotEmpty(t, module.Artifacts[0].Sha256, "artifact sha256 should be non-empty in build info")
+}
+
+// TestAgentPluginsPublishWithProjectFlag verifies that --project=<key> stores the
+// build-info partials under the project-key-aware local directory (the build dir
+// hash includes the project key), and that nothing is stored under the
+// empty-project directory.
+func TestAgentPluginsPublishWithProjectFlag(t *testing.T) {
+	initAgentPluginsTest(t)
+	defer cleanAgentPluginsTest()
+
+	slug := "project-flag-plugin"
+	buildName := tests.AgentPluginsBuildName + "-project"
+	buildNumber := "1"
+	projectKey := "testprj"
+	t.Cleanup(func() {
+		_ = coreBuild.RemoveBuildDir(buildName, buildNumber, projectKey)
+		_ = coreBuild.RemoveBuildDir(buildName, buildNumber, "")
+	})
+
+	require.NoError(t, runAgentPluginsCmd(t,
+		"publish", createTestPlugin(t, slug, "1.0.0"),
+		"--repo="+tests.AgentPluginsLocalRepo,
+		"--build-name="+buildName,
+		"--build-number="+buildNumber,
+		"--project="+projectKey,
+	))
+
+	partials, err := coreBuild.ReadPartialBuildInfoFiles(buildName, buildNumber, projectKey)
+	require.NoError(t, err)
+	require.Len(t, partials, 1, "expected 1 build-info partial stored with project key %q", projectKey)
+	assert.Equal(t, slug, partials[0].ModuleId)
+	assert.NotEmpty(t, partials[0].Artifacts, "published zip should be recorded as a build-info artifact")
+
+	partialsNoProject, err := coreBuild.ReadPartialBuildInfoFiles(buildName, buildNumber, "")
+	assert.NoError(t, err)
+	assert.Empty(t, partialsNoProject, "build info should NOT be stored under the empty project key directory")
 }
 
 // TestAgentPluginsNoBuildInfoWithoutFlags verifies that publishing without
@@ -1840,9 +1899,13 @@ func TestAgentPluginsUpdateAll(t *testing.T) {
 		{slugA, "1.0.0", "2.0.0"},
 		{slugB, "1.0.0", "2.0.0"},
 	} {
-		v1Path := createTestPlugin(t, entry.slug, entry.oldVer)
+		// Real codex requires the manifest under .codex-plugin/plugin.json (mirroring
+		// claude's .claude-plugin/ convention); a flat root plugin.json fails
+		// "codex plugin add" with "missing plugin.json". Use the harness-aware fixture
+		// since these cases install with harness=codex (via agentPluginHarnessCases()).
+		v1Path := createTestHarnessPlugin(t, entry.slug, entry.oldVer, []string{"claude", "codex", "cursor"})
 		require.NoError(t, runAgentPluginsCmd(t, "publish", v1Path, "--repo="+tests.AgentPluginsLocalRepo))
-		v2Path := createTestPlugin(t, entry.slug, entry.newVer)
+		v2Path := createTestHarnessPlugin(t, entry.slug, entry.newVer, []string{"claude", "codex", "cursor"})
 		require.NoError(t, runAgentPluginsCmd(t, "publish", v2Path, "--repo="+tests.AgentPluginsLocalRepo))
 	}
 
@@ -1891,9 +1954,13 @@ func TestAgentPluginsUpdateAllNonInteractive(t *testing.T) {
 	defer cleanAgentPluginsTest()
 
 	slug := "update-all-ci-plugin"
-	v1Path := createTestPlugin(t, slug, "1.0.0")
+	// Real codex requires the manifest under .codex-plugin/plugin.json (mirroring
+	// claude's .claude-plugin/ convention); a flat root plugin.json fails
+	// "codex plugin add" with "missing plugin.json". Use the harness-aware fixture
+	// since these cases install with harness=codex (via agentPluginHarnessCases()).
+	v1Path := createTestHarnessPlugin(t, slug, "1.0.0", []string{"claude", "codex", "cursor"})
 	require.NoError(t, runAgentPluginsCmd(t, "publish", v1Path, "--repo="+tests.AgentPluginsLocalRepo))
-	v2Path := createTestPlugin(t, slug, "2.0.0")
+	v2Path := createTestHarnessPlugin(t, slug, "2.0.0", []string{"claude", "codex", "cursor"})
 	require.NoError(t, runAgentPluginsCmd(t, "publish", v2Path, "--repo="+tests.AgentPluginsLocalRepo))
 
 	for _, tc := range agentPluginHarnessCases() {
@@ -1937,9 +2004,13 @@ func TestAgentPluginsUpdateFormatJSON(t *testing.T) {
 	defer cleanAgentPluginsTest()
 
 	slug := "update-format-json-plugin"
-	v1Path := createTestPlugin(t, slug, "1.0.0")
+	// Real codex requires the manifest under .codex-plugin/plugin.json (mirroring
+	// claude's .claude-plugin/ convention); a flat root plugin.json fails
+	// "codex plugin add" with "missing plugin.json". Use the harness-aware fixture
+	// since these cases install with harness=codex (via agentPluginHarnessCases()).
+	v1Path := createTestHarnessPlugin(t, slug, "1.0.0", []string{"claude", "codex", "cursor"})
 	require.NoError(t, runAgentPluginsCmd(t, "publish", v1Path, "--repo="+tests.AgentPluginsLocalRepo))
-	v2Path := createTestPlugin(t, slug, "2.0.0")
+	v2Path := createTestHarnessPlugin(t, slug, "2.0.0", []string{"claude", "codex", "cursor"})
 	require.NoError(t, runAgentPluginsCmd(t, "publish", v2Path, "--repo="+tests.AgentPluginsLocalRepo))
 
 	for _, tc := range agentPluginHarnessCases() {
@@ -2126,9 +2197,13 @@ func TestAgentPluginsListCheckUpdatesStatus(t *testing.T) {
 	defer cleanAgentPluginsTest()
 
 	slug := "check-status-plugin"
-	v1Path := createTestPlugin(t, slug, "1.0.0")
+	// Real codex requires the manifest under .codex-plugin/plugin.json (mirroring
+	// claude's .claude-plugin/ convention); a flat root plugin.json fails
+	// "codex plugin add" with "missing plugin.json". Use the harness-aware fixture
+	// since these cases install with harness=codex (via agentPluginHarnessCases()).
+	v1Path := createTestHarnessPlugin(t, slug, "1.0.0", []string{"claude", "codex", "cursor"})
 	require.NoError(t, runAgentPluginsCmd(t, "publish", v1Path, "--repo="+tests.AgentPluginsLocalRepo))
-	v2Path := createTestPlugin(t, slug, "2.0.0")
+	v2Path := createTestHarnessPlugin(t, slug, "2.0.0", []string{"claude", "codex", "cursor"})
 	require.NoError(t, runAgentPluginsCmd(t, "publish", v2Path, "--repo="+tests.AgentPluginsLocalRepo))
 
 	for _, tc := range agentPluginHarnessCases() {
