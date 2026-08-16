@@ -75,6 +75,7 @@ var (
 	TestApt                   *bool
 	TestAgentPlugins          *bool
 	TestAgentSkills           *bool
+	TestApm                   *bool
 	TestConan                 *bool
 	TestHelm                  *bool
 	TestHuggingFace           *bool
@@ -147,6 +148,7 @@ func init() {
 	TestApt = flag.Bool("test.apt", false, "Test apt (Debian/Ubuntu package manager)")
 	TestAgentPlugins = flag.Bool("test.agentPlugins", false, "Test Agent Plugins")
 	TestAgentSkills = flag.Bool("test.agentSkills", false, "Test Agent Skills")
+	TestApm = flag.Bool("test.apm", false, "Test APM (Agent Package Manager)")
 	TestConan = flag.Bool("test.conan", false, "Test Conan")
 	TestHelm = flag.Bool("test.helm", false, "Test Helm")
 	TestHuggingFace = flag.Bool("test.huggingface", false, "Test HuggingFace")
@@ -281,8 +283,49 @@ func DeleteFiles(deleteSpec *spec.SpecFiles, serverDetails *config.ServerDetails
 	return deleteCommand.DeleteFiles(reader)
 }
 
+// SearchFiles searches for files in Artifactory using the provided spec and server details.
+// Returns search results as utils.ResultItem (repo/path/name/properties/checksums) and a count.
+//
+// Deliberately decodes into utils.ResultItem, not artUtils.SearchResult: the latter has no Name
+// field at all and a Props field shaped/tagged for a different JSON payload than what the AQL
+// search reader actually emits, so it silently comes back with an empty filename and empty
+// properties on every record - see ConvertArtifactsSearchDetailsToBuildInfoArtifacts in
+// jfrog-cli-core for the same reader decoded into the same, correct type.
+func SearchFiles(searchSpec *spec.SpecFiles, serverDetails *config.ServerDetails) (searchResults []utils.ResultItem, count int, err error) {
+	servicesManager, err := artUtils.CreateServiceManager(serverDetails, -1, 0, false)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Use the search utilities from jfrog-cli-core
+	readers, _, err := artUtils.SearchFiles(servicesManager, searchSpec)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer func() {
+		for _, r := range readers {
+			ioutils.Close(r, &err)
+		}
+	}()
+
+	// Process search results from readers
+	for _, reader := range readers {
+		for item := new(utils.ResultItem); reader.NextRecord(item) == nil; item = new(utils.ResultItem) {
+			searchResults = append(searchResults, *item)
+		}
+	}
+
+	return searchResults, len(searchResults), nil
+}
+
 // This function makes no assertion, caller is responsible to assert as needed.
 func GetBuildInfo(serverDetails *config.ServerDetails, buildName, buildNumber string) (pbi *buildinfo.PublishedBuildInfo, found bool, err error) {
+	return GetBuildInfoInProject(serverDetails, buildName, buildNumber, "")
+}
+
+// GetBuildInfoInProject is GetBuildInfo scoped to an Artifactory project key.
+// This function makes no assertion, caller is responsible to assert as needed.
+func GetBuildInfoInProject(serverDetails *config.ServerDetails, buildName, buildNumber, projectKey string) (pbi *buildinfo.PublishedBuildInfo, found bool, err error) {
 	servicesManager, err := artUtils.CreateServiceManager(serverDetails, -1, 0, false)
 	if err != nil {
 		return nil, false, err
@@ -290,6 +333,7 @@ func GetBuildInfo(serverDetails *config.ServerDetails, buildName, buildNumber st
 	params := services.NewBuildInfoParams()
 	params.BuildName = buildName
 	params.BuildNumber = buildNumber
+	params.ProjectKey = projectKey
 	return servicesManager.GetBuildInfo(params)
 }
 
@@ -332,6 +376,7 @@ var reposConfigMap = map[*string]string{
 	&UvVirtualRepo:                  UvVirtualRepositoryConfig,
 	&AgentPluginsLocalRepo:          AgentPluginsLocalRepositoryConfig,
 	&AgentSkillsLocalRepo:           AgentSkillsLocalRepositoryConfig,
+	&AgentPackagesLocalRepo:         AgentPackagesLocalRepositoryConfig,
 	&NixLocalRepo:                   NixLocalRepositoryConfig,
 	&NixRemoteRepo:                  NixRemoteRepositoryConfig,
 	&NixVirtualRepo:                 NixVirtualRepositoryConfig,
@@ -418,6 +463,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestApt:                {&AptLocalRepo, &AptRemoteRepo, &AptDebianRemoteRepo},
 		TestAgentPlugins:       {&AgentPluginsLocalRepo},
 		TestAgentSkills:        {&AgentSkillsLocalRepo},
+		TestApm:                {&AgentPackagesLocalRepo},
 		TestConan:              {&ConanLocalRepo, &ConanRemoteRepo},
 		TestHelm:               {&HelmLocalRepo},
 		TestHuggingFace:        {&HuggingFaceLocalRepo},
@@ -565,6 +611,7 @@ func getSubstitutionMap() map[string]string {
 		"${UV_VIRTUAL_REPO}":           UvVirtualRepo,
 		"${AGENT_PLUGINS_LOCAL_REPO}":  AgentPluginsLocalRepo,
 		"${AGENT_SKILLS_LOCAL_REPO}":   AgentSkillsLocalRepo,
+		"${AGENT_PACKAGES_LOCAL_REPO}": AgentPackagesLocalRepo,
 		"${NIX_LOCAL_REPO}":            NixLocalRepo,
 		"${NIX_REMOTE_REPO}":           NixRemoteRepo,
 		"${NIX_VIRTUAL_REPO}":          NixVirtualRepo,
