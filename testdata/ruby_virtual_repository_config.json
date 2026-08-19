@@ -1,0 +1,9 @@
+{
+  "key": "${RUBY_VIRTUAL_REPO}",
+  "rclass": "virtual",
+  "packageType": "gems",
+  "repositories": [
+    "${RUBY_LOCAL_REPO}",
+    "${RUBY_REMOTE_REPO}"
+  ]
+}
