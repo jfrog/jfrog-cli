@@ -167,8 +167,8 @@ func pluginArtifactPath(repo, slug, version string) string {
 // Harness helpers
 // ---------------------------------------------------------------------------
 
-// agentPluginHarnessCase is one of the four required harness conditions:
-// claude, codex, cursor, and combined claude,codex,cursor.
+// agentPluginHarnessCase is one of the required harness conditions:
+// claude, codex, cursor, vscode, and combined claude,codex,cursor,vscode.
 type agentPluginHarnessCase struct {
 	name      string
 	harnesses []string
@@ -179,7 +179,8 @@ func agentPluginHarnessCases() []agentPluginHarnessCase {
 		{name: "claude", harnesses: []string{"claude"}},
 		{name: "codex", harnesses: []string{"codex"}},
 		{name: "cursor", harnesses: []string{"cursor"}},
-		{name: "claude,codex,cursor", harnesses: []string{"claude", "codex", "cursor"}},
+		{name: "vscode", harnesses: []string{"vscode"}},
+		{name: "claude,codex,cursor,vscode", harnesses: []string{"claude", "codex", "cursor", "vscode"}},
 	}
 }
 
@@ -189,6 +190,7 @@ func harnessFlag(harnesses []string) string {
 
 // globalPluginInstallDir returns the current global install destination for a built-in harness.
 // claude/codex use repo-keyed layout under .../local/jfrog/<repo>/<slug>;
+// vscode uses repo-keyed layout under ~/.copilot/installed-plugins/<repo>/<slug>;
 // cursor installs under ~/.cursor/plugins/local/<slug>.
 func globalPluginInstallDir(homeDir, harness, repoKey, slug string) string {
 	switch strings.ToLower(harness) {
@@ -198,6 +200,8 @@ func globalPluginInstallDir(homeDir, harness, repoKey, slug string) string {
 		return filepath.Join(homeDir, ".agents", "plugins", "local", "jfrog", repoKey, slug)
 	case "cursor":
 		return filepath.Join(homeDir, ".cursor", "plugins", "local", slug)
+	case "vscode":
+		return filepath.Join(homeDir, ".copilot", "installed-plugins", repoKey, slug)
 	default:
 		return filepath.Join(homeDir, "."+harness, "plugins", slug)
 	}
@@ -238,14 +242,23 @@ func setIsolatedHome(t *testing.T) string {
 	return homeDir
 }
 
-// createTestHarnessPlugin creates a plugin fixture with .<harness>-plugin/plugin.json for each harness.
+// pluginManifestDir returns the directory holding a harness's plugin.json inside a plugin.
+// Harnesses use .<harness>-plugin, except vscode, which reads plugin.json at the plugin root.
+func pluginManifestDir(pluginPath, harness string) string {
+	if strings.EqualFold(harness, "vscode") {
+		return pluginPath
+	}
+	return filepath.Join(pluginPath, "."+harness+"-plugin")
+}
+
+// createTestHarnessPlugin creates a plugin fixture with a plugin.json for each harness.
 func createTestHarnessPlugin(t *testing.T, slug, version string, harnesses []string) string {
 	t.Helper()
 	pluginPath, cleanup := coretests.CreateTempDirWithCallbackAndAssert(t)
 	t.Cleanup(cleanup)
 
 	for _, harness := range harnesses {
-		harnessDir := filepath.Join(pluginPath, "."+harness+"-plugin")
+		harnessDir := pluginManifestDir(pluginPath, harness)
 		require.NoError(t, os.MkdirAll(harnessDir, 0755)) // #nosec G301 -- test directory
 		manifest := map[string]any{
 			"name":        slug,
@@ -1155,7 +1168,7 @@ func TestAgentPluginsInstallNotFound(t *testing.T) {
 }
 
 // TestAgentPluginsInstallProjectScopeRejectedForBuiltIns verifies that built-in
-// harnesses reject --project-dir (global-only) for each of the four harness conditions.
+// harnesses reject --project-dir (global-only) for each harness condition.
 func TestAgentPluginsInstallProjectScopeRejectedForBuiltIns(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
@@ -1187,7 +1200,7 @@ func TestAgentPluginsInstallProjectScopeRejectedForBuiltIns(t *testing.T) {
 }
 
 // TestAgentPluginsInstallGlobal verifies that --global installs the plugin into
-// each built-in harness destination for all four harness conditions.
+// each built-in harness destination for all harness conditions.
 // Version is resolved from the harness marketplace (no --version) after publish indexing.
 func TestAgentPluginsInstallGlobal(t *testing.T) {
 	initAgentPluginsTest(t)
@@ -1653,7 +1666,7 @@ func TestAgentPluginsInstallEvidenceGateDisabled(t *testing.T) {
 }
 
 // TestAgentPluginsUpdateAllNothingInstalled verifies that update --all succeeds
-// when no plugins are installed for each of the four harness conditions.
+// when no plugins are installed for each harness condition.
 func TestAgentPluginsUpdateAllNothingInstalled(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
@@ -1887,7 +1900,7 @@ func TestAgentPluginsUpdateForce(t *testing.T) {
 }
 
 // TestAgentPluginsUpdateAll verifies that `update --all` discovers and updates
-// every installed plugin under each of the four harness conditions.
+// every installed plugin under each harness condition.
 func TestAgentPluginsUpdateAll(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
@@ -1998,7 +2011,7 @@ func TestAgentPluginsUpdateAllNonInteractive(t *testing.T) {
 }
 
 // TestAgentPluginsUpdateFormatJSON verifies that `update --slug --format=json`
-// and `update --all --format=json` succeed for each of the four harness conditions.
+// and `update --all --format=json` succeed for each harness condition.
 func TestAgentPluginsUpdateFormatJSON(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
@@ -2158,7 +2171,7 @@ func TestAgentPluginsUpdateFlags(t *testing.T) {
 }
 
 // TestAgentPluginsListCheckUpdates installs a plugin then runs list
-// --check-updates for each of the four harness conditions and verifies JSON.
+// --check-updates for each harness condition and verifies JSON.
 func TestAgentPluginsListCheckUpdates(t *testing.T) {
 	initAgentPluginsTest(t)
 	defer cleanAgentPluginsTest()
