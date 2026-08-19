@@ -410,8 +410,8 @@ github.com/jfrog/jfrog-cli-evidence v0.10.0 h1:9wbdHOl+wcN3crNw5qtQtQ0N28NX+9QH/
 github.com/jfrog/jfrog-cli-evidence v0.10.0/go.mod h1:xTtHBeiVg3gbJ7jcx48sMlcWlCsRnvqlPKpbGJt22k0=
 github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260618062042-6053ab368cab h1:Zn/qB8LYhSu82YDtbqXwErN1RPHTHe/a3gQY6Ti/OBE=
 github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260618062042-6053ab368cab/go.mod h1:lVUeZtlvrLKJRsoSu8OPN9mJ+bfeq9zSESNYao2Jgo8=
-github.com/jfrog/jfrog-cli-security v1.33.1 h1:pzEuM/wR88HDQpiS2XgfMMDv9oDnewyih4CmkeYxQp4=
-github.com/jfrog/jfrog-cli-security v1.33.1/go.mod h1:PN4uzcVtJbWsxaC2vmXlQAT7I3t+dEGFKMHstzMEb+4=
+github.com/jfrog/jfrog-cli-security v1.34.0 h1:M4av+ff+EfSTZ7pK85Mm2fWlllNbHS0ndB4tZRRNXc8=
+github.com/jfrog/jfrog-cli-security v1.34.0/go.mod h1:J+GxgmNuyCZxb0BJnXbPQq1NEbtyWKMJR9kGwN2VJHE=
 github.com/jfrog/jfrog-client-go v1.55.1-0.20260813100550-0f2168d02558 h1:/4ayHXxzgyZ9f66EqImCyZr2SKUpygU1P36sDVAlskM=
 github.com/jfrog/jfrog-client-go v1.55.1-0.20260813100550-0f2168d02558/go.mod h1:7B7eMRKuMhZ0rOdMItbJVpWjRUe1L//J3Jq+PgjiNxI=
 github.com/jhump/protoreflect v1.17.0 h1:qOEr613fac2lOuTgWN4tPAtLL7fUSbuJL5X5XumQh94=
@@ -626,8 +626,9 @@ github.com/stretchr/testify v1.7.2/go.mod h1:R6va5+xMeoiuVRoj+gSkQ7d3FALtqAAGI1F
 github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO+kdMU+MU=
 github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
 github.com/stretchr/testify v1.10.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
-github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
+github.com/stretchr/testify v1.12.0 h1:K6Mr6jO9JICuend/5xzTM03ydSV3vdNRYAdPSukj8uI=
+github.com/stretchr/testify v1.12.0/go.mod h1:bOYBZb5qJ00vPzWfIqBUZPaxK8jWiXc6d3ErP4Ca9Gw=
 github.com/subosito/gotenv v1.6.0 h1:9NlTDc1FTs4qu0DDq7AEtTPNw6SVm7uBMsUCUjABIf8=
 github.com/subosito/gotenv v1.6.0/go.mod h1:Dk4QP5c2W3ibzajGcXpNraDfq2IrhjMIvMSWPKKo0FU=
 github.com/terminalstatic/go-xsd-validate v0.1.6 h1:TenYeQ3eY631qNi1/cTmLH/s2slHPRKTTHT+XSHkepo=
