@@ -75,6 +75,7 @@ var (
 	TestRuby                  *bool
 	TestApt                   *bool
 	TestAgentPlugins          *bool
+	TestAgentSkills           *bool
 	TestConan                 *bool
 	TestHelm                  *bool
 	TestHuggingFace           *bool
@@ -86,6 +87,7 @@ var (
 	TestEvidence              *bool
 	TestApi                   *bool
 	TestGhostFrog             *bool
+	TestIde                   *bool
 	HideUnitTestLog           *bool
 	ciRunId                   *string
 	InstallDataTransferPlugin *bool
@@ -146,6 +148,7 @@ func init() {
 	TestRuby = flag.Bool("test.ruby", false, "Test Ruby")
 	TestApt = flag.Bool("test.apt", false, "Test apt (Debian/Ubuntu package manager)")
 	TestAgentPlugins = flag.Bool("test.agentPlugins", false, "Test Agent Plugins")
+	TestAgentSkills = flag.Bool("test.agentSkills", false, "Test Agent Skills")
 	TestConan = flag.Bool("test.conan", false, "Test Conan")
 	TestHelm = flag.Bool("test.helm", false, "Test Helm")
 	TestHuggingFace = flag.Bool("test.huggingface", false, "Test HuggingFace")
@@ -157,6 +160,7 @@ func init() {
 	TestEvidence = flag.Bool("test.evidence", false, "Test evidence")
 	TestApi = flag.Bool("test.api", false, "Test api command")
 	TestGhostFrog = flag.Bool("test.ghostFrog", false, "Test Ghost Frog package alias")
+	TestIde = flag.Bool("test.ide", false, "Test IDE (VS Code / Cursor / Windsurf / Kiro / JetBrains) setup commands")
 	ContainerRegistry = flag.String("test.containerRegistry", "localhost:8082", "Container registry")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
 	InstallDataTransferPlugin = flag.Bool("test.installDataTransferPlugin", false, "Install data-transfer plugin on the source Artifactory server")
@@ -329,6 +333,7 @@ var reposConfigMap = map[*string]string{
 	&UvRemoteRepo:                   UvRemoteRepositoryConfig,
 	&UvVirtualRepo:                  UvVirtualRepositoryConfig,
 	&AgentPluginsLocalRepo:          AgentPluginsLocalRepositoryConfig,
+	&AgentSkillsLocalRepo:           AgentSkillsLocalRepositoryConfig,
 	&NixLocalRepo:                   NixLocalRepositoryConfig,
 	&NixRemoteRepo:                  NixRemoteRepositoryConfig,
 	&NixVirtualRepo:                 NixVirtualRepositoryConfig,
@@ -418,6 +423,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestRuby:               {&RubyLocalRepo, &RubyRemoteRepo},
 		TestApt:                {&AptLocalRepo, &AptRemoteRepo, &AptDebianRemoteRepo},
 		TestAgentPlugins:       {&AgentPluginsLocalRepo},
+		TestAgentSkills:        {&AgentSkillsLocalRepo},
 		TestConan:              {&ConanLocalRepo, &ConanRemoteRepo},
 		TestHelm:               {&HelmLocalRepo},
 		TestHuggingFace:        {&HuggingFaceLocalRepo},
@@ -454,6 +460,7 @@ func GetVirtualRepositories() map[*string]string {
 		TestRuby:         {&RubyVirtualRepo},
 		TestApt:          {&AptVirtualRepo},
 		TestAgentPlugins: {},
+		TestAgentSkills:  {},
 		TestConan:        {&ConanVirtualRepo},
 		TestHelm:         {},
 		TestHuggingFace:  {},
@@ -500,6 +507,7 @@ func GetBuildNames() []string {
 		TestAlpine:       {&AlpineBuildName},
 		TestRuby:         {&RubyBuildName},
 		TestAgentPlugins: {&AgentPluginsBuildName},
+		TestAgentSkills:  {&AgentSkillsBuildName},
 		TestConan:        {&ConanBuildName},
 		TestHelm:         {&HelmBuildName},
 		TestHuggingFace:  {&HuggingFaceBuildName},
@@ -564,6 +572,7 @@ func getSubstitutionMap() map[string]string {
 		"${UV_REMOTE_REPO}":            UvRemoteRepo,
 		"${UV_VIRTUAL_REPO}":           UvVirtualRepo,
 		"${AGENT_PLUGINS_LOCAL_REPO}":  AgentPluginsLocalRepo,
+		"${AGENT_SKILLS_LOCAL_REPO}":   AgentSkillsLocalRepo,
 		"${NIX_LOCAL_REPO}":            NixLocalRepo,
 		"${NIX_REMOTE_REPO}":           NixRemoteRepo,
 		"${NIX_VIRTUAL_REPO}":          NixVirtualRepo,
@@ -651,6 +660,7 @@ func AddTimestampToGlobalVars() {
 	UvRemoteRepo += uniqueSuffix
 	UvVirtualRepo += uniqueSuffix
 	AgentPluginsLocalRepo += uniqueSuffix
+	AgentSkillsLocalRepo += uniqueSuffix
 	NixLocalRepo += uniqueSuffix
 	NixRemoteRepo += uniqueSuffix
 	NixVirtualRepo += uniqueSuffix
@@ -693,6 +703,7 @@ func AddTimestampToGlobalVars() {
 	PipenvBuildName += uniqueSuffix
 	PoetryBuildName += uniqueSuffix
 	AgentPluginsBuildName += uniqueSuffix
+	AgentSkillsBuildName += uniqueSuffix
 	UvBuildName += uniqueSuffix
 	NixBuildName += uniqueSuffix
 	AlpineBuildName += uniqueSuffix

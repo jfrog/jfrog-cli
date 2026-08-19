@@ -133,6 +133,10 @@ func execMain() error {
 		},
 	}
 	args := os.Args
+	// jf api has a "docs" subcommand, which makes urfave/cli skip its usual flag
+	// reordering and fail on flags placed after the endpoint path. Work around it
+	// here rather than in the command itself. See NormalizeApiTrailingFlags.
+	args = cliutils.NormalizeApiTrailingFlags(args)
 	cliutils.SetCliExecutableName(args[0])
 	// Auto-promote --format=json (already supported by many commands and by
 	// commands.Exec subcommands) to JFROG_CLI_ERROR_OUTPUT_FORMAT=json so that

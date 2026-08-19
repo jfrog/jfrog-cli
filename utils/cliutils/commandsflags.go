@@ -92,6 +92,7 @@ const (
 	Ruby                   = "ruby"
 	Apt                    = "apt"
 	AptSetup               = "apt-setup"
+	Apk                    = "apk"
 	Ping                   = "ping"
 	RtCurl                 = "rt-curl"
 	TemplateConsumer       = "template-consumer"
@@ -166,6 +167,10 @@ const (
 	serverIdNpm         = "server-id-npm"
 	disableTokenRefresh = "disable-token-refresh"
 
+	apkAlpineVersion = "alpine-version"
+	apkArch          = "arch"
+	apkBranch        = "apk-branch"
+
 	passwordStdin    = "password-stdin"
 	accessTokenStdin = "access-token-stdin"
 
@@ -233,6 +238,7 @@ const (
 	EncPassword   = "enc-password"
 	BasicAuthOnly = "basic-auth-only"
 	Overwrite     = "overwrite"
+	Legacy        = "legacy"
 
 	// Unique upload flags
 	uploadPrefix      = "upload-"
@@ -799,6 +805,18 @@ var flagsMap = map[string]cli.Flag{
 		Name:  serverId,
 		Usage: "[Optional] Server ID configured using the 'jf config' command. Used in native mode (JFROG_RUN_NATIVE=true) to identify the JFrog server for usage reporting.` `",
 	},
+	apkAlpineVersion: cli.StringFlag{
+		Name:  apkAlpineVersion,
+		Usage: "[Optional] Alpine release version, e.g. v3.20. Used by upload (required) and to select the Artifactory path for other subcommands.` `",
+	},
+	apkArch: cli.StringFlag{
+		Name:  apkArch,
+		Usage: "[Optional, upload only] CPU architecture override (x86_64, aarch64, armhf, …). Inferred from the .apk filename by default.` `",
+	},
+	apkBranch: cli.StringFlag{
+		Name:  branch,
+		Usage: "[Default: main, upload only] Alpine repository branch to upload into, e.g. main or community.` `",
+	},
 	passwordStdin: cli.BoolFlag{
 		Name:  passwordStdin,
 		Usage: "[Default: false] Set to true to provide the password via stdin.` `",
@@ -1006,6 +1024,10 @@ var flagsMap = map[string]cli.Flag{
 	interactive: cli.BoolTFlag{
 		Name:  interactive,
 		Usage: "[Default: true, unless $CI is true] Set to false if you don't want the config command to be interactive. If true, the --url option becomes optional.` `",
+	},
+	Legacy: cli.BoolFlag{
+		Name:  Legacy,
+		Usage: "[Default: false] Set to true to configure or log in to a JFrog Platform where products don't share a single unified URL, such as Artifactory 6.x self-hosted. When set, you'll be prompted to review or override each service's URL (Artifactory, Distribution, Xray, Mission Control, Pipelines), and 'jf login' will use standard authentication instead of the browser-based web login.` `",
 	},
 	EncPassword: cli.BoolTFlag{
 		Name:  EncPassword,
@@ -2063,11 +2085,11 @@ var commandFlags = map[string][]string{
 	AddConfig: {
 		interactive, EncPassword, configPlatformUrl, configRtUrl, configDistUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, sshPassphrase, ClientCertPath,
 		ClientCertKeyPath, BasicAuthOnly, configInsecureTls, Overwrite, passwordStdin, accessTokenStdin, OidcTokenID,
-		OidcProviderName, OidcAudience, OidcProviderType, ApplicationKey, configDisableRefreshAccessToken,
+		OidcProviderName, OidcAudience, OidcProviderType, ApplicationKey, configDisableRefreshAccessToken, Legacy,
 	},
 	EditConfig: {
 		interactive, EncPassword, configPlatformUrl, configRtUrl, configDistUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, sshPassphrase, ClientCertPath,
-		ClientCertKeyPath, BasicAuthOnly, configInsecureTls, passwordStdin, accessTokenStdin, configDisableRefreshAccessToken,
+		ClientCertKeyPath, BasicAuthOnly, configInsecureTls, passwordStdin, accessTokenStdin, configDisableRefreshAccessToken, Legacy,
 	},
 	DeleteConfig: {
 		deleteQuiet,
@@ -2328,6 +2350,9 @@ var commandFlags = map[string][]string{
 	AptSetup: {
 		serverId, setupRepo, aptDistribution, aptComponent, aptTrusted, aptImportKey, aptRemove,
 	},
+	Apk: {
+		serverId, repo, apkAlpineVersion, apkBranch, apkArch, BuildName, BuildNumber, module, Project, user, password,
+	},
 	Stats: {
 		XrFormat, accessToken, serverId,
 	},
@@ -2481,7 +2506,7 @@ var commandFlags = map[string][]string{
 		aptDistribution, aptComponent, aptTrusted, aptImportKey, aptRemove,
 	},
 	Login: {
-		serverId,
+		serverId, configDisableRefreshAccessToken, Legacy,
 	},
 }
 

@@ -247,6 +247,15 @@ components:
           type: boolean
           default: false
           description: Whether UI access is disabled
+        middle_name:
+          # OpenAPI 3.1 / JSON Schema 2020-12 nullable-union form of "type"
+          # (a sequence rather than a scalar). Regression fixture for JGC-537:
+          # apispec must decode this rather than failing to unmarshal a YAML
+          # sequence into a Go string.
+          type:
+            - string
+            - "null"
+          description: The user's middle name, if any
     UserListResponse:
       type: object
       properties:

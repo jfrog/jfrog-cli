@@ -6,10 +6,12 @@ package apispec
 import (
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"sort"
 	"strings"
 	"sync"
 
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"gopkg.in/yaml.v3"
 )
 
@@ -115,7 +117,7 @@ type rawMediaTypeItem struct {
 // and sidestep any $ref cycles in the full (non-stub) bundle.
 type rawSchema struct {
 	Ref         string               `yaml:"$ref"`
-	Type        string               `yaml:"type"`
+	Type        flexType             `yaml:"type"`
 	Description string               `yaml:"description"`
 	Default     any                  `yaml:"default"`
 	Required    []string             `yaml:"required"`
@@ -123,19 +125,79 @@ type rawSchema struct {
 	Items       *rawSchema           `yaml:"items"`
 }
 
+// flexType decodes an OpenAPI "type" keyword, which JSON Schema 2020-12 (used
+// by OpenAPI 3.1) allows to be either a single string ("string") or a
+// nullable union sequence (e.g. [string, "null"]) in place of the older
+// "nullable: true" sibling keyword. For a sequence, the first non-"null"
+// entry is used -- enough to keep propertyType's type hint accurate without
+// modeling nullability itself.
+type flexType string
+
+func (t *flexType) UnmarshalYAML(node *yaml.Node) error {
+	switch node.Kind {
+	case yaml.SequenceNode:
+		var types []string
+		if err := node.Decode(&types); err != nil {
+			return err
+		}
+		for _, s := range types {
+			if s != "null" {
+				*t = flexType(s)
+				return nil
+			}
+		}
+		*t = ""
+		return nil
+	default:
+		var s string
+		if err := node.Decode(&s); err != nil {
+			return err
+		}
+		*t = flexType(s)
+		return nil
+	}
+}
+
+// FileError describes a single embedded spec file that failed to parse and
+// was skipped -- see Failures.
+type FileError struct {
+	File string
+	Err  error
+}
+
+func (e FileError) Error() string {
+	return fmt.Sprintf("%s: %s", e.File, e.Err)
+}
+
 var (
 	once       sync.Once
 	operations []Operation
 	parseErr   error
+	fileErrors []FileError
 )
 
 // Operations returns every operation across the embedded OpenAPI spec bundle.
-// Parsing happens once per process and the result is cached.
+// Parsing happens once per process and the result is cached. A spec file that
+// fails to parse is skipped (logged as a warning, see Failures) rather than
+// failing every other file's operations along with it; parseErr is non-nil
+// only for a bundle-level failure (e.g. the embedded directory itself can't
+// be read).
 func Operations() ([]Operation, error) {
 	once.Do(func() {
-		operations, parseErr = parseAll()
+		operations, fileErrors, parseErr = parseAll()
 	})
 	return operations, parseErr
+}
+
+// Failures reports which embedded spec files failed to parse and were
+// skipped, if any. Parsing tolerates a bad file at runtime so that most of
+// the catalog stays searchable, but a non-empty Failures() means the catalog
+// is incomplete -- the full-build release gate (parser_full_test.go) fails
+// on any entry here rather than shipping a release with a silently gappy
+// catalog.
+func Failures() []FileError {
+	_, _ = Operations()
+	return fileErrors
 }
 
 // Info reports which spec bundle is embedded and, for full builds, the
@@ -154,20 +216,34 @@ func isSpecFile(name string) bool {
 	return strings.HasSuffix(name, ".yaml") && !strings.HasPrefix(name, ".") && !strings.HasPrefix(name, "_")
 }
 
-func parseAll() ([]Operation, error) {
-	entries, err := specFS.ReadDir(rootDir)
+func parseAll() ([]Operation, []FileError, error) {
+	return parseDir(specFS, rootDir)
+}
+
+// parseDir parses every spec file directly under dir in fsys, skipping (and
+// recording in the returned []FileError) any file that fails to parse rather
+// than letting one bad file take down every other file's operations. fsys is
+// a parameter rather than the package-level specFS so this loop's
+// skip-and-continue behavior can be verified with a synthetic in-memory
+// filesystem in tests, without needing a deliberately-broken fixture in the
+// real embedded stub/full bundle.
+func parseDir(fsys fs.FS, dir string) ([]Operation, []FileError, error) {
+	entries, err := fs.ReadDir(fsys, dir)
 	if err != nil {
-		return nil, fmt.Errorf("apispec: reading %s: %w", rootDir, err)
+		return nil, nil, fmt.Errorf("apispec: reading %s: %w", dir, err)
 	}
 
 	var ops []Operation
+	var failures []FileError
 	for _, entry := range entries {
 		if entry.IsDir() || !isSpecFile(entry.Name()) {
 			continue
 		}
-		fileOps, err := parseFile(rootDir + "/" + entry.Name())
+		fileOps, err := parseFile(fsys, dir+"/"+entry.Name())
 		if err != nil {
-			return nil, fmt.Errorf("apispec: parsing %s: %w", entry.Name(), err)
+			log.Warn(fmt.Sprintf("apispec: skipping %s: parsing failed: %s", entry.Name(), err))
+			failures = append(failures, FileError{File: entry.Name(), Err: err})
+			continue
 		}
 		ops = append(ops, fileOps...)
 	}
@@ -178,11 +254,11 @@ func parseAll() ([]Operation, error) {
 		}
 		return ops[i].Method < ops[j].Method
 	})
-	return ops, nil
+	return ops, failures, nil
 }
 
-func parseFile(name string) ([]Operation, error) {
-	data, err := specFS.ReadFile(name)
+func parseFile(fsys fs.FS, name string) ([]Operation, error) {
+	data, err := fs.ReadFile(fsys, name)
 	if err != nil {
 		return nil, err
 	}
@@ -331,7 +407,7 @@ func propertyType(p rawSchema) string {
 			case p.Items.Ref != "":
 				itemType = schemaRefName(p.Items.Ref)
 			case p.Items.Type != "":
-				itemType = p.Items.Type
+				itemType = string(p.Items.Type)
 			}
 		}
 		return "array<" + itemType + ">"
@@ -339,7 +415,7 @@ func propertyType(p rawSchema) string {
 	if p.Type == "" {
 		return "object"
 	}
-	return p.Type
+	return string(p.Type)
 }
 
 func stringifyDefault(v any) string {
