@@ -478,6 +478,8 @@ var agentDetectorEnvVars = []string{
 	"PI_CODING_AGENT", "GROK_AGENT", "AWS_EXECUTION_ENV",
 	"AI_AGENT", "AGENT",
 	"TERM_PROGRAM", "JFROG_CLI_AI_MODEL",
+	"ZED_TERM", "TERMINAL_EMULATOR",
+	"VSCODE_GIT_ASKPASS_MAIN", "VSCODE_GIT_ASKPASS_NODE", "GIT_ASKPASS",
 }
 
 func clearAgentEnvVarsForTest(t *testing.T) {

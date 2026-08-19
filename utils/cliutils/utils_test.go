@@ -412,8 +412,11 @@ var agentDetectorEnvVars = []string{
 	"PI_CODING_AGENT", "GROK_AGENT", "AWS_EXECUTION_ENV",
 	"AI_AGENT", "AGENT",
 	// Host editor and model axes — cleared so the wire format is deterministic
-	// regardless of the shell running `go test`.
+	// regardless of the shell running `go test`, including the editor window
+	// (Zed, JetBrains and VS Code forks all advertise themselves).
 	"TERM_PROGRAM", "JFROG_CLI_AI_MODEL",
+	"ZED_TERM", "TERMINAL_EMULATOR",
+	"VSCODE_GIT_ASKPASS_MAIN", "VSCODE_GIT_ASKPASS_NODE", "GIT_ASKPASS",
 }
 
 func clearAgentEnvVarsForTest(t *testing.T) {
@@ -720,6 +723,32 @@ func TestGetCliUserAgentWithAgentCopilotCliOmitsClientDespiteTermProgram(t *test
 	corecommands.ResetExecutionContextForTest()
 
 	assert.Equal(t, "jfrog-cli-go/2.117.0 ai-agent/copilot", GetCliUserAgentWithAgent())
+}
+
+// The wire carries the editor the user actually opened, not the editor implied
+// by the agent: Copilot inside IntelliJ must not report vscode.
+func TestGetCliUserAgentWithAgentCarriesHostEditor(t *testing.T) {
+	testCases := []struct {
+		name     string
+		env      map[string]string
+		expected string
+	}{
+		{"copilot in jetbrains", map[string]string{"COPILOT_AGENT": "1", "TERMINAL_EMULATOR": "JetBrains-JediTerm"}, "ai-agent/copilot ai-client/jetbrains"},
+		{"claude in zed", map[string]string{"CLAUDE_CODE_CHILD_SESSION": "1", "ZED_TERM": "true"}, "ai-agent/claude ai-client/zed"},
+		{"claude in cursor", map[string]string{"CLAUDE_CODE_CHILD_SESSION": "1", "VSCODE_GIT_ASKPASS_MAIN": "/Applications/Cursor.app/out/askpass-main.js"}, "ai-agent/claude ai-client/cursor"},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			clearAgentEnvVarsForTest(t)
+			withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
+			for key, value := range testCase.env {
+				t.Setenv(key, value)
+			}
+			corecommands.ResetExecutionContextForTest()
+
+			assert.Equal(t, "jfrog-cli-go/2.117.0 "+testCase.expected, GetCliUserAgentWithAgent())
+		})
+	}
 }
 
 func TestGetCliUserAgentWithAgentHumanClaudeIDEOmitsAiAgent(t *testing.T) {
