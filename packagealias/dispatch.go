@@ -116,10 +116,15 @@ func runJFMode(tool string, args []string) error {
 		return fmt.Errorf("%s could not determine executable path: %w", ghostFrogLogPrefix, err)
 	}
 
-	newArgs := make([]string, 0, len(os.Args)+1)
+	newArgs := make([]string, 0, len(os.Args)+2)
 	newArgs = append(newArgs, execPath) // Use actual executable path
-	newArgs = append(newArgs, tool)     // Add tool name as first argument
-	newArgs = append(newArgs, args...)  // Add remaining arguments
+	// RubyGems (gem) and Bundler (bundle) are exposed under the single
+	// `jf ruby <tool>` dispatcher rather than top-level `jf gem`/`jf bundle`.
+	if tool == "gem" || tool == "bundle" {
+		newArgs = append(newArgs, "ruby")
+	}
+	newArgs = append(newArgs, tool)    // Add tool name as first argument
+	newArgs = append(newArgs, args...) // Add remaining arguments
 
 	os.Args = newArgs
 

@@ -89,6 +89,7 @@ const (
 	ConanConfig            = "conan-config"
 	Conan                  = "conan"
 	Nix                    = "nix"
+	Ruby                   = "ruby"
 	Apt                    = "apt"
 	AptSetup               = "apt-setup"
 	Apk                    = "apk"
@@ -2339,6 +2340,9 @@ var commandFlags = map[string][]string{
 	},
 	Nix: {
 		BuildName, BuildNumber, module, Project, serverId,
+	},
+	Ruby: {
+		BuildName, BuildNumber, module, Project, serverId, repo,
 	},
 	Apt: {
 		serverId, skipLogin, setupRepo, aptDistribution, aptComponent, aptTrusted,

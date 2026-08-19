@@ -157,6 +157,10 @@ jobs:
     needs: gate
     uses: ./.github/workflows/pythonTests.yml
     secrets: inherit
+  ruby:
+    needs: gate
+    uses: ./.github/workflows/rubyTests.yml
+    secrets: inherit
   script:
     needs: gate
     uses: ./.github/workflows/scriptTests.yml
@@ -205,6 +209,7 @@ jobs:
       - podman
       - poetry
       - python
+      - ruby
       - script
       - transfer
       - uv
