@@ -628,12 +628,11 @@ func TestNugetFlexPackDoesNotCreateNugetYaml(t *testing.T) {
 	assert.True(t, os.IsNotExist(statErr), "'.jfrog/projects/nuget.yaml' must not be created by stateless FlexPack invocations")
 }
 
-// TestNugetFlexPackRespectsUserConfigFile covers scenario 5: a user-supplied -ConfigFile should
-// be passed through to nuget.exe untouched (native passthrough). NOTE: as written, FlexPack's
-// buildCmd always appends its own generated -ConfigFile after any user-supplied flags rather
-// than detecting one already present, so the two conflict for nuget.exe (last flag wins - jf's
-// own config silently overrides the user's). This test documents the actual current behavior;
-// if it starts failing, buildCmd has started detecting and respecting a pre-existing -ConfigFile.
+// TestNugetFlexPackRespectsUserConfigFile covers scenario 5: a user-supplied -ConfigFile is
+// passed through to nuget.exe. FlexPack now injects credentials via -Source (rank-1 in NuGet's
+// credential priority table) rather than appending its own -ConfigFile. This means jf's -Source
+// takes precedence over whatever sources the user's -ConfigFile declares, so restore succeeds
+// even when the user's config points only at a bogus source.
 func TestNugetFlexPackRespectsUserConfigFile(t *testing.T) {
 	initNugetTest(t)
 	defer cleanTestsHomeEnv()
@@ -645,7 +644,7 @@ func TestNugetFlexPackRespectsUserConfigFile(t *testing.T) {
 
 	// A user config pointing only at a bogus, unreachable source.
 	// cwd is already projectPath (via the chdir above), so the path must be bare - joining
-	// projectPath again here would double it, since projectPath itself is a relative path.
+	// projectPath here would double it, since projectPath itself is a relative path.
 	userConfigPath := "user-nuget.config"
 	userConfig := `<?xml version="1.0" encoding="utf-8"?>
 <configuration>
@@ -656,13 +655,10 @@ func TestNugetFlexPackRespectsUserConfigFile(t *testing.T) {
 	require.NoError(t, os.WriteFile(userConfigPath, []byte(userConfig), 0o600))
 	defer func() { _ = os.Remove(userConfigPath) }()
 
-	err = restoreFlexPack(t, tests.NugetRemoteRepo, "packagesconfig.sln", "-ConfigFile", userConfigPath)
-	if err != nil {
-		t.Logf("restore with an explicit user -ConfigFile pointing only at a bogus source failed as expected if jf's own -ConfigFile is NOT appended after it: %v", err)
-	} else {
-		t.Log("restore succeeded despite the user -ConfigFile pointing only at a bogus source - " +
-			"confirms jf's own generated -ConfigFile silently takes precedence (known gap, see comment above)")
-	}
+	// jf appends -Source <artifactory-url-with-creds> (rank-1). The bogus -ConfigFile source is
+	// overridden by the rank-1 -Source, so restore must succeed.
+	require.NoError(t, restoreFlexPack(t, tests.NugetRemoteRepo, "packagesconfig.sln", "-ConfigFile", userConfigPath),
+		"restore must succeed: jf's -Source (rank-1) overrides any source declared in the user's -ConfigFile")
 }
 
 // TestNugetFlexPackUserSourceOverride covers scenario 6: a user-supplied -Source on
@@ -2994,22 +2990,23 @@ func TestNugetFlexPackActuallyInjectsTempConfig(t *testing.T) {
 	defer cleanTestsHomeEnv()
 
 	// A project with NO NuGet.Config of its own and no ambient source configured for the test
-	// repo - if FlexPack didn't inject its own config with credentials, this would have nothing
-	// to authenticate against.
+	// repo - if FlexPack didn't inject credentials, this would have nothing to authenticate
+	// against. FlexPack injects -Source <artifactory-url-with-embedded-creds> (rank-1 per
+	// NuGet's credential priority table) so no nuget.config is created or modified.
 	projectPath := createNugetProject(t, "reference")
 	wd, err := os.Getwd()
 	require.NoError(t, err)
 	defer clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)()
 	require.NoError(t, restoreFlexPack(t, tests.NugetRemoteRepo, "reference.sln"),
-		"restore succeeding with no ambient NuGet.Config source for this repo confirms FlexPack injected its own temp config with credentials")
+		"restore succeeding with no ambient NuGet.Config confirms FlexPack injected -Source with embedded credentials")
 }
 
 // TestNugetFlexPackPasswordExpansionNotIntercepted covers scenario 136: a NuGet.Config using
 // %NUGET_PASSWORD%-style env expansion in packageSourceCredentials is nuget.exe's own feature -
 // JFrog CLI does not read, parse, or intercept the user's packageSourceCredentials section at
-// all (it generates and passes its own separate config instead). This documents that FlexPack's
-// own config generation does not interfere with the user's config being valid/usable for
-// non-Artifactory sources declared in it.
+// all (it injects -Source with embedded credentials, not a separate config file). This documents
+// that FlexPack's -Source injection does not interfere with the user's config being valid/usable
+// for non-Artifactory sources declared in it.
 func TestNugetFlexPackPasswordExpansionNotIntercepted(t *testing.T) {
 	initNugetTest(t)
 	defer cleanTestsHomeEnv()
@@ -3040,11 +3037,11 @@ func TestNugetFlexPackPasswordExpansionNotIntercepted(t *testing.T) {
 	clientTestUtils.SetEnvAndAssert(t, "NUGET_PASSWORD", "irrelevant-value")
 	defer clientTestUtils.UnSetEnvAndAssert(t, "NUGET_PASSWORD")
 
-	// FlexPack's own temp config (targeting the real remote repo) is what's actually used; the
-	// presence of an unrelated %NUGET_PASSWORD%-using source in the user's file must not break
-	// or otherwise interfere with the restore.
+	// FlexPack injects -Source <artifactory-url-with-creds> (rank-1), which is what actually
+	// resolves packages; the presence of an unrelated %NUGET_PASSWORD%-using source in the
+	// user's file must not break or otherwise interfere with the restore.
 	err = restoreFlexPack(t, tests.NugetRemoteRepo, "packagesconfig.sln")
-	assert.NoError(t, err, "an unrelated %NUGET_PASSWORD%-expanding source in the user's own config must not interfere with FlexPack's restore")
+	assert.NoError(t, err, "an unrelated %NUGET_PASSWORD%-expanding source in the user's own config must not interfere with FlexPack's -Source injection")
 }
 
 // TestNugetFlexPackApiKeyEnvVar covers scenario 137: NUGET_API_KEY env var (NuGet 7.6+)
@@ -3053,9 +3050,9 @@ func TestNugetFlexPackPasswordExpansionNotIntercepted(t *testing.T) {
 func TestNugetFlexPackApiKeyEnvVar(t *testing.T) {
 	initNugetTest(t)
 	defer cleanTestsHomeEnv()
-	// NUGET_API_KEY is irrelevant to jf's own generated config (which embeds its own
-	// username/password), so setting a bogus value must not break the push that uses jf's
-	// config - this documents that jf's auth model does not depend on or get confused by it.
+	// FlexPack sets NUGET_API_KEY to the real access token for push auth (rank-2 per NuGet's
+	// credential priority table, NuGet 7.6+). A bogus pre-existing value must not interfere
+	// because jf overwrites it with the real token via os.Setenv before invoking nuget.exe.
 	clientTestUtils.SetEnvAndAssert(t, "NUGET_API_KEY", "bogus-unrelated-key")
 	defer clientTestUtils.UnSetEnvAndAssert(t, "NUGET_API_KEY")
 	nupkgPath, _ := buildTestNupkg(t, "ApiKeyEnvPkg", "1.0.0")
@@ -3091,9 +3088,10 @@ func TestNugetFlexPackApiKeyFlagOverride(t *testing.T) {
 func TestNugetFlexPackNoTokenLeakToChildEnv(t *testing.T) {
 	t.Skip("Verifying a spawned native subprocess's own environment requires either instrumenting " +
 		"exec.Cmd.Env at the source or a stub 'nuget' binary that dumps its env for inspection - " +
-		"neither is wired into this black-box CLI test harness. Code-level note: buildCmd() in " +
-		"jfrog-cli-artifactory's nuget/command.go never touches exec.Cmd.Env; credentials only ever " +
-		"flow through the generated config FILE passed via -ConfigFile")
+		"neither is wired into this black-box CLI test harness. Code-level note: for restore, " +
+		"credentials flow through the -Source URL (embedded userinfo, not in exec.Cmd.Env); " +
+		"for push, NUGET_API_KEY is set via os.Setenv/os.Unsetenv (not exec.Cmd.Env), which " +
+		"is inherited by the child process by design - that is the intended auth channel")
 }
 
 // TestNugetFlexPackStampWithRevokedTokenPreservesPushExit covers scenario 142: a stamp REST call
@@ -3117,16 +3115,39 @@ func TestNugetFlexPackAnonymousPushStampSkipped(t *testing.T) {
 
 	nupkgPath, _ := buildTestNupkg(t, "AnonymousPushPkg", "1.0.0")
 	// No --repo (nothing for jf to stamp against) - only a native -Source/-ConfigFile pair with
-	// credentials, exactly as an anonymous/non-jf-managed push would be invoked. Neither -ApiKey
+	// credentials, exactly as a non-jf-managed push would be invoked. Neither -ApiKey
 	// (sends the value verbatim as X-NuGet-ApiKey, which Artifactory rejects for an access token)
 	// nor URL-embedded userinfo (nuget push's HTTP client doesn't honor it) works here; a
-	// packageSourceCredentials-bearing NuGet.Config is the one mechanism that does, matching how
-	// jf's own repo-tracked path authenticates access tokens (see dotnetcommand.go's auth.go).
+	// packageSourceCredentials-bearing NuGet.Config is the one mechanism that does for push.
+	// (For restore, jf's -Source with embedded userinfo works fine — see TestNugetFlexPackRestoreWithoutRepoResolve.)
 	sourceUrl, configPath := nugetConfigWithCredentials(t, tests.NugetLocalRepo)
 	args := []string{"nuget", "push", nupkgPath, "-Source", sourceUrl, "-ConfigFile", configPath}
 	allowInsecureConnectionForFlexPackTests(&args)
 	err := runNugetFlexPack(t, args...)
 	assert.NoError(t, err, "a push with no --repo tracked by jf must still succeed natively, with stamping simply skipped")
+}
+
+// TestNugetFlexPackRestoreWithoutRepoResolve covers the customer opt-out scenario for restore:
+// when --repo-resolve is omitted, FlexPack skips credential injection entirely and nuget.exe
+// authenticates using whatever the customer has configured (nuget.config, -Source, etc.).
+// This is the symmetric counterpart of TestNugetFlexPackAnonymousPushStampSkipped.
+func TestNugetFlexPackRestoreWithoutRepoResolve(t *testing.T) {
+	initNugetTest(t)
+	defer cleanTestsHomeEnv()
+
+	projectPath := createNugetProject(t, "packagesconfig")
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	defer clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)()
+
+	// Build a NuGet.Config with valid Artifactory credentials, managed entirely by the customer.
+	// No --repo-resolve is passed: jf must not inject any -Source flag or modify any config.
+	// nuget.exe authenticates solely via the customer-supplied -ConfigFile.
+	_, configPath := nugetConfigWithCredentials(t, tests.NugetRemoteRepo)
+	args := []string{"nuget", "restore", "packagesconfig.sln", "-ConfigFile", configPath}
+	allowInsecureConnectionForFlexPackTests(&args)
+	require.NoError(t, runNugetFlexPack(t, args...),
+		"restore must succeed via customer-supplied NuGet.Config credentials when --repo-resolve is omitted")
 }
 
 // nugetConfigWithCredentials writes a temporary NuGet.Config with this test run's access token

@@ -2236,11 +2236,15 @@ func runNugetFlexPackCmd(c *cli.Context, toolchainType dotnetutils.ToolchainType
 		SetBuildConfiguration(buildConfiguration).
 		SetWorkingDir(workingDir)
 
-	if nugetCmd.RequiresServerDetails() {
-		serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, false)
-		if err != nil {
-			return err
-		}
+	// Always attempt to load server details from --server-id or the default configured server.
+	// Credential injection into the temp nuget.config happens later in Run() only when needed
+	// (i.e. --repo-resolve/--repo is set and no existing nuget.config credentials take priority).
+	serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, false)
+	if err != nil && serverID != "" {
+		// Only fail hard when a specific --server-id was requested but not found.
+		return fmt.Errorf("server-id %q not found: %w", serverID, err)
+	}
+	if err == nil {
 		nugetCmd.SetServerDetails(serverDetails)
 	}
 
