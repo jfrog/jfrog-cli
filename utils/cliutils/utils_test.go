@@ -712,6 +712,16 @@ func TestGetCliUserAgentWithAgentKiloExtensionOmitsAgent(t *testing.T) {
 	assert.Equal(t, "jfrog-cli-go/2.117.0", GetCliUserAgentWithAgent())
 }
 
+func TestGetCliUserAgentWithAgentCopilotCliOmitsClientDespiteTermProgram(t *testing.T) {
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
+	t.Setenv("COPILOT_CLI", "1")
+	t.Setenv("TERM_PROGRAM", "vscode")
+	corecommands.ResetExecutionContextForTest()
+
+	assert.Equal(t, "jfrog-cli-go/2.117.0 ai-agent/copilot", GetCliUserAgentWithAgent())
+}
+
 func TestGetCliUserAgentWithAgentHumanClaudeIDEOmitsAiAgent(t *testing.T) {
 	clearAgentEnvVarsForTest(t)
 	withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
