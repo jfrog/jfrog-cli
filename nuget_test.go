@@ -177,7 +177,10 @@ func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expe
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 }
 
-// Add allow insecure connection for testings to work with localhost server
+// Add --allow-insecure-connections for tests that use a localhost server. Every call site in
+// this file creates a legacy nuget-config/dotnet-config file, so the command always runs through
+// the legacy NugetCmd/DotnetCmd path (see buildtools/cli.go), which only recognizes this flag
+// name - not FlexPack's "--insecure-tls".
 func allowInsecureConnectionForTests(args *[]string) {
 	*args = append(*args, "--allow-insecure-connections")
 }

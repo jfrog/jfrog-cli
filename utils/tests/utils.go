@@ -320,6 +320,8 @@ var reposConfigMap = map[*string]string{
 	&NpmScopedRepo:                  NpmLocalScopedRespositoryConfig,
 	&NpmRemoteRepo:                  NpmRemoteRepositoryConfig,
 	&NugetRemoteRepo:                NugetRemoteRepositoryConfig,
+	&NugetLocalRepo:                 NugetLocalRepositoryConfig,
+	&NugetVirtualRepo:               NugetVirtualRepositoryConfig,
 	&YarnRemoteRepo:                 YarnRemoteRepositoryConfig,
 	&PypiLocalRepo:                  PypiLocalRepositoryConfig,
 	&PypiRemoteRepo:                 PypiRemoteRepositoryConfig,
@@ -413,7 +415,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestMaven:              {&MvnRepo1, &MvnRepo2, &MvnRemoteRepo},
 		TestNpm:                {&NpmRepo, &NpmScopedRepo, &NpmRemoteRepo},
 		TestPnpm:               {&NpmRepo, &NpmScopedRepo, &NpmRemoteRepo},
-		TestNuget:              {&NugetRemoteRepo},
+		TestNuget:              {&NugetRemoteRepo, &NugetLocalRepo},
 		TestPip:                {&PypiLocalRepo, &PypiRemoteRepo},
 		TestPipenv:             {&PipenvRemoteRepo},
 		TestPoetry:             {&PoetryLocalRepo, &PoetryRemoteRepo},
@@ -450,7 +452,7 @@ func GetVirtualRepositories() map[*string]string {
 		TestMaven:        {},
 		TestNpm:          {},
 		TestPnpm:         {},
-		TestNuget:        {},
+		TestNuget:        {&NugetVirtualRepo},
 		TestPip:          {&PypiVirtualRepo},
 		TestPipenv:       {&PipenvVirtualRepo},
 		TestPoetry:       {&PoetryVirtualRepo},
@@ -549,6 +551,8 @@ func getSubstitutionMap() map[string]string {
 		"${NPM_REMOTE_REPO}":           NpmRemoteRepo,
 		"${PNPM_BUILD_NAME}":           PnpmBuildName,
 		"${NUGET_REMOTE_REPO}":         NugetRemoteRepo,
+		"${NUGET_LOCAL_REPO}":          NugetLocalRepo,
+		"${NUGET_VIRTUAL_REPO}":        NugetVirtualRepo,
 		"${YARN_REMOTE_REPO}":          YarnRemoteRepo,
 		"${GO_REPO}":                   GoRepo,
 		"${GO_REMOTE_REPO}":            GoRemoteRepo,
@@ -647,6 +651,8 @@ func AddTimestampToGlobalVars() {
 	NpmScopedRepo += uniqueSuffix
 	NpmRemoteRepo += uniqueSuffix
 	NugetRemoteRepo += uniqueSuffix
+	NugetLocalRepo += uniqueSuffix
+	NugetVirtualRepo += uniqueSuffix
 	YarnRemoteRepo += uniqueSuffix
 	PypiLocalRepo += uniqueSuffix
 	PypiRemoteRepo += uniqueSuffix
