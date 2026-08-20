@@ -61,7 +61,7 @@ fi
 
 URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-${CLI_OS}-${ARCH}/${FILE_NAME}"
 echo "Downloading from: $URL"
-curl -XGET "$URL" -L -k -g > $FILE_NAME
+curl -XGET "$URL" -L -g > $FILE_NAME
 chmod +x $FILE_NAME
 
 # Move executable to a destination in path.

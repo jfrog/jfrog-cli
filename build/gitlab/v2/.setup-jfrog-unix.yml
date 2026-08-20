@@ -82,7 +82,7 @@
     fi
 
   # Download with curl and verify exit code and status code.
-  - status_code=$(curl -XGET "$URL" -L -k -g -w "%{http_code}" -f -O -H "${AUTH_HEADER}")
+  - status_code=$(curl -XGET "$URL" -L -g -w "%{http_code}" -f -O -H "${AUTH_HEADER}")
   - exit_code=$?
   - |
     if [ $exit_code -ne 0 ]; then
