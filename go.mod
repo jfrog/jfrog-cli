@@ -21,7 +21,7 @@ require (
 	github.com/jfrog/build-info-go v1.13.1-0.20260820072515-bd3fffb4622c
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-application v1.0.2-0.20260817110546-58a0a6fe6fc9
-	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260820121259-125e31930d25
+	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260820123842-e8c9a0baf6b0
 	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260814125750-77deb9f6259c
 	github.com/jfrog/jfrog-cli-evidence v0.11.0
 	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260618062042-6053ab368cab
