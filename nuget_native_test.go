@@ -1893,18 +1893,41 @@ func TestNugetFlexPackResolveViaVirtualRepo(t *testing.T) {
 
 // TestNugetFlexPackVirtualRepoPushConvention covers scenario 82: pushing to a virtual repo
 // forwards to its configured default deployment repo, consistent with the convention used by
-// other JFrog CLI FlexPack package managers.
+// other JFrog CLI FlexPack package managers. OriginalDeploymentRepo in build-info must be
+// the resolved local repo, not the virtual repo key.
 func TestNugetFlexPackVirtualRepoPushConvention(t *testing.T) {
 	initNugetTest(t)
 	defer cleanTestsHomeEnv()
-	nupkgPath, _ := buildTestNupkg(t, "VirtualPushConventionPkg", "1.0.0")
-	require.NoError(t, pushNupkgFlexPack(t, nupkgPath, tests.NugetVirtualRepo))
 
+	id, version := "VirtualPushConventionPkg", "1.0.0"
+	nupkgPath, _ := buildTestNupkg(t, id, version)
+
+	buildName := tests.NuGetBuildName + "-flexpack-virtual-push"
+	buildNumber := "1"
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	require.NoError(t, pushNupkgFlexPack(t, nupkgPath, tests.NugetVirtualRepo,
+		"--build-name="+buildName, "--build-number="+buildNumber))
+
+	// Artifact must land in the local repo (virtual repo routes to its defaultDeploymentRepo).
 	client, err := httpclient.ClientBuilder().Build()
 	require.NoError(t, err)
-	_, res, err := client.GetRemoteFileDetails(serverDetails.ArtifactoryUrl+tests.NugetLocalRepo+"/VirtualPushConventionPkg.1.0.0.nupkg", artHttpDetails)
+	_, res, err := client.GetRemoteFileDetails(serverDetails.ArtifactoryUrl+tests.NugetLocalRepo+"/"+id+"."+version+".nupkg", artHttpDetails)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, res.StatusCode, "push to the virtual repo must land in its defaultDeploymentRepo (the local repo)")
+
+	// OriginalDeploymentRepo in build-info must be the local repo, not the virtual repo key.
+	require.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	require.NoError(t, err)
+	require.True(t, found)
+	bi := publishedBuildInfo.BuildInfo
+	require.Len(t, bi.Modules, 1)
+	require.NotEmpty(t, bi.Modules[0].Artifacts)
+	for _, artifact := range bi.Modules[0].Artifacts {
+		assert.Equal(t, tests.NugetLocalRepo, artifact.OriginalDeploymentRepo,
+			"OriginalDeploymentRepo must resolve to the local repo even when pushed via virtual repo")
+	}
 }
 
 // TestNugetFlexPackMixedLayoutVirtualRepoRejected covers scenario 83: a virtual repo aggregating
