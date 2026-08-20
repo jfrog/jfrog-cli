@@ -305,9 +305,9 @@ func TestNugetFlexPackMultiProjectModuleAttribution(t *testing.T) {
 
 // assertNugetFlexPackMultiPackagesConfigDependencies mirrors nuget_test.go's
 // assertNugetMultiPackagesConfigDependencies for the legacy 'jf rt nuget' path, but for FlexPack's
-// requestedBy shape: the enclosing module is never part of a dependency's own requestedBy chain
-// (see solution.go's stripModuleFromRequestedBy), so a direct dependency's requestedBy is nil and
-// a transitive dependency's chain stops at its real package parent instead of also naming moduleName.
+// requestedBy shape: a direct dependency's requestedBy is [[moduleName]] (the module that directly
+// pulls it in) and a transitive dependency's chain stops at its real package parent (the module ID
+// is stripped from the end by solution.go's stripModuleFromRequestedBy).
 func assertNugetFlexPackMultiPackagesConfigDependencies(t *testing.T, module buildInfo.Module, moduleName string) {
 	for _, dependency := range module.Dependencies {
 		switch dependency.Id {
@@ -317,7 +317,8 @@ func assertNugetFlexPackMultiPackagesConfigDependencies(t *testing.T, module bui
 			assert.EqualValues(t, [][]string{{"bootstrap:4.0.0"}}, dependency.RequestedBy)
 		case "bootstrap:4.0.0", "Newtonsoft.Json:11.0.2", "NuGet.Core:2.14.0", "StyleCop.Analyzers:1.0.2",
 			"Microsoft.VisualStudio.Setup.Configuration.Interop:1.11.2290", "popper.js:1.12.9":
-			assert.Nil(t, dependency.RequestedBy, "module %s: a direct dependency's requestedBy should not redundantly name the module it's already listed under", moduleName)
+			assert.EqualValues(t, [][]string{{moduleName}}, dependency.RequestedBy,
+				"module %s: a direct dependency's requestedBy should name the module that directly pulls it in", moduleName)
 		default:
 			assert.Fail(t, "Unexpected dependency "+dependency.Id+" in module "+moduleName)
 		}
