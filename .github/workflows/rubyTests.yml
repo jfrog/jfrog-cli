@@ -1,4 +1,4 @@
-name: Python Tests
+name: Ruby Tests
 on:
   workflow_call:
   workflow_dispatch:
@@ -15,17 +15,14 @@ on:
         default: ""
 
 jobs:
-  Python-Tests:
-    name: ${{ matrix.suite }} ${{ matrix.os.name }}
+  Ruby-Tests:
+    name: Ruby tests (${{ matrix.os.name }})
     strategy:
       fail-fast: false
       matrix:
-        suite: [pip, pipenv]
         os:
           - name: ubuntu
             version: 24.04
-          - name: windows
-            version: 2022
           - name: macos
             version: 14
     runs-on: ${{ matrix.os.name }}-${{ matrix.os.version }}
@@ -38,11 +35,9 @@ jobs:
 
       - name: Checkout code
         if: matrix.os.name != 'macos'
-        uses: actions/checkout@v7
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
-          # Safe: this workflow only runs after human approval via the build-gate environment.
-          allow-unsafe-pr-checkout: true
 
       - name: Setup FastCI
         if: matrix.os.name != 'macos'
@@ -51,38 +46,16 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           fastci_otel_token: ${{ secrets.FASTCI_TOKEN }}
 
-      # Due to a bug in Python 3.12.0 we temporarily use version 3.11.5
-      - name: Setup Python3
-        if: matrix.os.name != 'macos'
-        uses: actions/setup-python@v7
-        with:
-          python-version: "3.11.5"
-
-      - name: Setup Pipenv
-        if: ${{ matrix.suite == 'pipenv' && matrix.os.name != 'macos' }}
-        run: python -m pip install pipenv==2026.2.2
-
-      - name: Setup Twine
-        if: ${{ matrix.suite == 'pip' && matrix.os.name != 'macos' }}
-        run: python -m pip install twine
-
       - name: Setup Go with cache
         if: matrix.os.name != 'macos'
         uses: jfrog/.github/actions/install-go-with-cache@main
 
-      - name: Debug macOS Environment and Set Timeout
-        if: runner.os == 'macOS'
-        run: |
-          echo "=== macOS Debug Information ==="
-          echo "Architecture: $(uname -m)"
-          echo "macOS Version: $(sw_vers -productVersion)"
-          echo "macOS Build: $(sw_vers -buildVersion)"
-          echo "Available memory: $(system_profiler SPHardwareDataType | grep Memory || echo 'Memory info not available')"
-          echo "Available disk space: $(df -h)"
-          echo "Java version: $(java -version 2>&1 || echo 'Java not found')"
-          echo "Go version: $(go version)"
-          echo "Setting RT_CONNECTION_TIMEOUT_SECONDS to 2400 for macOS"
-          echo "RT_CONNECTION_TIMEOUT_SECONDS=2400" >> $GITHUB_ENV
+      - name: Setup Ruby
+        if: matrix.os.name != 'macos'
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
+          bundler-cache: false
 
       - name: Install local Artifactory
         if: matrix.os.name != 'macos'
@@ -91,10 +64,10 @@ jobs:
           RTLIC: ${{ secrets.RTLIC }}
           JFROG_URL: ${{ inputs.jfrog_url }}
           JFROG_ADMIN_TOKEN: ${{ inputs.jfrog_admin_token }}
-          RT_CONNECTION_TIMEOUT_SECONDS: ${{ env.RT_CONNECTION_TIMEOUT_SECONDS || '1200' }}
+          RT_CONNECTION_TIMEOUT_SECONDS: '1200'
 
-      - name: Run Python tests
+      - name: Run Ruby tests
         if: matrix.os.name != 'macos'
         run: >-
-          go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.${{ matrix.suite }}
+          go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.ruby
           ${{ env.JFROG_TESTS_IS_EXTERNAL == 'true' && format('--jfrog.url={0} --jfrog.adminToken={1}', env.JFROG_TESTS_URL, env.JFROG_TESTS_LOCAL_ACCESS_TOKEN) || '' }}

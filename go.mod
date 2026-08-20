@@ -1,6 +1,6 @@
 module github.com/jfrog/jfrog-cli
 
-go 1.26.5
+go 1.26.6
 
 replace (
 	// Should not be updated to 0.11.0+ due to default spec version change (1.6 -> 1.7, https://github.com/CycloneDX/cyclonedx-go/pull/257)
@@ -18,15 +18,15 @@ require (
 	github.com/buger/jsonparser v1.6.1
 	github.com/gocarina/gocsv v0.0.0-20260628180327-50907998929c
 	github.com/jfrog/archiver/v3 v3.6.4
-	github.com/jfrog/build-info-go v1.13.1-0.20260811071930-3b99d4a6c84b
+	github.com/jfrog/build-info-go v1.13.1-0.20260818195724-23e528d30b96
 	github.com/jfrog/gofrog v1.7.6
-	github.com/jfrog/jfrog-cli-application v1.0.2-0.20260723152309-34eeb81e2847
-	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260812053557-d311dd344da9
-	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260811142039-2813ec601d92
-	github.com/jfrog/jfrog-cli-evidence v0.10.0
+	github.com/jfrog/jfrog-cli-application v1.0.2-0.20260817110546-58a0a6fe6fc9
+	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260819070735-a590327f2489
+	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260814125750-77deb9f6259c
+	github.com/jfrog/jfrog-cli-evidence v0.11.0
 	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260618062042-6053ab368cab
-	github.com/jfrog/jfrog-cli-security v1.33.1
-	github.com/jfrog/jfrog-client-go v1.55.1-0.20260811135712-2010f5075cc6
+	github.com/jfrog/jfrog-cli-security v1.34.1
+	github.com/jfrog/jfrog-client-go v1.55.1-0.20260813100550-0f2168d02558
 	github.com/jszwec/csvutil v1.10.0
 	github.com/moby/moby/api v1.55.0
 	github.com/spf13/viper v1.21.0
@@ -248,8 +248,8 @@ require (
 
 // replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.54.2-0.20251007084958-5eeaa42c31a6
 
-// replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260811155045-62401b3fa49b
+// replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260818062137-18e36e626c63
 
-replace github.com/jfrog/build-info-go => github.com/bhanurp/build-info-go v1.10.10-0.20260820054516-ebcf1aa22559
+replace github.com/jfrog/build-info-go => github.com/bhanurp/build-info-go v1.10.10-0.20260820072515-bd3fffb4622c
 
-replace github.com/jfrog/jfrog-cli-artifactory => github.com/bhanurp/jfrog-cli-artifactory v0.1.12-0.20260820070859-30740961d911
+replace github.com/jfrog/jfrog-cli-artifactory => github.com/bhanurp/jfrog-cli-artifactory v0.1.12-0.20260820072602-5cad7df81427
