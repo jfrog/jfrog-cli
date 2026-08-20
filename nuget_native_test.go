@@ -242,15 +242,19 @@ func TestNugetFlexPackSkipDuplicateSymbolStillPushes(t *testing.T) {
 	allowInsecureConnectionForFlexPackTests(&args)
 	require.NoError(t, runNugetFlexPack(t, args...), ".snupkg push must succeed even though the sibling .nupkg was a duplicate")
 
-	// Verify both files actually landed in the repo (flat at the root - see file-header note).
+	// Verify both files actually landed in the repo.
+	// .nupkg is stored flat at the root; .snupkg is stored as symbolpackage/<id>.<version>.nupkg.
 	client, err := httpclient.ClientBuilder().Build()
 	require.NoError(t, err)
-	for _, ext := range []string{"nupkg", "snupkg"} {
-		fileUrl := serverDetails.ArtifactoryUrl + tests.NugetLocalRepo + "/" + id + "." + version + "." + ext
-		_, res, detailsErr := client.GetRemoteFileDetails(fileUrl, artHttpDetails)
-		if assert.NoError(t, detailsErr, "failed to find %s in %s", ext, tests.NugetLocalRepo) {
-			assert.Equal(t, http.StatusOK, res.StatusCode)
-		}
+	nupkgUrl := serverDetails.ArtifactoryUrl + tests.NugetLocalRepo + "/" + id + "." + version + ".nupkg"
+	_, res, detailsErr := client.GetRemoteFileDetails(nupkgUrl, artHttpDetails)
+	if assert.NoError(t, detailsErr, "failed to find nupkg in %s", tests.NugetLocalRepo) {
+		assert.Equal(t, http.StatusOK, res.StatusCode)
+	}
+	snupkgUrl := serverDetails.ArtifactoryUrl + tests.NugetLocalRepo + "/symbolpackage/" + id + "." + version + ".nupkg"
+	_, res, detailsErr = client.GetRemoteFileDetails(snupkgUrl, artHttpDetails)
+	if assert.NoError(t, detailsErr, "failed to find snupkg in %s", tests.NugetLocalRepo) {
+		assert.Equal(t, http.StatusOK, res.StatusCode)
 	}
 }
 
@@ -829,7 +833,8 @@ func TestNugetFlexPackSiblingSymbolAutoPush(t *testing.T) {
 
 	client, err := httpclient.ClientBuilder().Build()
 	require.NoError(t, err)
-	_, res, err := client.GetRemoteFileDetails(fmt.Sprintf("%s%s/%s.%s.snupkg", serverDetails.ArtifactoryUrl, tests.NugetLocalRepo, id, version), artHttpDetails)
+	// Artifactory stores snupkg at symbolpackage/<id>.<version>.nupkg (not flat).
+	_, res, err := client.GetRemoteFileDetails(fmt.Sprintf("%s%s/symbolpackage/%s.%s.nupkg", serverDetails.ArtifactoryUrl, tests.NugetLocalRepo, id, version), artHttpDetails)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, res.StatusCode, "sibling .snupkg should have been auto-pushed by nuget.exe alongside the .nupkg")
 }
@@ -876,7 +881,8 @@ func TestNugetFlexPackNoSymbolsFlag(t *testing.T) {
 	require.NoError(t, err)
 	// GetRemoteFileDetails returns a non-nil error on a 404, so "must not exist" is confirmed by
 	// an error here, not by a mismatched status code.
-	_, res, err := client.GetRemoteFileDetails(fmt.Sprintf("%s%s/%s.%s.snupkg", serverDetails.ArtifactoryUrl, tests.NugetLocalRepo, id, version), artHttpDetails)
+	// Artifactory stores snupkg at symbolpackage/<id>.<version>.nupkg (not flat).
+	_, res, err := client.GetRemoteFileDetails(fmt.Sprintf("%s%s/symbolpackage/%s.%s.nupkg", serverDetails.ArtifactoryUrl, tests.NugetLocalRepo, id, version), artHttpDetails)
 	if err == nil {
 		assert.NotEqual(t, http.StatusOK, res.StatusCode, "-NoSymbols must suppress the symbol upload even though a sibling .snupkg exists")
 	}
@@ -899,8 +905,9 @@ func TestNugetFlexPackLegacySymbolsFormat(t *testing.T) {
 	require.NoError(t, pushNupkgFlexPack(t, legacySymbolsPath, tests.NugetLocalRepo))
 	client, err := httpclient.ClientBuilder().Build()
 	require.NoError(t, err)
-	_, res, err := client.GetRemoteFileDetails(serverDetails.ArtifactoryUrl+tests.NugetLocalRepo+"/LegacySymbolsPkg.1.0.0.nupkg", artHttpDetails)
-	require.NoError(t, err, "the push must land under the nuspec-derived name, not the client-side '.symbols.nupkg' filename")
+	// Artifactory stores it at symbolpackage/<id>.<version>.nupkg — the extension is .nupkg (nuspec-derived) and the path is in the subfolder.
+	_, res, err := client.GetRemoteFileDetails(serverDetails.ArtifactoryUrl+tests.NugetLocalRepo+"/symbolpackage/LegacySymbolsPkg.1.0.0.nupkg", artHttpDetails)
+	require.NoError(t, err, "the push must land under symbolpackage/<id>.<version>.nupkg, not the client-side '.symbols.nupkg' filename")
 	assert.Equal(t, http.StatusOK, res.StatusCode)
 }
 
@@ -938,7 +945,8 @@ func TestNugetFlexPackStampSymbolExactPath(t *testing.T) {
 		require.NoError(t, pushNupkgFlexPack(t, path, tests.NugetLocalRepo, "--build-name="+buildName, "--build-number="+buildNumber))
 	}
 
-	props := getFlexPackItemProps(t, tests.NugetLocalRepo+"/"+id+"."+version+".snupkg")
+	// Artifactory stores snupkg at symbolpackage/<id>.<version>.nupkg — stamp must target that exact path.
+	props := getFlexPackItemProps(t, tests.NugetLocalRepo+"/symbolpackage/"+id+"."+version+".nupkg")
 	assert.Contains(t, props, "build.name", ".snupkg must be stamped like its sibling .nupkg")
 }
 
@@ -1294,8 +1302,10 @@ func TestNugetFlexPackPushBuildInfoAndProperties(t *testing.T) {
 
 	client, err := httpclient.ClientBuilder().Build()
 	require.NoError(t, err)
+	// Use artifact.Path (not artifact.Name) — for snupkg, Path is "symbolpackage/<id>.<version>.nupkg"
+	// while Name remains the original filename (e.g., "PushCorePkg.1.0.0.snupkg").
 	for name, artifact := range map[string]buildInfo.Artifact{"nupkg": nupkgArtifact, "snupkg": snupkgArtifact} {
-		fileUrl := serverDetails.ArtifactoryUrl + tests.NugetLocalRepo + "/" + artifact.Name
+		fileUrl := serverDetails.ArtifactoryUrl + tests.NugetLocalRepo + "/" + artifact.Path
 		details, res, detailsErr := client.GetRemoteFileDetails(fileUrl, artHttpDetails)
 		if !assert.NoError(t, detailsErr, "failed to fetch %s details", name) {
 			continue
@@ -1305,7 +1315,7 @@ func TestNugetFlexPackPushBuildInfoAndProperties(t *testing.T) {
 		assert.NotEmpty(t, details.Checksum.Sha256, "%s must have sha256 populated in Artifactory", name)
 		assert.NotEmpty(t, details.Checksum.Md5, "%s must have md5 populated in Artifactory", name)
 
-		props := getFlexPackItemProps(t, tests.NugetLocalRepo+"/"+artifact.Name)
+		props := getFlexPackItemProps(t, tests.NugetLocalRepo+"/"+artifact.Path)
 		assert.Contains(t, props, "build.name", "%s must be stamped with build.name", name)
 		assert.Contains(t, props, "build.number", "%s must be stamped with build.number", name)
 		assert.Contains(t, props, "build.timestamp", "%s must be stamped with build.timestamp", name)
@@ -1706,7 +1716,8 @@ func TestNugetFlexPackSymbolChecksumStored(t *testing.T) {
 
 	client, err := httpclient.ClientBuilder().Build()
 	require.NoError(t, err)
-	details, _, err := client.GetRemoteFileDetails(fmt.Sprintf("%s%s/%s.%s.snupkg", serverDetails.ArtifactoryUrl, tests.NugetLocalRepo, id, version), artHttpDetails)
+	// Artifactory stores snupkg at symbolpackage/<id>.<version>.nupkg (not flat).
+	details, _, err := client.GetRemoteFileDetails(fmt.Sprintf("%s%s/symbolpackage/%s.%s.nupkg", serverDetails.ArtifactoryUrl, tests.NugetLocalRepo, id, version), artHttpDetails)
 	require.NoError(t, err)
 	assert.NotEmpty(t, details.Checksum.Sha256, ".snupkg must have sha256 stored in Artifactory")
 }
@@ -2007,7 +2018,8 @@ func TestNugetFlexPackSymbolRoundTrip(t *testing.T) {
 
 	client, err := httpclient.ClientBuilder().Build()
 	require.NoError(t, err)
-	_, res, err := client.GetRemoteFileDetails(fmt.Sprintf("%s%s/%s.%s.snupkg", serverDetails.ArtifactoryUrl, tests.NugetLocalRepo, id, version), artHttpDetails)
+	// Artifactory stores snupkg at symbolpackage/<id>.<version>.nupkg (not flat).
+	_, res, err := client.GetRemoteFileDetails(fmt.Sprintf("%s%s/symbolpackage/%s.%s.nupkg", serverDetails.ArtifactoryUrl, tests.NugetLocalRepo, id, version), artHttpDetails)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, res.StatusCode, "the symbol package must be fetchable from the same repo it was pushed to")
 }
@@ -2055,11 +2067,16 @@ func TestNugetFlexPackBuildPromote(t *testing.T) {
 
 	client, err := httpclient.ClientBuilder().Build()
 	require.NoError(t, err)
-	for _, ext := range []string{"nupkg", "snupkg"} {
-		_, res, detailsErr := client.GetRemoteFileDetails(fmt.Sprintf("%s%s/%s.%s.%s", serverDetails.ArtifactoryUrl, stagingRepo, id, version, ext), artHttpDetails)
-		if assert.NoError(t, detailsErr) {
-			assert.Equal(t, http.StatusOK, res.StatusCode, "%s must have been promoted to %s", ext, stagingRepo)
-		}
+	// .nupkg is stored flat; .snupkg is stored as symbolpackage/<id>.<version>.nupkg.
+	nupkgPromoteUrl := fmt.Sprintf("%s%s/%s.%s.nupkg", serverDetails.ArtifactoryUrl, stagingRepo, id, version)
+	_, res, detailsErr := client.GetRemoteFileDetails(nupkgPromoteUrl, artHttpDetails)
+	if assert.NoError(t, detailsErr) {
+		assert.Equal(t, http.StatusOK, res.StatusCode, "nupkg must have been promoted to %s", stagingRepo)
+	}
+	snupkgPromoteUrl := fmt.Sprintf("%s%s/symbolpackage/%s.%s.nupkg", serverDetails.ArtifactoryUrl, stagingRepo, id, version)
+	_, res, detailsErr = client.GetRemoteFileDetails(snupkgPromoteUrl, artHttpDetails)
+	if assert.NoError(t, detailsErr) {
+		assert.Equal(t, http.StatusOK, res.StatusCode, "snupkg must have been promoted to %s", stagingRepo)
 	}
 }
 
