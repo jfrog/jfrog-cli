@@ -18,10 +18,10 @@ require (
 	github.com/buger/jsonparser v1.6.1
 	github.com/gocarina/gocsv v0.0.0-20260628180327-50907998929c
 	github.com/jfrog/archiver/v3 v3.6.4
-	github.com/jfrog/build-info-go v1.13.1-0.20260818195724-23e528d30b96
+	github.com/jfrog/build-info-go v1.13.1-0.20260820072515-bd3fffb4622c
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-application v1.0.2-0.20260817110546-58a0a6fe6fc9
-	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260819070735-a590327f2489
+	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260820121259-125e31930d25
 	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260814125750-77deb9f6259c
 	github.com/jfrog/jfrog-cli-evidence v0.11.0
 	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260618062042-6053ab368cab
@@ -250,6 +250,6 @@ require (
 
 // replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260818062137-18e36e626c63
 
-replace github.com/jfrog/build-info-go => github.com/bhanurp/build-info-go v1.10.10-0.20260820072515-bd3fffb4622c
+// replace github.com/jfrog/build-info-go => github.com/bhanurp/build-info-go v1.10.10-0.20260820072515-bd3fffb4622c
 
-replace github.com/jfrog/jfrog-cli-artifactory => github.com/bhanurp/jfrog-cli-artifactory v0.1.12-0.20260820111339-146a760b0fd1
+// replace github.com/jfrog/jfrog-cli-artifactory => github.com/bhanurp/jfrog-cli-artifactory v0.1.12-0.20260820111339-146a760b0fd1
