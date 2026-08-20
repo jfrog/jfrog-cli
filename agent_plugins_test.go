@@ -1121,6 +1121,36 @@ func TestAgentPluginsInstallLatest(t *testing.T) {
 		"plugin.json should exist after install")
 }
 
+// TestAgentPluginsInstallCreatesMissingPath verifies that --path pointing at a
+// directory that doesn't exist yet (including missing parents) is created
+// automatically instead of failing install.
+func TestAgentPluginsInstallCreatesMissingPath(t *testing.T) {
+	initAgentPluginsTest(t)
+	defer cleanAgentPluginsTest()
+
+	slug := "install-missing-path-plugin"
+	version := "1.0.0"
+	pluginPath := createTestPlugin(t, slug, version)
+
+	require.NoError(t, runAgentPluginsCmd(t,
+		"publish", pluginPath,
+		"--repo="+tests.AgentPluginsLocalRepo,
+	))
+
+	// installDir itself does not exist yet, and neither do its parents.
+	installDir := filepath.Join(t.TempDir(), "does-not-exist", "nested", "install-target")
+	require.NoDirExists(t, installDir)
+
+	assert.NoError(t, runAgentPluginsCmd(t,
+		"install", slug,
+		"--repo="+tests.AgentPluginsLocalRepo,
+		"--path="+installDir,
+	))
+
+	assert.FileExists(t, filepath.Join(installDir, slug, "plugin.json"),
+		"plugin.json should exist after install; --path should have been created automatically")
+}
+
 // TestAgentPluginsInstallSpecificVersion verifies that --version installs the
 // requested version rather than latest.
 func TestAgentPluginsInstallSpecificVersion(t *testing.T) {
