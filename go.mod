@@ -9,7 +9,7 @@ replace (
 	// Should not be updated to 0.2.6 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
 	github.com/c-bata/go-prompt => github.com/c-bata/go-prompt v0.2.5
 	// RTECO-1574: upstream push rejected by repo rules; use fork until branch is merged.
-	github.com/jfrog/jfrog-cli-artifactory => github.com/bhanurp/jfrog-cli-artifactory v0.1.12-0.20260820154341-64f556789736
+	github.com/jfrog/jfrog-cli-artifactory => github.com/bhanurp/jfrog-cli-artifactory v0.1.12-0.20260820164604-d1305ca14d14
 	// Should not be updated to 0.2.0-beta.2 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
 	github.com/pkg/term => github.com/pkg/term v1.1.0
 )
@@ -20,7 +20,7 @@ require (
 	github.com/buger/jsonparser v1.6.1
 	github.com/gocarina/gocsv v0.0.0-20260628180327-50907998929c
 	github.com/jfrog/archiver/v3 v3.6.4
-	github.com/jfrog/build-info-go v1.13.1-0.20260820154103-6abde25ebe46
+	github.com/jfrog/build-info-go v1.13.1-0.20260820164502-c052ac9d077c
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-application v1.0.2-0.20260817110546-58a0a6fe6fc9
 	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260820123842-e8c9a0baf6b0

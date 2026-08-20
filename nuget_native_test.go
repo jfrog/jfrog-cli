@@ -905,9 +905,10 @@ func TestNugetFlexPackLegacySymbolsFormat(t *testing.T) {
 	require.NoError(t, pushNupkgFlexPack(t, legacySymbolsPath, tests.NugetLocalRepo))
 	client, err := httpclient.ClientBuilder().Build()
 	require.NoError(t, err)
-	// Artifactory stores it at symbolpackage/<id>.<version>.nupkg — the extension is .nupkg (nuspec-derived) and the path is in the subfolder.
-	_, res, err := client.GetRemoteFileDetails(serverDetails.ArtifactoryUrl+tests.NugetLocalRepo+"/symbolpackage/LegacySymbolsPkg.1.0.0.nupkg", artHttpDetails)
-	require.NoError(t, err, "the push must land under symbolpackage/<id>.<version>.nupkg, not the client-side '.symbols.nupkg' filename")
+	// Legacy .symbols.nupkg goes via the regular push endpoint; Artifactory stores it flat at
+	// the repo root as <id>.<version>.nupkg (nuspec-derived name, .symbols segment dropped).
+	_, res, err := client.GetRemoteFileDetails(serverDetails.ArtifactoryUrl+tests.NugetLocalRepo+"/LegacySymbolsPkg.1.0.0.nupkg", artHttpDetails)
+	require.NoError(t, err, "the push must land under the nuspec-derived name, not the client-side '.symbols.nupkg' filename")
 	assert.Equal(t, http.StatusOK, res.StatusCode)
 }
 
