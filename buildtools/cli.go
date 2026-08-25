@@ -2189,6 +2189,14 @@ func ConanCmd(c *cli.Context) error {
 // runNugetFlexPackCmd handles NuGet/dotnet commands in FlexPack native mode.
 // No project config file is required; server details come from --server-id or the default profile.
 func runNugetFlexPackCmd(c *cli.Context, toolchainType dotnetutils.ToolchainType) error {
+	// ShowCmdHelpIfNeeded only catches --help when it is the sole argument (e.g. "jf nuget --help").
+	// For subcommand help ("jf nuget push --help", "jf dotnet restore -h") the flag sits after
+	// the subcommand name, so SkipFlagParsing passes the whole slice to us. Intercept it here
+	// before any arg is forwarded to the native tool, which would reject --help with an error.
+	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), c.Command.Name); show || err != nil {
+		return err
+	}
+
 	args := cliutils.ExtractCommand(c)
 
 	args, serverID, err := coreutils.ExtractServerIdFromCommand(args)
