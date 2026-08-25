@@ -285,7 +285,24 @@ func DeleteFiles(deleteSpec *spec.SpecFiles, serverDetails *config.ServerDetails
 	return deleteCommand.DeleteFiles(reader)
 }
 
+// buildInfoIndexRetries and buildInfoIndexBackoff bound the retry in
+// GetBuildInfo below: Artifactory's build-info search index can lag a
+// freshly-published build by a second or two, especially under concurrent
+// CI load (many PM compatibility tests hitting the same instance at once).
+// Total worst-case wait is ~7.5s (0.5+1+2+4), which is negligible next to
+// the seconds a full PM test takes, but eliminates a whole class of
+// "Build info was not found" false failures immediately after a publish.
+const (
+	buildInfoIndexRetries = 4
+	buildInfoIndexBackoff = 500 * time.Millisecond
+)
+
 // This function makes no assertion, caller is responsible to assert as needed.
+//
+// Retries when the build info is genuinely not there yet (found=false,
+// err=nil is Artifactory's 404 signal — see BuildInfoService.GetBuildInfo)
+// to absorb search-index propagation lag right after a publish. Any real
+// error is returned immediately, unretried, exactly as before.
 func GetBuildInfo(serverDetails *config.ServerDetails, buildName, buildNumber string) (pbi *buildinfo.PublishedBuildInfo, found bool, err error) {
 	servicesManager, err := artUtils.CreateServiceManager(serverDetails, -1, 0, false)
 	if err != nil {
@@ -294,7 +311,16 @@ func GetBuildInfo(serverDetails *config.ServerDetails, buildName, buildNumber st
 	params := services.NewBuildInfoParams()
 	params.BuildName = buildName
 	params.BuildNumber = buildNumber
-	return servicesManager.GetBuildInfo(params)
+
+	wait := buildInfoIndexBackoff
+	for attempt := 0; ; attempt++ {
+		pbi, found, err = servicesManager.GetBuildInfo(params)
+		if err != nil || found || attempt == buildInfoIndexRetries {
+			return pbi, found, err
+		}
+		time.Sleep(wait)
+		wait *= 2
+	}
 }
 
 func GetBuildRuns(serverDetails *config.ServerDetails, buildName string) (pbi *buildinfo.BuildRuns, found bool, err error) {
