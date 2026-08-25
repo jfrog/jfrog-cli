@@ -307,12 +307,30 @@ func TestNugetFlexPackMultiProjectModuleAttribution(t *testing.T) {
 	}
 }
 
+// assertDependencyProperties verifies that every dependency in a NuGet build-info module
+// carries the mandatory fields introduced by the FlexPack build-info fix:
+//   - Type must be "nupkg"
+//   - Scopes must be non-empty (either ["compile"] for regular deps or ["private"] for
+//     PrivateAssets=all / developmentDependency=true packages)
+func assertDependencyProperties(t *testing.T, deps []buildInfo.Dependency) {
+	t.Helper()
+	for _, dep := range deps {
+		assert.Equal(t, "nupkg", dep.Type, "dependency %s must have type=nupkg", dep.Id)
+		assert.NotEmpty(t, dep.Scopes, "dependency %s must have a non-empty scope (compile or private)", dep.Id)
+		if len(dep.Scopes) > 0 {
+			assert.Contains(t, []string{"compile", "private"}, dep.Scopes[0],
+				"dependency %s scope must be 'compile' or 'private', got %v", dep.Id, dep.Scopes)
+		}
+	}
+}
+
 // assertNugetFlexPackMultiPackagesConfigDependencies mirrors nuget_test.go's
 // assertNugetMultiPackagesConfigDependencies for the legacy 'jf rt nuget' path, but for FlexPack's
 // requestedBy shape: a direct dependency's requestedBy is [[moduleName]] (the module that directly
 // pulls it in) and a transitive dependency's chain stops at its real package parent (the module ID
 // is stripped from the end by solution.go's stripModuleFromRequestedBy).
 func assertNugetFlexPackMultiPackagesConfigDependencies(t *testing.T, module buildInfo.Module, moduleName string) {
+	assertDependencyProperties(t, module.Dependencies)
 	for _, dependency := range module.Dependencies {
 		switch dependency.Id {
 		case "Microsoft.Web.Xdt:2.1.0", "Microsoft.Web.Xdt:2.1.1":
@@ -1181,6 +1199,7 @@ func TestNugetFlexPackTransitiveDepsResolved(t *testing.T) {
 	// solution.go's stripModuleFromRequestedBy) - so under FlexPack's convention, any dependency
 	// with a non-empty RequestedBy chain is by definition transitive (pulled in by another
 	// package, not declared directly by the project).
+	assertDependencyProperties(t, publishedBuildInfo.BuildInfo.Modules[0].Dependencies)
 	transitiveFound := false
 	for _, dep := range publishedBuildInfo.BuildInfo.Modules[0].Dependencies {
 		if len(dep.RequestedBy) > 0 {
@@ -1353,6 +1372,7 @@ func TestNugetFlexPackRestoreBuildInfoCore(t *testing.T) {
 
 	// A direct dependency's RequestedBy is nil under FlexPack's convention (see solution.go's
 	// stripModuleFromRequestedBy), so any dependency with a non-empty chain is transitive.
+	assertDependencyProperties(t, bi.Modules[0].Dependencies)
 	transitiveFound := false
 	for _, dep := range bi.Modules[0].Dependencies {
 		assert.NotEmpty(t, dep.Sha1, "dependency %s missing sha1", dep.Id)
@@ -1557,6 +1577,7 @@ func TestNugetFlexPackNonPrivateDependencyDefaultScope(t *testing.T) {
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
 	require.NoError(t, err)
 	require.True(t, found)
+	assertDependencyProperties(t, publishedBuildInfo.BuildInfo.Modules[0].Dependencies)
 	for _, dep := range publishedBuildInfo.BuildInfo.Modules[0].Dependencies {
 		assert.NotContains(t, dep.Scopes, "private", "dependency %s has no PrivateAssets/developmentDependency marker and must not be scoped private", dep.Id)
 	}
@@ -2325,6 +2346,7 @@ func TestNugetFlexPackBuildScanFullTransitiveTree(t *testing.T) {
 	require.True(t, found)
 	// A direct dependency's RequestedBy is nil under FlexPack's convention (see solution.go's
 	// stripModuleFromRequestedBy), so any dependency with a non-empty chain is transitive.
+	assertDependencyProperties(t, publishedBuildInfo.BuildInfo.Modules[0].Dependencies)
 	transitiveCount := 0
 	for _, dep := range publishedBuildInfo.BuildInfo.Modules[0].Dependencies {
 		if len(dep.RequestedBy) > 0 {
@@ -2607,6 +2629,7 @@ func TestNugetFlexPackLockfileReproducibleRestore(t *testing.T) {
 		publishedBuildInfo, found, getErr := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
 		require.NoError(t, getErr)
 		require.True(t, found)
+		assertDependencyProperties(t, publishedBuildInfo.BuildInfo.Modules[0].Dependencies)
 		deps := map[string]bool{}
 		for _, dep := range publishedBuildInfo.BuildInfo.Modules[0].Dependencies {
 			deps[dep.Id] = true
@@ -2795,6 +2818,7 @@ func TestNugetFlexPackDependencyRangeResolvesConcreteVersion(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, found)
 
+	assertDependencyProperties(t, publishedBuildInfo.BuildInfo.Modules[0].Dependencies)
 	foundConcrete := false
 	for _, dep := range publishedBuildInfo.BuildInfo.Modules[0].Dependencies {
 		if strings.HasPrefix(dep.Id, "bootstrap:") {
@@ -3309,6 +3333,7 @@ func TestNugetFlexPackSdkStyleChecksums(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, found)
 	require.NotEmpty(t, publishedBuildInfo.BuildInfo.Modules[0].Dependencies)
+	assertDependencyProperties(t, publishedBuildInfo.BuildInfo.Modules[0].Dependencies)
 	for _, dep := range publishedBuildInfo.BuildInfo.Modules[0].Dependencies {
 		assert.NotEmpty(t, dep.Sha1, "SDK-style dependency %s missing sha1", dep.Id)
 		assert.NotEmpty(t, dep.Sha256, "SDK-style dependency %s missing sha256", dep.Id)
@@ -3341,6 +3366,7 @@ func TestNugetFlexPackLegacyChecksumsIncludeSha256(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, found)
 	require.NotEmpty(t, publishedBuildInfo.BuildInfo.Modules[0].Dependencies)
+	assertDependencyProperties(t, publishedBuildInfo.BuildInfo.Modules[0].Dependencies)
 	for _, dep := range publishedBuildInfo.BuildInfo.Modules[0].Dependencies {
 		assert.NotEmpty(t, dep.Sha1, "legacy dependency %s missing sha1", dep.Id)
 		assert.NotEmpty(t, dep.Sha256, "legacy dependency %s missing sha256 (this session's fix - previously always empty for packages.config projects)", dep.Id)
