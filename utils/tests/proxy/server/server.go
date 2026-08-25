@@ -47,16 +47,21 @@ func getReverseProxyHandler(targetUrl string) (*httputil.ReverseProxy, error) {
 		return nil, err
 	}
 	origHost := target.Host
-	d := func(req *http.Request) {
-		req.URL.Host = origHost
-		req.Host = origHost
-		req.URL.Scheme = target.Scheme
+	// Rewrite replaces the deprecated Director (Go 1.26, staticcheck SA1019).
+	// pr.Out is a clone of pr.In that ReverseProxy sends upstream; unlike a
+	// nil Rewrite's defaults, defining this func means no other header
+	// rewriting happens automatically (X-Forwarded-For, etc.) -- matching
+	// Director's behavior exactly, since Director never set defaults either.
+	rewrite := func(pr *httputil.ProxyRequest) {
+		pr.Out.URL.Host = origHost
+		pr.Out.Host = origHost
+		pr.Out.URL.Scheme = target.Scheme
 	}
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 	proxyErrLogger := log.New(os.Stdout, "PROXY-LOGGER", log.Ldate|log.Ltime|log.Lshortfile)
-	p := &httputil.ReverseProxy{Director: d, Transport: tr, ErrorLog: proxyErrLogger}
+	p := &httputil.ReverseProxy{Rewrite: rewrite, Transport: tr, ErrorLog: proxyErrLogger}
 	return p, nil
 }
 
