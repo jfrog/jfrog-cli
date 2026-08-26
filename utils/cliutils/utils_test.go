@@ -414,8 +414,9 @@ var agentDetectorEnvVars = []string{
 	// Host editor and model axes — cleared so the wire format is deterministic
 	// regardless of the shell running `go test`, including the editor window
 	// (Zed, JetBrains and VS Code forks all advertise themselves).
-	"TERM_PROGRAM", "JFROG_CLI_AI_MODEL",
-	"ZED_TERM", "TERMINAL_EMULATOR",
+	"TERM_PROGRAM", "TERM", "TMUX", "WT_SESSION", "KITTY_WINDOW_ID", "ALACRITTY_LOG",
+	"JFROG_CLI_AI_MODEL",
+	"ZED_TERM", "TERMINAL_EMULATOR", "VisualStudioVersion",
 	"VSCODE_GIT_ASKPASS_MAIN", "VSCODE_GIT_ASKPASS_NODE", "GIT_ASKPASS",
 }
 
@@ -564,7 +565,7 @@ func TestGetCliUserAgentWithAgentPerDetector(t *testing.T) {
 		envValue  string // empty → "1"
 		wantAgent string
 	}{
-		{"claude child session", "CLAUDE_CODE_CHILD_SESSION", "", "claude"},
+		{"claude child session", "CLAUDE_CODE_CHILD_SESSION", "", "claude ai-client/claude"},
 		{"gemini", "GEMINI_CLI", "", "gemini"},
 		{"goose", "GOOSE_TERMINAL", "", "goose"},
 		{"cursor agent", "CURSOR_AGENT", "", "cursor ai-client/cursor"},
@@ -580,19 +581,19 @@ func TestGetCliUserAgentWithAgentPerDetector(t *testing.T) {
 		{"codex thread", "CODEX_THREAD_ID", "", "codex"},
 		{"codex sandbox", "CODEX_SANDBOX", "", "codex"},
 		{"codex sandbox network", "CODEX_SANDBOX_NETWORK_DISABLED", "", "codex"},
-		{"windsurf", "WINDSURF_CASCADE_TERMINAL", "", "windsurf"},
+		{"windsurf", "WINDSURF_CASCADE_TERMINAL", "", "windsurf ai-client/windsurf"},
 		{"cline", "CLINE_ACTIVE", "", "cline"},
 		{"opencode", "OPENCODE", "", "opencode"},
 		{"opencode session id", "OPENCODE_SESSION_ID", "", "opencode"},
 		{"amp", "AMP_CURRENT_THREAD_ID", "", "amp"},
 		{"augment", "AUGMENT_AGENT", "", "augment"},
 		{"qwen", "QWEN_CODE", "", "qwen"},
-		{"antigravity", "ANTIGRAVITY_AGENT", "", "antigravity"},
+		{"antigravity", "ANTIGRAVITY_AGENT", "", "antigravity ai-client/antigravity"},
 		{"crush", "CRUSH", "", "crush"},
 		{"iflow", "IFLOW_CLI", "", "iflow"},
-		{"trae", "TRAE_AI_SHELL_ID", "", "trae"},
+		{"trae", "TRAE_AI_SHELL_ID", "", "trae ai-client/trae"},
 		{"grok", "GROK_AGENT", "1", "grok"},
-		{"cowork", "CLAUDE_CODE_IS_COWORK", "", "claude"},
+		{"cowork", "CLAUDE_CODE_IS_COWORK", "", "claude ai-client/claude"},
 		{"pi", "PI_CODING_AGENT", "", "pi"},
 		{"amazon q", "AWS_EXECUTION_ENV", "AmazonQ-For-CLI", "amazon_q"},
 		{"generic agent collapses to unknown", "AGENT", "", "unknown"},
@@ -621,7 +622,7 @@ func TestGetCliUserAgentWithAgentPreservesCustomUserAgent(t *testing.T) {
 	t.Setenv("CLAUDE_CODE_CHILD_SESSION", "true")
 	corecommands.ResetExecutionContextForTest()
 
-	assert.Equal(t, "my-wrapper/9.9.9 ai-agent/claude", GetCliUserAgentWithAgent())
+	assert.Equal(t, "my-wrapper/9.9.9 ai-agent/claude ai-client/claude", GetCliUserAgentWithAgent())
 }
 
 func TestGetCliUserAgentWithAgentNoVersion(t *testing.T) {
@@ -631,7 +632,7 @@ func TestGetCliUserAgentWithAgentNoVersion(t *testing.T) {
 	t.Setenv("CLAUDE_CODE_CHILD_SESSION", "true")
 	corecommands.ResetExecutionContextForTest()
 
-	assert.Equal(t, "jfrog-cli-go ai-agent/claude", GetCliUserAgentWithAgent())
+	assert.Equal(t, "jfrog-cli-go ai-agent/claude ai-client/claude", GetCliUserAgentWithAgent())
 }
 
 func TestGetCliUserAgentWithAgentAppendsHostAndModel(t *testing.T) {
@@ -647,14 +648,14 @@ func TestGetCliUserAgentWithAgentAppendsHostAndModel(t *testing.T) {
 }
 
 func TestGetCliUserAgentWithAgentOmitsAbsentAxes(t *testing.T) {
-	// Host and model are optional: with neither advertised, the suffix is just
-	// the agent entry — byte-identical to the pre-host/model behaviour.
+	// Gemini has no standalone-app identity; without a host signal the suffix
+	// is just the agent entry.
 	clearAgentEnvVarsForTest(t)
 	withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
-	t.Setenv("CLAUDE_CODE_CHILD_SESSION", "1")
+	t.Setenv("GEMINI_CLI", "1")
 	corecommands.ResetExecutionContextForTest()
 
-	assert.Equal(t, "jfrog-cli-go/2.117.0 ai-agent/claude", GetCliUserAgentWithAgent())
+	assert.Equal(t, "jfrog-cli-go/2.117.0 ai-agent/gemini", GetCliUserAgentWithAgent())
 }
 
 func TestGetCliUserAgentWithAgentClientOnly(t *testing.T) {
@@ -675,7 +676,7 @@ func TestGetCliUserAgentWithAgentModelOnly(t *testing.T) {
 	t.Setenv("JFROG_CLI_AI_MODEL", "opus-4.7")
 	corecommands.ResetExecutionContextForTest()
 
-	assert.Equal(t, "jfrog-cli-go/2.117.0 ai-agent/claude ai-model/opus-4.7",
+	assert.Equal(t, "jfrog-cli-go/2.117.0 ai-agent/claude ai-client/claude ai-model/opus-4.7",
 		GetCliUserAgentWithAgent())
 }
 
