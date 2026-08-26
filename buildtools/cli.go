@@ -2239,7 +2239,7 @@ func runNugetFlexPackCmd(c *cli.Context, toolchainType dotnetutils.ToolchainType
 		return err
 	}
 	if xrayScan {
-		log.Debug("'--scan' was passed to 'jf nuget push' but conditional-upload Xray scanning is not yet wired for NuGet FlexPack; the flag is accepted and stripped, not acted on.")
+		return errors.New("--scan is not yet supported for 'jf nuget'/'jf dotnet' in native mode; omit --scan or use the legacy path")
 	}
 
 	cmdName, nugetArgs := getNugetCommandName(filteredArgs, toolchainType)
