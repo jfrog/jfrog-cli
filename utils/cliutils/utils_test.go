@@ -539,7 +539,7 @@ func TestGetCliUserAgentWithAgentPreservesRichRawUA(t *testing.T) {
 	raw := "jfrog-skills/0.22.0 (trigger=skill; tool=cursor) jfrog-cli-go/2.120.0"
 	rawCliUserAgent = raw
 	t.Setenv("CURSOR_AGENT", "1")
-	t.Setenv("TERM_PROGRAM", "vscode")
+	t.Setenv("CURSOR_TRACE_ID", "trace-123")
 	corecommands.ResetExecutionContextForTest()
 
 	got := GetCliUserAgentWithAgent()
@@ -568,8 +568,8 @@ func TestGetCliUserAgentWithAgentPerDetector(t *testing.T) {
 		{"claude child session", "CLAUDE_CODE_CHILD_SESSION", "", "claude ai-client/claude"},
 		{"gemini", "GEMINI_CLI", "", "gemini"},
 		{"goose", "GOOSE_TERMINAL", "", "goose"},
-		{"cursor agent", "CURSOR_AGENT", "", "cursor ai-client/cursor"},
-		{"cursor extension host", "CURSOR_EXTENSION_HOST_ROLE", "agent-exec", "cursor ai-client/cursor"},
+		{"cursor agent", "CURSOR_AGENT", "", "cursor"},
+		{"cursor extension host", "CURSOR_EXTENSION_HOST_ROLE", "agent-exec", "cursor"},
 		{"copilot cli", "COPILOT_CLI", "", "copilot"},
 		{"copilot agent", "COPILOT_AGENT", "", "copilot ai-client/vscode"},
 		{"copilot agent job", "COPILOT_AGENT_JOB_ID", "", "copilot"},
@@ -639,7 +639,7 @@ func TestGetCliUserAgentWithAgentAppendsHostAndModel(t *testing.T) {
 	clearAgentEnvVarsForTest(t)
 	withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
 	t.Setenv("CURSOR_AGENT", "1")
-	t.Setenv("TERM_PROGRAM", "vscode")
+	t.Setenv("CURSOR_TRACE_ID", "trace-123")
 	t.Setenv("JFROG_CLI_AI_MODEL", "opus-4.7")
 	corecommands.ResetExecutionContextForTest()
 
@@ -662,7 +662,7 @@ func TestGetCliUserAgentWithAgentClientOnly(t *testing.T) {
 	clearAgentEnvVarsForTest(t)
 	withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
 	t.Setenv("CURSOR_AGENT", "1")
-	t.Setenv("TERM_PROGRAM", "vscode")
+	t.Setenv("CURSOR_TRACE_ID", "trace-123")
 	corecommands.ResetExecutionContextForTest()
 
 	assert.Equal(t, "jfrog-cli-go/2.117.0 ai-agent/cursor ai-client/cursor",
@@ -689,7 +689,7 @@ func TestGetCliUserAgentWithAgentMarkerIsWellFormed(t *testing.T) {
 	userAgent := GetCliUserAgentWithAgent()
 	// The product entry stays first, so parsers that read only it are unaffected.
 	assert.True(t, strings.HasPrefix(userAgent, "jfrog-cli-go/2.117.0"), "got %q", userAgent)
-	assert.True(t, strings.HasSuffix(userAgent, "ai-agent/cursor ai-client/cursor"), "got %q", userAgent)
+	assert.True(t, strings.HasSuffix(userAgent, "ai-agent/cursor"), "got %q", userAgent)
 	// The detector only ever returns fixed table names, so no raw env value — and
 	// therefore no header-splitting sequence — can reach the wire.
 	assert.NotContains(t, userAgent, "\n")
@@ -726,6 +726,18 @@ func TestGetCliUserAgentWithAgentCopilotCliOmitsClientDespiteTermProgram(t *test
 	assert.Equal(t, "jfrog-cli-go/2.117.0 ai-agent/copilot", GetCliUserAgentWithAgent())
 }
 
+func TestGetCliUserAgentWithAgentCursorOmitsClientDespiteTermProgram(t *testing.T) {
+	// CURSOR_AGENT proves the session, not the window. Inherited TERM_PROGRAM=vscode
+	// is not a vscode or cursor host.
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
+	t.Setenv("CURSOR_AGENT", "1")
+	t.Setenv("TERM_PROGRAM", "vscode")
+	corecommands.ResetExecutionContextForTest()
+
+	assert.Equal(t, "jfrog-cli-go/2.117.0 ai-agent/cursor", GetCliUserAgentWithAgent())
+}
+
 // The wire carries the editor the user actually opened, not the editor implied
 // by the agent: Copilot inside IntelliJ must not report vscode.
 func TestGetCliUserAgentWithAgentCarriesHostEditor(t *testing.T) {
@@ -735,8 +747,12 @@ func TestGetCliUserAgentWithAgentCarriesHostEditor(t *testing.T) {
 		expected string
 	}{
 		{"copilot in jetbrains", map[string]string{"COPILOT_AGENT": "1", "TERMINAL_EMULATOR": "JetBrains-JediTerm"}, "ai-agent/copilot ai-client/jetbrains"},
+		{"copilot plugin in iterm", map[string]string{"COPILOT_AGENT": "1", "TERM_PROGRAM": "iTerm.app"}, "ai-agent/copilot ai-client/iterm"},
 		{"claude in zed", map[string]string{"CLAUDE_CODE_CHILD_SESSION": "1", "ZED_TERM": "true"}, "ai-agent/claude ai-client/zed"},
-		{"claude in cursor", map[string]string{"CLAUDE_CODE_CHILD_SESSION": "1", "VSCODE_GIT_ASKPASS_MAIN": "/Applications/Cursor.app/out/askpass-main.js"}, "ai-agent/claude ai-client/cursor"},
+		{"claude in cursor", map[string]string{"CLAUDE_CODE_CHILD_SESSION": "1", "VSCODE_GIT_ASKPASS_MAIN": "/Applications/Cursor.app/out/askpass-main.js"}, "ai-agent/claude ai-client/cursor"}, // #nosec G101 jfrog-ignore -- fixture path, not a credential
+		{"cursor agent in iterm", map[string]string{"CURSOR_AGENT": "1", "TERM_PROGRAM": "iTerm.app"}, "ai-agent/cursor ai-client/iterm"},
+		{"cursor agent in stock vscode", map[string]string{"CURSOR_AGENT": "1", "VSCODE_GIT_ASKPASS_MAIN": "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass-main.js"}, "ai-agent/cursor ai-client/vscode"}, // #nosec G101 jfrog-ignore -- fixture path, not a credential
+		{"gemini in iterm", map[string]string{"GEMINI_CLI": "1", "TERM_PROGRAM": "iTerm.app"}, "ai-agent/gemini ai-client/iterm"},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
