@@ -1050,6 +1050,9 @@ func TestNugetFlexPackSignedPackagePush(t *testing.T) {
 // blocks a push when Xray finds a critical vulnerability.
 func TestNugetFlexPackScanBlocksVulnerablePush(t *testing.T) {
 	initNugetTest(t)
+	if !*tests.TestXray {
+		t.Skip("Skipping --scan push test: requires Xray (pass -test.xray to enable).")
+	}
 	defer cleanTestsHomeEnv()
 	nupkgPath, _ := buildTestNupkg(t, "ScanBlockPkg", "1.0.0")
 	args := []string{"nuget", "push", nupkgPath, "--repo=" + tests.NugetLocalRepo, "--scan"}
