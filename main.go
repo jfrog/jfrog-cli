@@ -478,8 +478,8 @@ func getCommands() ([]cli.Command, error) {
 		return nil, err
 	}
 
-	allCommands := make([]cli.Command, len(cliNameSpaces))
-	copy(allCommands, cliNameSpaces)
+	allCommands := make([]cli.Command, 0, len(cliNameSpaces))
+	allCommands = append(allCommands, cliNameSpaces...)
 	allCommands = append(allCommands, securityCmds...)
 	allCommands = mergeCommands(allCommands, artifactoryCmds)
 	allCommands = mergeCommands(allCommands, evidenceCmds)
