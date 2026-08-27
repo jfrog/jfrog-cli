@@ -54,7 +54,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
-	"golang.org/x/exp/slices"
 )
 
 const commandHelpTemplate string = `{{.HelpName}}{{if .UsageText}}
@@ -479,7 +478,9 @@ func getCommands() ([]cli.Command, error) {
 		return nil, err
 	}
 
-	allCommands := append(slices.Clone(cliNameSpaces), securityCmds...)
+	allCommands := make([]cli.Command, len(cliNameSpaces))
+	copy(allCommands, cliNameSpaces)
+	allCommands = append(allCommands, securityCmds...)
 	allCommands = mergeCommands(allCommands, artifactoryCmds)
 	allCommands = mergeCommands(allCommands, evidenceCmds)
 	allCommands = append(allCommands, platformServicesCmds...)

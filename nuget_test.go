@@ -31,7 +31,6 @@ import (
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/slices"
 )
 
 func initNugetTest(t *testing.T) {
@@ -86,7 +85,9 @@ func TestDotnetResolve(t *testing.T) {
 func testNativeNugetDotnetResolve(t *testing.T, uniqueTests []testDescriptor, buildName string, projectType project.ProjectType) {
 	initNugetTest(t)
 	clearNuGetHTTPCache(t)
-	testDescriptors := append(slices.Clone(uniqueTests), []testDescriptor{
+	combined := make([]testDescriptor, len(uniqueTests))
+	copy(combined, uniqueTests)
+	testDescriptors := append(combined, []testDescriptor{
 		{"referencewithoutmodulechange", "reference", []string{projectType.String(), "restore"}, []string{"reference"}, []int{6}},
 		{"referencewithmodulechange", "reference", []string{projectType.String(), "restore", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{6}},
 		{"multireferencewithoutmodulechange", "multireference", []string{projectType.String(), "restore"}, []string{"proj1", "proj2"}, []int{5, 3}},
