@@ -85,8 +85,8 @@ func TestDotnetResolve(t *testing.T) {
 func testNativeNugetDotnetResolve(t *testing.T, uniqueTests []testDescriptor, buildName string, projectType project.ProjectType) {
 	initNugetTest(t)
 	clearNuGetHTTPCache(t)
-	combined := make([]testDescriptor, len(uniqueTests))
-	copy(combined, uniqueTests)
+	combined := make([]testDescriptor, 0, len(uniqueTests))
+	combined = append(combined, uniqueTests...)
 	combined = append(combined, []testDescriptor{
 		{"referencewithoutmodulechange", "reference", []string{projectType.String(), "restore"}, []string{"reference"}, []int{6}},
 		{"referencewithmodulechange", "reference", []string{projectType.String(), "restore", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{6}},
