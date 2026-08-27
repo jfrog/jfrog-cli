@@ -8,8 +8,6 @@ replace (
 	github.com/CycloneDX/cyclonedx-go => github.com/CycloneDX/cyclonedx-go v0.10.0
 	// Should not be updated to 0.2.6 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
 	github.com/c-bata/go-prompt => github.com/c-bata/go-prompt v0.2.5
-	// RTECO-1574: upstream push rejected by repo rules; use fork until branch is merged.
-	github.com/jfrog/jfrog-cli-artifactory => github.com/bhanurp/jfrog-cli-artifactory v0.1.12-0.20260820164604-d1305ca14d14
 	// Should not be updated to 0.2.0-beta.2 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
 	github.com/pkg/term => github.com/pkg/term v1.1.0
 )
@@ -23,7 +21,7 @@ require (
 	github.com/jfrog/build-info-go v1.13.1-0.20260826100753-e3fe21d97f7c
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-application v1.0.2-0.20260820134442-c8629258ff3a
-	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260820123842-e8c9a0baf6b0
+	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260827035455-cc2a8de82ae7
 	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260826121657-9a951b0bb4b7
 	github.com/jfrog/jfrog-cli-evidence v0.11.1-0.20260824063609-79b735ec565e
 	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260618062042-6053ab368cab
