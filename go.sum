@@ -390,8 +390,8 @@ github.com/jellydator/ttlcache/v3 v3.4.0 h1:YS4P125qQS0tNhtL6aeYkheEaB/m8HCqdMMP
 github.com/jellydator/ttlcache/v3 v3.4.0/go.mod h1:Hw9EgjymziQD3yGsQdf1FqFdpp7YjFMd4Srg5EJlgD4=
 github.com/jfrog/archiver/v3 v3.6.4 h1:qHAWCLKwo3+ocHNNoWzGZ8ESl8QQk/lR3W09Pt+ROvE=
 github.com/jfrog/archiver/v3 v3.6.4/go.mod h1:5V9l+Fte30Y4qe9dUOAd3yNTf8lmtVNuhKNrvI8PMhg=
-github.com/jfrog/build-info-go v1.13.1-0.20260827115645-671a9b8faf2e h1:/LxB+uUs+JyK72/ZrEwhgwEoWySRAfTLNFMFpBgxveU=
-github.com/jfrog/build-info-go v1.13.1-0.20260827115645-671a9b8faf2e/go.mod h1:CYRUCvLKfyARjoJXLWAxce1qNUxTEtbRKAARkV42vpE=
+github.com/jfrog/build-info-go v1.13.1-0.20260828051808-4a2e4939ca36 h1:5pgzvDcQO9D+5Gqv7UT/RGyg08fnf1lbNSXpHCetC0s=
+github.com/jfrog/build-info-go v1.13.1-0.20260828051808-4a2e4939ca36/go.mod h1:CYRUCvLKfyARjoJXLWAxce1qNUxTEtbRKAARkV42vpE=
 github.com/jfrog/froggit-go v1.23.1 h1:4wmaHeuptxVINbovMaeITzVhi3+VQoc/FFIjF4axzu0=
 github.com/jfrog/froggit-go v1.23.1/go.mod h1:wRDryqyp3oe+eHgME2mpnEQmO8XBECIPagFwj0nHmdI=
 github.com/jfrog/go-mockhttp v0.3.1 h1:/wac8v4GMZx62viZmv4wazB5GNKs+GxawuS1u3maJH8=
