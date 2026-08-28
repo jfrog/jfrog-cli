@@ -11,9 +11,9 @@ import (
 	"strconv"
 	"strings"
 
-	cargocommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/cargo"
 	alpinecommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/alpine"
 	aptcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/apt"
+	cargocommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/cargo"
 	conancommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/conan"
 	nixcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nix"
 	rubycommandexec "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/ruby"
@@ -58,9 +58,9 @@ import (
 	terraformdocs "github.com/jfrog/jfrog-cli/docs/artifactory/terraform"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/terraformconfig"
 	twinedocs "github.com/jfrog/jfrog-cli/docs/artifactory/twine"
-	cargo "github.com/jfrog/jfrog-cli/docs/buildtools/cargo"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/apkcommand"
 	aptdocs "github.com/jfrog/jfrog-cli/docs/buildtools/apt"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/cargo"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/conan"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/conanconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/docker"
@@ -451,7 +451,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "cargo",
-			Hidden:          false,
+			Hidden:          true,
 			Flags:           cliutils.GetCommandFlags(cliutils.Cargo),
 			Usage:           corecommon.ResolveDescription(cargo.GetDescription(), cargo.GetAIDescription()),
 			HelpName:        corecommon.CreateUsage("cargo", corecommon.ResolveDescription(cargo.GetDescription(), cargo.GetAIDescription()), cargo.Usage),
