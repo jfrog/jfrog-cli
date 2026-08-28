@@ -402,8 +402,8 @@ github.com/jfrog/jfrog-apps-config v1.0.1 h1:mtv6k7g8A8BVhlHGlSveapqf4mJfonwvXYL
 github.com/jfrog/jfrog-apps-config v1.0.1/go.mod h1:8AIIr1oY9JuH5dylz2S6f8Ym2MaadPLR6noCBO4C22w=
 github.com/jfrog/jfrog-cli-application v1.0.2-0.20260621072921-cadb78770a3e h1:jUfQzLCVbUazw7FEXf3+57vQheDSHa/Px/Gp4pf/sNI=
 github.com/jfrog/jfrog-cli-application v1.0.2-0.20260621072921-cadb78770a3e/go.mod h1:p8yLtbmCxxQucIbLZKnWu0F+EDtj6NLXbRQCEK/nb6o=
-github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260828104756-dc14bd38b039 h1:3kR5h9JEOlWHRUyn81zEo+Ti+/oNRw+cK/PEz6Pv5CE=
-github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260828104756-dc14bd38b039/go.mod h1:we3sXBDY283lkB0Szd0q1oO1iKYqDsJFPpL/8Ze4P+Q=
+github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260828154930-3b7d100d5390 h1:pfoT3lcjqRcX7csf70OaxaE7IEGatnsyW2D68Xw6YHk=
+github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260828154930-3b7d100d5390/go.mod h1:we3sXBDY283lkB0Szd0q1oO1iKYqDsJFPpL/8Ze4P+Q=
 github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260827111619-bee4d60fbdc7 h1:4ytBkQB+iBS/KbG+a974hiZbmTith6KuWa5g0Zvw+z4=
 github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260827111619-bee4d60fbdc7/go.mod h1:vuARjRZopsCqVcZmWzCgw5Pr9QD1FWvwFxijV4bvJJI=
 github.com/jfrog/jfrog-cli-evidence v0.9.5-0.20260618135203-4d2bdd4ee35f h1:MV4BATdkEoUYJmdPDvaB9EBb8JQZg28n/K4X7dcmyAY=
