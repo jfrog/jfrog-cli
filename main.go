@@ -30,6 +30,9 @@ import (
 	"github.com/jfrog/jfrog-cli/config"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	apiDocs "github.com/jfrog/jfrog-cli/docs/general/api"
+	apiDocsNodeDocs "github.com/jfrog/jfrog-cli/docs/general/apidocs"
+	apiDocsDescribeDocs "github.com/jfrog/jfrog-cli/docs/general/apidocsdescribe"
+	apiDocsSearchDocs "github.com/jfrog/jfrog-cli/docs/general/apidocssearch"
 	loginDocs "github.com/jfrog/jfrog-cli/docs/general/login"
 	oidcDocs "github.com/jfrog/jfrog-cli/docs/general/oidc"
 	summaryDocs "github.com/jfrog/jfrog-cli/docs/general/summary"
@@ -110,8 +113,9 @@ func execMain() error {
 		}
 	}
 
-	// Set JFrog CLI's user-agent on the jfrog-client-go.
-	clientutils.SetUserAgent(coreutils.GetCliUserAgent())
+	// Set JFrog CLI's user-agent on the jfrog-client-go, enriched with the AI agent
+	// that invoked us when one is detected (AGW-86).
+	clientutils.SetUserAgent(cliutils.GetCliUserAgentWithAgent())
 
 	app := cli.NewApp()
 	app.Name = jfrogAppName
@@ -129,6 +133,10 @@ func execMain() error {
 		},
 	}
 	args := os.Args
+	// jf api has a "docs" subcommand, which makes urfave/cli skip its usual flag
+	// reordering and fail on flags placed after the endpoint path. Work around it
+	// here rather than in the command itself. See NormalizeApiTrailingFlags.
+	args = cliutils.NormalizeApiTrailingFlags(args)
 	cliutils.SetCliExecutableName(args[0])
 	// Auto-promote --format=json (already supported by many commands and by
 	// commands.Exec subcommands) to JFROG_CLI_ERROR_OUTPUT_FORMAT=json so that
@@ -387,6 +395,34 @@ func getCommands() ([]cli.Command, error) {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     otherCategory,
 			Action:       api.Command,
+			Subcommands: []cli.Command{
+				{
+					Name:     "docs",
+					Usage:    corecommon.ResolveDescription(apiDocsNodeDocs.GetDescription(), apiDocsNodeDocs.GetAIDescription()),
+					HelpName: corecommon.CreateUsage("api docs", corecommon.ResolveDescription(apiDocsNodeDocs.GetDescription(), apiDocsNodeDocs.GetAIDescription()), apiDocsNodeDocs.Usage),
+					Action:   api.DocsCommand,
+					Subcommands: []cli.Command{
+						{
+							Name:         "search",
+							Flags:        cliutils.GetCommandFlags(cliutils.ApiDocsSearch),
+							Usage:        corecommon.ResolveDescription(apiDocsSearchDocs.GetDescription(), apiDocsSearchDocs.GetAIDescription()),
+							HelpName:     corecommon.CreateUsage("api docs search", corecommon.ResolveDescription(apiDocsSearchDocs.GetDescription(), apiDocsSearchDocs.GetAIDescription()), apiDocsSearchDocs.Usage),
+							UsageText:    apiDocsSearchDocs.GetArguments(),
+							BashComplete: corecommon.CreateBashCompletionFunc(),
+							Action:       api.SearchCommand,
+						},
+						{
+							Name:         "describe",
+							Flags:        cliutils.GetCommandFlags(cliutils.ApiDocsDescribe),
+							Usage:        corecommon.ResolveDescription(apiDocsDescribeDocs.GetDescription(), apiDocsDescribeDocs.GetAIDescription()),
+							HelpName:     corecommon.CreateUsage("api docs describe", corecommon.ResolveDescription(apiDocsDescribeDocs.GetDescription(), apiDocsDescribeDocs.GetAIDescription()), apiDocsDescribeDocs.Usage),
+							UsageText:    apiDocsDescribeDocs.GetArguments(),
+							BashComplete: corecommon.CreateBashCompletionFunc(),
+							Action:       api.DescribeCommand,
+						},
+					},
+				},
+			},
 		},
 		{
 			Name:         "exchange-oidc-token",

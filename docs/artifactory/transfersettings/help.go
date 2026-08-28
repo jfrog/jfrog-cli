@@ -23,5 +23,10 @@ Gotchas:
 - Interactive only; cannot be scripted directly. For automation, edit ~/.jfrog/transfer-settings.json directly.
 - Settings apply across all subsequent transfer-files invocations.
 
-Related: jf rt transfer-files, jf rt transfer-config`
+Related: jf rt transfer-files, jf rt transfer-config
+
+QA:
+Q: How can I adjust the file transfer speed in JFrog Artifactory?
+A: jf rt transfer-settings
+`
 }

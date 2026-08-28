@@ -891,6 +891,52 @@ func TestPnpmBuildPublishWithCIVcsProps(t *testing.T) {
 	assert.Greater(t, artifactCount, 0, "No artifacts in build info")
 }
 
+// TestPnpmPublishWithLocalGitVcsProps verifies local git VCS props on pnpm artifacts
+// when running publish followed by build-publish with VCS collection enabled and no CI env.
+func TestPnpmPublishWithLocalGitVcsProps(t *testing.T) {
+	initPnpmTest(t)
+	defer cleanPnpmTest(t)
+
+	buildName := "pnpm-local-git-test"
+	buildNumber := "1"
+
+	cleanupEnv := tests.SetupLocalGitVcsEnv(t)
+	defer cleanupEnv()
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	pnpmProjectPath := createPnpmProject(t, "pnpmproject")
+	projectDir := filepath.Dir(pnpmProjectPath)
+	tests.CopyGitFixtureIntoProject(t, projectDir)
+	prepareArtifactoryForPnpmBuild(t, projectDir)
+	clientTestUtils.ChangeDirAndAssert(t, projectDir)
+
+	cleanupAuth := setupPnpmPublishAuth(t, tests.NpmRepo)
+	defer cleanupAuth()
+
+	runJfrogCli(t, "pnpm", "publish", "--no-git-checks",
+		"--build-name="+buildName, "--build-number="+buildNumber)
+	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	assert.NoError(t, err)
+	assert.True(t, found, "Build info was not found")
+
+	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
+	assert.NoError(t, err)
+
+	count := tests.ValidateLocalGitVcsPropsOnBuildInfoArtifacts(t, serviceManager, publishedBuildInfo, tests.NpmRepo,
+		tests.VcsFixtureMainURL, tests.VcsFixtureMainRevision, tests.VcsFixtureMainBranch)
+	assert.Greater(t, count, 0)
+}
+
 // TestPnpmInstallAndPublishWithProject verifies that pnpm install and publish work correctly
 // when targeting a non-default Artifactory project (RTECO-924).
 // The test uses --project flag with install, publish, and build-publish to verify that

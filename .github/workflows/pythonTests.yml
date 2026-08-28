@@ -41,6 +41,8 @@ jobs:
         uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
+          # Safe: this workflow only runs after human approval via the build-gate environment.
+          allow-unsafe-pr-checkout: true
 
       - name: Setup FastCI
         if: matrix.os.name != 'macos'
@@ -52,7 +54,7 @@ jobs:
       # Due to a bug in Python 3.12.0 we temporarily use version 3.11.5
       - name: Setup Python3
         if: matrix.os.name != 'macos'
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.11.5"
 

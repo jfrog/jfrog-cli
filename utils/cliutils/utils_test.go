@@ -13,6 +13,7 @@ import (
 	"time"
 
 	biutils "github.com/jfrog/build-info-go/utils"
+	corecommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	configtests "github.com/jfrog/jfrog-cli-core/v2/utils/config/tests"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
@@ -38,6 +39,9 @@ func TestSplitAgentNameAndVersion(t *testing.T) {
 		{"abc\\1.2.3", "abc\\1.2.3", ""},
 		{"abc:1.2.3", "abc:1.2.3", ""},
 		{"", "", ""},
+		{"jfrog-cli-go/2.119.0 ai-agent/claude", "jfrog-cli-go", "2.119.0"},
+		{"jfrog-skills/0.22.0 (trigger=skill; tool=cursor; client=vscode; model=opus-4.7) jfrog-cli-go/2.120.0", "jfrog-skills", "0.22.0"},
+		{"jfrog-skills/0.1.0 (trigger=hook; tool=cursor) jfrog-cli-go/2.119.0", "jfrog-skills", "0.1.0"},
 	}
 
 	for _, test := range tests {
@@ -385,6 +389,46 @@ func (t *redirectingTransport) RoundTrip(req *http.Request) (*http.Response, err
 	return t.baseTransport.RoundTrip(req)
 }
 
+// agentDetectorEnvVars lists every env var jfrog-cli-core's agent detector consults
+// (see ExecutionContext in jfrog-cli-core/common/commands). Tests clear these so
+// ShouldHideSurveyLink's agent check is deterministic regardless of the shell
+// running `go test` (e.g. running inside Claude Code, Cursor, etc.).
+var agentDetectorEnvVars = []string{
+	"CLAUDE_CODE_CHILD_SESSION", "CLAUDE_CODE_IS_COWORK",
+	// Cleared even though no longer detectors — leftover process env must not
+	// bleed into human / strong-signal assertions.
+	"CLAUDECODE", "CLAUDE_CODE", "CLAUDE_CODE_ENTRYPOINT",
+	"GEMINI_CLI",
+	"GOOSE_TERMINAL",
+	"CURSOR_AGENT", "CURSOR_TRACE_ID", "CURSOR_EXTENSION_HOST_ROLE", "CURSOR_CLI",
+	"COPILOT_CLI", "COPILOT_AGENT", "COPILOT_AGENT_JOB_ID", "COPILOT_AGENT_SESSION_ID", "COPILOT_MODEL", "COPILOT_ALLOW_ALL",
+	"KILOCODE_FEATURE", "KILO_PID", "KILO_IPC_SOCKET_PATH", "KILO_SERVER_PASSWORD",
+	"ROO_ACTIVE", "ROO_CLI_RUNTIME", "ROO_CODE_IPC_SOCKET_PATH",
+	"CODEX_CI", "CODEX_THREAD_ID", "CODEX_SANDBOX", "CODEX_SANDBOX_NETWORK_DISABLED",
+	"WINDSURF_CASCADE_TERMINAL",
+	"CLINE_ACTIVE", "OPENCODE", "OPENCODE_SESSION_ID", "OPENCODE_CLIENT",
+	"AMP_CURRENT_THREAD_ID", "AUGMENT_AGENT", "QWEN_CODE",
+	"ANTIGRAVITY_AGENT", "CRUSH", "IFLOW_CLI", "TRAE_AI_SHELL_ID",
+	"PI_CODING_AGENT", "GROK_AGENT", "AWS_EXECUTION_ENV",
+	"AI_AGENT", "AGENT",
+	// Host editor and model axes — cleared so the wire format is deterministic
+	// regardless of the shell running `go test`, including the editor window
+	// (Zed, JetBrains and VS Code forks all advertise themselves).
+	"TERM_PROGRAM", "TERM", "TMUX", "WT_SESSION", "KITTY_WINDOW_ID", "ALACRITTY_LOG",
+	"JFROG_CLI_AI_MODEL",
+	"ZED_TERM", "TERMINAL_EMULATOR", "VisualStudioVersion",
+	"VSCODE_GIT_ASKPASS_MAIN", "VSCODE_GIT_ASKPASS_NODE", "GIT_ASKPASS",
+}
+
+func clearAgentEnvVarsForTest(t *testing.T) {
+	t.Helper()
+	for _, e := range agentDetectorEnvVars {
+		t.Setenv(e, "")
+	}
+	corecommands.ResetExecutionContextForTest()
+	t.Cleanup(corecommands.ResetExecutionContextForTest)
+}
+
 // TestGetHasDisplayedSurveyLink tests the survey link environment variable check with parametrized test cases
 func TestGetHasDisplayedSurveyLink(t *testing.T) {
 	testCases := []struct {
@@ -411,6 +455,7 @@ func TestGetHasDisplayedSurveyLink(t *testing.T) {
 	t.Setenv(coreutils.CI, "")
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			clearAgentEnvVarsForTest(t)
 			t.Setenv(JfrogCliHideSurvey, tc.envValue)
 
 			shouldHide := ShouldHideSurveyLink()
@@ -430,6 +475,16 @@ func TestSettingCIFlagRemovesSurvey(t *testing.T) {
 	assert.True(t, shouldHide, "Expected survey to be hidden when CI flag is set")
 }
 
+func TestSurveyHiddenForAgent(t *testing.T) {
+	t.Setenv(coreutils.CI, "")
+	t.Setenv(JfrogCliHideSurvey, "")
+	clearAgentEnvVarsForTest(t)
+	t.Setenv("CLAUDE_CODE_CHILD_SESSION", "true")
+	corecommands.ResetExecutionContextForTest()
+
+	assert.True(t, ShouldHideSurveyLink(), "Expected survey to be hidden when invoked by an agent")
+}
+
 func TestLoginCommandFlagsIncludeServerId(t *testing.T) {
 	flags := GetCommandFlags(Login)
 	assert.NotEmpty(t, flags, "Expected login command to have flags")
@@ -439,4 +494,285 @@ func TestLoginCommandFlagsIncludeServerId(t *testing.T) {
 		flagNames = append(flagNames, f.GetName())
 	}
 	assert.Contains(t, flagNames, "server-id", "Expected login command flags to include 'server-id'")
+}
+
+func TestTransferFilesTimestampFilterFlags(t *testing.T) {
+	flags := GetCommandFlags(TransferFiles)
+	assert.NotEmpty(t, flags)
+
+	var flagNames []string
+	usageByName := map[string]string{}
+	for _, f := range flags {
+		flagNames = append(flagNames, f.GetName())
+		usageByName[f.GetName()] = f.String()
+	}
+
+	assert.Contains(t, flagNames, CreatedAfter)
+	assert.Contains(t, flagNames, DownloadedAfter)
+	assert.Contains(t, usageByName[CreatedAfter], "YYYY-MM-DDTHH:mm:ss.sssZ")
+	assert.Contains(t, usageByName[DownloadedAfter], "YYYY-MM-DDTHH:mm:ss.sssZ")
+}
+
+// --- AGW-86: User-Agent enrichment with the detected AI agent ---
+
+// withCliUserAgent pins the CLI user-agent name/version for one test. The real values are
+// set once in init() from JFROG_CLI_USER_AGENT, so tests drive the setters directly rather
+// than trying to re-run init.
+func withCliUserAgent(t *testing.T, name, version string) {
+	t.Helper()
+	prevName, prevVersion := coreutils.GetCliUserAgentName(), coreutils.GetCliUserAgentVersion()
+	prevRaw := rawCliUserAgent
+	coreutils.SetCliUserAgentName(name)
+	coreutils.SetCliUserAgentVersion(version)
+	// Tests that pin name/version usually want rebuilt base unless they set raw.
+	rawCliUserAgent = ""
+	t.Cleanup(func() {
+		coreutils.SetCliUserAgentName(prevName)
+		coreutils.SetCliUserAgentVersion(prevVersion)
+		rawCliUserAgent = prevRaw
+	})
+}
+
+func TestGetCliUserAgentWithAgentPreservesRichRawUA(t *testing.T) {
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "jfrog-skills", "0.22.0")
+	raw := "jfrog-skills/0.22.0 (trigger=skill; tool=cursor) jfrog-cli-go/2.120.0"
+	rawCliUserAgent = raw
+	t.Setenv("CURSOR_AGENT", "1")
+	t.Setenv("CURSOR_TRACE_ID", "trace-123")
+	corecommands.ResetExecutionContextForTest()
+
+	got := GetCliUserAgentWithAgent()
+	assert.Equal(t, raw+" ai-agent/cursor ai-client/cursor", got,
+		"HTTP UA must keep the rich raw value and existing agent suffix behavior")
+}
+
+func TestGetCliUserAgentWithAgentNoAgentDetected(t *testing.T) {
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
+	corecommands.ResetExecutionContextForTest()
+
+	assert.Equal(t, "jfrog-cli-go/2.117.0", GetCliUserAgentWithAgent(),
+		"a human invocation must stay byte-identical to today's behaviour")
+}
+
+func TestGetCliUserAgentWithAgentPerDetector(t *testing.T) {
+	// Cover every detector row in jfrog-cli-core's agentEnvDetectors (at least
+	// one signal each), plus envEquals and the generic AGENT→unknown fallback.
+	testCases := []struct {
+		name      string
+		envVar    string
+		envValue  string // empty → "1"
+		wantAgent string
+	}{
+		{"claude child session", "CLAUDE_CODE_CHILD_SESSION", "", "claude ai-client/claude"},
+		{"gemini", "GEMINI_CLI", "", "gemini"},
+		{"goose", "GOOSE_TERMINAL", "", "goose"},
+		{"cursor agent", "CURSOR_AGENT", "", "cursor"},
+		{"cursor extension host", "CURSOR_EXTENSION_HOST_ROLE", "agent-exec", "cursor"},
+		{"copilot cli", "COPILOT_CLI", "", "copilot"},
+		{"copilot agent", "COPILOT_AGENT", "", "copilot ai-client/vscode"},
+		{"copilot agent job", "COPILOT_AGENT_JOB_ID", "", "copilot"},
+		{"copilot agent session", "COPILOT_AGENT_SESSION_ID", "", "copilot"},
+		{"kilocode feature cli", "KILOCODE_FEATURE", "cli", "kilocode"},
+		{"roo active", "ROO_ACTIVE", "", "roo_code"},
+		{"roo cli runtime", "ROO_CLI_RUNTIME", "", "roo_code"},
+		{"codex ci", "CODEX_CI", "", "codex"},
+		{"codex thread", "CODEX_THREAD_ID", "", "codex"},
+		{"codex sandbox", "CODEX_SANDBOX", "", "codex"},
+		{"codex sandbox network", "CODEX_SANDBOX_NETWORK_DISABLED", "", "codex"},
+		{"windsurf", "WINDSURF_CASCADE_TERMINAL", "", "windsurf ai-client/windsurf"},
+		{"cline", "CLINE_ACTIVE", "", "cline"},
+		{"opencode", "OPENCODE", "", "opencode"},
+		{"opencode session id", "OPENCODE_SESSION_ID", "", "opencode"},
+		{"amp", "AMP_CURRENT_THREAD_ID", "", "amp"},
+		{"augment", "AUGMENT_AGENT", "", "augment"},
+		{"qwen", "QWEN_CODE", "", "qwen"},
+		{"antigravity", "ANTIGRAVITY_AGENT", "", "antigravity ai-client/antigravity"},
+		{"crush", "CRUSH", "", "crush"},
+		{"iflow", "IFLOW_CLI", "", "iflow"},
+		{"trae", "TRAE_AI_SHELL_ID", "", "trae ai-client/trae"},
+		{"grok", "GROK_AGENT", "1", "grok"},
+		{"cowork", "CLAUDE_CODE_IS_COWORK", "", "claude ai-client/claude"},
+		{"pi", "PI_CODING_AGENT", "", "pi"},
+		{"amazon q", "AWS_EXECUTION_ENV", "AmazonQ-For-CLI", "amazon_q"},
+		{"generic agent collapses to unknown", "AGENT", "", "unknown"},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			clearAgentEnvVarsForTest(t)
+			withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
+			val := testCase.envValue
+			if val == "" {
+				val = "1"
+			}
+			t.Setenv(testCase.envVar, val)
+			corecommands.ResetExecutionContextForTest()
+
+			assert.Equal(t, "jfrog-cli-go/2.117.0 ai-agent/"+testCase.wantAgent, GetCliUserAgentWithAgent())
+		})
+	}
+}
+
+func TestGetCliUserAgentWithAgentPreservesCustomUserAgent(t *testing.T) {
+	// JFROG_CLI_USER_AGENT lets an operator replace the product entry entirely. The agent
+	// marker must be appended to whatever that resolves to, never replace it.
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "my-wrapper", "9.9.9")
+	t.Setenv("CLAUDE_CODE_CHILD_SESSION", "true")
+	corecommands.ResetExecutionContextForTest()
+
+	assert.Equal(t, "my-wrapper/9.9.9 ai-agent/claude ai-client/claude", GetCliUserAgentWithAgent())
+}
+
+func TestGetCliUserAgentWithAgentNoVersion(t *testing.T) {
+	// GetCliUserAgent omits the slash when no version is set; the marker still appends.
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "jfrog-cli-go", "")
+	t.Setenv("CLAUDE_CODE_CHILD_SESSION", "true")
+	corecommands.ResetExecutionContextForTest()
+
+	assert.Equal(t, "jfrog-cli-go ai-agent/claude ai-client/claude", GetCliUserAgentWithAgent())
+}
+
+func TestGetCliUserAgentWithAgentAppendsHostAndModel(t *testing.T) {
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
+	t.Setenv("CURSOR_AGENT", "1")
+	t.Setenv("CURSOR_TRACE_ID", "trace-123")
+	t.Setenv("JFROG_CLI_AI_MODEL", "opus-4.7")
+	corecommands.ResetExecutionContextForTest()
+
+	assert.Equal(t, "jfrog-cli-go/2.117.0 ai-agent/cursor ai-client/cursor ai-model/opus-4.7",
+		GetCliUserAgentWithAgent())
+}
+
+func TestGetCliUserAgentWithAgentOmitsAbsentAxes(t *testing.T) {
+	// Gemini has no standalone-app identity; without a host signal the suffix
+	// is just the agent entry.
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
+	t.Setenv("GEMINI_CLI", "1")
+	corecommands.ResetExecutionContextForTest()
+
+	assert.Equal(t, "jfrog-cli-go/2.117.0 ai-agent/gemini", GetCliUserAgentWithAgent())
+}
+
+func TestGetCliUserAgentWithAgentClientOnly(t *testing.T) {
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
+	t.Setenv("CURSOR_AGENT", "1")
+	t.Setenv("CURSOR_TRACE_ID", "trace-123")
+	corecommands.ResetExecutionContextForTest()
+
+	assert.Equal(t, "jfrog-cli-go/2.117.0 ai-agent/cursor ai-client/cursor",
+		GetCliUserAgentWithAgent())
+}
+
+func TestGetCliUserAgentWithAgentModelOnly(t *testing.T) {
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
+	t.Setenv("CLAUDE_CODE_CHILD_SESSION", "1")
+	t.Setenv("JFROG_CLI_AI_MODEL", "opus-4.7")
+	corecommands.ResetExecutionContextForTest()
+
+	assert.Equal(t, "jfrog-cli-go/2.117.0 ai-agent/claude ai-client/claude ai-model/opus-4.7",
+		GetCliUserAgentWithAgent())
+}
+
+func TestGetCliUserAgentWithAgentMarkerIsWellFormed(t *testing.T) {
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
+	t.Setenv("CURSOR_AGENT", "1")
+	corecommands.ResetExecutionContextForTest()
+
+	userAgent := GetCliUserAgentWithAgent()
+	// The product entry stays first, so parsers that read only it are unaffected.
+	assert.True(t, strings.HasPrefix(userAgent, "jfrog-cli-go/2.117.0"), "got %q", userAgent)
+	assert.True(t, strings.HasSuffix(userAgent, "ai-agent/cursor"), "got %q", userAgent)
+	// The detector only ever returns fixed table names, so no raw env value — and
+	// therefore no header-splitting sequence — can reach the wire.
+	assert.NotContains(t, userAgent, "\n")
+	assert.NotContains(t, userAgent, "\r")
+}
+
+func TestGetCliUserAgentWithAgentCopilotVscodeAlias(t *testing.T) {
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
+	t.Setenv("AI_AGENT", "github_copilot_vscode_agent")
+	corecommands.ResetExecutionContextForTest()
+
+	assert.Equal(t, "jfrog-cli-go/2.117.0 ai-agent/copilot ai-client/vscode",
+		GetCliUserAgentWithAgent())
+}
+
+func TestGetCliUserAgentWithAgentKiloExtensionOmitsAgent(t *testing.T) {
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
+	t.Setenv("KILO_PID", "12345")
+	t.Setenv("KILOCODE_FEATURE", "vscode-extension")
+	corecommands.ResetExecutionContextForTest()
+
+	assert.Equal(t, "jfrog-cli-go/2.117.0", GetCliUserAgentWithAgent())
+}
+
+func TestGetCliUserAgentWithAgentCopilotCliOmitsClientDespiteTermProgram(t *testing.T) {
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
+	t.Setenv("COPILOT_CLI", "1")
+	t.Setenv("TERM_PROGRAM", "vscode")
+	corecommands.ResetExecutionContextForTest()
+
+	assert.Equal(t, "jfrog-cli-go/2.117.0 ai-agent/copilot", GetCliUserAgentWithAgent())
+}
+
+func TestGetCliUserAgentWithAgentCursorOmitsClientDespiteTermProgram(t *testing.T) {
+	// CURSOR_AGENT proves the session, not the window. Inherited TERM_PROGRAM=vscode
+	// is not a vscode or cursor host.
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
+	t.Setenv("CURSOR_AGENT", "1")
+	t.Setenv("TERM_PROGRAM", "vscode")
+	corecommands.ResetExecutionContextForTest()
+
+	assert.Equal(t, "jfrog-cli-go/2.117.0 ai-agent/cursor", GetCliUserAgentWithAgent())
+}
+
+// The wire carries the editor the user actually opened, not the editor implied
+// by the agent: Copilot inside IntelliJ must not report vscode.
+func TestGetCliUserAgentWithAgentCarriesHostEditor(t *testing.T) {
+	testCases := []struct {
+		name     string
+		env      map[string]string
+		expected string
+	}{
+		{"copilot in jetbrains", map[string]string{"COPILOT_AGENT": "1", "TERMINAL_EMULATOR": "JetBrains-JediTerm"}, "ai-agent/copilot ai-client/jetbrains"},
+		{"copilot plugin in iterm", map[string]string{"COPILOT_AGENT": "1", "TERM_PROGRAM": "iTerm.app"}, "ai-agent/copilot ai-client/iterm"},
+		{"claude in zed", map[string]string{"CLAUDE_CODE_CHILD_SESSION": "1", "ZED_TERM": "true"}, "ai-agent/claude ai-client/zed"},
+		{"claude in cursor", map[string]string{"CLAUDE_CODE_CHILD_SESSION": "1", "VSCODE_GIT_ASKPASS_MAIN": "/Applications/Cursor.app/out/askpass-main.js"}, "ai-agent/claude ai-client/cursor"}, // #nosec G101 jfrog-ignore -- fixture path, not a credential
+		{"cursor agent in iterm", map[string]string{"CURSOR_AGENT": "1", "TERM_PROGRAM": "iTerm.app"}, "ai-agent/cursor ai-client/iterm"},
+		{"cursor agent in stock vscode", map[string]string{"CURSOR_AGENT": "1", "VSCODE_GIT_ASKPASS_MAIN": "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass-main.js"}, "ai-agent/cursor ai-client/vscode"}, // #nosec G101 jfrog-ignore -- fixture path, not a credential
+		{"gemini in iterm", map[string]string{"GEMINI_CLI": "1", "TERM_PROGRAM": "iTerm.app"}, "ai-agent/gemini ai-client/iterm"},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			clearAgentEnvVarsForTest(t)
+			withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
+			for key, value := range testCase.env {
+				t.Setenv(key, value)
+			}
+			corecommands.ResetExecutionContextForTest()
+
+			assert.Equal(t, "jfrog-cli-go/2.117.0 "+testCase.expected, GetCliUserAgentWithAgent())
+		})
+	}
+}
+
+func TestGetCliUserAgentWithAgentHumanClaudeIDEOmitsAiAgent(t *testing.T) {
+	clearAgentEnvVarsForTest(t)
+	withCliUserAgent(t, "jfrog-cli-go", "2.117.0")
+	t.Setenv("CLAUDECODE", "1")
+	corecommands.ResetExecutionContextForTest()
+
+	assert.Equal(t, "jfrog-cli-go/2.117.0", GetCliUserAgentWithAgent())
 }

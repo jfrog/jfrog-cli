@@ -72,7 +72,11 @@ var (
 	TestUv                    *bool
 	TestNix                   *bool
 	TestCargo                 *bool
+	TestAlpine                *bool
+	TestRuby                  *bool
+	TestApt                   *bool
 	TestAgentPlugins          *bool
+	TestAgentSkills           *bool
 	TestConan                 *bool
 	TestHelm                  *bool
 	TestHuggingFace           *bool
@@ -84,6 +88,7 @@ var (
 	TestEvidence              *bool
 	TestApi                   *bool
 	TestGhostFrog             *bool
+	TestIde                   *bool
 	HideUnitTestLog           *bool
 	ciRunId                   *string
 	InstallDataTransferPlugin *bool
@@ -141,7 +146,11 @@ func init() {
 	TestUv = flag.Bool("test.uv", false, "Test UV")
 	TestNix = flag.Bool("test.nix", false, "Test Nix")
 	TestCargo = flag.Bool("test.cargo", false, "Test Cargo")
+	TestAlpine = flag.Bool("test.alpine", false, "Test Alpine APK")
+	TestRuby = flag.Bool("test.ruby", false, "Test Ruby")
+	TestApt = flag.Bool("test.apt", false, "Test apt (Debian/Ubuntu package manager)")
 	TestAgentPlugins = flag.Bool("test.agentPlugins", false, "Test Agent Plugins")
+	TestAgentSkills = flag.Bool("test.agentSkills", false, "Test Agent Skills")
 	TestConan = flag.Bool("test.conan", false, "Test Conan")
 	TestHelm = flag.Bool("test.helm", false, "Test Helm")
 	TestHuggingFace = flag.Bool("test.huggingface", false, "Test HuggingFace")
@@ -153,6 +162,7 @@ func init() {
 	TestEvidence = flag.Bool("test.evidence", false, "Test evidence")
 	TestApi = flag.Bool("test.api", false, "Test api command")
 	TestGhostFrog = flag.Bool("test.ghostFrog", false, "Test Ghost Frog package alias")
+	TestIde = flag.Bool("test.ide", false, "Test IDE (VS Code / Cursor / Windsurf / Kiro / JetBrains) setup commands")
 	ContainerRegistry = flag.String("test.containerRegistry", "localhost:8082", "Container registry")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
 	InstallDataTransferPlugin = flag.Bool("test.installDataTransferPlugin", false, "Install data-transfer plugin on the source Artifactory server")
@@ -325,11 +335,22 @@ var reposConfigMap = map[*string]string{
 	&UvRemoteRepo:                   UvRemoteRepositoryConfig,
 	&UvVirtualRepo:                  UvVirtualRepositoryConfig,
 	&AgentPluginsLocalRepo:          AgentPluginsLocalRepositoryConfig,
+	&AgentSkillsLocalRepo:           AgentSkillsLocalRepositoryConfig,
 	&NixLocalRepo:                   NixLocalRepositoryConfig,
 	&NixRemoteRepo:                  NixRemoteRepositoryConfig,
 	&NixVirtualRepo:                 NixVirtualRepositoryConfig,
 	&CargoLocalRepo:                 CargoLocalRepositoryConfig,
 	&CargoRemoteRepo:                CargoRemoteRepositoryConfig,
+	&AlpineLocalRepo:                AlpineLocalRepositoryConfig,
+	&AlpineRemoteRepo:               AlpineRemoteRepositoryConfig,
+	&AlpineVirtualRepo:              AlpineVirtualRepositoryConfig,
+	&RubyLocalRepo:                  RubyLocalRepositoryConfig,
+	&RubyRemoteRepo:                 RubyRemoteRepositoryConfig,
+	&RubyVirtualRepo:                RubyVirtualRepositoryConfig,
+	&AptLocalRepo:                   AptLocalRepositoryConfig,
+	&AptRemoteRepo:                  AptRemoteRepositoryConfig,
+	&AptDebianRemoteRepo:            AptDebianRemoteRepositoryConfig,
+	&AptVirtualRepo:                 AptVirtualRepositoryConfig,
 	&ConanLocalRepo:                 ConanLocalRepositoryConfig,
 	&ConanRemoteRepo:                ConanRemoteRepositoryConfig,
 	&ConanVirtualRepo:               ConanVirtualRepositoryConfig,
@@ -403,7 +424,11 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestUv:                 {&UvLocalRepo, &UvRemoteRepo},
 		TestNix:                {&NixLocalRepo, &NixRemoteRepo},
 		TestCargo:              {&CargoLocalRepo, &CargoRemoteRepo},
+		TestAlpine:             {&AlpineLocalRepo, &AlpineRemoteRepo},
+		TestRuby:               {&RubyLocalRepo, &RubyRemoteRepo},
+		TestApt:                {&AptLocalRepo, &AptRemoteRepo, &AptDebianRemoteRepo},
 		TestAgentPlugins:       {&AgentPluginsLocalRepo},
+		TestAgentSkills:        {&AgentSkillsLocalRepo},
 		TestConan:              {&ConanLocalRepo, &ConanRemoteRepo},
 		TestHelm:               {&HelmLocalRepo},
 		TestHuggingFace:        {&HuggingFaceLocalRepo},
@@ -436,7 +461,11 @@ func GetVirtualRepositories() map[*string]string {
 		TestPoetry:       {&PoetryVirtualRepo},
 		TestUv:           {&UvVirtualRepo},
 		TestNix:          {&NixVirtualRepo},
+		TestAlpine:       {&AlpineVirtualRepo},
+		TestRuby:         {&RubyVirtualRepo},
+		TestApt:          {&AptVirtualRepo},
 		TestAgentPlugins: {},
+		TestAgentSkills:  {},
 		TestConan:        {&ConanVirtualRepo},
 		TestHelm:         {},
 		TestHuggingFace:  {},
@@ -481,7 +510,10 @@ func GetBuildNames() []string {
 		TestUv:           {&UvBuildName},
 		TestNix:          {&NixBuildName},
 		TestCargo:        {&CargoBuildName},
+		TestAlpine:       {&AlpineBuildName},
+		TestRuby:         {&RubyBuildName},
 		TestAgentPlugins: {&AgentPluginsBuildName},
+		TestAgentSkills:  {&AgentSkillsBuildName},
 		TestConan:        {&ConanBuildName},
 		TestHelm:         {&HelmBuildName},
 		TestHuggingFace:  {&HuggingFaceBuildName},
@@ -546,11 +578,22 @@ func getSubstitutionMap() map[string]string {
 		"${UV_REMOTE_REPO}":            UvRemoteRepo,
 		"${UV_VIRTUAL_REPO}":           UvVirtualRepo,
 		"${AGENT_PLUGINS_LOCAL_REPO}":  AgentPluginsLocalRepo,
+		"${AGENT_SKILLS_LOCAL_REPO}":   AgentSkillsLocalRepo,
 		"${NIX_LOCAL_REPO}":            NixLocalRepo,
 		"${NIX_REMOTE_REPO}":           NixRemoteRepo,
 		"${NIX_VIRTUAL_REPO}":          NixVirtualRepo,
 		"${CARGO_LOCAL_REPO}":          CargoLocalRepo,
 		"${CARGO_REMOTE_REPO}":         CargoRemoteRepo,
+		"${ALPINE_LOCAL_REPO}":         AlpineLocalRepo,
+		"${ALPINE_REMOTE_REPO}":        AlpineRemoteRepo,
+		"${ALPINE_VIRTUAL_REPO}":       AlpineVirtualRepo,
+		"${RUBY_LOCAL_REPO}":           RubyLocalRepo,
+		"${RUBY_REMOTE_REPO}":          RubyRemoteRepo,
+		"${RUBY_VIRTUAL_REPO}":         RubyVirtualRepo,
+		"${APT_LOCAL_REPO}":            AptLocalRepo,
+		"${APT_REMOTE_REPO}":           AptRemoteRepo,
+		"${APT_DEBIAN_REMOTE_REPO}":    AptDebianRemoteRepo,
+		"${APT_VIRTUAL_REPO}":          AptVirtualRepo,
 		"${CONAN_LOCAL_REPO}":          ConanLocalRepo,
 		"${CONAN_REMOTE_REPO}":         ConanRemoteRepo,
 		"${CONAN_VIRTUAL_REPO}":        ConanVirtualRepo,
@@ -625,11 +668,19 @@ func AddTimestampToGlobalVars() {
 	UvRemoteRepo += uniqueSuffix
 	UvVirtualRepo += uniqueSuffix
 	AgentPluginsLocalRepo += uniqueSuffix
+	AgentSkillsLocalRepo += uniqueSuffix
 	NixLocalRepo += uniqueSuffix
 	NixRemoteRepo += uniqueSuffix
 	NixVirtualRepo += uniqueSuffix
 	CargoLocalRepo += uniqueSuffix
 	CargoRemoteRepo += uniqueSuffix
+	AlpineLocalRepo += uniqueSuffix
+	AlpineRemoteRepo += uniqueSuffix
+	AlpineVirtualRepo += uniqueSuffix
+	AptLocalRepo += uniqueSuffix
+	AptRemoteRepo += uniqueSuffix
+	AptDebianRemoteRepo += uniqueSuffix
+	AptVirtualRepo += uniqueSuffix
 	ConanLocalRepo += uniqueSuffix
 	ConanRemoteRepo += uniqueSuffix
 	ConanVirtualRepo += uniqueSuffix
@@ -662,9 +713,11 @@ func AddTimestampToGlobalVars() {
 	PipenvBuildName += uniqueSuffix
 	PoetryBuildName += uniqueSuffix
 	AgentPluginsBuildName += uniqueSuffix
+	AgentSkillsBuildName += uniqueSuffix
 	UvBuildName += uniqueSuffix
 	NixBuildName += uniqueSuffix
 	CargoBuildName += uniqueSuffix
+	AlpineBuildName += uniqueSuffix
 	ConanBuildName += uniqueSuffix
 	HelmBuildName += uniqueSuffix
 	HuggingFaceBuildName += uniqueSuffix
@@ -934,6 +987,31 @@ func SetupGitHubActionsEnv(t *testing.T) (cleanup func(), actualOrg, actualRepo 
 	return cleanup, actualOrg, actualRepo
 }
 
+// SetupGitHubActionsEnvForLocalGitMerge enables CI VCS collection with provider/org/repo
+// but clears url/revision/branch CI env vars so local git fallback is exercised.
+func SetupGitHubActionsEnvForLocalGitMerge(t *testing.T) (cleanup func(), actualOrg, actualRepo string) {
+	t.Helper()
+	cleanupBase, actualOrg, actualRepo := SetupGitHubActionsEnv(t)
+
+	var callbacks []func()
+	for _, key := range []string{
+		"GITHUB_SERVER_URL",
+		"GITHUB_SHA",
+		"GITHUB_REF",
+		"GITHUB_REF_NAME",
+		"GITHUB_HEAD_REF",
+	} {
+		callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, key, ""))
+	}
+
+	return func() {
+		for _, cb := range callbacks {
+			cb()
+		}
+		cleanupBase()
+	}, actualOrg, actualRepo
+}
+
 // ValidateCIVcsPropsOnArtifacts validates that CI VCS properties are set on artifacts.
 func ValidateCIVcsPropsOnArtifacts(t *testing.T, resultItems []utils.ResultItem, expectedProvider, expectedOrg, expectedRepo string) {
 	for _, item := range resultItems {
@@ -1029,6 +1107,79 @@ func ValidateCIVcsPropsIfPresent(t *testing.T, resultItems []utils.ResultItem, e
 			vals, ok := propertiesMap["vcs.repo"]
 			assert.True(t, ok, "Missing vcs.repo on %s", item.Name)
 			assert.Contains(t, vals, expectedRepo, "Wrong vcs.repo on %s", item.Name)
+		}
+	}
+}
+
+// SetupLocalGitVcsEnv enables VCS property collection and clears CI detection
+// so only local git fallback is exercised.
+func SetupLocalGitVcsEnv(t *testing.T) (cleanup func()) {
+	t.Helper()
+	var callbacks []func()
+
+	for _, key := range []string{
+		"JFROG_CLI_CI_VCS_PROPS_DISABLED", // set to "" to enable
+		"CI", "GITHUB_ACTIONS", "GITHUB_WORKFLOW", "GITHUB_RUN_ID",
+		"GITHUB_REPOSITORY", "GITHUB_REPOSITORY_OWNER",
+		"GITHUB_SERVER_URL", "GITHUB_SHA", "GITHUB_REF", "GITHUB_REF_NAME", "GITHUB_HEAD_REF",
+	} {
+		callbacks = append(callbacks, tests.SetEnvWithCallbackAndAssert(t, key, ""))
+	}
+
+	return func() {
+		for _, cb := range callbacks {
+			cb()
+		}
+	}
+}
+
+// ValidateLocalGitVcsPropsOnArtifacts asserts vcs.url, vcs.revision, vcs.branch on every item.
+func ValidateLocalGitVcsPropsOnArtifacts(t *testing.T, resultItems []utils.ResultItem, expectedURL, expectedRevision, expectedBranch string) {
+	t.Helper()
+	for _, item := range resultItems {
+		propertiesMap := ConvertPropertiesToMap(item.Properties)
+		assertLocalGitProp(t, item.Name, propertiesMap, "vcs.url", expectedURL)
+		assertLocalGitProp(t, item.Name, propertiesMap, "vcs.revision", expectedRevision)
+		if expectedBranch != "" {
+			assertLocalGitProp(t, item.Name, propertiesMap, "vcs.branch", expectedBranch)
+		}
+	}
+}
+
+func assertLocalGitProp(t *testing.T, itemName string, props map[string][]string, key, expected string) {
+	t.Helper()
+	vals, ok := props[key]
+	assert.True(t, ok, "Missing %s on %s", key, itemName)
+	assert.Contains(t, vals, expected, "Wrong %s on %s", key, itemName)
+}
+
+// ValidateNoLocalGitVcsPropsOnArtifacts asserts url/revision/branch are absent.
+func ValidateNoLocalGitVcsPropsOnArtifacts(t *testing.T, resultItems []utils.ResultItem) {
+	t.Helper()
+	for _, item := range resultItems {
+		propertiesMap := ConvertPropertiesToMap(item.Properties)
+		_, hasURL := propertiesMap["vcs.url"]
+		_, hasRev := propertiesMap["vcs.revision"]
+		_, hasBranch := propertiesMap["vcs.branch"]
+		assert.False(t, hasURL, "vcs.url should not be set on %s", item.Name)
+		assert.False(t, hasRev, "vcs.revision should not be set on %s", item.Name)
+		assert.False(t, hasBranch, "vcs.branch should not be set on %s", item.Name)
+	}
+}
+
+// ValidateCIAndLocalGitVcsPropsOnArtifacts asserts CI props plus local git props coexist.
+func ValidateCIAndLocalGitVcsPropsOnArtifacts(t *testing.T, resultItems []utils.ResultItem,
+	expectedProvider, expectedOrg, expectedRepo, expectedURL, expectedRevision, expectedBranch string) {
+	t.Helper()
+	for _, item := range resultItems {
+		propertiesMap := ConvertPropertiesToMap(item.Properties)
+		assertLocalGitProp(t, item.Name, propertiesMap, "vcs.provider", expectedProvider)
+		assertLocalGitProp(t, item.Name, propertiesMap, "vcs.org", expectedOrg)
+		assertLocalGitProp(t, item.Name, propertiesMap, "vcs.repo", expectedRepo)
+		assertLocalGitProp(t, item.Name, propertiesMap, "vcs.url", expectedURL)
+		assertLocalGitProp(t, item.Name, propertiesMap, "vcs.revision", expectedRevision)
+		if expectedBranch != "" {
+			assertLocalGitProp(t, item.Name, propertiesMap, "vcs.branch", expectedBranch)
 		}
 	}
 }

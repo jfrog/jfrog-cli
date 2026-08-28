@@ -21,6 +21,7 @@ Common patterns:
 
 Gotchas:
 - Interactive prompts trigger when required flags are missing.
+- This does not configure the pipenv client itself. It is read only by 'jf pipenv' commands; a plain 'pipenv install' keeps resolving from its own configuration, which this command never touches. To point the client itself at Artifactory for every project on the machine, run 'jf setup pipenv' instead - the two are independent and can even name different repositories.
 
-Related: jf pipenv, jf pip-config, jf poetry-config`
+Related: jf pipenv, jf pip-config, jf poetry-config, jf setup pipenv`
 }

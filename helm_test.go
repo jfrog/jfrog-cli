@@ -958,6 +958,99 @@ func TestHelmBuildPublishWithCIVcsProps(t *testing.T) {
 	assert.Greater(t, artifactCount, 0, "No artifacts were validated for CI VCS properties")
 }
 
+// TestHelmPushWithLocalGitVcsProps verifies local git VCS props on Helm artifacts
+// when running build-publish with VCS collection enabled and no CI env.
+func TestHelmPushWithLocalGitVcsProps(t *testing.T) {
+	initHelmTest(t)
+	defer cleanHelmTest(t)
+
+	buildName := tests.HelmBuildName + "-local-git"
+	buildNumber := "1"
+
+	cleanupEnv := tests.SetupLocalGitVcsEnv(t)
+	defer cleanupEnv()
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	chartDir := createTestHelmChartWithDependencies(t, "test-chart-local-git", "0.2.0")
+	defer func() {
+		if err := os.RemoveAll(chartDir); err != nil {
+			t.Logf("Warning: Failed to remove test chart directory %s: %v", chartDir, err)
+		}
+	}()
+	tests.CopyGitFixtureIntoProject(t, chartDir)
+
+	originalDir, err := os.Getwd()
+	require.NoError(t, err)
+	defer func() {
+		if err := os.Chdir(originalDir); err != nil {
+			t.Logf("Warning: Failed to change back to original directory: %v", err)
+		}
+	}()
+	require.NoError(t, os.Chdir(chartDir))
+
+	helmCmd := exec.Command("helm", "dependency", "update")
+	helmCmd.Dir = chartDir
+	require.NoError(t, helmCmd.Run(), "helm dependency update should succeed")
+
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+	require.NoError(t, jfrogCli.Exec("helm", "package", ".",
+		"--build-name="+buildName, "--build-number="+buildNumber), "helm package should succeed")
+
+	chartFiles, err := filepath.Glob(filepath.Join(chartDir, "*.tgz"))
+	require.NoError(t, err)
+	require.NotEmpty(t, chartFiles, "Chart package file should be created")
+	chartFile := filepath.Base(chartFiles[0])
+
+	parsedURL, err := url.Parse(serverDetails.ArtifactoryUrl)
+	require.NoError(t, err)
+	registryHost := parsedURL.Host
+	registryURL := fmt.Sprintf("oci://%s/%s", registryHost, tests.HelmLocalRepo)
+
+	if !isRepoExist(tests.HelmLocalRepo) {
+		t.Skipf("Repository %s does not exist. Skipping test.", tests.HelmLocalRepo)
+	}
+
+	err = loginHelmRegistry(t, registryHost)
+	if err != nil {
+		errorMsg := strings.ToLower(err.Error())
+		if strings.Contains(errorMsg, "account temporarily locked") {
+			t.Skip("Artifactory account is temporarily locked. Skipping test.")
+		}
+		if strings.Contains(errorMsg, "http response to https") ||
+			strings.Contains(errorMsg, "tls: first record does not look like a tls handshake") {
+			t.Skip("Helm registry login failed due to HTTPS/HTTP mismatch. Skipping test.")
+		}
+	}
+	require.NoError(t, err, "helm registry login should succeed")
+
+	err = jfrogCli.Exec("helm", "push", chartFile, registryURL,
+		"--build-name="+buildName, "--build-number="+buildNumber)
+	if err != nil {
+		errorMsg := strings.ToLower(err.Error())
+		if strings.Contains(errorMsg, "404") ||
+			strings.Contains(errorMsg, "not found") ||
+			strings.Contains(errorMsg, "exit status 1") {
+			t.Skip("OCI registry API not accessible (404). Skipping test.")
+		}
+	}
+	require.NoError(t, err, "helm push should succeed")
+
+	require.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	require.NoError(t, err)
+	require.True(t, found)
+
+	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
+	require.NoError(t, err)
+
+	count := tests.ValidateLocalGitVcsPropsOnBuildInfoArtifacts(t, serviceManager, publishedBuildInfo, tests.HelmLocalRepo,
+		tests.VcsFixtureMainURL, tests.VcsFixtureMainRevision, tests.VcsFixtureMainBranch)
+	assert.Greater(t, count, 0)
+}
+
 // InitHelmTests initializes Helm tests
 func InitHelmTests() {
 	initArtifactoryCli()
