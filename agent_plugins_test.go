@@ -344,6 +344,14 @@ func assertCodexPluginInstalled(t *testing.T, slug string, wantVersion string) {
 	require.True(t, found, "codex plugin %q not found in `codex plugin list`", slug)
 }
 
+func setIsolatedHome(t *testing.T) string {
+	t.Helper()
+	homeDir := t.TempDir()
+	t.Setenv("HOME", homeDir)
+	t.Setenv("USERPROFILE", homeDir)
+	return homeDir
+}
+
 // verifyIsolatedHome verifies that HOME was actually changed to an isolated directory.
 func verifyIsolatedHome(t *testing.T, homeDir string) {
 	t.Helper()
@@ -357,14 +365,6 @@ func verifyIsolatedHome(t *testing.T, homeDir string) {
 	tempRoot := filepath.Dir(tempDir) // Get parent of temp dir to allow for t.TempDir() subdirectories
 	require.True(t, strings.HasPrefix(filepath.Clean(homeDir), filepath.Clean(tempRoot)),
 		"isolated HOME should be in system temp directory, got %s (temp root: %s)", homeDir, tempRoot)
-}
-
-func setIsolatedHome(t *testing.T) string {
-	t.Helper()
-	homeDir := t.TempDir()
-	t.Setenv("HOME", homeDir)
-	t.Setenv("USERPROFILE", homeDir)
-	return homeDir
 }
 
 // pluginManifestDir returns the directory holding a harness's plugin.json inside a plugin.
@@ -1341,6 +1341,7 @@ func TestAgentPluginsInstallGlobal(t *testing.T) {
 	for _, tc := range agentPluginHarnessCases() {
 		t.Run(tc.name, func(t *testing.T) {
 			homeDir := setIsolatedHome(t)
+			verifyIsolatedHome(t, homeDir)
 			require.NoError(t, installViaMarketplaceWithRetry(t, slug, harnessFlag(tc.harnesses)))
 			assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug, "1.0.0")
 			assertPluginsInstalledNatively(t, tc.harnesses, slug, "1.0.0")
@@ -1367,6 +1368,7 @@ func TestAgentPluginsInstallMarketplace(t *testing.T) {
 	for _, tc := range agentPluginHarnessCases() {
 		t.Run(tc.name, func(t *testing.T) {
 			homeDir := setIsolatedHome(t)
+			verifyIsolatedHome(t, homeDir)
 			require.NoError(t, installViaMarketplaceWithRetry(t, slug, harnessFlag(tc.harnesses)),
 				"install without --version should resolve through the generated marketplace")
 			assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug, "1.0.0")
@@ -2316,6 +2318,7 @@ func TestAgentPluginsListCheckUpdates(t *testing.T) {
 	for _, tc := range agentPluginHarnessCases() {
 		t.Run(tc.name, func(t *testing.T) {
 			homeDir := setIsolatedHome(t)
+			verifyIsolatedHome(t, homeDir)
 			require.NoError(t, installViaMarketplaceWithRetry(t, slug, harnessFlag(tc.harnesses)))
 			assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug, version)
 
@@ -2387,6 +2390,7 @@ func TestAgentPluginsListCheckUpdatesCurrent(t *testing.T) {
 	for _, tc := range agentPluginHarnessCases() {
 		t.Run(tc.name, func(t *testing.T) {
 			homeDir := setIsolatedHome(t)
+			verifyIsolatedHome(t, homeDir)
 			require.NoError(t, installViaMarketplaceWithRetry(t, slug, harnessFlag(tc.harnesses)))
 			assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug)
 
@@ -2722,6 +2726,7 @@ func TestAgentPluginsListLocal(t *testing.T) {
 	for _, tc := range agentPluginHarnessCases() {
 		t.Run(tc.name, func(t *testing.T) {
 			homeDir := setIsolatedHome(t)
+			verifyIsolatedHome(t, homeDir)
 			require.NoError(t, installViaMarketplaceWithRetry(t, slug, harnessFlag(tc.harnesses)))
 			assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug, version)
 
