@@ -2285,17 +2285,23 @@ func TestApmPassthroughServerIdFlag(t *testing.T) {
 	initApmTest(t)
 	defer cleanApmTest(t)
 
+	publishApmDependencyPackage(t, "test/passthrough-server-id-dep", "1.0.0")
+
 	projectDir, err := os.MkdirTemp("", "apm-passthrough-server-id-test-*")
 	require.NoError(t, err)
 	defer func() {
 		_ = os.RemoveAll(projectDir)
 	}()
-	createApmTestProject(t, projectDir)
+	createApmTestProjectWithDependency(t, projectDir, "test/passthrough-server-id-dep#1.0.0")
 
 	wd, err := os.Getwd()
 	require.NoError(t, err)
 	defer clientTestUtils.ChangeDirAndAssert(t, wd)
 	clientTestUtils.ChangeDirAndAssert(t, projectDir)
+
+	// "outdated" (like most native apm subcommands) needs an existing apm.lock.yaml to have
+	// anything to check - install first so a real lockfile exists before exercising passthrough.
+	require.NoError(t, getApmCli().Exec("agent", "apm", "install"), "setup install for the passthrough test should succeed")
 
 	// Explicit --server-id naming the real, configured server ("default", set up by
 	// createJfrogHomeConfig) should succeed exactly like omitting it entirely.
@@ -2314,56 +2320,14 @@ func TestApmPassthroughServerIdFlag(t *testing.T) {
 		"error should come from jf's own server resolution (proving --server-id was consumed), not from a bare exec failure after the flag leaked through to apm")
 }
 
-// TestApmInstallModuleIdFallsBackToBuildNameWhenManifestIncomplete validates that install's
-// default module ID (no --module given) falls back to the build name itself when apm.yml is
-// missing version - matching npm/yarn's own BuildInfoModuleId() convention (empty module id
-// flows to build-info-go's generic partial-merge fallback), not a directory-basename fallback
-// of apm's own invention, and not a malformed partial id like "name:" with no version.
-func TestApmInstallModuleIdFallsBackToBuildNameWhenManifestIncomplete(t *testing.T) {
-	initApmTest(t)
-	defer cleanApmTest(t)
-
-	publishApmDependencyPackage(t, "test/incomplete-manifest-dep", "1.0.0")
-
-	projectDir, err := os.MkdirTemp("", "apm-incomplete-manifest-test-*")
-	require.NoError(t, err)
-	defer func() {
-		_ = os.RemoveAll(projectDir)
-	}()
-	require.NoError(t, os.MkdirAll(filepath.Join(projectDir, ".apm"), dirPerms))
-
-	// Deliberately no "version:" field, so derivedModuleID cannot produce a "name:version"
-	// module id and must fall through to build-info-go's generic fallback.
-	apmYamlContent := `name: incomplete-manifest-project
-license: UNLICENSED
-targets:
-  - claude
-dependencies:
-  apm:
-    - test/incomplete-manifest-dep#1.0.0
-`
-	require.NoError(t, os.WriteFile(filepath.Join(projectDir, "apm.yml"), []byte(apmYamlContent), filePerms))
-
-	wd, err := os.Getwd()
-	require.NoError(t, err)
-	defer clientTestUtils.ChangeDirAndAssert(t, wd)
-	clientTestUtils.ChangeDirAndAssert(t, projectDir)
-
-	buildNumber := "113"
-	err = getApmCli().Exec("agent", "apm", "install", "--build-name", apmBuildName, "--build-number", buildNumber)
-	require.NoError(t, err, "jf agent apm install should succeed even with an incomplete apm.yml (missing version)")
-
-	buildResult := fetchPublishedApmBuildInfo(t, apmBuildName, buildNumber)
-	require.NotEmpty(t, buildResult.Modules, "build info should have a module even with an incomplete manifest")
-	module := buildResult.Modules[0]
-
-	assert.Equal(t, apmBuildName, module.Id,
-		"module id should fall back to the build name when apm.yml has no version, matching npm's own convention - not a directory-basename fallback")
-	assert.NotContains(t, module.Id, "incomplete-manifest-project",
-		"module id should not be derived from the manifest name alone when version is missing")
-
-	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, apmBuildName, artHttpDetails)
-}
+// NOTE: a real e2e test for "install's default module ID falls back to the build name when
+// apm.yml has no version" was attempted here and removed - the native apm binary itself hard-
+// requires the version field ("Missing required field 'version' in apm.yml") and refuses to run
+// at all without it, so that scenario is unreachable through a genuine "jf agent apm install"
+// call; apm never lets jf's own build-info code see an incomplete manifest in practice. The
+// behavior is already covered at the unit level by TestDerivedModuleID in
+// jfrog-cli-artifactory/agent/apm/common/build_info_test.go, which exercises derivedModuleID
+// directly without going through apm's own stricter validation.
 
 // TestApmInstallDevDependencyScope validates that a dependency installed with --dev is recorded
 // with scope "dev" in build info, matching npm's own dev-dependency scope convention (see
@@ -2512,7 +2476,7 @@ primitives:
 	clientTestUtils.ChangeDirAndAssert(t, projectDir)
 
 	buildNumber := "116"
-	err = getApmCli().Exec("agent", "apm", "publish", "--package", owner+"/"+pkgName, "--zip", customZipPath,
+	err = getApmCli().Exec("agent", "apm", "publish", "--package", owner+"/"+pkgName, "--registry", tests.AgentPackagesLocalRepo, "--zip", customZipPath,
 		"--build-name", apmBuildName, "--build-number", buildNumber)
 	require.NoError(t, err, "jf agent apm publish --zip <custom path> should succeed")
 

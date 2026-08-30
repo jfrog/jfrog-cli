@@ -4,7 +4,7 @@ import "time"
 
 const (
 	// General CLI constants
-	CliVersion  = "2.120.0"
+	CliVersion  = "2.122.0"
 	ClientAgent = "jfrog-cli-go"
 
 	// CLI base commands constants:

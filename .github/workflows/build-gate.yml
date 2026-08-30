@@ -65,6 +65,10 @@ jobs:
     needs: gate
     uses: ./.github/workflows/conanTests.yml
     secrets: inherit
+  cargo:
+    needs: gate
+    uses: ./.github/workflows/cargoTests.yml
+    secrets: inherit
   distribution:
     needs: gate
     uses: ./.github/workflows/distributionTests.yml
@@ -161,6 +165,10 @@ jobs:
     needs: gate
     uses: ./.github/workflows/pythonTests.yml
     secrets: inherit
+  ruby:
+    needs: gate
+    uses: ./.github/workflows/rubyTests.yml
+    secrets: inherit
   script:
     needs: gate
     uses: ./.github/workflows/scriptTests.yml
@@ -190,6 +198,7 @@ jobs:
       - access
       - artifactory
       - conan
+      - cargo
       - distribution
       - docker
       - evidence
@@ -210,6 +219,7 @@ jobs:
       - podman
       - poetry
       - python
+      - ruby
       - script
       - transfer
       - uv

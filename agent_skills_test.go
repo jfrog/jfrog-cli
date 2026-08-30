@@ -1793,6 +1793,43 @@ func TestAgentSkillsPublishBuildInfo(t *testing.T) {
 	assert.NotEmpty(t, props.Properties["build.timestamp"])
 }
 
+// TestAgentSkillsPublishWithProjectFlag verifies that --project=<key> stores the
+// build-info partials under the project-key-aware local directory (the build dir
+// hash includes the project key), and that nothing is stored under the
+// empty-project directory.
+func TestAgentSkillsPublishWithProjectFlag(t *testing.T) {
+	initAgentSkillsTest(t)
+	defer cleanAgentSkillsTest()
+
+	slug := "project-flag-skill"
+	buildName := tests.AgentSkillsBuildName + "-project"
+	buildNumber := "1"
+	projectKey := "testprj"
+	t.Cleanup(func() {
+		_ = coreBuild.RemoveBuildDir(buildName, buildNumber, projectKey)
+		_ = coreBuild.RemoveBuildDir(buildName, buildNumber, "")
+	})
+
+	require.NoError(t, runAgentSkillsCmd(t,
+		"publish", createTestSkill(t, slug, "1.0.0"),
+		"--repo="+tests.AgentSkillsLocalRepo,
+		"--skip-scan",
+		"--build-name="+buildName,
+		"--build-number="+buildNumber,
+		"--project="+projectKey,
+	))
+
+	partials, err := coreBuild.ReadPartialBuildInfoFiles(buildName, buildNumber, projectKey)
+	require.NoError(t, err)
+	require.Len(t, partials, 1, "expected 1 build-info partial stored with project key %q", projectKey)
+	assert.Equal(t, slug, partials[0].ModuleId)
+	assert.NotEmpty(t, partials[0].Artifacts, "published zip should be recorded as a build-info artifact")
+
+	partialsNoProject, err := coreBuild.ReadPartialBuildInfoFiles(buildName, buildNumber, "")
+	assert.NoError(t, err)
+	assert.Empty(t, partialsNoProject, "build info should NOT be stored under the empty project key directory")
+}
+
 // TestAgentSkillsPublishModuleOverride verifies --module overrides the default
 // build-info module id (skill slug).
 func TestAgentSkillsPublishModuleOverride(t *testing.T) {

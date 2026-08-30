@@ -16,8 +16,8 @@ replace (
 require (
 	github.com/BurntSushi/toml v1.6.0
 	github.com/agnivade/levenshtein v1.2.1
-	github.com/buger/jsonparser v1.6.1
-	github.com/gocarina/gocsv v0.0.0-20260628180327-50907998929c
+	github.com/buger/jsonparser v1.3.0
+	github.com/gocarina/gocsv v0.0.0-20260607070740-0735908c6461
 	github.com/jfrog/archiver/v3 v3.6.4
 	github.com/jfrog/build-info-go v1.13.1-0.20260828071122-bb92ab7ba69b
 	github.com/jfrog/gofrog v1.7.6
@@ -26,7 +26,7 @@ require (
 	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260830182749-43e0b312da78
 	github.com/jfrog/jfrog-cli-evidence v0.10.0
 	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260618062042-6053ab368cab
-	github.com/jfrog/jfrog-cli-security v1.33.1
+	github.com/jfrog/jfrog-cli-security v1.35.0
 	github.com/jfrog/jfrog-client-go v1.55.1-0.20260827094947-e7a90ebc8049
 	github.com/jszwec/csvutil v1.10.0
 	github.com/moby/moby/api v1.55.0
@@ -243,10 +243,8 @@ require (
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
 
-// replace github.com/gfleury/go-bitbucket-v1 => github.com/gfleury/go-bitbucket-v1 v0.0.0-20230825095122-9bc1711434ab
+//replace github.com/gfleury/go-bitbucket-v1 => github.com/gfleury/go-bitbucket-v1 v0.0.0-20230825095122-9bc1711434ab
 
-// replace github.com/ktrysmt/go-bitbucket => github.com/ktrysmt/go-bitbucket v0.9.80
+//replace github.com/ktrysmt/go-bitbucket => github.com/ktrysmt/go-bitbucket v0.9.80
 
-// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.54.2-0.20251007084958-5eeaa42c31a6
-
-// replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260811155045-62401b3fa49b
+// replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260604085947-7c110b77b4b4

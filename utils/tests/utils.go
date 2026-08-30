@@ -71,7 +71,9 @@ var (
 	TestPoetry                *bool
 	TestUv                    *bool
 	TestNix                   *bool
+	TestCargo                 *bool
 	TestAlpine                *bool
+	TestRuby                  *bool
 	TestApt                   *bool
 	TestAgentPlugins          *bool
 	TestAgentSkills           *bool
@@ -144,7 +146,9 @@ func init() {
 	TestPoetry = flag.Bool("test.poetry", false, "Test Poetry")
 	TestUv = flag.Bool("test.uv", false, "Test UV")
 	TestNix = flag.Bool("test.nix", false, "Test Nix")
+	TestCargo = flag.Bool("test.cargo", false, "Test Cargo")
 	TestAlpine = flag.Bool("test.alpine", false, "Test Alpine APK")
+	TestRuby = flag.Bool("test.ruby", false, "Test Ruby")
 	TestApt = flag.Bool("test.apt", false, "Test apt (Debian/Ubuntu package manager)")
 	TestAgentPlugins = flag.Bool("test.agentPlugins", false, "Test Agent Plugins")
 	TestAgentSkills = flag.Bool("test.agentSkills", false, "Test Agent Skills")
@@ -380,9 +384,14 @@ var reposConfigMap = map[*string]string{
 	&NixLocalRepo:                   NixLocalRepositoryConfig,
 	&NixRemoteRepo:                  NixRemoteRepositoryConfig,
 	&NixVirtualRepo:                 NixVirtualRepositoryConfig,
+	&CargoLocalRepo:                 CargoLocalRepositoryConfig,
+	&CargoRemoteRepo:                CargoRemoteRepositoryConfig,
 	&AlpineLocalRepo:                AlpineLocalRepositoryConfig,
 	&AlpineRemoteRepo:               AlpineRemoteRepositoryConfig,
 	&AlpineVirtualRepo:              AlpineVirtualRepositoryConfig,
+	&RubyLocalRepo:                  RubyLocalRepositoryConfig,
+	&RubyRemoteRepo:                 RubyRemoteRepositoryConfig,
+	&RubyVirtualRepo:                RubyVirtualRepositoryConfig,
 	&AptLocalRepo:                   AptLocalRepositoryConfig,
 	&AptRemoteRepo:                  AptRemoteRepositoryConfig,
 	&AptDebianRemoteRepo:            AptDebianRemoteRepositoryConfig,
@@ -459,7 +468,9 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestPoetry:             {&PoetryLocalRepo, &PoetryRemoteRepo},
 		TestUv:                 {&UvLocalRepo, &UvRemoteRepo},
 		TestNix:                {&NixLocalRepo, &NixRemoteRepo},
+		TestCargo:              {&CargoLocalRepo, &CargoRemoteRepo},
 		TestAlpine:             {&AlpineLocalRepo, &AlpineRemoteRepo},
+		TestRuby:               {&RubyLocalRepo, &RubyRemoteRepo},
 		TestApt:                {&AptLocalRepo, &AptRemoteRepo, &AptDebianRemoteRepo},
 		TestAgentPlugins:       {&AgentPluginsLocalRepo},
 		TestAgentSkills:        {&AgentSkillsLocalRepo},
@@ -497,6 +508,7 @@ func GetVirtualRepositories() map[*string]string {
 		TestUv:           {&UvVirtualRepo},
 		TestNix:          {&NixVirtualRepo},
 		TestAlpine:       {&AlpineVirtualRepo},
+		TestRuby:         {&RubyVirtualRepo},
 		TestApt:          {&AptVirtualRepo},
 		TestAgentPlugins: {},
 		TestAgentSkills:  {},
@@ -543,7 +555,9 @@ func GetBuildNames() []string {
 		TestPoetry:       {&PoetryBuildName},
 		TestUv:           {&UvBuildName},
 		TestNix:          {&NixBuildName},
+		TestCargo:        {&CargoBuildName},
 		TestAlpine:       {&AlpineBuildName},
+		TestRuby:         {&RubyBuildName},
 		TestAgentPlugins: {&AgentPluginsBuildName},
 		TestAgentSkills:  {&AgentSkillsBuildName},
 		TestConan:        {&ConanBuildName},
@@ -615,9 +629,14 @@ func getSubstitutionMap() map[string]string {
 		"${NIX_LOCAL_REPO}":            NixLocalRepo,
 		"${NIX_REMOTE_REPO}":           NixRemoteRepo,
 		"${NIX_VIRTUAL_REPO}":          NixVirtualRepo,
+		"${CARGO_LOCAL_REPO}":          CargoLocalRepo,
+		"${CARGO_REMOTE_REPO}":         CargoRemoteRepo,
 		"${ALPINE_LOCAL_REPO}":         AlpineLocalRepo,
 		"${ALPINE_REMOTE_REPO}":        AlpineRemoteRepo,
 		"${ALPINE_VIRTUAL_REPO}":       AlpineVirtualRepo,
+		"${RUBY_LOCAL_REPO}":           RubyLocalRepo,
+		"${RUBY_REMOTE_REPO}":          RubyRemoteRepo,
+		"${RUBY_VIRTUAL_REPO}":         RubyVirtualRepo,
 		"${APT_LOCAL_REPO}":            AptLocalRepo,
 		"${APT_REMOTE_REPO}":           AptRemoteRepo,
 		"${APT_DEBIAN_REMOTE_REPO}":    AptDebianRemoteRepo,
@@ -700,6 +719,8 @@ func AddTimestampToGlobalVars() {
 	NixLocalRepo += uniqueSuffix
 	NixRemoteRepo += uniqueSuffix
 	NixVirtualRepo += uniqueSuffix
+	CargoLocalRepo += uniqueSuffix
+	CargoRemoteRepo += uniqueSuffix
 	AlpineLocalRepo += uniqueSuffix
 	AlpineRemoteRepo += uniqueSuffix
 	AlpineVirtualRepo += uniqueSuffix
@@ -742,6 +763,7 @@ func AddTimestampToGlobalVars() {
 	AgentSkillsBuildName += uniqueSuffix
 	UvBuildName += uniqueSuffix
 	NixBuildName += uniqueSuffix
+	CargoBuildName += uniqueSuffix
 	AlpineBuildName += uniqueSuffix
 	ConanBuildName += uniqueSuffix
 	HelmBuildName += uniqueSuffix
