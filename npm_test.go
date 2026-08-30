@@ -1686,3 +1686,335 @@ func TestNpmPublishWithLocalGitVcsProps(t *testing.T) {
 		tests.VcsFixtureMainURL, tests.VcsFixtureMainRevision, tests.VcsFixtureMainBranch)
 	assert.Greater(t, count, 0)
 }
+
+// TestNpmInstallFailOnMissingDepsWithoutBuildInfo tests the --fail-on-missing-deps flag
+// when build-info collection is not enabled. The flag should be recognized but have no effect.
+// STEP 1: Initialize test environment
+// STEP 2: Create npm project with dependencies
+// STEP 3: Run "jfrog npm install --fail-on-missing-deps" (WITHOUT build-name/build-number)
+// STEP 4: Verify command succeeds (flag ignored when no build-info collection)
+func TestNpmInstallFailOnMissingDepsWithoutBuildInfo(t *testing.T) {
+	initNpmTest(t) // STEP 1: Initialize test with mock Artifactory
+	defer cleanNpmTest(t)
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+
+	// STEP 2: Setup npm project in temporary directory
+	npmPath := initNpmProjectTest(t)
+	chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, npmPath)
+	defer chdirCallBack()
+
+	// STEP 3: Run npm install with --fail-on-missing-deps but WITHOUT build-info collection
+	// This should succeed because the flag only affects build-info collection
+	runJfrogCli(t, "npm", "install", "--fail-on-missing-deps")
+
+	// STEP 4: Verify success - flag is ignored when no build-info collection
+	// (No assertion needed - runJfrogCli asserts NoError internally)
+	clientTestUtils.ChangeDirAndAssert(t, wd)
+}
+
+// TestNpmInstallWithoutFailOnMissingDepsFlag tests npm install with build-info collection
+// but WITHOUT the --fail-on-missing-deps flag (legacy behavior with available deps).
+// STEP 1: Initialize test environment
+// STEP 2: Create npm project with dependencies
+// STEP 3: Run "jfrog npm install --build-name=X --build-number=Y" (WITHOUT --fail-on-missing-deps)
+// STEP 4: Verify command succeeds (legacy behavior - warns on missing deps, doesn't fail)
+// STEP 5: Verify build-info was published
+func TestNpmInstallWithoutFailOnMissingDepsFlag(t *testing.T) {
+	initNpmTest(t) // STEP 1: Initialize test with mock Artifactory
+	defer cleanNpmTest(t)
+
+	buildName := "npm-no-strict-test"
+	buildNumber := "1"
+
+	// STEP 1 (continued): Clean old build if exists
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+
+	// STEP 2: Setup npm project in temporary directory
+	npmPath := initNpmProjectTest(t)
+	chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, npmPath)
+	defer chdirCallBack()
+
+	// STEP 3: Run npm install with build-info collection but WITHOUT strict mode
+	runJfrogCli(t, "npm", "install", "--build-name="+buildName, "--build-number="+buildNumber)
+
+	// STEP 4: Verify success (legacy behavior - warns on missing, doesn't fail)
+	clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	// STEP 5: Verify build publish succeeds (publishes local build-info to Artifactory)
+	publishErr := artifactoryCli.Exec("bp", buildName, buildNumber)
+	assert.NoError(t, publishErr, "Build publish should SUCCEED and publish build-info to Artifactory")
+
+	// STEP 6: Verify build-info was published to Artifactory
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	assert.NoError(t, err)
+	assert.True(t, found, "Build info should be found in Artifactory after bp publish")
+	assert.NotNil(t, publishedBuildInfo)
+}
+
+// TestNpmInstallLegacyModeWarnsWithMissingCache installs xml/json from Artifactory,
+// then clears npm _cacache tarballs while keeping node_modules.
+// Without --fail-on-missing-deps the command succeeds and still publishes partial build-info.
+func TestNpmInstallLegacyModeWarnsWithMissingCache(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+
+	buildName := "npm-legacy-warn-test"
+	buildNumber := "1"
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+
+	npmPath := initNpmProjectTest(t)
+	chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, npmPath)
+	defer chdirCallBack()
+
+	cacheDir, restoreCache := useIsolatedNpmCache(t)
+	defer restoreCache()
+
+	err = runJfrogCliWithoutAssertion("npm", "install")
+	assert.NoError(t, err, "Initial npm install should populate node_modules and the isolated cache from Artifactory")
+
+	wipeNpmCacacheTarballs(t, cacheDir)
+
+	err = runJfrogCliWithoutAssertion("npm", "install",
+		"--build-name="+buildName,
+		"--build-number="+buildNumber)
+	assert.NoError(t, err, "Without --fail-on-missing-deps, missing cache tarballs should not fail the command")
+
+	clientTestUtils.ChangeDirAndAssert(t, wd)
+	require.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	assert.NoError(t, err)
+	assert.True(t, found, "Partial build-info should still be published in legacy (warn) mode")
+	assert.NotNil(t, publishedBuildInfo)
+}
+
+// TestNpmInstallWithFailOnMissingDepsFlag tests npm install with the --fail-on-missing-deps
+// flag enabled. When all dependencies (regular/peer/bundled/optional) are available, this should succeed.
+// In strict mode, 100% dependency resolution is required for ALL 4 categories.
+// STEP 1: Initialize test environment
+// STEP 2: Create npm project with dependencies
+// STEP 3: Run "jfrog npm install --build-name=X --build-number=Y --fail-on-missing-deps"
+// STEP 4: Verify command succeeds (all 4 dep categories available)
+// STEP 5: Verify build-info was published with all dependencies
+func TestNpmInstallWithFailOnMissingDepsFlag(t *testing.T) {
+	initNpmTest(t) // STEP 1: Initialize test with mock Artifactory
+	defer cleanNpmTest(t)
+
+	buildName := "npm-strict-test"
+	buildNumber := "1"
+
+	// STEP 1 (continued): Clean old build if exists
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+
+	// STEP 2: Setup npm project in temporary directory
+	npmPath := initNpmProjectTest(t)
+	chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, npmPath)
+	defer chdirCallBack()
+
+	// STEP 3: Run npm install with strict mode enabled (all deps must be available)
+	// With a normal npm project, this should succeed (all deps available)
+	runJfrogCli(t, "npm", "install",
+		"--build-name="+buildName,
+		"--build-number="+buildNumber,
+		"--fail-on-missing-deps")
+
+	// STEP 4: Verify success - command completed without failing
+	clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	// STEP 5: Verify build publish succeeds (publishes local build-info to Artifactory)
+	publishErr := artifactoryCli.Exec("bp", buildName, buildNumber)
+	assert.NoError(t, publishErr, "Build publish should SUCCEED when strict mode succeeds and all deps are available")
+
+	// STEP 6: Verify build-info was published to Artifactory (strict mode didn't prevent it)
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	assert.NoError(t, err)
+	assert.True(t, found, "Build info should be published to Artifactory when using --fail-on-missing-deps with available deps")
+	assert.NotNil(t, publishedBuildInfo)
+}
+
+// useIsolatedNpmCache points npm at a dedicated cache directory via npm_config_cache.
+// The build-info collector resolves the cache with 'npm config get cache', which reads this env
+// var too, so wiping the directory cannot be masked by the machine's global npm cache.
+func useIsolatedNpmCache(t *testing.T) (cacheDir string, restore func()) {
+	cacheDir = t.TempDir()
+	return cacheDir, clientTestUtils.SetEnvWithCallbackAndAssert(t, "npm_config_cache", cacheDir)
+}
+
+// npmCachedTarballs returns every tarball currently stored in the cache's content-v2 store.
+func npmCachedTarballs(t *testing.T, cacheDir string) []string {
+	var tarballs []string
+	contentDir := filepath.Join(cacheDir, "_cacache", "content-v2")
+	err := filepath.Walk(contentDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			tarballs = append(tarballs, path)
+		}
+		return nil
+	})
+	if os.IsNotExist(err) {
+		return nil
+	}
+	require.NoError(t, err)
+	return tarballs
+}
+
+// wipeNpmCacacheTarballs removes cached tarballs but keeps the _cacache directory itself.
+// GetNpmConfigCache fails outright when _cacache is absent, which is a different error path than
+// the per-dependency cache miss these tests exercise. node_modules is left in place so the next
+// npm install stays up to date and does not repopulate the cache.
+func wipeNpmCacacheTarballs(t *testing.T, cacheDir string) {
+	cacachePath := filepath.Join(cacheDir, "_cacache")
+	require.NotEmpty(t, npmCachedTarballs(t, cacheDir), "cache should hold tarballs before wiping, otherwise the test proves nothing")
+	require.NoError(t, os.RemoveAll(filepath.Join(cacachePath, "content-v2")))
+	require.NoError(t, os.RemoveAll(filepath.Join(cacachePath, "index-v5")))
+	require.NoError(t, os.MkdirAll(cacachePath, 0755))
+}
+
+// removeOneNpmCachedTarball deletes exactly one cached tarball, leaving the rest resolvable.
+// This produces the partial-resolution case: most dependencies check out, one cannot be checksummed.
+func removeOneNpmCachedTarball(t *testing.T, cacheDir string) {
+	tarballs := npmCachedTarballs(t, cacheDir)
+	require.Greater(t, len(tarballs), 1, "need more than one cached tarball to remove just one of them")
+	require.NoError(t, os.Remove(tarballs[0]))
+	require.NoError(t, os.RemoveAll(filepath.Join(cacheDir, "_cacache", "index-v5")))
+}
+
+// TestNpmInstallFailsWithMissingCacheStrict tests STRICT MODE FAILURE SCENARIO
+// when npm _cacache tarballs are missing (corrupted/cleared cache).
+// With packages in node_modules but cache corrupted, strict mode should fail.
+// STEP 1: Create npm project with dependencies from Artifactory
+// STEP 2: npm install populates both node_modules AND _cacache
+// STEP 3: Wipe _cacache tarballs (keeps _cacache dir, simulates cache corruption)
+// STEP 4: npm install with --fail-on-missing-deps finds cache entries missing
+// STEP 5: Strict mode fails, build-info NOT published
+func TestNpmInstallFailsWithMissingCacheStrict(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+
+	buildName := "npm-missing-cache-test"
+	buildNumber := "1"
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+
+	npmPath := initNpmProjectTest(t)
+	chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, npmPath)
+	defer chdirCallBack()
+
+	cacheDir, restoreCache := useIsolatedNpmCache(t)
+	defer restoreCache()
+
+	err = runJfrogCliWithoutAssertion("npm", "install")
+	assert.NoError(t, err, "Initial npm install should populate node_modules and the isolated cache from Artifactory")
+
+	wipeNpmCacacheTarballs(t, cacheDir)
+
+	err = runJfrogCliWithoutAssertion("npm", "install",
+		"--build-name="+buildName,
+		"--build-number="+buildNumber,
+		"--fail-on-missing-deps")
+	assert.Error(t, err, "npm install with --fail-on-missing-deps should fail when cache tarballs are missing")
+	if err != nil {
+		assert.True(t,
+			strings.Contains(err.Error(), "cannot be 100% resolved") ||
+				strings.Contains(err.Error(), "will not be included in the build-info"),
+			"Error should mention unresolved build-info dependencies, got: %v", err)
+	}
+
+	clientTestUtils.ChangeDirAndAssert(t, wd)
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	assert.NoError(t, err)
+	assert.False(t, found, "Build info should not exist in Artifactory when collection failed")
+	assert.Nil(t, publishedBuildInfo)
+
+	publishErr := artifactoryCli.Exec("bp", buildName, buildNumber)
+	assert.Error(t, publishErr, "bp should fail because SaveBuildInfo was skipped")
+}
+
+// TestNpmInstallFailsWithPartialMissingCacheStrict tests PARTIAL CACHE MISSING SCENARIO
+// where some dependencies exist in cache but others are missing (100% not achieved).
+// With multiple deps but only one missing, strict mode should still fail.
+// STEP 1: Create npm project with 2 dependencies (xml + json)
+// STEP 2: npm install populates node_modules AND _cacache with both packages
+// STEP 3: Delete only ONE package from _cacache (partial cache loss)
+// STEP 4: npm install with --fail-on-missing-deps finds one dep missing
+// STEP 5: Strict mode fails (not 100% resolved), build-info NOT published
+func TestNpmInstallFailsWithPartialMissingCacheStrict(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+
+	buildName := "npm-partial-missing-cache-test"
+	buildNumber := "1"
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+
+	npmPath := initNpmProjectTest(t)
+	chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, npmPath)
+	defer chdirCallBack()
+
+	// Update package.json to have TWO dependencies (xml + json)
+	pkgJSON := []byte(`{
+  "name": "test-partial-cache",
+  "version": "1.0.0",
+  "dependencies": {
+    "xml": "1.0.1",
+    "json": "9.0.6"
+  }
+}`)
+	require.NoError(t, os.WriteFile("package.json", pkgJSON, 0644))
+
+	cacheDir, restoreCache := useIsolatedNpmCache(t)
+	defer restoreCache()
+
+	err = runJfrogCliWithoutAssertion("npm", "install")
+	assert.NoError(t, err, "Initial npm install should populate node_modules and cache with both dependencies")
+
+	removeOneNpmCachedTarball(t, cacheDir)
+
+	// Run with strict mode - should fail because not ALL deps are resolvable from cache
+	err = runJfrogCliWithoutAssertion("npm", "install",
+		"--build-name="+buildName,
+		"--build-number="+buildNumber,
+		"--fail-on-missing-deps")
+	assert.Error(t, err, "npm install with --fail-on-missing-deps should fail when ANY dep is missing from cache")
+	if err != nil {
+		assert.True(t,
+			strings.Contains(err.Error(), "cannot be 100% resolved") ||
+				strings.Contains(err.Error(), "will not be included in the build-info"),
+			"Error should mention unresolved dependencies (partial cache), got: %v", err)
+	}
+
+	// Verify build-info NOT published (strict mode prevents it)
+	clientTestUtils.ChangeDirAndAssert(t, wd)
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	assert.NoError(t, err)
+	assert.False(t, found, "Build info should not exist when strict mode fails due to partial cache")
+	assert.Nil(t, publishedBuildInfo)
+
+	// Verify bp fails (no build-info collected)
+	publishErr := artifactoryCli.Exec("bp", buildName, buildNumber)
+	assert.Error(t, publishErr, "bp should fail because SaveBuildInfo was skipped in strict mode")
+}
