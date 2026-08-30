@@ -1,6 +1,7 @@
 package main
 
 import (
+	"archive/zip"
 	"crypto/md5"  // #nosec G501 -- checksum verification against Artifactory's own reported MD5, not security-sensitive
 	"crypto/sha1" // #nosec G505 -- checksum verification against Artifactory's own reported SHA1, not security-sensitive
 	"encoding/json"
@@ -9,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -2266,4 +2268,342 @@ func TestApmInstallPositionalPackageWithBuildInfo(t *testing.T) {
 	assert.True(t, found, "build info dependency list should include the positionally-installed package")
 
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, apmBuildName, artHttpDetails)
+}
+
+// TestApmPassthroughServerIdFlag validates that "jf agent apm <native-subcommand>" (any
+// subcommand other than install/update/publish) honors --server-id for server selection, and
+// never lets that flag leak through as a raw, unrecognized argument to the native apm binary
+// (which has no --server-id option of its own).
+//
+// Regression test for a passthrough bug where RunApmPassthroughDefault resolved auth from the
+// default configured server unconditionally, ignoring --server-id entirely, while the raw
+// "--server-id <value>" tokens still rode along in the forwarded args and broke apm itself
+// with "Error: No such option: --server-id". Fixed by extracting --server-id via
+// coreutils.ExtractServerIdFromCommand before resolving the server or building the native
+// command, mirroring jf nix's own passthrough dispatcher.
+func TestApmPassthroughServerIdFlag(t *testing.T) {
+	initApmTest(t)
+	defer cleanApmTest(t)
+
+	projectDir, err := os.MkdirTemp("", "apm-passthrough-server-id-test-*")
+	require.NoError(t, err)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
+	createApmTestProject(t, projectDir)
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+	clientTestUtils.ChangeDirAndAssert(t, projectDir)
+
+	// Explicit --server-id naming the real, configured server ("default", set up by
+	// createJfrogHomeConfig) should succeed exactly like omitting it entirely.
+	err = getApmCli().Exec("agent", "apm", "outdated", "--server-id", "default")
+	require.NoError(t, err, "jf agent apm outdated --server-id <valid server> should succeed, not leak the flag to apm")
+
+	// A bad --server-id must fail at jf's OWN server resolution, with jf's own "does not
+	// exist" error - proving --server-id was actually extracted and consumed by jf, not
+	// silently ignored and then forwarded to apm. Before the fix, this case did not surface
+	// "does not exist" at all: --server-id's value was never inspected for server selection
+	// (silently falling back to the default server), so the only failure was apm's own
+	// generic "unrecognized option" exit further downstream.
+	err = getApmCli().Exec("agent", "apm", "outdated", "--server-id", "definitely-not-a-configured-server")
+	require.Error(t, err, "jf agent apm outdated --server-id <bad server> should fail")
+	assert.Contains(t, err.Error(), "does not exist",
+		"error should come from jf's own server resolution (proving --server-id was consumed), not from a bare exec failure after the flag leaked through to apm")
+}
+
+// TestApmInstallModuleIdFallsBackToBuildNameWhenManifestIncomplete validates that install's
+// default module ID (no --module given) falls back to the build name itself when apm.yml is
+// missing version - matching npm/yarn's own BuildInfoModuleId() convention (empty module id
+// flows to build-info-go's generic partial-merge fallback), not a directory-basename fallback
+// of apm's own invention, and not a malformed partial id like "name:" with no version.
+func TestApmInstallModuleIdFallsBackToBuildNameWhenManifestIncomplete(t *testing.T) {
+	initApmTest(t)
+	defer cleanApmTest(t)
+
+	publishApmDependencyPackage(t, "test/incomplete-manifest-dep", "1.0.0")
+
+	projectDir, err := os.MkdirTemp("", "apm-incomplete-manifest-test-*")
+	require.NoError(t, err)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
+	require.NoError(t, os.MkdirAll(filepath.Join(projectDir, ".apm"), dirPerms))
+
+	// Deliberately no "version:" field, so derivedModuleID cannot produce a "name:version"
+	// module id and must fall through to build-info-go's generic fallback.
+	apmYamlContent := `name: incomplete-manifest-project
+license: UNLICENSED
+targets:
+  - claude
+dependencies:
+  apm:
+    - test/incomplete-manifest-dep#1.0.0
+`
+	require.NoError(t, os.WriteFile(filepath.Join(projectDir, "apm.yml"), []byte(apmYamlContent), filePerms))
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+	clientTestUtils.ChangeDirAndAssert(t, projectDir)
+
+	buildNumber := "113"
+	err = getApmCli().Exec("agent", "apm", "install", "--build-name", apmBuildName, "--build-number", buildNumber)
+	require.NoError(t, err, "jf agent apm install should succeed even with an incomplete apm.yml (missing version)")
+
+	buildResult := fetchPublishedApmBuildInfo(t, apmBuildName, buildNumber)
+	require.NotEmpty(t, buildResult.Modules, "build info should have a module even with an incomplete manifest")
+	module := buildResult.Modules[0]
+
+	assert.Equal(t, apmBuildName, module.Id,
+		"module id should fall back to the build name when apm.yml has no version, matching npm's own convention - not a directory-basename fallback")
+	assert.NotContains(t, module.Id, "incomplete-manifest-project",
+		"module id should not be derived from the manifest name alone when version is missing")
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, apmBuildName, artHttpDetails)
+}
+
+// TestApmInstallDevDependencyScope validates that a dependency installed with --dev is recorded
+// with scope "dev" in build info, matching npm's own dev-dependency scope convention (see
+// finalScope in agent/apm/common/dependency_resolver.go).
+func TestApmInstallDevDependencyScope(t *testing.T) {
+	initApmTest(t)
+	defer cleanApmTest(t)
+
+	publishApmDependencyPackage(t, "test/dev-scope-dep", "1.0.0")
+
+	projectDir, err := os.MkdirTemp("", "apm-dev-scope-test-*")
+	require.NoError(t, err)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
+	createApmTestProject(t, projectDir)
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+	clientTestUtils.ChangeDirAndAssert(t, projectDir)
+
+	buildNumber := "114"
+	err = getApmCli().Exec("agent", "apm", "install", "--dev", "test/dev-scope-dep#1.0.0", "--build-name", apmBuildName, "--build-number", buildNumber)
+	require.NoError(t, err, "jf agent apm install --dev <pkg> should succeed")
+
+	// apm.lock.yaml should record is_dev: true for this dependency - the flag
+	// dependency_resolver.go's finalScope trusts to classify the scope.
+	lockfileContent, err := os.ReadFile(filepath.Join(projectDir, "apm.lock.yaml"))
+	require.NoError(t, err)
+	assert.Contains(t, string(lockfileContent), "is_dev: true",
+		"apm.lock.yaml should mark the --dev-installed dependency as a dev dependency")
+
+	buildResult := fetchPublishedApmBuildInfo(t, apmBuildName, buildNumber)
+	require.NotEmpty(t, buildResult.Modules, "build info should have a module")
+	module := buildResult.Modules[0]
+
+	var found bool
+	for _, dep := range module.Dependencies {
+		if strings.Contains(dep.Id, "dev-scope-dep") {
+			found = true
+			assert.Contains(t, dep.Scopes, "dev",
+				"a --dev-installed dependency should be scoped 'dev' in build info, matching npm's own dev-dependency scope convention")
+		}
+	}
+	assert.True(t, found, "build info dependency list should include the --dev-installed package")
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, apmBuildName, artHttpDetails)
+}
+
+// TestApmInstallRootFlagBuildInfo validates that --root redirects apm_modules/ and
+// apm.lock.yaml under the given directory, and - the actual jf-owned regression risk - that
+// build-info collection reads the lockfile from that redirected location rather than silently
+// looking in the default project root and finding nothing.
+func TestApmInstallRootFlagBuildInfo(t *testing.T) {
+	initApmTest(t)
+	defer cleanApmTest(t)
+
+	publishApmDependencyPackage(t, "test/root-flag-dep", "1.0.0")
+
+	projectDir, err := os.MkdirTemp("", "apm-root-flag-test-*")
+	require.NoError(t, err)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
+	createApmTestProjectWithDependency(t, projectDir, "test/root-flag-dep#1.0.0")
+	require.NoError(t, os.MkdirAll(filepath.Join(projectDir, "out"), dirPerms))
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+	clientTestUtils.ChangeDirAndAssert(t, projectDir)
+
+	buildNumber := "115"
+	err = getApmCli().Exec("agent", "apm", "install", "--root", "out", "--build-name", apmBuildName, "--build-number", buildNumber)
+	require.NoError(t, err, "jf agent apm install --root out should succeed")
+
+	require.FileExists(t, filepath.Join(projectDir, "out", "apm.lock.yaml"),
+		"apm.lock.yaml should be written under --root's target directory")
+	_, statErr := os.Stat(filepath.Join(projectDir, "apm.lock.yaml"))
+	assert.True(t, os.IsNotExist(statErr),
+		"apm.lock.yaml should NOT be written at the project root when --root redirects it")
+
+	buildResult := fetchPublishedApmBuildInfo(t, apmBuildName, buildNumber)
+	require.NotEmpty(t, buildResult.Modules, "build info should have a module")
+	module := buildResult.Modules[0]
+	require.NotEmpty(t, module.Dependencies,
+		"build info should have picked up dependencies from the --root-redirected lockfile, not found nothing")
+
+	var found bool
+	for _, dep := range module.Dependencies {
+		if strings.Contains(dep.Id, "root-flag-dep") {
+			found = true
+		}
+	}
+	assert.True(t, found,
+		"build info dependency list should include the dependency, proving build-info collection read the --root-redirected apm.lock.yaml")
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, apmBuildName, artHttpDetails)
+}
+
+// TestApmPublishZipFlagBuildInfo validates that --zip's explicit archive path is what
+// build-info's checksum is actually derived from, not a default-named file. The zip here is
+// deliberately named differently from apm's own auto-pack convention (<name>-<version>.zip),
+// so build-info can only get the right checksum by genuinely reading --zip's value - a broken
+// extraction would fall back to a default-named file that doesn't exist, leaving no checksum at
+// all rather than merely a wrong one.
+func TestApmPublishZipFlagBuildInfo(t *testing.T) {
+	initApmTest(t)
+	defer cleanApmTest(t)
+
+	owner, pkgName := "test", "zip-flag-pkg"
+	projectDir, err := os.MkdirTemp("", "apm-zip-flag-test-*")
+	require.NoError(t, err)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
+
+	require.NoError(t, os.MkdirAll(filepath.Join(projectDir, ".apm", "primitives"), dirPerms))
+	apmYaml := fmt.Sprintf(`name: %s
+version: 1.0.0
+license: UNLICENSED
+targets:
+  - claude
+primitives:
+  agents: []
+`, pkgName)
+	require.NoError(t, os.WriteFile(filepath.Join(projectDir, "apm.yml"), []byte(apmYaml), filePerms))
+	require.NoError(t, os.WriteFile(filepath.Join(projectDir, ".apm", "primitives", "placeholder.txt"), []byte("placeholder content"), filePerms))
+
+	customZipPath := filepath.Join(projectDir, "custom-prebuilt.zip")
+	zipFile, err := os.Create(customZipPath) // #nosec G304 -- test-controlled temp path
+	require.NoError(t, err)
+	zipWriter := zip.NewWriter(zipFile)
+	fileWriter, err := zipWriter.Create("apm.yml")
+	require.NoError(t, err)
+	_, err = fileWriter.Write([]byte(apmYaml))
+	require.NoError(t, err)
+	require.NoError(t, zipWriter.Close())
+	require.NoError(t, zipFile.Close())
+	expectedChecksum := computeFileSHA256(t, customZipPath)
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+	clientTestUtils.ChangeDirAndAssert(t, projectDir)
+
+	buildNumber := "116"
+	err = getApmCli().Exec("agent", "apm", "publish", "--package", owner+"/"+pkgName, "--zip", customZipPath,
+		"--build-name", apmBuildName, "--build-number", buildNumber)
+	require.NoError(t, err, "jf agent apm publish --zip <custom path> should succeed")
+
+	buildResult := fetchPublishedApmBuildInfo(t, apmBuildName, buildNumber)
+	require.NotEmpty(t, buildResult.Modules, "build info should have a module")
+	module := buildResult.Modules[0]
+	require.NotEmpty(t, module.Artifacts, "build info should have an artifact")
+
+	assert.Equal(t, expectedChecksum, module.Artifacts[0].Sha256,
+		"published artifact's build-info checksum should match the explicit --zip file's own hash, proving --zip's value was actually used rather than a default-named file")
+
+	searchSpec := spec.NewBuilder().
+		Pattern(tests.AgentPackagesLocalRepo + "/" + owner + "/" + pkgName + "/*.zip").
+		BuildSpec()
+	_, _, _ = tests.DeleteFiles(searchSpec, serverDetails)
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, apmBuildName, artHttpDetails)
+}
+
+// TestApmPublishPackageFlagNotMisPromotedFromOtherFlagValues is a regression test for the exact
+// scenario reviewers flagged on PR #518: a value-taking apm-native flag's own value ("foo.zip")
+// must never be mistaken for --package, even when immediately followed by something that looks
+// like a bare positional package spec ("acme/pkg").
+func TestApmPublishPackageFlagNotMisPromotedFromOtherFlagValues(t *testing.T) {
+	initApmTest(t)
+	defer cleanApmTest(t)
+
+	projectDir, err := os.MkdirTemp("", "apm-mispromote-test-*")
+	require.NoError(t, err)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
+	createApmTestProject(t, projectDir)
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+	clientTestUtils.ChangeDirAndAssert(t, projectDir)
+
+	err = getApmCli().Exec("agent", "apm", "publish", "--zip", "foo.zip", "acme/pkg")
+	require.Error(t, err, "publish without an explicit --package should fail, even with --zip foo.zip acme/pkg present")
+	assert.Contains(t, err.Error(), "requires --package",
+		"error should be the explicit --package requirement, not a downstream failure from silently promoting acme/pkg into --package")
+}
+
+// writeFakeApmVersionScript writes a fake "apm" executable to a fresh directory that only
+// understands "--version", printing versionOutput and exiting 0. Returns the directory to
+// prepend to PATH.
+func writeFakeApmVersionScript(t *testing.T, versionOutput string) string {
+	t.Helper()
+	binDir := t.TempDir()
+	apmPath := filepath.Join(binDir, "apm")
+	script := "#!/bin/sh\necho \"" + versionOutput + "\"\nexit 0\n"
+	if runtime.GOOS == "windows" {
+		apmPath += ".bat"
+		script = "@echo " + versionOutput + "\r\n@exit /b 0\r\n"
+	}
+	// 0755 (not 0644) is required here: this file is exec'd directly as a command, and the
+	// executable bit is what makes that possible - a stricter mode would make PATH resolution
+	// find it but fail to run it. Still safe: the stub lives under t.TempDir(), never a
+	// shared or persistent location.
+	require.NoError(t, os.WriteFile(apmPath, []byte(script), 0755)) // #nosec G306 -- executable stub under t.TempDir, not a shared path
+	return binDir
+}
+
+// TestApmMinVersionGate validates that ValidateApmPrerequisites rejects an installed apm below
+// minSupportedApmVersion (agent/apm/common/utils.go) before ever touching Artifactory or running
+// the real install/update/publish flow, naming both the required and the actual version in the
+// error.
+func TestApmMinVersionGate(t *testing.T) {
+	initApmTest(t)
+	defer cleanApmTest(t)
+
+	binDir := writeFakeApmVersionScript(t, "Agent Package Manager (APM) CLI version 0.10.0 (fake)")
+	prevPath := os.Getenv("PATH")
+	t.Setenv("PATH", binDir+string(os.PathListSeparator)+prevPath)
+
+	projectDir, err := os.MkdirTemp("", "apm-min-version-test-*")
+	require.NoError(t, err)
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
+	createApmTestProject(t, projectDir)
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+	clientTestUtils.ChangeDirAndAssert(t, projectDir)
+
+	err = getApmCli().Exec("agent", "apm", "install")
+	require.Error(t, err, "install should be rejected when the installed apm version is below the minimum supported version")
+	assert.Contains(t, err.Error(), "0.23.0", "error should name the minimum supported version")
+	assert.Contains(t, err.Error(), "0.10.0", "error should name the actual (too-old) installed version")
 }

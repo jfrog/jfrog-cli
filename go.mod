@@ -1,6 +1,6 @@
 module github.com/jfrog/jfrog-cli
 
-go 1.26.5
+go 1.26.6
 
 replace (
 	// Should not be updated to 0.11.0+ due to default spec version change (1.6 -> 1.7, https://github.com/CycloneDX/cyclonedx-go/pull/257)
@@ -9,7 +9,6 @@ replace (
 	// Should not be updated to 0.2.6 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
 	github.com/c-bata/go-prompt => github.com/c-bata/go-prompt v0.2.5
 
-	github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260816155757-2229d1c9671c
 	// Should not be updated to 0.2.0-beta.2 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
 	github.com/pkg/term => github.com/pkg/term v1.1.0
 )
@@ -20,15 +19,15 @@ require (
 	github.com/buger/jsonparser v1.6.1
 	github.com/gocarina/gocsv v0.0.0-20260628180327-50907998929c
 	github.com/jfrog/archiver/v3 v3.6.4
-	github.com/jfrog/build-info-go v1.13.1-0.20260811071930-3b99d4a6c84b
+	github.com/jfrog/build-info-go v1.13.1-0.20260828071122-bb92ab7ba69b
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-application v1.0.2-0.20260723152309-34eeb81e2847
-	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260816155757-2229d1c9671c
-	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260816155142-ac59b1aecb32
+	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260830182919-d2b1963c5678
+	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260830182749-43e0b312da78
 	github.com/jfrog/jfrog-cli-evidence v0.10.0
 	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260618062042-6053ab368cab
 	github.com/jfrog/jfrog-cli-security v1.33.1
-	github.com/jfrog/jfrog-client-go v1.55.1-0.20260813100550-0f2168d02558
+	github.com/jfrog/jfrog-client-go v1.55.1-0.20260827094947-e7a90ebc8049
 	github.com/jszwec/csvutil v1.10.0
 	github.com/moby/moby/api v1.55.0
 	github.com/spf13/viper v1.21.0
