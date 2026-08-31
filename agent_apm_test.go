@@ -1513,11 +1513,10 @@ func TestApmBuildInfoWithArtifactsAndDependencies(t *testing.T) {
 }
 
 // TestApmAuthWithoutEnvVarSucceeds validates the common, default case every other auth test in
-// this file deliberately sets an env var to test around: install, publish, and update (now a
-// plain passthrough subcommand, but sharing the exact same auth-injection code path) must all
-// succeed with NO APM_REGISTRY_* env var set at all, relying purely on jf's own automatic
-// credential injection (BuildApmEnv/injectRegistryCredentialEnv in jfrog-cli-artifactory) from
-// its configured server.
+// this file deliberately sets an env var to test around: install and publish must both succeed
+// with NO APM_REGISTRY_* env var set at all, relying purely on jf's own automatic credential
+// injection (BuildApmEnv/injectRegistryCredentialEnv in jfrog-cli-artifactory) from its
+// configured server.
 func TestApmAuthWithoutEnvVarSucceeds(t *testing.T) {
 	initApmTest(t)
 	defer cleanApmTest(t)
@@ -1549,15 +1548,13 @@ func TestApmAuthWithoutEnvVarSucceeds(t *testing.T) {
 		"install should succeed with no APM_REGISTRY_* env var set")
 	require.NoError(t, getApmCli().Exec("agent", "apm", "publish", "--package", "test/no-env-var-auth-pkg", "--registry", tests.AgentPackagesLocalRepo),
 		"publish should succeed with no APM_REGISTRY_* env var set")
-	require.NoError(t, getApmCli().Exec("agent", "apm", "update", "--yes"),
-		"update should succeed with no APM_REGISTRY_* env var set")
 
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, apmBuildName, artHttpDetails)
 }
 
 // TestApmCommandsFailWithoutJfServerConfig validates that removing jf's own server
 // configuration entirely (not just APM_REGISTRY_* env vars or ~/.apm/config.json) causes
-// install/publish/update (now a plain passthrough subcommand) to fail, since jf itself has nothing to build credentials from -
+// install/publish to fail, since jf itself has nothing to build credentials from -
 // confirming BuildApmEnv's credential injection genuinely depends on jf's own configured server,
 // not some other fallback. Restores the "default" server config afterward unconditionally
 // (regardless of how this test's own assertions turn out): every other test in this file, and
@@ -1589,7 +1586,6 @@ func TestApmCommandsFailWithoutJfServerConfig(t *testing.T) {
 
 	assert.Error(t, getApmCli().Exec("agent", "apm", "install"), "install should fail without a configured jf server")
 	assert.Error(t, getApmCli().Exec("agent", "apm", "publish", "--package", "test/no-server-config-pkg"), "publish should fail without a configured jf server")
-	assert.Error(t, getApmCli().Exec("agent", "apm", "update", "--yes"), "update should fail without a configured jf server")
 }
 
 // TestApmMixedRegistryDependenciesInOneInstall validates that a SINGLE install can resolve
