@@ -100,19 +100,20 @@ func getApmCli() *coreTests.JfrogCli {
 	return coreTests.NewJfrogCli(execMain, "jfrog", "")
 }
 
-// publishApmDependencyPackage publishes a minimal, real APM package to the default registry
-// (tests.AgentPackagesLocalRepo) so other tests can declare it as a resolvable dependency
-// (via the "owner/name#version" shorthand) and exercise real install/build-info collection.
-// packageSpec is "owner/name"; version is the version to publish (e.g. "1.0.0").
-func publishApmDependencyPackage(t *testing.T, packageSpec, version string) {
+// publishApmDependencyPackage publishes a minimal, real APM package, always at version 1.0.0, to
+// the default registry (tests.AgentPackagesLocalRepo) so other tests can declare it as a
+// resolvable dependency (via the "owner/name#1.0.0" shorthand) and exercise real
+// install/build-info collection. packageSpec is "owner/name".
+func publishApmDependencyPackage(t *testing.T, packageSpec string) {
 	t.Helper()
-	publishApmDependencyPackageToRegistry(t, packageSpec, version, tests.AgentPackagesLocalRepo)
+	publishApmDependencyPackageToRegistry(t, packageSpec, tests.AgentPackagesLocalRepo)
 }
 
 // publishApmDependencyPackageToRegistry is publishApmDependencyPackage targeting a specific,
 // already-configured registry name (e.g. one of several distinct repos set up via
 // "jf setup apm --repo <name>"), instead of always the default tests.AgentPackagesLocalRepo.
-func publishApmDependencyPackageToRegistry(t *testing.T, packageSpec, version, registryName string) {
+// Always publishes at version 1.0.0 - no caller has ever needed a different one.
+func publishApmDependencyPackageToRegistry(t *testing.T, packageSpec, registryName string) {
 	t.Helper()
 	pubDir, err := os.MkdirTemp("", "apm-dep-publish-*")
 	require.NoError(t, err)
@@ -125,13 +126,13 @@ func publishApmDependencyPackageToRegistry(t *testing.T, packageSpec, version, r
 	require.True(t, ok, "packageSpec must be in owner/name form, got %q", packageSpec)
 
 	apmYaml := fmt.Sprintf(`name: %s
-version: %s
+version: 1.0.0
 license: UNLICENSED
 targets:
   - claude
 primitives:
   agents: []
-`, pkgName, version)
+`, pkgName)
 	require.NoError(t, os.WriteFile(filepath.Join(pubDir, "apm.yml"), []byte(apmYaml), filePerms))
 	require.NoError(t, os.WriteFile(filepath.Join(pubDir, ".apm", "primitives", "placeholder.txt"), []byte("placeholder content"), filePerms))
 
@@ -527,7 +528,7 @@ func TestApmInstallWithBuildInfo(t *testing.T) {
 	initApmTest(t)
 	defer cleanApmTest(t)
 
-	publishApmDependencyPackage(t, "test/install-bi-dep", "1.0.0")
+	publishApmDependencyPackage(t, "test/install-bi-dep")
 
 	projectDir, err := os.MkdirTemp("", "apm-install-test-*")
 	require.NoError(t, err)
@@ -754,7 +755,7 @@ func TestApmAuthEnvVarBehavior(t *testing.T) {
 		// main(), not execMain(); this test harness invokes execMain() directly in-process, so
 		// the log level set via os.Setenv here is never actually picked up. Confirmed live: the
 		// log line never appeared no matter what level was set.)
-		publishApmDependencyPackage(t, "test/auth-env-wrong-token-dep", "1.0.0")
+		publishApmDependencyPackage(t, "test/auth-env-wrong-token-dep")
 
 		// Belt and braces: apm's own docs say an env var token outranks ~/.apm/config.json's
 		// stored one, but remove the stored token for this registry anyway so there is no valid
@@ -1039,7 +1040,7 @@ func TestApmModuleFlag(t *testing.T) {
 	initApmTest(t)
 	defer cleanApmTest(t)
 
-	publishApmDependencyPackage(t, "test/module-flag-dep", "1.0.0")
+	publishApmDependencyPackage(t, "test/module-flag-dep")
 
 	projectDir, err := os.MkdirTemp("", "apm-module-flag-test-*")
 	require.NoError(t, err)
@@ -1223,7 +1224,7 @@ func TestApmProjectFlag(t *testing.T) {
 	defer cleanApmTest(t)
 
 	ensureApmTestProjectExists(t)
-	publishApmDependencyPackage(t, "test/project-flag-dep", "1.0.0")
+	publishApmDependencyPackage(t, "test/project-flag-dep")
 
 	projectDir, err := os.MkdirTemp("", "apm-project-flag-test-*")
 	require.NoError(t, err)
@@ -1344,7 +1345,7 @@ func TestApmIntegrationFullPipeline(t *testing.T) {
 	initApmTest(t)
 	defer cleanApmTest(t)
 
-	publishApmDependencyPackage(t, "test/e2e-pipeline-dep", "1.0.0")
+	publishApmDependencyPackage(t, "test/e2e-pipeline-dep")
 
 	projectDir, err := os.MkdirTemp("", "apm-e2e-pipeline-*")
 	require.NoError(t, err)
@@ -1446,7 +1447,7 @@ func TestApmInstallWithDependenciesInBuildInfo(t *testing.T) {
 	initApmTest(t)
 	defer cleanApmTest(t)
 
-	publishApmDependencyPackage(t, "test/install-with-deps-bi", "1.0.0")
+	publishApmDependencyPackage(t, "test/install-with-deps-bi")
 
 	projectDir := createProjectWithDependencies(t, "app-with-deps", []string{"test/install-with-deps-bi#1.0.0"})
 	defer func() {
@@ -1487,7 +1488,7 @@ func TestApmBuildInfoWithArtifactsAndDependencies(t *testing.T) {
 	initApmTest(t)
 	defer cleanApmTest(t)
 
-	publishApmDependencyPackage(t, "test/complete-app-dep", "1.0.0")
+	publishApmDependencyPackage(t, "test/complete-app-dep")
 
 	projectDir := createProjectWithDependencies(t, "complete-app", []string{"test/complete-app-dep#1.0.0"})
 	defer func() {
@@ -1528,7 +1529,7 @@ func TestApmAuthWithoutEnvVarSucceeds(t *testing.T) {
 		}
 	}
 
-	publishApmDependencyPackage(t, "test/no-env-var-auth-dep", "1.0.0")
+	publishApmDependencyPackage(t, "test/no-env-var-auth-dep")
 
 	projectDir, err := os.MkdirTemp("", "apm-no-env-var-auth-*")
 	require.NoError(t, err)
@@ -1563,7 +1564,7 @@ func TestApmCommandsFailWithoutJfServerConfig(t *testing.T) {
 	initApmTest(t)
 	defer cleanApmTest(t)
 
-	publishApmDependencyPackage(t, "test/no-server-config-dep", "1.0.0")
+	publishApmDependencyPackage(t, "test/no-server-config-dep")
 
 	projectDir, err := os.MkdirTemp("", "apm-no-server-config-*")
 	require.NoError(t, err)
@@ -1626,8 +1627,8 @@ func TestApmMixedRegistryDependenciesInOneInstall(t *testing.T) {
 	// Publish one dependency to each registry.
 	owner := "test"
 	pkgA, pkgB := "mixed-registry-dep-a", "mixed-registry-dep-b"
-	publishApmDependencyPackageToRegistry(t, owner+"/"+pkgA, "1.0.0", repos[0])
-	publishApmDependencyPackageToRegistry(t, owner+"/"+pkgB, "1.0.0", repos[1])
+	publishApmDependencyPackageToRegistry(t, owner+"/"+pkgA, repos[0])
+	publishApmDependencyPackageToRegistry(t, owner+"/"+pkgB, repos[1])
 
 	// Consumer project depends on both, each via the object-form dependency's explicit registry:
 	// field naming its own, different registry.
@@ -1789,7 +1790,7 @@ func TestApmRegistryPrecedenceDefaultFallback(t *testing.T) {
 
 	// Publish a real package to the SECOND repo only.
 	owner, pkgName := "test", "default-fallback-dep"
-	publishApmDependencyPackageToRegistry(t, owner+"/"+pkgName, "1.0.0", repos[1])
+	publishApmDependencyPackageToRegistry(t, owner+"/"+pkgName, repos[1])
 
 	// apm.yml declares both repos as named registries, with its own default: pointing at the
 	// second one. The dependency below uses the bare shorthand (no explicit registry: field), so
@@ -1880,7 +1881,7 @@ func TestApmFrozenModeWithDependencies(t *testing.T) {
 	initApmTest(t)
 	defer cleanApmTest(t)
 
-	publishApmDependencyPackage(t, "test/frozen-mode-dep", "1.0.0")
+	publishApmDependencyPackage(t, "test/frozen-mode-dep")
 
 	projectDir, err := os.MkdirTemp("", "apm-frozen-*")
 	require.NoError(t, err)
@@ -2089,7 +2090,7 @@ func TestApmInstallPositionalPackageWithBuildInfo(t *testing.T) {
 	initApmTest(t)
 	defer cleanApmTest(t)
 
-	publishApmDependencyPackage(t, "test/positional-install-dep", "1.0.0")
+	publishApmDependencyPackage(t, "test/positional-install-dep")
 
 	projectDir, err := os.MkdirTemp("", "apm-positional-install-*")
 	require.NoError(t, err)
@@ -2150,7 +2151,7 @@ func TestApmPassthroughServerIdFlag(t *testing.T) {
 	initApmTest(t)
 	defer cleanApmTest(t)
 
-	publishApmDependencyPackage(t, "test/passthrough-server-id-dep", "1.0.0")
+	publishApmDependencyPackage(t, "test/passthrough-server-id-dep")
 
 	projectDir, err := os.MkdirTemp("", "apm-passthrough-server-id-test-*")
 	require.NoError(t, err)
@@ -2201,7 +2202,7 @@ func TestApmInstallDevDependencyScope(t *testing.T) {
 	initApmTest(t)
 	defer cleanApmTest(t)
 
-	publishApmDependencyPackage(t, "test/dev-scope-dep", "1.0.0")
+	publishApmDependencyPackage(t, "test/dev-scope-dep")
 
 	projectDir, err := os.MkdirTemp("", "apm-dev-scope-test-*")
 	require.NoError(t, err)
@@ -2251,7 +2252,7 @@ func TestApmInstallRootFlagBuildInfo(t *testing.T) {
 	initApmTest(t)
 	defer cleanApmTest(t)
 
-	publishApmDependencyPackage(t, "test/root-flag-dep", "1.0.0")
+	publishApmDependencyPackage(t, "test/root-flag-dep")
 
 	projectDir, err := os.MkdirTemp("", "apm-root-flag-test-*")
 	require.NoError(t, err)
