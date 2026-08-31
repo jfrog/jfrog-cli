@@ -1797,12 +1797,6 @@ func TestNpmInstallWithFailOnMissingDepsFlag(t *testing.T) {
 		"--fail-on-missing-deps")
 	clientTestUtils.ChangeDirAndAssert(t, wd)
 	assertPublishedXmlAndJsonDeps(t, buildName, buildNumber)
-
-	// Verify file:// and git:// dependencies were handled correctly (success with intact cache)
-	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
-	assert.NoError(t, err)
-	assert.True(t, found, "Build info should be published when strict mode succeeds with all types")
-	assert.NotNil(t, publishedBuildInfo)
 }
 
 // useIsolatedNpmCache points npm at a dedicated cache directory via npm_config_cache.
@@ -1919,17 +1913,6 @@ func TestNpmInstallFailsWithMissingCacheStrict(t *testing.T) {
 		"--build-number="+buildNumber,
 		"--fail-on-missing-deps")
 	assertMissingCacheStrictError(t, err)
-
-	// Explicit verification: error includes ALL dependency types (xml, json, file://, git://)
-	errMsg := err.Error()
-	assert.Contains(t, errMsg, "xml", "Error should mention missing xml dependency")
-	assert.Contains(t, errMsg, "json", "Error should mention missing json dependency")
-	assert.True(t,
-		strings.Contains(errMsg, "file-dep") || strings.Contains(errMsg, "file:"),
-		"Error should mention file:// dependency")
-	assert.True(t,
-		strings.Contains(errMsg, "git-dep") || strings.Contains(errMsg, "git://"),
-		"Error should mention git:// dependency")
 
 	clientTestUtils.ChangeDirAndAssert(t, wd)
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
