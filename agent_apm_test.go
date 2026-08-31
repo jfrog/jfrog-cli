@@ -293,7 +293,7 @@ dependencies:
 // fetchPublishedApmBuildInfo publishes the locally-collected build info to Artifactory
 // (jf rt bp) and reads it back from the server.
 //
-// apm's install/publish/update commands only ever call Build.AddArtifacts /
+// apm's install/publish commands only ever call Build.AddArtifacts /
 // Build.SavePartialBuildInfo, which write *partial* build-info files under
 // <buildDir>/partials/ - they never call Build.SaveBuildInfo to materialize a combined,
 // "generated" build info directly under <buildDir> (the file build.GetGeneratedBuildsInfo
@@ -1252,44 +1252,6 @@ func TestApmProjectFlag(t *testing.T) {
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, apmBuildName, artHttpDetails)
 }
 
-// TestApmUpdateWithBuildInfo validates `jf agent apm update` with build-info (P1: Scenario #16).
-func TestApmUpdateWithBuildInfo(t *testing.T) {
-	initApmTest(t)
-	defer cleanApmTest(t)
-
-	publishApmDependencyPackage(t, "test/update-bi-dep", "1.0.0")
-
-	projectDir, err := os.MkdirTemp("", "apm-update-test-*")
-	require.NoError(t, err)
-	defer func() {
-		_ = os.RemoveAll(projectDir)
-	}()
-
-	createApmTestProjectWithDependency(t, projectDir, "test/update-bi-dep#1.0.0")
-
-	buildNumber := "109"
-	wd, err := os.Getwd()
-	require.NoError(t, err)
-	defer clientTestUtils.ChangeDirAndAssert(t, wd)
-
-	clientTestUtils.ChangeDirAndAssert(t, projectDir)
-
-	// First, install to have a lockfile
-	err = getApmCli().Exec("agent", "apm", "install")
-	require.NoError(t, err)
-
-	// Then update with build-info capture. --yes is required: apm update shows a
-	// confirmation plan and exits 1 without it, even in CI/non-interactive shells.
-	err = getApmCli().Exec("agent", "apm", "update", "--yes", "--build-name", apmBuildName, "--build-number", buildNumber)
-	require.NoError(t, err, "jf agent apm update should succeed with build-info")
-
-	// Validate build info was created
-	validateApmBuildInfo(t, apmBuildName, buildNumber, 0)
-
-	// Clean up
-	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, apmBuildName, artHttpDetails)
-}
-
 // TestApmNativeFlags validates native APM flags with -- escape (P1: Scenario #28).
 func TestApmNativeFlags(t *testing.T) {
 	initApmTest(t)
@@ -1550,51 +1512,9 @@ func TestApmBuildInfoWithArtifactsAndDependencies(t *testing.T) {
 	deleteBuildInfo()
 }
 
-// TestApmUpdateWithVersionChange validates update captures a new dependency version in build info.
-// A bare "#1.0.0" pin is exact and apm update never moves it; only a semver range like "^1.0.0"
-// is a floating constraint update can re-resolve, so this uses "^1.0.0" and republishes the
-// dependency at 1.0.1 in between install and update (matching the documented apmbughunt flow).
-func TestApmUpdateWithVersionChange(t *testing.T) {
-	initApmTest(t)
-	defer cleanApmTest(t)
-
-	publishApmDependencyPackage(t, "test/version-change-dep", "1.0.0")
-
-	projectDir, err := os.MkdirTemp("", "apm-update-version-test-*")
-	require.NoError(t, err)
-	defer func() {
-		_ = os.RemoveAll(projectDir)
-	}()
-	createApmTestProjectWithDependency(t, projectDir, "test/version-change-dep#^1.0.0")
-	defer setupTestWorkingDirectory(t, projectDir)()
-
-	buildNumber := "403"
-
-	// Step 1: Install at 1.0.0
-	err = runApmInstall(buildNumber)
-	require.NoError(t, err, "install should succeed")
-
-	installResult := fetchPublishedApmBuildInfo(t, apmBuildName, buildNumber)
-	require.NotEmpty(t, installResult.Modules, "install build info should have a module")
-	assert.Contains(t, installResult.Modules[0].Dependencies[0].Id, "1.0.0", "install should resolve the dependency at 1.0.0")
-	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, apmBuildName, artHttpDetails)
-
-	// Bump and republish the dependency so update has something new to pick up.
-	publishApmDependencyPackage(t, "test/version-change-dep", "1.0.1")
-
-	// Step 2: Update should re-resolve the floating range to 1.0.1
-	err = runApmUpdate(apmBuildName, buildNumber)
-	require.NoError(t, err, "update should succeed")
-
-	updateResult := fetchPublishedApmBuildInfo(t, apmBuildName, buildNumber)
-	require.NotEmpty(t, updateResult.Modules, "update build info should have a module")
-	assert.Contains(t, updateResult.Modules[0].Dependencies[0].Id, "1.0.1", "update should resolve the dependency at 1.0.1")
-
-	deleteBuildInfo()
-}
-
 // TestApmAuthWithoutEnvVarSucceeds validates the common, default case every other auth test in
-// this file deliberately sets an env var to test around: install, publish, and update must all
+// this file deliberately sets an env var to test around: install, publish, and update (now a
+// plain passthrough subcommand, but sharing the exact same auth-injection code path) must all
 // succeed with NO APM_REGISTRY_* env var set at all, relying purely on jf's own automatic
 // credential injection (BuildApmEnv/injectRegistryCredentialEnv in jfrog-cli-artifactory) from
 // its configured server.
@@ -1637,7 +1557,7 @@ func TestApmAuthWithoutEnvVarSucceeds(t *testing.T) {
 
 // TestApmCommandsFailWithoutJfServerConfig validates that removing jf's own server
 // configuration entirely (not just APM_REGISTRY_* env vars or ~/.apm/config.json) causes
-// install/publish/update to fail, since jf itself has nothing to build credentials from -
+// install/publish/update (now a plain passthrough subcommand) to fail, since jf itself has nothing to build credentials from -
 // confirming BuildApmEnv's credential injection genuinely depends on jf's own configured server,
 // not some other fallback. Restores the "default" server config afterward unconditionally
 // (regardless of how this test's own assertions turn out): every other test in this file, and
@@ -1825,16 +1745,6 @@ func runApmPublish(packagePath, buildName, buildNumber string) error {
 	return getApmCli().Exec(args...)
 }
 
-// runApmUpdate runs update command with optional build info. --yes is required: apm update
-// shows a confirmation plan and exits 1 without it, even in CI/non-interactive shells.
-func runApmUpdate(buildName, buildNumber string) error {
-	args := []string{"agent", "apm", "update", "--yes"}
-	if buildName != "" && buildNumber != "" {
-		args = append(args, "--build-name", buildName, "--build-number", buildNumber)
-	}
-	return getApmCli().Exec(args...)
-}
-
 // deleteBuildInfo deletes build info from Artifactory
 func deleteBuildInfo() {
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, apmBuildName, artHttpDetails)
@@ -1966,47 +1876,6 @@ dependencies:
 	_, _, _ = tests.DeleteFiles(
 		spec.NewBuilder().Pattern(tests.AgentPackagesLocalRepo+"/test/app-with-deps/*.zip").BuildSpec(),
 		serverDetails)
-	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, apmBuildName, artHttpDetails)
-}
-
-// TestApmUpdateChangesLockfile validates update behavior with dependencies (P1: Scenario #16).
-func TestApmUpdateChangesLockfile(t *testing.T) {
-	initApmTest(t)
-	defer cleanApmTest(t)
-
-	// A real dependency is required: apm only writes apm.lock.yaml when the project has at
-	// least one dependency to resolve.
-	publishApmDependencyPackage(t, "test/update-lock-dep", "1.0.0")
-
-	projectDir, err := os.MkdirTemp("", "apm-update-lock-*")
-	require.NoError(t, err)
-	defer func() {
-		_ = os.RemoveAll(projectDir)
-	}()
-
-	createApmTestProjectWithDependency(t, projectDir, "test/update-lock-dep#1.0.0")
-
-	defer setupTestWorkingDirectory(t, projectDir)()
-
-	buildNumber := "203"
-	// First install to create initial lockfile
-	err = getApmCli().Exec("agent", "apm", "install")
-	require.NoError(t, err)
-
-	// Verify lockfile created
-	lockfilePath := filepath.Join(projectDir, "apm.lock.yaml")
-	assert.FileExists(t, lockfilePath, "apm.lock.yaml should exist after install")
-
-	// Update with build-info. --yes is required: apm update shows a confirmation plan and
-	// exits 1 without it, even in CI/non-interactive shells.
-	err = getApmCli().Exec("agent", "apm", "update", "--yes", "--build-name", apmBuildName, "--build-number", buildNumber)
-	require.NoError(t, err, "update should succeed")
-
-	// Verify lockfile still exists (update should maintain it)
-	assert.FileExists(t, lockfilePath, "apm.lock.yaml should still exist after update")
-
-	validateApmBuildInfo(t, apmBuildName, buildNumber, 0)
-
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, apmBuildName, artHttpDetails)
 }
 
@@ -2271,7 +2140,7 @@ func TestApmInstallPositionalPackageWithBuildInfo(t *testing.T) {
 }
 
 // TestApmPassthroughServerIdFlag validates that "jf agent apm <native-subcommand>" (any
-// subcommand other than install/update/publish) honors --server-id for server selection, and
+// subcommand other than install/publish) honors --server-id for server selection, and
 // never lets that flag leak through as a raw, unrecognized argument to the native apm binary
 // (which has no --server-id option of its own).
 //
@@ -2544,7 +2413,7 @@ func writeFakeApmVersionScript(t *testing.T, versionOutput string) string {
 
 // TestApmMinVersionGate validates that ValidateApmPrerequisites rejects an installed apm below
 // minSupportedApmVersion (agent/apm/common/utils.go) before ever touching Artifactory or running
-// the real install/update/publish flow, naming both the required and the actual version in the
+// the real install/publish flow, naming both the required and the actual version in the
 // error.
 func TestApmMinVersionGate(t *testing.T) {
 	initApmTest(t)
