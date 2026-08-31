@@ -1,0 +1,12 @@
+[package]
+name = "cli-cargo-member-a"
+version = "1.0.0"
+edition = "2021"
+description = "Workspace member A fixture for JFrog CLI Cargo integration tests"
+license = "Apache-2.0"
+
+[dependencies]
+# External production dependency (resolved from Artifactory).
+serde_json = "1"
+# Intra-workspace dependency on a sibling member (path dep, resolved locally).
+cli-cargo-member-b = { path = "../member-b" }
