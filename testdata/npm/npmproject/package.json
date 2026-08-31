@@ -13,11 +13,5 @@
   },
   "devDependencies": {
     "json": "9.0.6"
-  },
-  "optionalDependencies": {
-    "file-dep": "file:./local-package"
-  },
-  "peerDependencies": {
-    "git-dep": "git://github.com/example/repo.git#v1.0.0"
   }
 }
