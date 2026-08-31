@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"crypto/md5"  // #nosec G501 -- checksum verification against Artifactory's own reported MD5, not security-sensitive
 	"crypto/sha1" // #nosec G505 -- checksum verification against Artifactory's own reported SHA1, not security-sensitive
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -858,6 +859,103 @@ func TestApmMissingCredentials(t *testing.T) {
 		"the failure should specifically be 'no registry found', not some unrelated error")
 }
 
+// apmRegistryToken reads registry.<repoName>.token out of ~/.apm/config.json, the same file
+// ConfigureApmRegistryPersistent writes to via `apm config set`. Returns "" if the file or the
+// registry entry doesn't exist.
+func apmRegistryToken(t *testing.T, repoName string) string {
+	t.Helper()
+	homeDir, err := os.UserHomeDir()
+	require.NoError(t, err)
+	data, err := os.ReadFile(filepath.Join(homeDir, ".apm", "config.json")) // #nosec G304 -- fixed, test-controlled path
+	if err != nil {
+		if os.IsNotExist(err) {
+			return ""
+		}
+		require.NoError(t, err)
+	}
+	var cfg struct {
+		Registries map[string]struct {
+			Token string `json:"token"`
+		} `json:"registries"`
+	}
+	require.NoError(t, json.Unmarshal(data, &cfg))
+	return cfg.Registries[repoName].Token
+}
+
+// TestApmAuthWithUsernamePassword validates BuildRegistryEntry's Priority-2 path
+// (agent/apm/common/apmenv.go): when the configured jf server has no AccessToken - only
+// User+Password - jf must mint a brand-new Artifactory access token itself and write THAT into
+// ~/.apm/config.json, rather than ever embedding the raw password. This is the one auth path in
+// the whole APM registry flow with no other e2e coverage: every other test in this file
+// configures the "default" server via --access-token and so only ever exercises Priority-1
+// (use the existing token as-is).
+//
+// To force Priority-2 for real (not just in a mocked unit test) without needing every
+// environment this suite runs in to hand out a plaintext platform password, this reconfigures
+// "default" with --user/--password derived from the current access token itself (Artifactory
+// accepts a token as a Basic Auth password) via tests.SetBasicAuthFromAccessToken. `jf setup`
+// always calls config.GetSpecificConfig with excludeRefreshableTokens=true (buildtools/cli.go),
+// which - per excludeRefreshableTokensFromDetails - strips the AccessToken jf's own config layer
+// auto-mints alongside User+Password back out again before BuildRegistryEntry ever sees
+// serverDetails. So this hits the real Priority-2 branch, not a contrived edge case.
+func TestApmAuthWithUsernamePassword(t *testing.T) {
+	initApmTest(t)
+	defer cleanApmTest(t)
+
+	repoName := tests.AgentPackagesLocalRepo
+	tokenBeforeSwitch := apmRegistryToken(t, repoName)
+	require.NotEmpty(t, tokenBeforeSwitch, "initApmTest/initApmConfig should have already written a token for %s", repoName)
+
+	// Switch "default" to User+Password only, remembering the original mode to restore it.
+	origAccessToken := *tests.JfrogAccessToken
+	origUser, origPassword := tests.SetBasicAuthFromAccessToken()
+	defer func() {
+		*tests.JfrogUser, *tests.JfrogPassword, *tests.JfrogAccessToken = origUser, origPassword, origAccessToken
+		createJfrogHomeConfig(t, true) // restore "default" to its original access-token mode
+		initApmConfig(t)               // re-run `jf setup apm` so later tests get a valid token again
+	}()
+	*tests.JfrogAccessToken = ""
+	require.NoError(t,
+		coreTests.NewJfrogCli(execMain, "jfrog config", "").Exec("edit", "default",
+			"--user="+*tests.JfrogUser, "--password="+*tests.JfrogPassword, "--interactive=false"),
+		"reconfiguring default with User+Password should succeed")
+
+	// Force a fresh mint: without this, BuildRegistryEntry's own Priority-1 check
+	// (serverDetails.AccessToken != "") would never even run, since the OLD token is still
+	// sitting in ~/.apm/config.json from initApmConfig - but that's a stale value ConfigureApmRegistryPersistent
+	// is about to overwrite anyway, not something BuildRegistryEntry reads back to decide its
+	// own priority. Removing it first just makes the "did a fresh token actually get minted"
+	// assertion below unambiguous.
+	require.NoError(t, exec.Command("apm", "config", "unset", fmt.Sprintf("registry.%s.token", repoName)).Run()) // #nosec G204 -- fixed argv
+
+	require.NoError(t,
+		coreTests.NewJfrogCli(execMain, "jfrog setup", "").Exec("apm", "--repo", repoName),
+		"jf setup apm should succeed when the server only has User+Password configured")
+
+	mintedToken := apmRegistryToken(t, repoName)
+	require.NotEmpty(t, mintedToken, "jf setup apm should have written a freshly minted token")
+	assert.NotEqual(t, tokenBeforeSwitch, mintedToken, "the token should be freshly minted, not the stale one left over from access-token mode")
+	assert.Equal(t, 2, strings.Count(mintedToken, "."), "a real Artifactory access token is a JWT (header.payload.signature); a base64(user:pass) blob would not have this shape")
+	assert.NotEqual(t, basicAuthBase64(*tests.JfrogUser, *tests.JfrogPassword), mintedToken, "the minted token must not just be the raw credentials re-encoded")
+
+	// Prove the minted token isn't just well-formed but actually authenticates: publish and
+	// install a real package through it, end to end.
+	publishApmDependencyPackage(t, "test/auth-username-password-dep")
+	projectDir, err := os.MkdirTemp("", "apm-auth-userpass-*")
+	require.NoError(t, err)
+	defer func() { _ = os.RemoveAll(projectDir) }()
+	createApmTestProjectWithDependency(t, projectDir, "test/auth-username-password-dep#1.0.0")
+	defer setupTestWorkingDirectory(t, projectDir)()
+
+	require.NoError(t, getApmCli().Exec("agent", "apm", "install", "--build-name", apmBuildName, "--build-number", "104"),
+		"install should succeed authenticating with the freshly minted access token")
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, apmBuildName, artHttpDetails)
+}
+
+func basicAuthBase64(user, password string) string {
+	return base64.StdEncoding.EncodeToString([]byte(user + ":" + password))
+}
+
 // TestApmRegistriesDeclaredInApmYml validates that apm.yml's own registries: block (a url: only -
 // see manifest.go's ManifestRegistry - matched to jf's configured server by host, via
 // discoverMatchingRegistries) is sufficient on its own for registry discovery: with a single
@@ -1460,6 +1558,51 @@ func TestApmInstallWithDependenciesInBuildInfo(t *testing.T) {
 	require.NoError(t, err, "install should succeed")
 
 	validateBuildInfoDependencies(t, apmBuildName, buildNumber)
+	deleteBuildInfo()
+}
+
+// TestApmDependencyChecksumsInBuildInfo validates that dependency checksums (SHA1, MD5, SHA256)
+// are all present and correct in build-info. This test covers the checksum resolution pipeline
+// for dependencies (as opposed to TestApmChecksumsInBuildInfo which covers artifacts).
+// The three-tier checksum resolution (cache → batched AQL → lockfile) must populate all
+// three checksum types (SHA1, MD5, SHA256) for each dependency.
+func TestApmDependencyChecksumsInBuildInfo(t *testing.T) {
+	initApmTest(t)
+	defer cleanApmTest(t)
+
+	// Create and publish a test dependency package
+	publishApmDependencyPackage(t, "test/checksum-validation-dep")
+
+	// Create a project that installs that dependency
+	projectDir := createProjectWithDependencies(t, "app-with-checksum-deps", []string{"test/checksum-validation-dep#1.0.0"})
+	defer func() {
+		_ = os.RemoveAll(projectDir)
+	}()
+	defer setupTestWorkingDirectory(t, projectDir)()
+
+	buildNumber := "501"
+	err := runApmInstall(buildNumber)
+	require.NoError(t, err, "install should succeed")
+
+	// Get build info and validate dependency checksums
+	buildResult := fetchPublishedApmBuildInfo(t, apmBuildName, buildNumber)
+	require.NotEmpty(t, buildResult.Modules, "build info should have a module")
+
+	module := buildResult.Modules[0]
+	require.NotEmpty(t, module.Dependencies, "build info should have dependencies")
+
+	// Validate that EVERY dependency has all three checksum types (SHA1, MD5, SHA256)
+	for _, dep := range module.Dependencies {
+		assert.NotEmpty(t, dep.Sha256, "dependency %s should have SHA256 checksum", dep.Id)
+		assert.NotEmpty(t, dep.Sha1, "dependency %s should have SHA1 checksum", dep.Id)
+		assert.NotEmpty(t, dep.Md5, "dependency %s should have MD5 checksum", dep.Id)
+
+		// Validate checksum format (hex string)
+		assert.Regexp(t, "^[a-f0-9]{64}$", dep.Sha256, "dependency %s SHA256 should be valid hex", dep.Id)
+		assert.Regexp(t, "^[a-f0-9]{40}$", dep.Sha1, "dependency %s SHA1 should be valid hex", dep.Id)
+		assert.Regexp(t, "^[a-f0-9]{32}$", dep.Md5, "dependency %s MD5 should be valid hex", dep.Id)
+	}
+
 	deleteBuildInfo()
 }
 
