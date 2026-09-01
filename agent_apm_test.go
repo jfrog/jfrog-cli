@@ -914,11 +914,12 @@ func TestApmAuthWithUsernamePassword(t *testing.T) {
 		createJfrogHomeConfig(t, true) // restore "default" to its original access-token mode
 		initApmConfig(t)               // re-run `jf setup apm` so later tests get a valid token again
 	}()
+	// Recreate "default" via the same add-with-explicit-URL helper used everywhere else in this
+	// file, rather than `config edit` without --url: edit's URL-preservation behavior isn't
+	// guaranteed, and re-adding keeps this test's setup identical to every other server-config
+	// switch in this file.
 	*tests.JfrogAccessToken = ""
-	require.NoError(t,
-		coreTests.NewJfrogCli(execMain, "jfrog config", "").Exec("edit", "default",
-			"--user="+*tests.JfrogUser, "--password="+*tests.JfrogPassword, "--interactive=false"),
-		"reconfiguring default with User+Password should succeed")
+	createJfrogHomeConfig(t, true)
 
 	// Force a fresh mint: without this, BuildRegistryEntry's own Priority-1 check
 	// (serverDetails.AccessToken != "") would never even run, since the OLD token is still
