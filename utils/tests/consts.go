@@ -242,6 +242,7 @@ var (
 	AptRemoteRepo                  = "cli-apt-remote"
 	AptDebianRemoteRepo            = "cli-apt-debian-remote"
 	AptVirtualRepo                 = "cli-apt-virtual"
+	AptBuildName                   = "cli-apt-build"
 	PoetryLocalRepo                = "cli-poetry-local"
 	PoetryRemoteRepo               = "cli-poetry-remote"
 	PoetryVirtualRepo              = "cli-poetry-virtual"
