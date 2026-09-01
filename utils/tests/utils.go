@@ -71,6 +71,7 @@ var (
 	TestPoetry                *bool
 	TestUv                    *bool
 	TestNix                   *bool
+	TestCargo                 *bool
 	TestAlpine                *bool
 	TestRuby                  *bool
 	TestApt                   *bool
@@ -144,6 +145,7 @@ func init() {
 	TestPoetry = flag.Bool("test.poetry", false, "Test Poetry")
 	TestUv = flag.Bool("test.uv", false, "Test UV")
 	TestNix = flag.Bool("test.nix", false, "Test Nix")
+	TestCargo = flag.Bool("test.cargo", false, "Test Cargo")
 	TestAlpine = flag.Bool("test.alpine", false, "Test Alpine APK")
 	TestRuby = flag.Bool("test.ruby", false, "Test Ruby")
 	TestApt = flag.Bool("test.apt", false, "Test apt (Debian/Ubuntu package manager)")
@@ -283,7 +285,24 @@ func DeleteFiles(deleteSpec *spec.SpecFiles, serverDetails *config.ServerDetails
 	return deleteCommand.DeleteFiles(reader)
 }
 
+// buildInfoIndexRetries and buildInfoIndexBackoff bound the retry in
+// GetBuildInfo below: Artifactory's build-info search index can lag a
+// freshly-published build by a second or two, especially under concurrent
+// CI load (many PM compatibility tests hitting the same instance at once).
+// Total worst-case wait is ~7.5s (0.5+1+2+4), which is negligible next to
+// the seconds a full PM test takes, but eliminates a whole class of
+// "Build info was not found" false failures immediately after a publish.
+const (
+	buildInfoIndexRetries = 4
+	buildInfoIndexBackoff = 500 * time.Millisecond
+)
+
 // This function makes no assertion, caller is responsible to assert as needed.
+//
+// Retries when the build info is genuinely not there yet (found=false,
+// err=nil is Artifactory's 404 signal — see BuildInfoService.GetBuildInfo)
+// to absorb search-index propagation lag right after a publish. Any real
+// error is returned immediately, unretried, exactly as before.
 func GetBuildInfo(serverDetails *config.ServerDetails, buildName, buildNumber string) (pbi *buildinfo.PublishedBuildInfo, found bool, err error) {
 	servicesManager, err := artUtils.CreateServiceManager(serverDetails, -1, 0, false)
 	if err != nil {
@@ -292,7 +311,16 @@ func GetBuildInfo(serverDetails *config.ServerDetails, buildName, buildNumber st
 	params := services.NewBuildInfoParams()
 	params.BuildName = buildName
 	params.BuildNumber = buildNumber
-	return servicesManager.GetBuildInfo(params)
+
+	wait := buildInfoIndexBackoff
+	for attempt := 0; ; attempt++ {
+		pbi, found, err = servicesManager.GetBuildInfo(params)
+		if err != nil || found || attempt == buildInfoIndexRetries {
+			return pbi, found, err
+		}
+		time.Sleep(wait)
+		wait *= 2
+	}
 }
 
 func GetBuildRuns(serverDetails *config.ServerDetails, buildName string) (pbi *buildinfo.BuildRuns, found bool, err error) {
@@ -337,6 +365,8 @@ var reposConfigMap = map[*string]string{
 	&NixLocalRepo:                   NixLocalRepositoryConfig,
 	&NixRemoteRepo:                  NixRemoteRepositoryConfig,
 	&NixVirtualRepo:                 NixVirtualRepositoryConfig,
+	&CargoLocalRepo:                 CargoLocalRepositoryConfig,
+	&CargoRemoteRepo:                CargoRemoteRepositoryConfig,
 	&AlpineLocalRepo:                AlpineLocalRepositoryConfig,
 	&AlpineRemoteRepo:               AlpineRemoteRepositoryConfig,
 	&AlpineVirtualRepo:              AlpineVirtualRepositoryConfig,
@@ -419,6 +449,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestPoetry:             {&PoetryLocalRepo, &PoetryRemoteRepo},
 		TestUv:                 {&UvLocalRepo, &UvRemoteRepo},
 		TestNix:                {&NixLocalRepo, &NixRemoteRepo},
+		TestCargo:              {&CargoLocalRepo, &CargoRemoteRepo},
 		TestAlpine:             {&AlpineLocalRepo, &AlpineRemoteRepo},
 		TestRuby:               {&RubyLocalRepo, &RubyRemoteRepo},
 		TestApt:                {&AptLocalRepo, &AptRemoteRepo, &AptDebianRemoteRepo},
@@ -504,6 +535,7 @@ func GetBuildNames() []string {
 		TestPoetry:       {&PoetryBuildName},
 		TestUv:           {&UvBuildName},
 		TestNix:          {&NixBuildName},
+		TestCargo:        {&CargoBuildName},
 		TestAlpine:       {&AlpineBuildName},
 		TestRuby:         {&RubyBuildName},
 		TestAgentPlugins: {&AgentPluginsBuildName},
@@ -576,6 +608,8 @@ func getSubstitutionMap() map[string]string {
 		"${NIX_LOCAL_REPO}":            NixLocalRepo,
 		"${NIX_REMOTE_REPO}":           NixRemoteRepo,
 		"${NIX_VIRTUAL_REPO}":          NixVirtualRepo,
+		"${CARGO_LOCAL_REPO}":          CargoLocalRepo,
+		"${CARGO_REMOTE_REPO}":         CargoRemoteRepo,
 		"${ALPINE_LOCAL_REPO}":         AlpineLocalRepo,
 		"${ALPINE_REMOTE_REPO}":        AlpineRemoteRepo,
 		"${ALPINE_VIRTUAL_REPO}":       AlpineVirtualRepo,
@@ -664,6 +698,8 @@ func AddTimestampToGlobalVars() {
 	NixLocalRepo += uniqueSuffix
 	NixRemoteRepo += uniqueSuffix
 	NixVirtualRepo += uniqueSuffix
+	CargoLocalRepo += uniqueSuffix
+	CargoRemoteRepo += uniqueSuffix
 	AlpineLocalRepo += uniqueSuffix
 	AlpineRemoteRepo += uniqueSuffix
 	AlpineVirtualRepo += uniqueSuffix
@@ -706,6 +742,7 @@ func AddTimestampToGlobalVars() {
 	AgentSkillsBuildName += uniqueSuffix
 	UvBuildName += uniqueSuffix
 	NixBuildName += uniqueSuffix
+	CargoBuildName += uniqueSuffix
 	AlpineBuildName += uniqueSuffix
 	ConanBuildName += uniqueSuffix
 	HelmBuildName += uniqueSuffix
