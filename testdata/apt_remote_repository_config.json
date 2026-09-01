@@ -2,8 +2,8 @@
   "key": "${APT_REMOTE_REPO}",
   "rclass": "remote",
   "packageType": "debian",
-  "url": "http://ports.ubuntu.com/ubuntu-ports",
-  "debianDefaultArchitectures": "arm64,amd64",
+  "url": "http://archive.ubuntu.com/ubuntu",
+  "debianDefaultArchitectures": "amd64",
   "repoLayoutRef": "simple-default",
   "xrayIndex": false
 }
