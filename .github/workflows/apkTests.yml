@@ -40,7 +40,7 @@ on:
         required: false
         default: ""
       jfrog_password:
-        description: "Password for external JFrog Platform."
+        description: "Password for external JFrog Platforms"
         type: string
         required: false
         default: ""
