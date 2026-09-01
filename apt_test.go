@@ -739,7 +739,7 @@ func validateAptLocalBuildInfo(t *testing.T, buildName, buildNumber string) {
 	assert.NotEmpty(t, mod.Dependencies, "apt build-info must have at least one dependency")
 	for _, dep := range mod.Dependencies {
 		assert.Equal(t, "deb", dep.Type, "dep %s must have type deb", dep.Id)
-		assert.NotEmpty(t, dep.Checksum.Sha256, "dep %s must have SHA256 checksum", dep.Id)
+		assert.NotEmpty(t, dep.Sha256, "dep %s must have SHA256 checksum", dep.Id)
 		assert.NotEmpty(t, dep.Scopes, "dep %s must have at least one scope", dep.Id)
 	}
 }
@@ -794,7 +794,7 @@ func TestAptInstall_BuildInfoDepProperties(t *testing.T) {
 		}
 
 		// #44: sha256 must be populated
-		assert.NotEmpty(t, dep.Checksum.Sha256, "dep %s: sha256 must be populated", dep.Id)
+		assert.NotEmpty(t, dep.Sha256, "dep %s: sha256 must be populated", dep.Id)
 
 		// #45: package must not appear in its own requestedBy ancestry
 		for _, path := range dep.RequestedBy {
