@@ -555,7 +555,7 @@ func TestAptInstall_TrustedFlag(t *testing.T) {
 
 	runJfrogCli(t, "apt", "install", "--dry-run", "-y", "curl",
 		"--repo="+aptRepo(),
-		"--dist=noble",
+		"--dist="+testDist(),
 		"--trusted",
 	)
 
@@ -971,9 +971,11 @@ func TestAptInstall_ClosureBounded(t *testing.T) {
 	require.Len(t, bi.Modules, 1)
 
 	depCount := len(bi.Modules[0].Dependencies)
-	// On a minimal Ubuntu 24.04 image with --installed --no-suggests, curl's
-	// closure is typically 2–6 packages, never thousands.
-	assert.Less(t, depCount, 20,
+	// With --installed --no-suggests the closure is bounded to packages already on
+	// the system; without these flags apt-cache walks the whole archive (~23,000
+	// packages). The exact count varies by distro (Ubuntu noble: ~4, Debian
+	// bookworm: ~40); the important invariant is it stays well under 200.
+	assert.Less(t, depCount, 200,
 		"curl dep count %d exceeds expected bound; --installed --no-suggests must be active", depCount)
 	assert.Greater(t, depCount, 0, "curl must have at least one dependency")
 }
