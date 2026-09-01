@@ -2224,7 +2224,10 @@ func runNugetFlexPackCmd(c *cli.Context, toolchainType dotnetutils.ToolchainType
 	if err != nil {
 		return err
 	}
-	allowInsecure, err := cliutils.ExtractBoolFlagFromArgs(&filteredArgs, "insecure-tls")
+	// --allow-insecure-connections mirrors the legacy nuget/dotnet path: it permits a plain
+	// http:// package source, which NuGet 6.8+ otherwise rejects. It is deliberately NOT
+	// --insecure-tls, which elsewhere in the CLI means "skip TLS certificate verification".
+	allowInsecure, err := cliutils.ExtractBoolFlagFromArgs(&filteredArgs, "allow-insecure-connections")
 	if err != nil {
 		return err
 	}

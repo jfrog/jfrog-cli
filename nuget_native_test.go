@@ -103,11 +103,11 @@ func routerServerDetails() *config.ServerDetails {
 	return &routed
 }
 
-// allowInsecureConnectionForFlexPackTests adds "--insecure-tls" for tests that use a localhost
-// server. Every test in this file runs through the FlexPack path (no config file is ever
-// created), which only recognizes this flag name - not legacy's "--allow-insecure-connections".
+// allowInsecureConnectionForFlexPackTests adds "--allow-insecure-connections" for tests that use
+// a plain-http localhost server, which NuGet 6.8+ otherwise rejects. The FlexPack path uses the
+// same flag name as the legacy nuget/dotnet path.
 func allowInsecureConnectionForFlexPackTests(args *[]string) {
-	*args = append(*args, "--insecure-tls")
+	*args = append(*args, "--allow-insecure-connections")
 }
 
 // buildTestNupkg packs a minimal, valid .nupkg using the real nuget.exe binary (so the result
