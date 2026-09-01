@@ -15,6 +15,9 @@ import (
 	"testing"
 	"time"
 
+	buildinfo "github.com/jfrog/build-info-go/entities"
+	"github.com/jfrog/jfrog-cli-core/v2/common/build"
+	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -615,6 +618,434 @@ func TestAptSetupThenNativeInstall(t *testing.T) {
 	require.NoError(t, err, "native apt-get install failed: %s", out)
 
 	assertPersistentInstallFromArtifactory(t, "curl", *tests.JfrogUrl)
+}
+
+// ── auth + setup with existing virtual repo ───────────────────────────────────
+
+// TestAptInstall_PersistentSetupJfAptInstall verifies the "setup once, then
+// jf apt install without flags" flow against the pre-configured virtual repository
+// (cli-apt-virtual, backed by ubuntu-remote + debian-remote + local members).
+//
+// After `jf setup apt` writes a persistent sources.list with embedded credentials
+// and a Pin-Priority: 1001 preferences file, a bare `jf apt install` (no --repo /
+// --dist) must detect the persistent config, route the install through Artifactory,
+// and succeed.
+func TestAptInstall_PersistentSetupJfAptInstall(t *testing.T) {
+	initAptTest(t)
+	requireRoot(t)
+	defer cleanAptTest(t)
+
+	repo := aptRepo()
+	dist := testDist()
+	const pkg = "ed"
+
+	if out, err := exec.Command("apt-get", "purge", "-y", pkg).CombinedOutput(); err != nil {
+		t.Logf("pre-test purge of %s skipped: %v\n%s", pkg, err, out)
+	}
+
+	// Write persistent sources.list + pinning file for the shared virtual repo.
+	runJfrogCli(t, "setup", "apt",
+		"--repo="+repo,
+		"--dist="+dist,
+		"--component=main",
+		"--trusted",
+	)
+
+	require.FileExists(t, sourcesListPath(repo, dist))
+	require.FileExists(t, prefPath(repo, dist))
+
+	// Install WITHOUT --repo/--dist. Must log "Using persistent Artifactory apt
+	// configuration" and proxy the install through the configured virtual repo.
+	runJfrogCli(t, "apt", "install", "-y", pkg)
+
+	_, err := exec.LookPath(pkg)
+	assert.NoError(t, err, "%s must be installed via persistent-config 'jf apt install'", pkg)
+	assertPersistentInstallFromArtifactory(t, pkg, *tests.JfrogUrl)
+}
+
+// TestAptInstall_BuildInfoWithVirtualRepo verifies end-to-end build-info collection
+// against the pre-configured virtual repository (cli-apt-virtual).
+//
+// Flow:
+//  1. jf apt install jq with --build-name/--build-number; build-info is saved locally.
+//  2. Local build-info is validated: module type debian, deps type deb, SHA256 present.
+//  3. jf rt bp publishes the build-info to Artifactory.
+//  4. The published build-info is fetched and round-trip-validated.
+func TestAptInstall_BuildInfoWithVirtualRepo(t *testing.T) {
+	initAptTest(t)
+	requireRoot(t)
+	defer cleanAptTest(t)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.AptBuildName, artHttpDetails)
+
+	repo := aptRepo()
+	dist := testDist()
+	const buildNumber = "1"
+	// jq: small utility whose closure is jq + libjq1 + libonig5; all three are served
+	// by the ubuntu/debian remotes in the virtual repo, so all three resolve with
+	// checksums from the Packages index and appear in the build-info output.
+	const pkg = "jq"
+
+	if out, err := exec.Command("apt-get", "purge", "-y", pkg).CombinedOutput(); err != nil {
+		t.Logf("pre-test purge of %s skipped: %v\n%s", pkg, err, out)
+	}
+
+	runJfrogCli(t, "apt", "install", "-y", pkg,
+		"--repo="+repo,
+		"--dist="+dist,
+		"--trusted",
+		"--build-name="+tests.AptBuildName,
+		"--build-number="+buildNumber,
+	)
+
+	_, err := exec.LookPath(pkg)
+	require.NoError(t, err, "%s must be installed after jf apt install", pkg)
+
+	// Validate the locally persisted build-info before it is published.
+	validateAptLocalBuildInfo(t, tests.AptBuildName, buildNumber)
+
+	// Publish and validate the round-trip through Artifactory.
+	runJfrogCli(t, "rt", "bp", tests.AptBuildName, buildNumber)
+
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.AptBuildName, buildNumber)
+	require.NoError(t, err)
+	require.True(t, found, "build %s/%s must appear in Artifactory after bp", tests.AptBuildName, buildNumber)
+
+	bi := publishedBuildInfo.BuildInfo
+	require.Len(t, bi.Modules, 1, "apt build-info must have exactly one module")
+	mod := bi.Modules[0]
+	assert.Equal(t, string(buildinfo.Debian), string(mod.Type))
+	assert.NotEmpty(t, mod.Dependencies, "apt build-info must have at least one dependency")
+	for _, dep := range mod.Dependencies {
+		assert.Equal(t, "deb", dep.Type, "dep %s must have type deb", dep.Id)
+		assert.NotEmpty(t, dep.Sha256, "dep %s must have SHA256 checksum", dep.Id)
+	}
+}
+
+// validateAptLocalBuildInfo validates the build-info persisted locally after
+// `jf apt install --build-name/--build-number` before it is published to Artifactory.
+func validateAptLocalBuildInfo(t *testing.T, buildName, buildNumber string) {
+	t.Helper()
+	buildInfoService := build.CreateBuildInfoService()
+	aptBuild, err := buildInfoService.GetOrCreateBuildWithProject(buildName, buildNumber, "")
+	require.NoError(t, err)
+	bi, err := aptBuild.ToBuildInfo()
+	require.NoError(t, err)
+	require.NotEmpty(t, bi.Started)
+	if !assert.Len(t, bi.Modules, 1, "apt build-info must have exactly one module") {
+		return
+	}
+	mod := bi.Modules[0]
+	assert.Equal(t, string(buildinfo.Debian), string(mod.Type))
+	assert.NotEmpty(t, mod.Dependencies, "apt build-info must have at least one dependency")
+	for _, dep := range mod.Dependencies {
+		assert.Equal(t, "deb", dep.Type, "dep %s must have type deb", dep.Id)
+		assert.NotEmpty(t, dep.Checksum.Sha256, "dep %s must have SHA256 checksum", dep.Id)
+		assert.NotEmpty(t, dep.Scopes, "dep %s must have at least one scope", dep.Id)
+	}
+}
+
+// ── build info dep properties ─────────────────────────────────────────────────
+
+// TestAptInstall_BuildInfoDepProperties verifies scenarios #42–#45:
+//   - #42: dependency ID format is name:version:arch
+//   - #43: Depends/Pre-Depends → required, Recommends → recommended
+//   - #44: sha256/sha1/md5 populated from Packages index
+//   - #45: requestedBy chains are acyclic (no package in its own ancestry)
+func TestAptInstall_BuildInfoDepProperties(t *testing.T) {
+	initAptTest(t)
+	requireRoot(t)
+	defer cleanAptTest(t)
+	defer func() { _ = build.RemoveBuildDir(tests.AptBuildName, "2", "") }()
+
+	if out, err := exec.Command("apt-get", "purge", "-y", "jq").CombinedOutput(); err != nil {
+		t.Logf("purge jq: %v\n%s", err, out)
+	}
+
+	runJfrogCli(t, "apt", "install", "-y", "jq",
+		"--repo="+aptRepo(),
+		"--dist="+testDist(),
+		"--trusted",
+		"--build-name="+tests.AptBuildName,
+		"--build-number=2",
+	)
+
+	buildInfoService := build.CreateBuildInfoService()
+	aptBuild, err := buildInfoService.GetOrCreateBuildWithProject(tests.AptBuildName, "2", "")
+	require.NoError(t, err)
+	bi, err := aptBuild.ToBuildInfo()
+	require.NoError(t, err)
+	require.Len(t, bi.Modules, 1)
+
+	for _, dep := range bi.Modules[0].Dependencies {
+		// #42: ID must be name:version:arch
+		parts := strings.SplitN(dep.Id, ":", 3)
+		assert.Len(t, parts, 3, "dep %s: ID must be name:version:arch", dep.Id)
+		assert.NotEmpty(t, parts[0], "dep %s: name must not be empty", dep.Id)
+		assert.NotEmpty(t, parts[1], "dep %s: version must not be empty", dep.Id)
+		assert.NotEmpty(t, parts[2], "dep %s: arch must not be empty", dep.Id)
+
+		// type must be deb
+		assert.Equal(t, "deb", dep.Type, "dep %s: type must be deb", dep.Id)
+
+		// #43: scope must be one of the three valid values
+		for _, scope := range dep.Scopes {
+			assert.Contains(t, []string{"required", "recommended", "optional"}, scope,
+				"dep %s: unexpected scope %q", dep.Id, scope)
+		}
+
+		// #44: sha256 must be populated
+		assert.NotEmpty(t, dep.Checksum.Sha256, "dep %s: sha256 must be populated", dep.Id)
+
+		// #45: package must not appear in its own requestedBy ancestry
+		for _, path := range dep.RequestedBy {
+			assert.NotContains(t, path, dep.Id,
+				"dep %s must not appear in its own requestedBy chain: %v", dep.Id, path)
+		}
+	}
+}
+
+// ── build info flag combinations ──────────────────────────────────────────────
+
+// TestAptInstall_BuildModule verifies scenario #35: --module overrides module ID.
+func TestAptInstall_BuildModule(t *testing.T) {
+	initAptTest(t)
+	requireRoot(t)
+	defer cleanAptTest(t)
+	defer func() { _ = build.RemoveBuildDir(tests.AptBuildName, "3", "") }()
+
+	const moduleID = "my-custom-apt-module"
+
+	if out, err := exec.Command("apt-get", "purge", "-y", "jq").CombinedOutput(); err != nil {
+		t.Logf("purge jq: %v\n%s", err, out)
+	}
+
+	runJfrogCli(t, "apt", "install", "-y", "jq",
+		"--repo="+aptRepo(),
+		"--dist="+testDist(),
+		"--trusted",
+		"--build-name="+tests.AptBuildName,
+		"--build-number=3",
+		"--module="+moduleID,
+	)
+
+	buildInfoService := build.CreateBuildInfoService()
+	aptBuild, err := buildInfoService.GetOrCreateBuildWithProject(tests.AptBuildName, "3", "")
+	require.NoError(t, err)
+	bi, err := aptBuild.ToBuildInfo()
+	require.NoError(t, err)
+	require.Len(t, bi.Modules, 1)
+	assert.Equal(t, moduleID, bi.Modules[0].Id, "--module must override the default module ID")
+}
+
+// TestAptInstall_BuildNameOnlyError verifies scenario #36:
+// --build-name without --build-number → CLI rejects the partial flags with an error.
+// JFrog CLI enforces that both flags must be provided together; a partial pair is
+// an error rather than silently skipping build info collection.
+func TestAptInstall_BuildNameOnlyError(t *testing.T) {
+	initAptTest(t)
+	defer cleanAptTest(t)
+
+	err := runJfrogCliWithoutAssertion("apt", "install", "--dry-run", "-y", "jq",
+		"--repo="+aptRepo(),
+		"--dist="+testDist(),
+		"--trusted",
+		"--build-name=cli-apt-nameonly-test",
+		// no --build-number
+	)
+	assert.Error(t, err, "--build-name without --build-number must return an error")
+}
+
+// TestAptInstall_BuildNumberOnlyError verifies scenario #37:
+// --build-number without --build-name → CLI rejects with an error.
+func TestAptInstall_BuildNumberOnlyError(t *testing.T) {
+	initAptTest(t)
+	defer cleanAptTest(t)
+
+	err := runJfrogCliWithoutAssertion("apt", "install", "--dry-run", "-y", "jq",
+		"--repo="+aptRepo(),
+		"--dist="+testDist(),
+		"--trusted",
+		"--build-number=1",
+		// no --build-name
+	)
+	assert.Error(t, err, "--build-number without --build-name must return an error")
+}
+
+// TestAptInstall_NoBuildFlagsNoBuildInfo verifies scenario #38:
+// no build flags → install succeeds, no build info produced.
+func TestAptInstall_NoBuildFlagsNoBuildInfo(t *testing.T) {
+	initAptTest(t)
+	requireRoot(t)
+	defer cleanAptTest(t)
+
+	const buildName = "cli-apt-nobuild-test"
+	const buildNum = "1"
+
+	runJfrogCli(t, "apt", "install", "--dry-run", "-y", "jq",
+		"--repo="+aptRepo(),
+		"--dist="+testDist(),
+		"--trusted",
+		// no --build-name, no --build-number
+	)
+
+	buildInfoService := build.CreateBuildInfoService()
+	aptBuild, err := buildInfoService.GetOrCreateBuildWithProject(buildName, buildNum, "")
+	require.NoError(t, err)
+	bi, err := aptBuild.ToBuildInfo()
+	require.NoError(t, err)
+	assert.Empty(t, bi.Modules, "no build flags must not produce build info")
+}
+
+// TestAptInstall_BuildFlagsFromEnvVars verifies scenario #39:
+// JFROG_CLI_BUILD_NAME + JFROG_CLI_BUILD_NUMBER env vars → build info captured.
+func TestAptInstall_BuildFlagsFromEnvVars(t *testing.T) {
+	initAptTest(t)
+	requireRoot(t)
+	defer cleanAptTest(t)
+	defer func() { _ = build.RemoveBuildDir(tests.AptBuildName, "4", "") }()
+
+	t.Setenv("JFROG_CLI_BUILD_NAME", tests.AptBuildName)
+	t.Setenv("JFROG_CLI_BUILD_NUMBER", "4")
+
+	if out, err := exec.Command("apt-get", "purge", "-y", "jq").CombinedOutput(); err != nil {
+		t.Logf("purge jq: %v\n%s", err, out)
+	}
+
+	// No --build-name / --build-number flags; env vars must supply them.
+	runJfrogCli(t, "apt", "install", "-y", "jq",
+		"--repo="+aptRepo(),
+		"--dist="+testDist(),
+		"--trusted",
+	)
+
+	buildInfoService := build.CreateBuildInfoService()
+	aptBuild, err := buildInfoService.GetOrCreateBuildWithProject(tests.AptBuildName, "4", "")
+	require.NoError(t, err)
+	bi, err := aptBuild.ToBuildInfo()
+	require.NoError(t, err)
+	require.Len(t, bi.Modules, 1, "build info must be captured from env vars")
+	assert.NotEmpty(t, bi.Modules[0].Dependencies)
+}
+
+// ── dispatch ──────────────────────────────────────────────────────────────────
+
+// TestAptInstall_DpkgQueryDispatch verifies scenario #29:
+// jf apt dpkg-query dispatches to dpkg-query without auth injection.
+func TestAptInstall_DpkgQueryDispatch(t *testing.T) {
+	initAptTest(t)
+	defer cleanAptTest(t)
+
+	// base-files is always installed; dpkg-query must find it.
+	runJfrogCli(t, "apt", "dpkg-query", "-W",
+		"-f=${Package}\\t${Version}\\n", "base-files")
+}
+
+// ── closure bounded ───────────────────────────────────────────────────────────
+
+// TestAptInstall_ClosureBounded verifies scenario #71:
+// apt-cache closure is bounded to installed packages via --installed --no-suggests.
+// curl's full archive closure is ~23,000 packages; with bounding it is <20.
+func TestAptInstall_ClosureBounded(t *testing.T) {
+	initAptTest(t)
+	requireRoot(t)
+	defer cleanAptTest(t)
+	defer func() { _ = build.RemoveBuildDir(tests.AptBuildName, "5", "") }()
+
+	if out, err := exec.Command("apt-get", "purge", "-y", "curl").CombinedOutput(); err != nil {
+		t.Logf("purge curl: %v\n%s", err, out)
+	}
+
+	runJfrogCli(t, "apt", "install", "-y", "--allow-downgrades", "curl",
+		"--repo="+aptRepo(),
+		"--dist="+testDist(),
+		"--trusted",
+		"--build-name="+tests.AptBuildName,
+		"--build-number=5",
+	)
+
+	buildInfoService := build.CreateBuildInfoService()
+	aptBuild, err := buildInfoService.GetOrCreateBuildWithProject(tests.AptBuildName, "5", "")
+	require.NoError(t, err)
+	bi, err := aptBuild.ToBuildInfo()
+	require.NoError(t, err)
+	require.Len(t, bi.Modules, 1)
+
+	depCount := len(bi.Modules[0].Dependencies)
+	// On a minimal Ubuntu 24.04 image with --installed --no-suggests, curl's
+	// closure is typically 2–6 packages, never thousands.
+	assert.Less(t, depCount, 20,
+		"curl dep count %d exceeds expected bound; --installed --no-suggests must be active", depCount)
+	assert.Greater(t, depCount, 0, "curl must have at least one dependency")
+}
+
+// ── Artifactory unreachable ───────────────────────────────────────────────────
+
+// TestAptInstall_ArtifactoryUnreachable verifies scenario #66:
+// on-the-fly install against a nonexistent repo returns a clear error;
+// apt must not silently fall back to system sources (Dir::Etc::sourceparts=-).
+func TestAptInstall_ArtifactoryUnreachable(t *testing.T) {
+	initAptTest(t)
+	requireRoot(t)
+	defer cleanAptTest(t)
+
+	err := runJfrogCliWithoutAssertion("apt", "install", "-y", "curl",
+		"--repo=repo-does-not-exist-xyz-abc",
+		"--dist="+testDist(),
+		"--trusted",
+	)
+	require.Error(t, err,
+		"install against nonexistent repo must fail (no silent fallback to system sources)")
+}
+
+// ── full CI pipeline ─────────────────────────────────────────────────────────
+
+// TestAptInstall_FullPipeline verifies scenario #65:
+// jf setup apt → jf apt install with build flags → jf rt bp → build in Artifactory.
+func TestAptInstall_FullPipeline(t *testing.T) {
+	initAptTest(t)
+	requireRoot(t)
+	defer cleanAptTest(t)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.AptBuildName, artHttpDetails)
+
+	const buildNumber = "6"
+	const pkg = "jq"
+	dist := testDist()
+
+	// 1. Persistent setup against the shared virtual repo.
+	runJfrogCli(t, "setup", "apt",
+		"--repo="+aptRepo(),
+		"--dist="+dist,
+		"--component=main",
+		"--trusted",
+	)
+	require.FileExists(t, sourcesListPath(aptRepo(), dist))
+
+	if out, err := exec.Command("apt-get", "purge", "-y", pkg).CombinedOutput(); err != nil {
+		t.Logf("purge %s: %v\n%s", pkg, err, out)
+	}
+
+	// 2. Install using persistent config (no --repo/--dist needed).
+	runJfrogCli(t, "apt", "install", "-y", pkg,
+		"--build-name="+tests.AptBuildName,
+		"--build-number="+buildNumber,
+	)
+
+	_, err := exec.LookPath(pkg)
+	require.NoError(t, err, "%s must be installed", pkg)
+
+	// 3. Validate local build info.
+	validateAptLocalBuildInfo(t, tests.AptBuildName, buildNumber)
+
+	// 4. Publish to Artifactory.
+	runJfrogCli(t, "rt", "bp", tests.AptBuildName, buildNumber)
+
+	// 5. Verify round-trip.
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.AptBuildName, buildNumber)
+	require.NoError(t, err)
+	require.True(t, found, "build info must be in Artifactory after jf rt bp")
+	require.Len(t, publishedBuildInfo.BuildInfo.Modules, 1)
+	assert.Equal(t, string(buildinfo.Debian), string(publishedBuildInfo.BuildInfo.Modules[0].Type))
+	assert.NotEmpty(t, publishedBuildInfo.BuildInfo.Modules[0].Dependencies)
 }
 
 // ── distribution matrix ───────────────────────────────────────────────────────

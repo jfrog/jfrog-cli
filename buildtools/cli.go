@@ -14,6 +14,7 @@ import (
 	alpinecommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/alpine"
 	aptcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/apt"
 	cargocommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/cargo"
+	aptflex "github.com/jfrog/build-info-go/flexpack/apt"
 	conancommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/conan"
 	nixcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nix"
 	rubycommandexec "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/ruby"
@@ -2360,9 +2361,20 @@ func AptCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	// Strip build flags so they aren't passed through to apt-get. Build-info
-	// collection is out of scope for the auth flow.
-	filteredArgs, _, err := build.ExtractBuildDetailsFromArgs(args)
+	args, fromFile, err := coreutils.ExtractStringOptionFromArgs(args, "from-file")
+	if err != nil {
+		return err
+	}
+	// Expand --from-file: inject package names after the "install" subcommand.
+	if fromFile != "" {
+		pkgs, err := aptflex.ReadPackagesFile(fromFile)
+		if err != nil {
+			return fmt.Errorf("--from-file %s: %w", fromFile, err)
+		}
+		args = injectPackagesAfterInstall(args, pkgs)
+	}
+	// Extract build flags (--build-name, --build-number, --module, --project).
+	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
 	if err != nil {
 		return err
 	}
@@ -2388,12 +2400,28 @@ func AptCmd(c *cli.Context) error {
 		SetTrusted(trusted).
 		SetRepoName(repoName).
 		SetDist(dist).
-		SetComponent(component)
+		SetComponent(component).
+		SetBuildConfiguration(buildConfiguration)
 	if serverDetails != nil {
 		cmd.SetServerDetails(serverDetails)
 	}
 
 	return commands.ExecWithPackageManager(cmd, "apt")
+}
+
+// injectPackagesAfterInstall inserts pkgs into args immediately after the
+// "install" subcommand token. If "install" is not present, pkgs are appended.
+func injectPackagesAfterInstall(args, pkgs []string) []string {
+	for i, a := range args {
+		if a == "install" {
+			result := make([]string, 0, len(args)+len(pkgs))
+			result = append(result, args[:i+1]...)
+			result = append(result, pkgs...)
+			result = append(result, args[i+1:]...)
+			return result
+		}
+	}
+	return append(args, pkgs...)
 }
 
 // aptSetupCmd handles 'jf setup apt' — writes a persistent sources.list entry.
