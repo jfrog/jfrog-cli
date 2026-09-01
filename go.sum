@@ -402,8 +402,8 @@ github.com/jfrog/jfrog-apps-config v1.0.1 h1:mtv6k7g8A8BVhlHGlSveapqf4mJfonwvXYL
 github.com/jfrog/jfrog-apps-config v1.0.1/go.mod h1:8AIIr1oY9JuH5dylz2S6f8Ym2MaadPLR6noCBO4C22w=
 github.com/jfrog/jfrog-cli-application v1.0.2-0.20260621072921-cadb78770a3e h1:jUfQzLCVbUazw7FEXf3+57vQheDSHa/Px/Gp4pf/sNI=
 github.com/jfrog/jfrog-cli-application v1.0.2-0.20260621072921-cadb78770a3e/go.mod h1:p8yLtbmCxxQucIbLZKnWu0F+EDtj6NLXbRQCEK/nb6o=
-github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260828154930-3b7d100d5390 h1:pfoT3lcjqRcX7csf70OaxaE7IEGatnsyW2D68Xw6YHk=
-github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260828154930-3b7d100d5390/go.mod h1:we3sXBDY283lkB0Szd0q1oO1iKYqDsJFPpL/8Ze4P+Q=
+github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260901141441-82d1b03bc083 h1:jjHlAgpi9jQMN1mhCqMmb2RnoxACSrpBks/CHNV0CGo=
+github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260901141441-82d1b03bc083/go.mod h1:g3l9tPAVq/3cYRfhNEsy9TXuvK1kvt5YUSMuWKTKyUg=
 github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260827111619-bee4d60fbdc7 h1:4ytBkQB+iBS/KbG+a974hiZbmTith6KuWa5g0Zvw+z4=
 github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260827111619-bee4d60fbdc7/go.mod h1:vuARjRZopsCqVcZmWzCgw5Pr9QD1FWvwFxijV4bvJJI=
 github.com/jfrog/jfrog-cli-evidence v0.9.5-0.20260618135203-4d2bdd4ee35f h1:MV4BATdkEoUYJmdPDvaB9EBb8JQZg28n/K4X7dcmyAY=
@@ -412,8 +412,8 @@ github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260618062042-6053ab368c
 github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260618062042-6053ab368cab/go.mod h1:lVUeZtlvrLKJRsoSu8OPN9mJ+bfeq9zSESNYao2Jgo8=
 github.com/jfrog/jfrog-cli-security v1.35.0 h1:6pz+WH4Zqbl5xXvf9YEidYUn1Iz0SbdLQtwuOCPQyoI=
 github.com/jfrog/jfrog-cli-security v1.35.0/go.mod h1:T1LXsW+LORDBJbZGiEPxdWeOn+zzaOGwoBFQwvEL37A=
-github.com/jfrog/jfrog-client-go v1.55.1-0.20260827094947-e7a90ebc8049 h1:eogwWAzZFir1suYEgZ4ZrYrch8fhWs7ma2dxv06p/z8=
-github.com/jfrog/jfrog-client-go v1.55.1-0.20260827094947-e7a90ebc8049/go.mod h1:7B7eMRKuMhZ0rOdMItbJVpWjRUe1L//J3Jq+PgjiNxI=
+github.com/jfrog/jfrog-client-go v1.55.1-0.20260901090904-78d68f83abec h1:fotFisxAbONFCpvjMniD30XbK+h92TpspLcqb258Z04=
+github.com/jfrog/jfrog-client-go v1.55.1-0.20260901090904-78d68f83abec/go.mod h1:7B7eMRKuMhZ0rOdMItbJVpWjRUe1L//J3Jq+PgjiNxI=
 github.com/jhump/protoreflect v1.17.0 h1:qOEr613fac2lOuTgWN4tPAtLL7fUSbuJL5X5XumQh94=
 github.com/jhump/protoreflect v1.17.0/go.mod h1:h9+vUUL38jiBzck8ck+6G/aeMX8Z4QUY/NiJPwPNi+8=
 github.com/jszwec/csvutil v1.10.0 h1:upMDUxhQKqZ5ZDCs/wy+8Kib8rZR8I8lOR34yJkdqhI=
