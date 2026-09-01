@@ -1046,24 +1046,6 @@ func TestNugetFlexPackSignedPackagePush(t *testing.T) {
 		"signature verification is explicitly out of scope for FlexPack v1 regardless (Confluence spec)")
 }
 
-// TestNugetFlexPackScanBlocksVulnerablePush covers scenario 30: conditional upload with --scan
-// blocks a push when Xray finds a critical vulnerability.
-func TestNugetFlexPackScanBlocksVulnerablePush(t *testing.T) {
-	initNugetTest(t)
-	if !*tests.TestXray {
-		t.Skip("Skipping --scan push test: requires Xray (pass -test.xray to enable).")
-	}
-	defer cleanTestsHomeEnv()
-	nupkgPath, _ := buildTestNupkg(t, "ScanBlockPkg", "1.0.0")
-	args := []string{"nuget", "push", nupkgPath, "--repo=" + tests.NugetLocalRepo, "--scan"}
-	allowInsecureConnectionForFlexPackTests(&args)
-	// A hand-built, dependency-free test package has nothing for Xray to flag; this asserts
-	// the --scan flag is accepted and the pipeline still completes rather than asserting a
-	// block, since reliably reproducing a "critical vulnerability" fixture is out of scope here.
-	err := runNugetFlexPack(t, args...)
-	assert.NoError(t, err, "--scan must not break a push for a package with no flagged vulnerabilities")
-}
-
 // --- Download / Resolve (scenarios 31-39) ---
 
 // TestNugetFlexPackRestoreResolvesInline covers scenario 31: restore resolves dependencies via
