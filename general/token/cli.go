@@ -112,7 +112,7 @@ func printTokenTable(data []byte, w io.Writer) error {
 	orderedKeys := []string{
 		"access_token", "token_id", "expires_in", "scope",
 		"token_type", "refreshable", "refresh_token", "reference_token",
-		"grant_type", "audience",
+		"grant_type", "audience", "username",
 	}
 
 	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
