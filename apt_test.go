@@ -667,7 +667,7 @@ func TestAptInstall_PersistentSetupJfAptInstall(t *testing.T) {
 // against the pre-configured virtual repository (cli-apt-virtual).
 //
 // Flow:
-//  1. jf apt install jq with --build-name/--build-number; build-info is saved locally.
+//  1. jf apt install curl with --build-name/--build-number; build-info is saved locally.
 //  2. Local build-info is validated: module type debian, deps type deb, SHA256 present.
 //  3. jf rt bp publishes the build-info to Artifactory.
 //  4. The published build-info is fetched and round-trip-validated.
@@ -680,16 +680,18 @@ func TestAptInstall_BuildInfoWithVirtualRepo(t *testing.T) {
 	repo := aptRepo()
 	dist := testDist()
 	const buildNumber = "1"
-	// jq: small utility whose closure is jq + libjq1 + libonig5; all three are served
-	// by the ubuntu/debian remotes in the virtual repo, so all three resolve with
-	// checksums from the Packages index and appear in the build-info output.
-	const pkg = "jq"
+	// curl: in the "main" component on every matrix dist (focal→trixie), served by the
+	// ubuntu/debian remotes in the virtual repo, and pulls a non-base dependency
+	// (libcurl4/libcurl4t64) that resolves with a checksum from the Packages index —
+	// so build-info always has at least one checksummed dependency. (jq is in
+	// "universe" on focal, so it cannot be used across the whole matrix.)
+	const pkg = "curl"
 
 	if out, err := exec.Command("apt-get", "purge", "-y", pkg).CombinedOutput(); err != nil {
 		t.Logf("pre-test purge of %s skipped: %v\n%s", pkg, err, out)
 	}
 
-	runJfrogCli(t, "apt", "install", "-y", pkg,
+	runJfrogCli(t, "apt", "install", "-y", "--allow-downgrades", pkg,
 		"--repo="+repo,
 		"--dist="+dist,
 		"--trusted",
@@ -757,11 +759,11 @@ func TestAptInstall_BuildInfoDepProperties(t *testing.T) {
 	defer cleanAptTest(t)
 	defer func() { _ = build.RemoveBuildDir(tests.AptBuildName, "2", "") }()
 
-	if out, err := exec.Command("apt-get", "purge", "-y", "jq").CombinedOutput(); err != nil {
-		t.Logf("purge jq: %v\n%s", err, out)
+	if out, err := exec.Command("apt-get", "purge", "-y", "curl").CombinedOutput(); err != nil {
+		t.Logf("purge curl: %v\n%s", err, out)
 	}
 
-	runJfrogCli(t, "apt", "install", "-y", "jq",
+	runJfrogCli(t, "apt", "install", "-y", "--allow-downgrades", "curl",
 		"--repo="+aptRepo(),
 		"--dist="+testDist(),
 		"--trusted",
@@ -815,11 +817,11 @@ func TestAptInstall_BuildModule(t *testing.T) {
 
 	const moduleID = "my-custom-apt-module"
 
-	if out, err := exec.Command("apt-get", "purge", "-y", "jq").CombinedOutput(); err != nil {
-		t.Logf("purge jq: %v\n%s", err, out)
+	if out, err := exec.Command("apt-get", "purge", "-y", "curl").CombinedOutput(); err != nil {
+		t.Logf("purge curl: %v\n%s", err, out)
 	}
 
-	runJfrogCli(t, "apt", "install", "-y", "jq",
+	runJfrogCli(t, "apt", "install", "-y", "--allow-downgrades", "curl",
 		"--repo="+aptRepo(),
 		"--dist="+testDist(),
 		"--trusted",
@@ -845,7 +847,7 @@ func TestAptInstall_BuildNameOnlyError(t *testing.T) {
 	initAptTest(t)
 	defer cleanAptTest(t)
 
-	err := runJfrogCliWithoutAssertion("apt", "install", "--dry-run", "-y", "jq",
+	err := runJfrogCliWithoutAssertion("apt", "install", "--dry-run", "-y", "curl",
 		"--repo="+aptRepo(),
 		"--dist="+testDist(),
 		"--trusted",
@@ -861,7 +863,7 @@ func TestAptInstall_BuildNumberOnlyError(t *testing.T) {
 	initAptTest(t)
 	defer cleanAptTest(t)
 
-	err := runJfrogCliWithoutAssertion("apt", "install", "--dry-run", "-y", "jq",
+	err := runJfrogCliWithoutAssertion("apt", "install", "--dry-run", "-y", "curl",
 		"--repo="+aptRepo(),
 		"--dist="+testDist(),
 		"--trusted",
@@ -881,7 +883,7 @@ func TestAptInstall_NoBuildFlagsNoBuildInfo(t *testing.T) {
 	const buildName = "cli-apt-nobuild-test"
 	const buildNum = "1"
 
-	runJfrogCli(t, "apt", "install", "--dry-run", "-y", "jq",
+	runJfrogCli(t, "apt", "install", "--dry-run", "-y", "curl",
 		"--repo="+aptRepo(),
 		"--dist="+testDist(),
 		"--trusted",
@@ -907,12 +909,12 @@ func TestAptInstall_BuildFlagsFromEnvVars(t *testing.T) {
 	t.Setenv("JFROG_CLI_BUILD_NAME", tests.AptBuildName)
 	t.Setenv("JFROG_CLI_BUILD_NUMBER", "4")
 
-	if out, err := exec.Command("apt-get", "purge", "-y", "jq").CombinedOutput(); err != nil {
-		t.Logf("purge jq: %v\n%s", err, out)
+	if out, err := exec.Command("apt-get", "purge", "-y", "curl").CombinedOutput(); err != nil {
+		t.Logf("purge curl: %v\n%s", err, out)
 	}
 
 	// No --build-name / --build-number flags; env vars must supply them.
-	runJfrogCli(t, "apt", "install", "-y", "jq",
+	runJfrogCli(t, "apt", "install", "-y", "--allow-downgrades", "curl",
 		"--repo="+aptRepo(),
 		"--dist="+testDist(),
 		"--trusted",
@@ -1010,7 +1012,8 @@ func TestAptInstall_FullPipeline(t *testing.T) {
 	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.AptBuildName, artHttpDetails)
 
 	const buildNumber = "6"
-	const pkg = "jq"
+	// curl is in "main" on every matrix dist (jq is in "universe" on focal).
+	const pkg = "curl"
 	dist := testDist()
 
 	// 1. Persistent setup against the shared virtual repo.
@@ -1027,7 +1030,7 @@ func TestAptInstall_FullPipeline(t *testing.T) {
 	}
 
 	// 2. Install using persistent config (no --repo/--dist needed).
-	runJfrogCli(t, "apt", "install", "-y", pkg,
+	runJfrogCli(t, "apt", "install", "-y", "--allow-downgrades", pkg,
 		"--build-name="+tests.AptBuildName,
 		"--build-number="+buildNumber,
 	)
