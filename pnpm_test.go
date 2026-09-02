@@ -511,7 +511,7 @@ func prepareArtifactoryForPnpmBuild(t *testing.T, workingDirectory string) {
 	clientTestUtils.ChangeDirAndAssert(t, workingDirectory)
 	caches := ioutils.DoubleWinPathSeparator(filepath.Join(workingDirectory, "caches"))
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
-	assert.NoError(t, jfrogCli.Exec("pnpm", "install", "-store-dir="+caches))
+	assert.NoError(t, jfrogCli.Exec("pnpm", "install", "--store-dir="+caches))
 	clientTestUtils.RemoveAllAndAssert(t, filepath.Join(workingDirectory, "node_modules"))
 	clientTestUtils.RemoveAllAndAssert(t, caches)
 }
