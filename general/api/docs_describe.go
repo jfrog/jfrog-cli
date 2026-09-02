@@ -50,6 +50,9 @@ func runDescribeCmd(c *cli.Context, stdOut io.Writer) error {
 	}
 	method := c.Args().Get(0)
 	path := normalizeApiPath(c.Args().Get(1))
+	if err := requireFullApiDocsBundle(); err != nil {
+		return err
+	}
 
 	info := apispec.Info()
 	op, ok := apispec.FindOperation(method, path)

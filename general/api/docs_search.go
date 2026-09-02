@@ -109,6 +109,9 @@ func runSearchCmd(c *cli.Context, stdOut io.Writer) error {
 	if limit <= 0 {
 		limit = defaultLimit
 	}
+	if err := requireFullApiDocsBundle(); err != nil {
+		return err
+	}
 
 	ops, err := apispec.Operations()
 	if err != nil {
