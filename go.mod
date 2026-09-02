@@ -8,6 +8,7 @@ replace (
 	github.com/CycloneDX/cyclonedx-go => github.com/CycloneDX/cyclonedx-go v0.10.0
 	// Should not be updated to 0.2.6 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
 	github.com/c-bata/go-prompt => github.com/c-bata/go-prompt v0.2.5
+
 	// Should not be updated to 0.2.0-beta.2 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
 	github.com/pkg/term => github.com/pkg/term v1.1.0
 )
@@ -20,13 +21,13 @@ require (
 	github.com/jfrog/archiver/v3 v3.6.4
 	github.com/jfrog/build-info-go v1.13.1-0.20260828071122-bb92ab7ba69b
 	github.com/jfrog/gofrog v1.7.6
-	github.com/jfrog/jfrog-cli-application v1.0.2-0.20260621072921-cadb78770a3e
-	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260828154930-3b7d100d5390
-	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260827111619-bee4d60fbdc7
-	github.com/jfrog/jfrog-cli-evidence v0.9.5-0.20260618135203-4d2bdd4ee35f
+	github.com/jfrog/jfrog-cli-application v1.0.2-0.20260723152309-34eeb81e2847
+	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260902051157-c1dfcda98584
+	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260831061529-c6dd293bccca
+	github.com/jfrog/jfrog-cli-evidence v0.10.0
 	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260618062042-6053ab368cab
 	github.com/jfrog/jfrog-cli-security v1.35.0
-	github.com/jfrog/jfrog-client-go v1.55.1-0.20260827094947-e7a90ebc8049
+	github.com/jfrog/jfrog-client-go v1.55.1-0.20260901090904-78d68f83abec
 	github.com/jszwec/csvutil v1.10.0
 	github.com/moby/moby/api v1.55.0
 	github.com/spf13/viper v1.21.0
