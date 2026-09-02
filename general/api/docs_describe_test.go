@@ -34,6 +34,7 @@ func TestFormatResponses(t *testing.T) {
 }
 
 func TestRunDescribeCmd_KnownGetOperation(t *testing.T) {
+	allowStubApiDocsBundle(t)
 	result := runDescribeJSON(t, "GET", "/access/api/v2/users")
 	assert.Equal(t, "GET", result["method"])
 	assert.Equal(t, "/access/api/v2/users", result["path"])
@@ -45,6 +46,7 @@ func TestRunDescribeCmd_KnownGetOperation(t *testing.T) {
 }
 
 func TestRunDescribeCmd_KnownPostOperation(t *testing.T) {
+	allowStubApiDocsBundle(t)
 	result := runDescribeJSON(t, "POST", "/access/api/v2/users")
 	assert.Equal(t, "POST", result["method"])
 
@@ -64,16 +66,19 @@ func TestRunDescribeCmd_KnownPostOperation(t *testing.T) {
 }
 
 func TestRunDescribeCmd_CaseInsensitiveMethod(t *testing.T) {
+	allowStubApiDocsBundle(t)
 	result := runDescribeJSON(t, "get", "/access/api/v2/users")
 	assert.Equal(t, "GET", result["method"])
 }
 
 func TestRunDescribeCmd_PathWithoutLeadingSlashNormalizes(t *testing.T) {
+	allowStubApiDocsBundle(t)
 	result := runDescribeJSON(t, "GET", "access/api/v2/users")
 	assert.Equal(t, "/access/api/v2/users", result["path"])
 }
 
 func TestRunDescribeCmd_NotFoundReturnsError(t *testing.T) {
+	allowStubApiDocsBundle(t)
 	var stdOut bytes.Buffer
 	var runErr error
 	app := newDescribeApp(&stdOut, &runErr)
@@ -99,6 +104,7 @@ func TestRunDescribeCmd_WrongNumberOfArguments(t *testing.T) {
 }
 
 func TestRunDescribeCmd_TableOutput(t *testing.T) {
+	allowStubApiDocsBundle(t)
 	var stdOut bytes.Buffer
 	var runErr error
 	app := newDescribeApp(&stdOut, &runErr)
@@ -113,6 +119,7 @@ func TestRunDescribeCmd_TableOutput(t *testing.T) {
 }
 
 func TestRunDescribeCmd_DefaultsToJSON(t *testing.T) {
+	allowStubApiDocsBundle(t)
 	var out bytes.Buffer
 	prevLogger := clientlog.GetLogger()
 	t.Cleanup(func() { clientlog.SetLogger(prevLogger) })
@@ -132,8 +139,6 @@ func TestRunDescribeCmd_DefaultsToJSON(t *testing.T) {
 }
 
 func TestRunDescribeCmd_RequireFullBundleFailsOnStub(t *testing.T) {
-	t.Setenv(envRequireFullBundle, "true")
-
 	var stdOut bytes.Buffer
 	var runErr error
 	app := newDescribeApp(&stdOut, &runErr)
@@ -146,6 +151,7 @@ func TestRunDescribeCmd_RequireFullBundleFailsOnStub(t *testing.T) {
 }
 
 func TestSearchThenDescribe_EndToEnd(t *testing.T) {
+	allowStubApiDocsBundle(t)
 	matches := filterAndScore(stubOps(t), "user", "", "")
 	require.NotEmpty(t, matches)
 	top := matches[0]

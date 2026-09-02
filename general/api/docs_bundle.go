@@ -8,13 +8,14 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 )
 
-// envRequireFullBundle, when set to "true", makes `jf api docs search` and
+// envRequireFullBundle controls whether `jf api docs search` and
 // `jf api docs describe` fail on binaries that embed the dev "stub" OpenAPI
-// bundle instead of returning a partial catalog.
+// bundle. Enabled by default; set to "false" to allow the partial catalog.
 const envRequireFullBundle = "JFROG_CLI_API_DOCS_REQUIRE_FULL_BUNDLE"
 
 func apiDocsRequireFullBundle() bool {
-	return strings.EqualFold(strings.TrimSpace(os.Getenv(envRequireFullBundle)), "true")
+	v := strings.ToLower(strings.TrimSpace(os.Getenv(envRequireFullBundle)))
+	return v != "false"
 }
 
 func maybeRequireFullApiDocsBundle() error {

@@ -174,14 +174,19 @@ func TestHasTag(t *testing.T) {
 	assert.False(t, hasTag([]string{"Users"}, "workers"))
 }
 
-func TestApiDocsRequireFullBundle_DefaultOff(t *testing.T) {
-	t.Setenv(envRequireFullBundle, "")
-	assert.False(t, apiDocsRequireFullBundle())
+func allowStubApiDocsBundle(t *testing.T) {
+	t.Helper()
+	t.Setenv(envRequireFullBundle, "false")
 }
 
-func TestApiDocsRequireFullBundle_Enabled(t *testing.T) {
-	t.Setenv(envRequireFullBundle, "true")
+func TestApiDocsRequireFullBundle_DefaultOn(t *testing.T) {
+	t.Setenv(envRequireFullBundle, "")
 	assert.True(t, apiDocsRequireFullBundle())
+}
+
+func TestApiDocsRequireFullBundle_Disabled(t *testing.T) {
+	t.Setenv(envRequireFullBundle, "false")
+	assert.False(t, apiDocsRequireFullBundle())
 }
 
 // TestRunSearchCmd_DefaultsToJSON verifies JSON is the default output format
@@ -191,6 +196,7 @@ func TestApiDocsRequireFullBundle_Enabled(t *testing.T) {
 // the JSON path writes via its Output channel, same technique as
 // TestApiJSONErrorMode_EmitsJSONOnStdout in cli_test.go.
 func TestRunSearchCmd_DefaultsToJSON(t *testing.T) {
+	allowStubApiDocsBundle(t)
 	var out bytes.Buffer
 	prevLogger := clientlog.GetLogger()
 	t.Cleanup(func() { clientlog.SetLogger(prevLogger) })
@@ -210,6 +216,7 @@ func TestRunSearchCmd_DefaultsToJSON(t *testing.T) {
 }
 
 func TestRunSearchCmd_TableOutput(t *testing.T) {
+	allowStubApiDocsBundle(t)
 	var stdOut bytes.Buffer
 	var runErr error
 	app := newSearchApp(&stdOut, &runErr)
@@ -221,6 +228,7 @@ func TestRunSearchCmd_TableOutput(t *testing.T) {
 }
 
 func TestRunSearchCmd_EmptyResultTableStillReportsSpecBundle(t *testing.T) {
+	allowStubApiDocsBundle(t)
 	var stdOut bytes.Buffer
 	var runErr error
 	app := newSearchApp(&stdOut, &runErr)
@@ -232,6 +240,7 @@ func TestRunSearchCmd_EmptyResultTableStillReportsSpecBundle(t *testing.T) {
 }
 
 func TestRunSearchCmd_LimitTruncates(t *testing.T) {
+	allowStubApiDocsBundle(t)
 	var stdOut bytes.Buffer
 	var runErr error
 	app := newSearchApp(&stdOut, &runErr)
@@ -248,6 +257,7 @@ func TestRunSearchCmd_LimitTruncates(t *testing.T) {
 }
 
 func TestRunSearchCmd_TruncationFieldsInJSON(t *testing.T) {
+	allowStubApiDocsBundle(t)
 	result, logged := runSearchJSON(t, "--limit", "1", "")
 	assert.Equal(t, float64(10), result["total_matches"], "stub has exactly 10 operations")
 	assert.Equal(t, true, result["truncated"])
@@ -256,6 +266,7 @@ func TestRunSearchCmd_TruncationFieldsInJSON(t *testing.T) {
 }
 
 func TestRunSearchCmd_NoTruncationFieldsFalse(t *testing.T) {
+	allowStubApiDocsBundle(t)
 	result, logged := runSearchJSON(t, "")
 	assert.Equal(t, float64(10), result["total_matches"])
 	assert.Equal(t, false, result["truncated"])
@@ -268,6 +279,7 @@ func TestRunSearchCmd_NoTruncationFieldsFalse(t *testing.T) {
 // writer carrying the table -- otherwise it would corrupt/clutter the table
 // (or, for JSON, break parseability).
 func TestRunSearchCmd_TruncationWarningDoesNotLeakIntoTable(t *testing.T) {
+	allowStubApiDocsBundle(t)
 	var stdOut bytes.Buffer
 	var runErr error
 	app := newSearchApp(&stdOut, &runErr)
@@ -285,8 +297,6 @@ func TestRunSearchCmd_TruncationWarningDoesNotLeakIntoTable(t *testing.T) {
 }
 
 func TestRunSearchCmd_RequireFullBundleFailsOnStub(t *testing.T) {
-	t.Setenv(envRequireFullBundle, "true")
-
 	var stdOut bytes.Buffer
 	var runErr error
 	app := newSearchApp(&stdOut, &runErr)
