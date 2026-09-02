@@ -14,7 +14,6 @@ import (
 	apispec "github.com/jfrog/jfrog-cli/docs/api-spec"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/urfave/cli"
 )
 
 func TestNormalizeApiPath(t *testing.T) {
@@ -30,21 +29,6 @@ func TestFormatResponses(t *testing.T) {
 		{Code: "200", Description: "Success"},
 		{Code: "400"},
 	}))
-}
-
-// newDescribeApp builds a minimal cli.App exercising runDescribeCmd exactly
-// like the real "describe" subcommand's flag set -- same technique as
-// newSearchApp in docs_search_test.go.
-func newDescribeApp(stdOut *bytes.Buffer, capturedErr *error) *cli.App {
-	app := cli.NewApp()
-	app.Flags = []cli.Flag{
-		cli.StringFlag{Name: "format"},
-	}
-	app.Action = func(c *cli.Context) error {
-		*capturedErr = runDescribeCmd(c, stdOut)
-		return nil
-	}
-	return app
 }
 
 func TestRunDescribeCmd_StubBundleFails(t *testing.T) {

@@ -15,7 +15,6 @@ import (
 	apispec "github.com/jfrog/jfrog-cli/docs/api-spec"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/urfave/cli"
 )
 
 func stubOps(t *testing.T) []apispec.Operation {
@@ -171,25 +170,6 @@ func TestJfApiOneLiner(t *testing.T) {
 func TestHasTag(t *testing.T) {
 	assert.True(t, hasTag([]string{"Users", "Access"}, "users"))
 	assert.False(t, hasTag([]string{"Users"}, "workers"))
-}
-
-// newSearchApp builds a minimal cli.App exercising runSearchCmd exactly like
-// the real "search" subcommand's flag set, without going through main.go's
-// full command tree -- same technique as TestResolveRequestBody in
-// cli_test.go.
-func newSearchApp(stdOut *bytes.Buffer, capturedErr *error) *cli.App {
-	app := cli.NewApp()
-	app.Flags = []cli.Flag{
-		cli.StringFlag{Name: flagTag},
-		cli.StringFlag{Name: flagMethod},
-		cli.IntFlag{Name: flagLimit, Value: defaultLimit},
-		cli.StringFlag{Name: "format"},
-	}
-	app.Action = func(c *cli.Context) error {
-		*capturedErr = runSearchCmd(c, stdOut)
-		return nil
-	}
-	return app
 }
 
 // TestRunSearchCmd_StubBundleFails verifies that source/stub builds refuse to
