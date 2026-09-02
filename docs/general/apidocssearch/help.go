@@ -46,7 +46,7 @@ Common patterns:
   $ jf api docs search repository --limit 3 --format json
 
 Gotchas:
-- The embedded spec bundle may be a small "stub" subset in source/Homebrew builds, not the full JFrog REST API surface. By default, `jf api docs search` and `jf api docs describe` fail fast on stub builds; set $JFROG_CLI_API_DOCS_REQUIRE_FULL_BUNDLE=false to allow the partial catalog (dev/OSS only).
+- The embedded spec bundle may be a small "stub" subset in source/Homebrew builds, not the full JFrog REST API surface. By default, 'jf api docs search' and 'jf api docs describe' fail fast on stub builds; set $JFROG_CLI_API_DOCS_REQUIRE_FULL_BUNDLE=false to allow the partial catalog (dev/OSS only).
 - Output is JSON by default (unconditionally, unlike most other jf commands' --ai-help-gated JSON defaults); pass --format table for a human-readable table instead.
 - Filters (--tag, --method) are hard excludes, applied before ranking/scoring.
 - A query with no contains-match anywhere falls back to fuzzy (typo-tolerant) matching, gated by a similarity floor to avoid coincidental false positives (e.g. "evidence" vs "environments"). Advanced: override the floor (0-1, default 0.6) with $JFROG_CLI_API_DOCS_SEARCH_FUZZY_MIN.

@@ -48,7 +48,7 @@ Common patterns:
   $ jf api docs describe DELETE /worker/api/v1/workers/{workerKey}
 
 Gotchas:
-- The embedded spec bundle may be a small "stub" subset in source/Homebrew builds, not the full JFrog REST API surface. By default, `jf api docs describe` fails fast on stub builds; set $JFROG_CLI_API_DOCS_REQUIRE_FULL_BUNDLE=false to allow the partial catalog (dev/OSS only).
+- The embedded spec bundle may be a small "stub" subset in source/Homebrew builds, not the full JFrog REST API surface. By default, 'jf api docs describe' fails fast on stub builds; set $JFROG_CLI_API_DOCS_REQUIRE_FULL_BUNDLE=false to allow the partial catalog (dev/OSS only).
 - Output is JSON by default (unconditionally, unlike most other jf commands' --ai-help-gated JSON defaults); pass --format table for a human-readable table instead.
 - path must match the catalog exactly, including any literal {param} placeholders (e.g. "{workerKey}", not a real key) — copy it verbatim from 'jf api docs search' results rather than guessing.
 - Not found (wrong method, wrong path, or the stub bundle lacks the operation) is a hard error (non-zero exit), unlike 'jf api docs search', which returns an empty match list with exit 0.
