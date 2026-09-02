@@ -88,6 +88,7 @@ const (
 	RubyConfig             = "ruby-config"
 	ConanConfig            = "conan-config"
 	Conan                  = "conan"
+	Cargo                  = "cargo"
 	Nix                    = "nix"
 	Ruby                   = "ruby"
 	Apt                    = "apt"
@@ -2337,6 +2338,9 @@ var commandFlags = map[string][]string{
 	},
 	Conan: {
 		BuildName, BuildNumber, module, Project,
+	},
+	Cargo: {
+		BuildName, BuildNumber, module, Project, serverId,
 	},
 	Nix: {
 		BuildName, BuildNumber, module, Project, serverId,

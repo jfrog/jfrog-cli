@@ -80,7 +80,7 @@ func splitAgentNameAndVersion(fullAgentName string) (string, string) {
 }
 
 // User-Agent product-entry formats for the Client → Agent → Model axes
-// (e.g. "jfrog-cli-go/2.117.0 ai-agent/claude ai-client/vscode ai-model/opus-4.7").
+// (e.g. "jfrog-cli-go/2.117.0 ai-agent/cursor ai-client/cursor ai-model/opus-4.7").
 //
 // Product entries rather than comments so UA parsers that split on whitespace and
 // read name/version pairs keep the census signal. "ai-agent" avoids colliding with

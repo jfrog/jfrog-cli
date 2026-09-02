@@ -933,6 +933,22 @@ func TestAgentSkillsInstallPathAndFlags(t *testing.T) {
 		assertSkillInfoManifest(t, filepath.Join(base, slug), slug, "1.0.0", "(path)", "path", tests.AgentSkillsLocalRepo)
 	})
 
+	t.Run("path-install-creates-missing-dir", func(t *testing.T) {
+		// base does not exist yet, and neither do its parents; --path should
+		// create it (mkdir -p semantics) instead of failing install.
+		base := filepath.Join(t.TempDir(), "does-not-exist", "nested", "install-target")
+		require.NoDirExists(t, base)
+
+		require.NoError(t, runAgentSkillsCmd(t,
+			"install", slug,
+			"--repo="+tests.AgentSkillsLocalRepo,
+			"--path="+base,
+			"--version=1.0.0",
+		))
+		assert.FileExists(t, filepath.Join(base, slug, "SKILL.md"),
+			"SKILL.md should exist after install; --path should have been created automatically")
+	})
+
 	t.Run("path-install-json", func(t *testing.T) {
 		base := t.TempDir()
 		out, err := runAgentSkillsCmdWithOutput(t,
