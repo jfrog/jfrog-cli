@@ -9,10 +9,12 @@ package api
 
 import (
 	"bytes"
+	"encoding/json"
 	"slices"
 	"testing"
 
 	apispec "github.com/jfrog/jfrog-cli/docs/api-spec"
+	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -172,9 +174,119 @@ func TestHasTag(t *testing.T) {
 	assert.False(t, hasTag([]string{"Users"}, "workers"))
 }
 
-// TestRunSearchCmd_StubBundleFails verifies that source/stub builds refuse to
-// serve api docs search rather than returning a misleading partial catalog.
-func TestRunSearchCmd_StubBundleFails(t *testing.T) {
+func TestApiDocsRequireFullBundle_DefaultOff(t *testing.T) {
+	t.Setenv(envRequireFullBundle, "")
+	assert.False(t, apiDocsRequireFullBundle())
+}
+
+func TestApiDocsRequireFullBundle_Enabled(t *testing.T) {
+	t.Setenv(envRequireFullBundle, "true")
+	assert.True(t, apiDocsRequireFullBundle())
+}
+
+// TestRunSearchCmd_DefaultsToJSON verifies JSON is the default output format
+// when --format is omitted entirely -- this command exists primarily for
+// agent consumption, unlike most other jf commands whose JSON default is
+// gated on --ai-help/$JFROG_CLI_AI_HELP. Swaps the shared client logger since
+// the JSON path writes via its Output channel, same technique as
+// TestApiJSONErrorMode_EmitsJSONOnStdout in cli_test.go.
+func TestRunSearchCmd_DefaultsToJSON(t *testing.T) {
+	var out bytes.Buffer
+	prevLogger := clientlog.GetLogger()
+	t.Cleanup(func() { clientlog.SetLogger(prevLogger) })
+	clientlog.SetLogger(clientlog.NewLoggerWithFlags(clientlog.INFO, &out, 0))
+
+	var stdOut bytes.Buffer
+	var runErr error
+	app := newSearchApp(&stdOut, &runErr)
+
+	require.NoError(t, app.Run([]string{"cmd", "user"}))
+	require.NoError(t, runErr)
+
+	var result map[string]any
+	require.NoError(t, json.Unmarshal(out.Bytes(), &result), "default output should be parseable JSON")
+	assert.Equal(t, "stub", result["spec_bundle"])
+	assert.Empty(t, stdOut.String(), "JSON goes through the logger's Output channel, not the stdOut writer")
+}
+
+func TestRunSearchCmd_TableOutput(t *testing.T) {
+	var stdOut bytes.Buffer
+	var runErr error
+	app := newSearchApp(&stdOut, &runErr)
+
+	require.NoError(t, app.Run([]string{"cmd", "--format", "table", "user"}))
+	require.NoError(t, runErr)
+	assert.Contains(t, stdOut.String(), "METHOD")
+	assert.Contains(t, stdOut.String(), "/access/api/v2/users")
+}
+
+func TestRunSearchCmd_EmptyResultTableStillReportsSpecBundle(t *testing.T) {
+	var stdOut bytes.Buffer
+	var runErr error
+	app := newSearchApp(&stdOut, &runErr)
+
+	require.NoError(t, app.Run([]string{"cmd", "--format", "table", "zzzznotreal"}))
+	require.NoError(t, runErr, "empty results must not be treated as a command failure")
+	assert.Contains(t, stdOut.String(), "spec_bundle=")
+	assert.Contains(t, stdOut.String(), "stub")
+}
+
+func TestRunSearchCmd_LimitTruncates(t *testing.T) {
+	var stdOut bytes.Buffer
+	var runErr error
+	app := newSearchApp(&stdOut, &runErr)
+
+	require.NoError(t, app.Run([]string{"cmd", "--format", "table", "--limit", "1", ""}))
+	require.NoError(t, runErr)
+	lineCount := 0
+	for _, b := range stdOut.Bytes() {
+		if b == '\n' {
+			lineCount++
+		}
+	}
+	assert.Equal(t, 2, lineCount, "expected a header row plus exactly one match row")
+}
+
+func TestRunSearchCmd_TruncationFieldsInJSON(t *testing.T) {
+	result, logged := runSearchJSON(t, "--limit", "1", "")
+	assert.Equal(t, float64(10), result["total_matches"], "stub has exactly 10 operations")
+	assert.Equal(t, true, result["truncated"])
+	assert.Len(t, result["matches"], 1)
+	assert.Contains(t, logged, "of 10", "truncation warning should mention the full match count")
+}
+
+func TestRunSearchCmd_NoTruncationFieldsFalse(t *testing.T) {
+	result, logged := runSearchJSON(t, "")
+	assert.Equal(t, float64(10), result["total_matches"])
+	assert.Equal(t, false, result["truncated"])
+	assert.Len(t, result["matches"], 10)
+	assert.Empty(t, logged, "no truncation warning expected when everything fits under the limit")
+}
+
+// TestRunSearchCmd_TruncationWarningDoesNotLeakIntoTable guards the QA-driven
+// requirement: the warning must go to stderr only, never into the stdOut
+// writer carrying the table -- otherwise it would corrupt/clutter the table
+// (or, for JSON, break parseability).
+func TestRunSearchCmd_TruncationWarningDoesNotLeakIntoTable(t *testing.T) {
+	var stdOut bytes.Buffer
+	var runErr error
+	app := newSearchApp(&stdOut, &runErr)
+
+	require.NoError(t, app.Run([]string{"cmd", "--format", "table", "--limit", "1", ""}))
+	require.NoError(t, runErr)
+	lineCount := 0
+	for _, b := range stdOut.Bytes() {
+		if b == '\n' {
+			lineCount++
+		}
+	}
+	assert.Equal(t, 2, lineCount, "the stdOut table must still be exactly header + one row")
+	assert.NotContains(t, stdOut.String(), "increase --limit", "the warning text must not appear in the table's stdOut writer")
+}
+
+func TestRunSearchCmd_RequireFullBundleFailsOnStub(t *testing.T) {
+	t.Setenv(envRequireFullBundle, "true")
+
 	var stdOut bytes.Buffer
 	var runErr error
 	app := newSearchApp(&stdOut, &runErr)
@@ -183,17 +295,6 @@ func TestRunSearchCmd_StubBundleFails(t *testing.T) {
 	require.Error(t, runErr)
 	assert.Contains(t, runErr.Error(), `"stub"`)
 	assert.Contains(t, runErr.Error(), "install-cli.jfrog.io")
-	assert.Empty(t, stdOut.String())
-}
-
-func TestRunSearchCmd_StubBundleFailsTableFormat(t *testing.T) {
-	var stdOut bytes.Buffer
-	var runErr error
-	app := newSearchApp(&stdOut, &runErr)
-
-	require.NoError(t, app.Run([]string{"cmd", "--format", "table", "user"}))
-	require.Error(t, runErr)
-	assert.Contains(t, runErr.Error(), `"stub"`)
 	assert.Empty(t, stdOut.String())
 }
 

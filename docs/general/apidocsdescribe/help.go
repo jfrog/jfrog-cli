@@ -48,10 +48,10 @@ Common patterns:
   $ jf api docs describe DELETE /worker/api/v1/workers/{workerKey}
 
 Gotchas:
-- Requires a binary built with the full OpenAPI bundle (official releases from https://install-cli.jfrog.io). Source/Homebrew builds exit with an error instead of returning partial results.
+- The embedded spec bundle may be a small "stub" subset in this build, not the full JFrog REST API surface — an unresolved lookup names spec_bundle so you know whether that's the likely cause. Set $JFROG_CLI_API_DOCS_REQUIRE_FULL_BUNDLE=true to fail fast on stub builds instead.
 - Output is JSON by default (unconditionally, unlike most other jf commands' --ai-help-gated JSON defaults); pass --format table for a human-readable table instead.
 - path must match the catalog exactly, including any literal {param} placeholders (e.g. "{workerKey}", not a real key) — copy it verbatim from 'jf api docs search' results rather than guessing.
-- Not found (wrong method or path) is a hard error (non-zero exit), unlike 'jf api docs search', which returns an empty match list with exit 0.
+- Not found (wrong method, wrong path, or the stub bundle lacks the operation) is a hard error (non-zero exit), unlike 'jf api docs search', which returns an empty match list with exit 0.
 - request_body's "example" field is only present when the underlying spec declares one; its absence doesn't mean the operation has no valid payload — check "properties" either way.
 - A request body property that is itself a nested object is reported by its type name (e.g. "PermissionResource") or "object" rather than being recursively flattened — only top-level fields are listed.
 
