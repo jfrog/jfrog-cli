@@ -15,15 +15,15 @@ replace (
 require (
 	github.com/BurntSushi/toml v1.6.0
 	github.com/agnivade/levenshtein v1.2.1
-	github.com/buger/jsonparser v1.6.1
-	github.com/gocarina/gocsv v0.0.0-20260628180327-50907998929c
+	github.com/buger/jsonparser v1.3.0
+	github.com/gocarina/gocsv v0.0.0-20260607070740-0735908c6461
 	github.com/jfrog/archiver/v3 v3.6.4
 	github.com/jfrog/build-info-go v1.13.1-0.20260901180730-3fbb6b5627f3
 	github.com/jfrog/gofrog v1.7.6
-	github.com/jfrog/jfrog-cli-application v1.0.2-0.20260820134442-c8629258ff3a
+	github.com/jfrog/jfrog-cli-application v1.0.2-0.20260621072921-cadb78770a3e
 	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260901192457-4f0c77a923fa
 	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260827111619-bee4d60fbdc7
-	github.com/jfrog/jfrog-cli-evidence v0.11.1-0.20260824063609-79b735ec565e
+	github.com/jfrog/jfrog-cli-evidence v0.9.5-0.20260618135203-4d2bdd4ee35f
 	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260618062042-6053ab368cab
 	github.com/jfrog/jfrog-cli-security v1.35.0
 	github.com/jfrog/jfrog-client-go v1.55.1-0.20260901090904-78d68f83abec
@@ -242,14 +242,8 @@ require (
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
 
-// replace github.com/gfleury/go-bitbucket-v1 => github.com/gfleury/go-bitbucket-v1 v0.0.0-20230825095122-9bc1711434ab
+//replace github.com/gfleury/go-bitbucket-v1 => github.com/gfleury/go-bitbucket-v1 v0.0.0-20230825095122-9bc1711434ab
 
-// replace github.com/ktrysmt/go-bitbucket => github.com/ktrysmt/go-bitbucket v0.9.80
+//replace github.com/ktrysmt/go-bitbucket => github.com/ktrysmt/go-bitbucket v0.9.80
 
-// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.54.2-0.20251007084958-5eeaa42c31a6
-
-// replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260818062137-18e36e626c63
-
-// replace github.com/jfrog/build-info-go => github.com/bhanurp/build-info-go v1.10.10-0.20260820072515-bd3fffb4622c
-
-// replace github.com/jfrog/jfrog-cli-artifactory => github.com/bhanurp/jfrog-cli-artifactory v0.1.12-0.20260820111339-146a760b0fd1
+// replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260604085947-7c110b77b4b4

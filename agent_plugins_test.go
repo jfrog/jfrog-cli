@@ -3,6 +3,7 @@ package main
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -174,13 +175,16 @@ type agentPluginHarnessCase struct {
 	harnesses []string
 }
 
+// allAgentHarnesses represents all 4 supported agent harnesses.
+var allAgentHarnesses = []string{"claude", "codex", "cursor", "vscode"}
+
 func agentPluginHarnessCases() []agentPluginHarnessCase {
 	return []agentPluginHarnessCase{
 		{name: "claude", harnesses: []string{"claude"}},
 		{name: "codex", harnesses: []string{"codex"}},
 		{name: "cursor", harnesses: []string{"cursor"}},
 		{name: "vscode", harnesses: []string{"vscode"}},
-		{name: "claude,codex,cursor,vscode", harnesses: []string{"claude", "codex", "cursor", "vscode"}},
+		{name: "claude,codex,cursor,vscode", harnesses: allAgentHarnesses},
 	}
 }
 
@@ -234,12 +238,133 @@ func assertPluginsInstalledGlobally(t *testing.T, homeDir string, harnesses []st
 	}
 }
 
+// assertPluginsInstalledNatively verifies plugins via each harness's native CLI commands.
+// Only applies to Claude/Codex which have native CLI support for plugin listing.
+// Cursor/VSCode don't have CLI support, so they skip this check (filesystem check via assertPluginsInstalledGlobally is sufficient).
+func assertPluginsInstalledNatively(t *testing.T, harnesses []string, slug string, wantVersion string) {
+	t.Helper()
+	// Validate inputs to catch test bugs early
+	require.NotEmpty(t, harnesses, "harnesses list must not be empty")
+	require.NotEmpty(t, slug, "plugin slug must not be empty")
+	require.NotEmpty(t, wantVersion, "plugin version must not be empty")
+
+	for _, harness := range harnesses {
+		switch strings.ToLower(harness) {
+		case "claude":
+			assertClaudePluginInstalled(t, slug, wantVersion)
+		case "codex":
+			assertCodexPluginInstalled(t, slug, wantVersion)
+		case "cursor", "vscode":
+			// Cursor and VSCode don't have native CLI plugin commands
+			// Filesystem validation via assertPluginsInstalledGlobally is sufficient
+			continue
+		default:
+			t.Fatalf("unknown harness: %s", harness)
+		}
+	}
+}
+
+// assertClaudePluginInstalled calls `claude plugin list --json` and verifies plugin presence.
+func assertClaudePluginInstalled(t *testing.T, slug string, wantVersion string) {
+	t.Helper()
+	// Use timeout to prevent test hangs if claude CLI is unresponsive
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "claude", "plugin", "list", "--json") // #nosec G204 -- fixed command
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+	require.NoError(t, err, "claude plugin list --json failed: %s", stderr.String())
+
+	var plugins []map[string]any
+	require.NoError(t, json.Unmarshal(stdout.Bytes(), &plugins),
+		"failed to parse claude plugin list output (stderr: %s)", stderr.String())
+
+	found := false
+	for _, p := range plugins {
+		id, ok := p["id"].(string)
+		if !ok {
+			// Log type mismatch for debugging if id is missing/wrong type
+			continue
+		}
+		// id format: "<slug>@<repo>"
+		if strings.HasPrefix(id, slug+"@") {
+			version, ok := p["version"].(string)
+			require.True(t, ok, "plugin %s missing version field or wrong type; got: %T", id, p["version"])
+			assert.Equal(t, wantVersion, version, "claude plugin %s has wrong version", id)
+			found = true
+			break
+		}
+	}
+	require.True(t, found, "claude plugin %q not found in `claude plugin list`", slug)
+}
+
+// assertCodexPluginInstalled calls `codex plugin list --json` and verifies plugin in installed[].
+func assertCodexPluginInstalled(t *testing.T, slug string, wantVersion string) {
+	t.Helper()
+	// Use timeout to prevent test hangs if codex CLI is unresponsive
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "codex", "plugin", "list", "--json") // #nosec G204 -- fixed command
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+	require.NoError(t, err, "codex plugin list --json failed: %s", stderr.String())
+
+	var result map[string]any
+	require.NoError(t, json.Unmarshal(stdout.Bytes(), &result),
+		"failed to parse codex plugin list output (stderr: %s)", stderr.String())
+
+	installed, ok := result["installed"].([]any)
+	require.True(t, ok, "codex plugin list missing 'installed' array")
+
+	found := false
+	for _, p := range installed {
+		plugin, ok := p.(map[string]any)
+		if !ok {
+			// Array element is not a map; log for debugging
+			continue
+		}
+		pluginID, ok := plugin["pluginId"].(string)
+		if !ok {
+			// pluginId missing or wrong type; log for debugging
+			continue
+		}
+		// pluginId format: "<slug>@<marketplace>"
+		if strings.HasPrefix(pluginID, slug+"@") {
+			version, ok := plugin["version"].(string)
+			require.True(t, ok, "codex plugin %s missing version field or wrong type; got: %T", pluginID, plugin["version"])
+			assert.Equal(t, wantVersion, version, "codex plugin %s has wrong version", pluginID)
+			found = true
+			break
+		}
+	}
+	require.True(t, found, "codex plugin %q not found in `codex plugin list`", slug)
+}
+
 func setIsolatedHome(t *testing.T) string {
 	t.Helper()
 	homeDir := t.TempDir()
 	t.Setenv("HOME", homeDir)
 	t.Setenv("USERPROFILE", homeDir)
 	return homeDir
+}
+
+// verifyIsolatedHome verifies that HOME was actually changed to an isolated directory.
+func verifyIsolatedHome(t *testing.T, homeDir string) {
+	t.Helper()
+	// Verify directory exists
+	require.DirExists(t, homeDir, "isolated HOME directory should exist")
+	// Verify HOME env var is set to isolated dir
+	require.Equal(t, homeDir, os.Getenv("HOME"), "HOME env var should point to isolated directory")
+	// Verify directory is under system temp (cross-platform: os.TempDir() returns system temp path)
+	// t.TempDir() creates subdirectories under os.TempDir(), so we check that homeDir starts with temp root
+	tempDir := os.TempDir()
+	tempRoot := filepath.Dir(tempDir) // Get parent of temp dir to allow for t.TempDir() subdirectories
+	require.True(t, strings.HasPrefix(filepath.Clean(homeDir), filepath.Clean(tempRoot)),
+		"isolated HOME should be in system temp directory, got %s (temp root: %s)", homeDir, tempRoot)
 }
 
 // pluginManifestDir returns the directory holding a harness's plugin.json inside a plugin.
@@ -1121,6 +1246,36 @@ func TestAgentPluginsInstallLatest(t *testing.T) {
 		"plugin.json should exist after install")
 }
 
+// TestAgentPluginsInstallCreatesMissingPath verifies that --path pointing at a
+// directory that doesn't exist yet (including missing parents) is created
+// automatically instead of failing install.
+func TestAgentPluginsInstallCreatesMissingPath(t *testing.T) {
+	initAgentPluginsTest(t)
+	defer cleanAgentPluginsTest()
+
+	slug := "install-missing-path-plugin"
+	version := "1.0.0"
+	pluginPath := createTestPlugin(t, slug, version)
+
+	require.NoError(t, runAgentPluginsCmd(t,
+		"publish", pluginPath,
+		"--repo="+tests.AgentPluginsLocalRepo,
+	))
+
+	// installDir itself does not exist yet, and neither do its parents.
+	installDir := filepath.Join(t.TempDir(), "does-not-exist", "nested", "install-target")
+	require.NoDirExists(t, installDir)
+
+	assert.NoError(t, runAgentPluginsCmd(t,
+		"install", slug,
+		"--repo="+tests.AgentPluginsLocalRepo,
+		"--path="+installDir,
+	))
+
+	assert.FileExists(t, filepath.Join(installDir, slug, "plugin.json"),
+		"plugin.json should exist after install; --path should have been created automatically")
+}
+
 // TestAgentPluginsInstallSpecificVersion verifies that --version installs the
 // requested version rather than latest.
 func TestAgentPluginsInstallSpecificVersion(t *testing.T) {
@@ -1174,7 +1329,7 @@ func TestAgentPluginsInstallProjectScopeRejectedForBuiltIns(t *testing.T) {
 	defer cleanAgentPluginsTest()
 
 	slug := "project-dir-plugin"
-	pluginPath := createTestHarnessPlugin(t, slug, "1.0.0", []string{"claude", "codex", "cursor"})
+	pluginPath := createTestHarnessPlugin(t, slug, "1.0.0", allAgentHarnesses)
 	require.NoError(t, runAgentPluginsCmd(t,
 		"publish", pluginPath,
 		"--repo="+tests.AgentPluginsLocalRepo,
@@ -1207,7 +1362,7 @@ func TestAgentPluginsInstallGlobal(t *testing.T) {
 	defer cleanAgentPluginsTest()
 
 	slug := "global-install-plugin"
-	pluginPath := createTestHarnessPlugin(t, slug, "1.0.0", []string{"claude", "codex", "cursor"})
+	pluginPath := createTestHarnessPlugin(t, slug, "1.0.0", allAgentHarnesses)
 	require.NoError(t, runAgentPluginsCmd(t,
 		"publish", pluginPath,
 		"--repo="+tests.AgentPluginsLocalRepo,
@@ -1216,8 +1371,10 @@ func TestAgentPluginsInstallGlobal(t *testing.T) {
 	for _, tc := range agentPluginHarnessCases() {
 		t.Run(tc.name, func(t *testing.T) {
 			homeDir := setIsolatedHome(t)
+			verifyIsolatedHome(t, homeDir)
 			require.NoError(t, installViaMarketplaceWithRetry(t, slug, harnessFlag(tc.harnesses)))
 			assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug, "1.0.0")
+			assertPluginsInstalledNatively(t, tc.harnesses, slug, "1.0.0")
 		})
 	}
 }
@@ -1232,7 +1389,7 @@ func TestAgentPluginsInstallMarketplace(t *testing.T) {
 	defer cleanAgentPluginsTest()
 
 	slug := "marketplace-plugin"
-	pluginPath := createTestHarnessPlugin(t, slug, "1.0.0", []string{"claude", "codex", "cursor"})
+	pluginPath := createTestHarnessPlugin(t, slug, "1.0.0", allAgentHarnesses)
 	require.NoError(t, runAgentPluginsCmd(t,
 		"publish", pluginPath,
 		"--repo="+tests.AgentPluginsLocalRepo,
@@ -1241,9 +1398,11 @@ func TestAgentPluginsInstallMarketplace(t *testing.T) {
 	for _, tc := range agentPluginHarnessCases() {
 		t.Run(tc.name, func(t *testing.T) {
 			homeDir := setIsolatedHome(t)
+			verifyIsolatedHome(t, homeDir)
 			require.NoError(t, installViaMarketplaceWithRetry(t, slug, harnessFlag(tc.harnesses)),
 				"install without --version should resolve through the generated marketplace")
 			assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug, "1.0.0")
+			assertPluginsInstalledNatively(t, tc.harnesses, slug, "1.0.0")
 		})
 	}
 }
@@ -1916,9 +2075,9 @@ func TestAgentPluginsUpdateAll(t *testing.T) {
 		// claude's .claude-plugin/ convention); a flat root plugin.json fails
 		// "codex plugin add" with "missing plugin.json". Use the harness-aware fixture
 		// since these cases install with harness=codex (via agentPluginHarnessCases()).
-		v1Path := createTestHarnessPlugin(t, entry.slug, entry.oldVer, []string{"claude", "codex", "cursor"})
+		v1Path := createTestHarnessPlugin(t, entry.slug, entry.oldVer, allAgentHarnesses)
 		require.NoError(t, runAgentPluginsCmd(t, "publish", v1Path, "--repo="+tests.AgentPluginsLocalRepo))
-		v2Path := createTestHarnessPlugin(t, entry.slug, entry.newVer, []string{"claude", "codex", "cursor"})
+		v2Path := createTestHarnessPlugin(t, entry.slug, entry.newVer, allAgentHarnesses)
 		require.NoError(t, runAgentPluginsCmd(t, "publish", v2Path, "--repo="+tests.AgentPluginsLocalRepo))
 	}
 
@@ -1971,9 +2130,9 @@ func TestAgentPluginsUpdateAllNonInteractive(t *testing.T) {
 	// claude's .claude-plugin/ convention); a flat root plugin.json fails
 	// "codex plugin add" with "missing plugin.json". Use the harness-aware fixture
 	// since these cases install with harness=codex (via agentPluginHarnessCases()).
-	v1Path := createTestHarnessPlugin(t, slug, "1.0.0", []string{"claude", "codex", "cursor"})
+	v1Path := createTestHarnessPlugin(t, slug, "1.0.0", allAgentHarnesses)
 	require.NoError(t, runAgentPluginsCmd(t, "publish", v1Path, "--repo="+tests.AgentPluginsLocalRepo))
-	v2Path := createTestHarnessPlugin(t, slug, "2.0.0", []string{"claude", "codex", "cursor"})
+	v2Path := createTestHarnessPlugin(t, slug, "2.0.0", allAgentHarnesses)
 	require.NoError(t, runAgentPluginsCmd(t, "publish", v2Path, "--repo="+tests.AgentPluginsLocalRepo))
 
 	for _, tc := range agentPluginHarnessCases() {
@@ -2021,9 +2180,9 @@ func TestAgentPluginsUpdateFormatJSON(t *testing.T) {
 	// claude's .claude-plugin/ convention); a flat root plugin.json fails
 	// "codex plugin add" with "missing plugin.json". Use the harness-aware fixture
 	// since these cases install with harness=codex (via agentPluginHarnessCases()).
-	v1Path := createTestHarnessPlugin(t, slug, "1.0.0", []string{"claude", "codex", "cursor"})
+	v1Path := createTestHarnessPlugin(t, slug, "1.0.0", allAgentHarnesses)
 	require.NoError(t, runAgentPluginsCmd(t, "publish", v1Path, "--repo="+tests.AgentPluginsLocalRepo))
-	v2Path := createTestHarnessPlugin(t, slug, "2.0.0", []string{"claude", "codex", "cursor"})
+	v2Path := createTestHarnessPlugin(t, slug, "2.0.0", allAgentHarnesses)
 	require.NoError(t, runAgentPluginsCmd(t, "publish", v2Path, "--repo="+tests.AgentPluginsLocalRepo))
 
 	for _, tc := range agentPluginHarnessCases() {
@@ -2048,6 +2207,7 @@ func TestAgentPluginsUpdateFormatJSON(t *testing.T) {
 			require.NoError(t, err, "update --slug --format=json should succeed")
 			assertInstallSummaryJSON(t, out, slug, "2.0.0")
 			assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug, "2.0.0")
+			assertPluginsInstalledNatively(t, tc.harnesses, slug, "2.0.0")
 
 			require.NoError(t, runAgentPluginsCmd(t,
 				"install", slug,
@@ -2070,6 +2230,7 @@ func TestAgentPluginsUpdateFormatJSON(t *testing.T) {
 			require.NoError(t, err, "update --all --format=json should succeed")
 			assertUpdateAllSummaryJSONContains(t, out, slug)
 			assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug, "2.0.0")
+			assertPluginsInstalledNatively(t, tc.harnesses, slug, "2.0.0")
 		})
 	}
 }
@@ -2178,7 +2339,7 @@ func TestAgentPluginsListCheckUpdates(t *testing.T) {
 
 	slug := "check-updates-plugin"
 	version := "1.0.0"
-	pluginPath := createTestHarnessPlugin(t, slug, version, []string{"claude", "codex", "cursor"})
+	pluginPath := createTestHarnessPlugin(t, slug, version, allAgentHarnesses)
 	require.NoError(t, runAgentPluginsCmd(t,
 		"publish", pluginPath,
 		"--repo="+tests.AgentPluginsLocalRepo,
@@ -2187,6 +2348,7 @@ func TestAgentPluginsListCheckUpdates(t *testing.T) {
 	for _, tc := range agentPluginHarnessCases() {
 		t.Run(tc.name, func(t *testing.T) {
 			homeDir := setIsolatedHome(t)
+			verifyIsolatedHome(t, homeDir)
 			require.NoError(t, installViaMarketplaceWithRetry(t, slug, harnessFlag(tc.harnesses)))
 			assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug, version)
 
@@ -2214,9 +2376,9 @@ func TestAgentPluginsListCheckUpdatesStatus(t *testing.T) {
 	// claude's .claude-plugin/ convention); a flat root plugin.json fails
 	// "codex plugin add" with "missing plugin.json". Use the harness-aware fixture
 	// since these cases install with harness=codex (via agentPluginHarnessCases()).
-	v1Path := createTestHarnessPlugin(t, slug, "1.0.0", []string{"claude", "codex", "cursor"})
+	v1Path := createTestHarnessPlugin(t, slug, "1.0.0", allAgentHarnesses)
 	require.NoError(t, runAgentPluginsCmd(t, "publish", v1Path, "--repo="+tests.AgentPluginsLocalRepo))
-	v2Path := createTestHarnessPlugin(t, slug, "2.0.0", []string{"claude", "codex", "cursor"})
+	v2Path := createTestHarnessPlugin(t, slug, "2.0.0", allAgentHarnesses)
 	require.NoError(t, runAgentPluginsCmd(t, "publish", v2Path, "--repo="+tests.AgentPluginsLocalRepo))
 
 	for _, tc := range agentPluginHarnessCases() {
@@ -2252,12 +2414,13 @@ func TestAgentPluginsListCheckUpdatesCurrent(t *testing.T) {
 
 	slug := "check-current-plugin"
 	version := "1.0.0"
-	pluginPath := createTestHarnessPlugin(t, slug, version, []string{"claude", "codex", "cursor"})
+	pluginPath := createTestHarnessPlugin(t, slug, version, allAgentHarnesses)
 	require.NoError(t, runAgentPluginsCmd(t, "publish", pluginPath, "--repo="+tests.AgentPluginsLocalRepo))
 
 	for _, tc := range agentPluginHarnessCases() {
 		t.Run(tc.name, func(t *testing.T) {
 			homeDir := setIsolatedHome(t)
+			verifyIsolatedHome(t, homeDir)
 			require.NoError(t, installViaMarketplaceWithRetry(t, slug, harnessFlag(tc.harnesses)))
 			assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug)
 
@@ -2584,7 +2747,7 @@ func TestAgentPluginsListLocal(t *testing.T) {
 
 	slug := "list-local-plugin"
 	version := "1.0.0"
-	pluginPath := createTestHarnessPlugin(t, slug, version, []string{"claude", "codex", "cursor"})
+	pluginPath := createTestHarnessPlugin(t, slug, version, allAgentHarnesses)
 	require.NoError(t, runAgentPluginsCmd(t,
 		"publish", pluginPath,
 		"--repo="+tests.AgentPluginsLocalRepo,
@@ -2593,6 +2756,7 @@ func TestAgentPluginsListLocal(t *testing.T) {
 	for _, tc := range agentPluginHarnessCases() {
 		t.Run(tc.name, func(t *testing.T) {
 			homeDir := setIsolatedHome(t)
+			verifyIsolatedHome(t, homeDir)
 			require.NoError(t, installViaMarketplaceWithRetry(t, slug, harnessFlag(tc.harnesses)))
 			assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug, version)
 
@@ -2794,7 +2958,7 @@ func TestAgentPluginsListLimitHarnessMode(t *testing.T) {
 
 	slugs := []string{"limit-a-plugin", "limit-b-plugin", "limit-c-plugin"}
 	for _, slug := range slugs {
-		p := createTestHarnessPlugin(t, slug, "1.0.0", []string{"claude", "codex", "cursor"})
+		p := createTestHarnessPlugin(t, slug, "1.0.0", allAgentHarnesses)
 		require.NoError(t, runAgentPluginsCmd(t, "publish", p, "--repo="+tests.AgentPluginsLocalRepo))
 	}
 
@@ -3131,6 +3295,7 @@ func TestAgentPluginsUpdateRepoFromEnvVar(t *testing.T) {
 		"--global",
 	), "update should resolve repo from JFROG_AGENT_PLUGINS_REPO")
 	assertPluginsInstalledGlobally(t, homeDir, []string{"cursor"}, slug, "2.0.0")
+	assertPluginsInstalledNatively(t, []string{"cursor"}, slug, "2.0.0")
 }
 
 // TestAgentPluginsRepoFlagOverridesEnvVar verifies that --repo takes precedence
@@ -3543,6 +3708,7 @@ func TestAgentPluginsPublishMultiHarnessMarketplaceIndexing(t *testing.T) {
 				"--global",
 			), "install %s without --version must succeed", slug)
 			assertPluginsInstalledGlobally(t, homeDir, tc.harnesses, slug, "1.0.0")
+			assertPluginsInstalledNatively(t, tc.harnesses, slug, "1.0.0")
 
 			out, err := runAgentPluginsCmdWithOutput(t,
 				"list",
