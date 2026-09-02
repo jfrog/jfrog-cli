@@ -119,6 +119,13 @@ func TestInfo_Stub(t *testing.T) {
 	assert.Empty(t, info.SpecVersion, "stub builds have no rdme-admin version")
 }
 
+func TestRequireFullBundle_Stub(t *testing.T) {
+	err := RequireFullBundle()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), `"stub"`)
+	assert.Contains(t, err.Error(), "install-cli.jfrog.io")
+}
+
 func TestIsSpecFile(t *testing.T) {
 	tests := []struct {
 		name string

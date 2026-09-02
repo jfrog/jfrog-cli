@@ -40,3 +40,7 @@ func TestInfo_Full(t *testing.T) {
 	assert.Equal(t, "full", info.SpecBundle)
 	assert.NotEmpty(t, info.SpecVersion, "full builds should report the rdme-admin version they were fetched from")
 }
+
+func TestRequireFullBundle_Full(t *testing.T) {
+	require.NoError(t, RequireFullBundle())
+}
