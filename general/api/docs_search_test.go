@@ -17,7 +17,6 @@ import (
 	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/urfave/cli"
 )
 
 func stubOps(t *testing.T) []apispec.Operation {
@@ -175,23 +174,19 @@ func TestHasTag(t *testing.T) {
 	assert.False(t, hasTag([]string{"Users"}, "workers"))
 }
 
-// newSearchApp builds a minimal cli.App exercising runSearchCmd exactly like
-// the real "search" subcommand's flag set, without going through main.go's
-// full command tree -- same technique as TestResolveRequestBody in
-// cli_test.go.
-func newSearchApp(stdOut *bytes.Buffer, capturedErr *error) *cli.App {
-	app := cli.NewApp()
-	app.Flags = []cli.Flag{
-		cli.StringFlag{Name: flagTag},
-		cli.StringFlag{Name: flagMethod},
-		cli.IntFlag{Name: flagLimit, Value: defaultLimit},
-		cli.StringFlag{Name: "format"},
-	}
-	app.Action = func(c *cli.Context) error {
-		*capturedErr = runSearchCmd(c, stdOut)
-		return nil
-	}
-	return app
+func allowStubApiDocsBundle(t *testing.T) {
+	t.Helper()
+	t.Setenv(envRequireFullBundle, "false")
+}
+
+func TestApiDocsRequireFullBundle_DefaultOn(t *testing.T) {
+	t.Setenv(envRequireFullBundle, "")
+	assert.True(t, apiDocsRequireFullBundle())
+}
+
+func TestApiDocsRequireFullBundle_Disabled(t *testing.T) {
+	t.Setenv(envRequireFullBundle, "false")
+	assert.False(t, apiDocsRequireFullBundle())
 }
 
 // TestRunSearchCmd_DefaultsToJSON verifies JSON is the default output format
@@ -201,6 +196,7 @@ func newSearchApp(stdOut *bytes.Buffer, capturedErr *error) *cli.App {
 // the JSON path writes via its Output channel, same technique as
 // TestApiJSONErrorMode_EmitsJSONOnStdout in cli_test.go.
 func TestRunSearchCmd_DefaultsToJSON(t *testing.T) {
+	allowStubApiDocsBundle(t)
 	var out bytes.Buffer
 	prevLogger := clientlog.GetLogger()
 	t.Cleanup(func() { clientlog.SetLogger(prevLogger) })
@@ -220,6 +216,7 @@ func TestRunSearchCmd_DefaultsToJSON(t *testing.T) {
 }
 
 func TestRunSearchCmd_TableOutput(t *testing.T) {
+	allowStubApiDocsBundle(t)
 	var stdOut bytes.Buffer
 	var runErr error
 	app := newSearchApp(&stdOut, &runErr)
@@ -231,6 +228,7 @@ func TestRunSearchCmd_TableOutput(t *testing.T) {
 }
 
 func TestRunSearchCmd_EmptyResultTableStillReportsSpecBundle(t *testing.T) {
+	allowStubApiDocsBundle(t)
 	var stdOut bytes.Buffer
 	var runErr error
 	app := newSearchApp(&stdOut, &runErr)
@@ -242,13 +240,13 @@ func TestRunSearchCmd_EmptyResultTableStillReportsSpecBundle(t *testing.T) {
 }
 
 func TestRunSearchCmd_LimitTruncates(t *testing.T) {
+	allowStubApiDocsBundle(t)
 	var stdOut bytes.Buffer
 	var runErr error
 	app := newSearchApp(&stdOut, &runErr)
 
 	require.NoError(t, app.Run([]string{"cmd", "--format", "table", "--limit", "1", ""}))
 	require.NoError(t, runErr)
-	// header + exactly one data row
 	lineCount := 0
 	for _, b := range stdOut.Bytes() {
 		if b == '\n' {
@@ -258,33 +256,8 @@ func TestRunSearchCmd_LimitTruncates(t *testing.T) {
 	assert.Equal(t, 2, lineCount, "expected a header row plus exactly one match row")
 }
 
-// runSearchJSON runs the search app with JSON output (the default) and
-// returns the parsed result body plus whatever landed on the logger's
-// Warn/Info/Error channel -- kept on a *separate* buffer from the JSON body's
-// Output channel (clientlog.NewLoggerWithFlags points both at the same
-// writer by default, which would otherwise interleave a truncation warning
-// into the JSON bytes and break json.Unmarshal).
-func runSearchJSON(t *testing.T, args ...string) (result map[string]any, logged string) {
-	t.Helper()
-	var jsonOut, logOut bytes.Buffer
-	logger := clientlog.NewLoggerWithFlags(clientlog.INFO, &logOut, 0)
-	logger.SetOutputWriter(&jsonOut)
-	prevLogger := clientlog.GetLogger()
-	t.Cleanup(func() { clientlog.SetLogger(prevLogger) })
-	clientlog.SetLogger(logger)
-
-	var stdOut bytes.Buffer
-	var runErr error
-	app := newSearchApp(&stdOut, &runErr)
-
-	require.NoError(t, app.Run(append([]string{"cmd"}, args...)))
-	require.NoError(t, runErr)
-
-	require.NoError(t, json.Unmarshal(jsonOut.Bytes(), &result), "output should be parseable JSON")
-	return result, logOut.String()
-}
-
 func TestRunSearchCmd_TruncationFieldsInJSON(t *testing.T) {
+	allowStubApiDocsBundle(t)
 	result, logged := runSearchJSON(t, "--limit", "1", "")
 	assert.Equal(t, float64(10), result["total_matches"], "stub has exactly 10 operations")
 	assert.Equal(t, true, result["truncated"])
@@ -293,6 +266,7 @@ func TestRunSearchCmd_TruncationFieldsInJSON(t *testing.T) {
 }
 
 func TestRunSearchCmd_NoTruncationFieldsFalse(t *testing.T) {
+	allowStubApiDocsBundle(t)
 	result, logged := runSearchJSON(t, "")
 	assert.Equal(t, float64(10), result["total_matches"])
 	assert.Equal(t, false, result["truncated"])
@@ -305,13 +279,13 @@ func TestRunSearchCmd_NoTruncationFieldsFalse(t *testing.T) {
 // writer carrying the table -- otherwise it would corrupt/clutter the table
 // (or, for JSON, break parseability).
 func TestRunSearchCmd_TruncationWarningDoesNotLeakIntoTable(t *testing.T) {
+	allowStubApiDocsBundle(t)
 	var stdOut bytes.Buffer
 	var runErr error
 	app := newSearchApp(&stdOut, &runErr)
 
 	require.NoError(t, app.Run([]string{"cmd", "--format", "table", "--limit", "1", ""}))
 	require.NoError(t, runErr)
-	// header + exactly one data row -- unchanged by the new warning path.
 	lineCount := 0
 	for _, b := range stdOut.Bytes() {
 		if b == '\n' {
@@ -320,6 +294,18 @@ func TestRunSearchCmd_TruncationWarningDoesNotLeakIntoTable(t *testing.T) {
 	}
 	assert.Equal(t, 2, lineCount, "the stdOut table must still be exactly header + one row")
 	assert.NotContains(t, stdOut.String(), "increase --limit", "the warning text must not appear in the table's stdOut writer")
+}
+
+func TestRunSearchCmd_RequireFullBundleFailsOnStub(t *testing.T) {
+	var stdOut bytes.Buffer
+	var runErr error
+	app := newSearchApp(&stdOut, &runErr)
+
+	require.NoError(t, app.Run([]string{"cmd", "user"}))
+	require.Error(t, runErr)
+	assert.Contains(t, runErr.Error(), `"stub"`)
+	assert.Contains(t, runErr.Error(), "install-cli.jfrog.io")
+	assert.Empty(t, stdOut.String())
 }
 
 func TestRunSearchCmd_WrongNumberOfArguments(t *testing.T) {
