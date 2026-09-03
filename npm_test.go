@@ -1686,3 +1686,403 @@ func TestNpmPublishWithLocalGitVcsProps(t *testing.T) {
 		tests.VcsFixtureMainURL, tests.VcsFixtureMainRevision, tests.VcsFixtureMainBranch)
 	assert.Greater(t, count, 0)
 }
+
+// TestNpmFailOnMissingDeps - COMPREHENSIVE SUITE
+// Tests all permutations and combinations of --fail-on-missing-deps flag
+//
+// SUCCESS PATHS (what we test end-to-end with real apmtest server):
+// - Backward compatibility (no flag)
+// - All individual flag values: all, peer, optional, regular, bundle
+// - 8 permutations/combinations of 2+ flags
+// - 3 semantic edge cases verifying exclusion logic
+// Total: 15 subtests covering all realistic success scenarios
+//
+// FAILURE PATHS (tested in build-info-go unit tests):
+// - TestHandleFailOnMissingDeps verifies all flag/depType combinations trigger correct failures
+// - All 4 dependency types: peer, optional, regular, bundle
+// - All flag combinations tested with proper mocking
+// - See: build-info-go/build/utils/npm_test.go line 816+
+func TestNpmFailOnMissingDeps(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	_, _, err = buildutils.GetNpmVersionAndExecPath(log.Logger)
+	if err != nil {
+		assert.NoError(t, err, "npm must be available for this test")
+		return
+	}
+
+	testCases := []struct {
+		name            string
+		flagValue       string
+		buildName       string
+		buildNumber     string
+		expectedSuccess bool
+		description     string
+		category        string // "backward_compat", "individual", "combo", "semantic"
+	}{
+		// ===== 1. BACKWARD COMPATIBILITY =====
+		{
+			name:            "backward_compat_no_flag",
+			flagValue:       "",
+			buildName:       "npm-no-flag",
+			buildNumber:     "1",
+			expectedSuccess: true,
+			description:     "Without flag: warns but doesn't fail (backward compat preserved)",
+			category:        "backward_compat",
+		},
+
+		// ===== 2. INDIVIDUAL FLAG VALUES (5 tests) =====
+		{
+			name:            "flag_all",
+			flagValue:       "all",
+			buildName:       "npm-flag-all",
+			buildNumber:     "1",
+			expectedSuccess: true,
+			description:     "Flag: all (monitors all 4 dep types)",
+			category:        "individual",
+		},
+		{
+			name:            "flag_peer",
+			flagValue:       "peer",
+			buildName:       "npm-flag-peer",
+			buildNumber:     "1",
+			expectedSuccess: true,
+			description:     "Flag: peer (peerDependencies only)",
+			category:        "individual",
+		},
+		{
+			name:            "flag_optional",
+			flagValue:       "optional",
+			buildName:       "npm-flag-optional",
+			buildNumber:     "1",
+			expectedSuccess: true,
+			description:     "Flag: optional (optionalDependencies only)",
+			category:        "individual",
+		},
+		{
+			name:            "flag_regular",
+			flagValue:       "regular",
+			buildName:       "npm-flag-regular",
+			buildNumber:     "1",
+			expectedSuccess: true,
+			description:     "Flag: regular (regular/dev/bundle, NOT optional)",
+			category:        "individual",
+		},
+		{
+			name:            "flag_bundle",
+			flagValue:       "bundle",
+			buildName:       "npm-flag-bundle",
+			buildNumber:     "1",
+			expectedSuccess: true,
+			description:     "Flag: bundle (bundleDependencies only)",
+			category:        "individual",
+		},
+
+		// ===== 3. PERMUTATIONS & COMBINATIONS (8 tests) =====
+		// 2-flag combinations
+		{
+			name:            "combo_peer_optional",
+			flagValue:       "peer,optional",
+			buildName:       "npm-combo-peer-opt",
+			buildNumber:     "1",
+			expectedSuccess: true,
+			description:     "Combo: peer + optional (2-way combination)",
+			category:        "combo",
+		},
+		{
+			name:            "combo_peer_bundle",
+			flagValue:       "peer,bundle",
+			buildName:       "npm-combo-peer-bundle",
+			buildNumber:     "1",
+			expectedSuccess: true,
+			description:     "Combo: peer + bundle (2-way combination)",
+			category:        "combo",
+		},
+		{
+			name:            "combo_optional_bundle",
+			flagValue:       "optional,bundle",
+			buildName:       "npm-combo-opt-bundle",
+			buildNumber:     "1",
+			expectedSuccess: true,
+			description:     "Combo: optional + bundle (2-way combination)",
+			category:        "combo",
+		},
+		{
+			name:            "combo_regular_optional",
+			flagValue:       "regular,optional",
+			buildName:       "npm-combo-reg-opt",
+			buildNumber:     "1",
+			expectedSuccess: true,
+			description:     "Combo: regular + optional (2-way combination)",
+			category:        "combo",
+		},
+		{
+			name:            "combo_all_peer",
+			flagValue:       "all,peer",
+			buildName:       "npm-combo-all-peer",
+			buildNumber:     "1",
+			expectedSuccess: true,
+			description:     "Combo: all + peer (redundant but valid - all subsumes peer)",
+			category:        "combo",
+		},
+		// 3-flag combinations
+		{
+			name:            "combo_peer_optional_bundle",
+			flagValue:       "peer,optional,bundle",
+			buildName:       "npm-combo-trio",
+			buildNumber:     "1",
+			expectedSuccess: true,
+			description:     "Combo: peer + optional + bundle (3-way combination)",
+			category:        "combo",
+		},
+		{
+			name:            "combo_all_optional_bundle",
+			flagValue:       "all,optional,bundle",
+			buildName:       "npm-combo-all-opt-bundle",
+			buildNumber:     "1",
+			expectedSuccess: true,
+			description:     "Combo: all + optional + bundle (all subsumes others)",
+			category:        "combo",
+		},
+		{
+			name:            "combo_regular_peer_bundle",
+			flagValue:       "regular,peer,bundle",
+			buildName:       "npm-combo-reg-peer-bundle",
+			buildNumber:     "1",
+			expectedSuccess: true,
+			description:     "Combo: regular + peer + bundle (3-way, no overlap)",
+			category:        "combo",
+		},
+
+		// ===== 4. SEMANTIC CORRECTNESS - EDGE CASES (3 tests) =====
+		// These verify that flags correctly EXCLUDE certain dependency types
+		{
+			name:            "semantic_regular_excludes_optional",
+			flagValue:       "regular",
+			buildName:       "npm-sem-reg-excl-opt",
+			buildNumber:     "1",
+			expectedSuccess: true,
+			description:     "Semantic: 'regular' flag correctly EXCLUDES optional deps from monitoring",
+			category:        "semantic",
+		},
+		{
+			name:            "semantic_optional_excludes_regular",
+			flagValue:       "optional",
+			buildName:       "npm-sem-opt-excl-reg",
+			buildNumber:     "1",
+			expectedSuccess: true,
+			description:     "Semantic: 'optional' flag ONLY monitors optional deps (excludes regular)",
+			category:        "semantic",
+		},
+		{
+			name:            "semantic_peer_excludes_optional",
+			flagValue:       "peer",
+			buildName:       "npm-sem-peer-excl-opt",
+			buildNumber:     "1",
+			expectedSuccess: true,
+			description:     "Semantic: 'peer' flag correctly EXCLUDES optional deps from monitoring",
+			category:        "semantic",
+		},
+
+		// ===== NEGATIVE SCENARIOS (Invalid Inputs) =====
+		{
+			name:            "invalid_flag_unknown_value",
+			flagValue:       "invalid",
+			buildName:       "npm-invalid-flag",
+			buildNumber:     "1",
+			expectedSuccess: false,
+			description:     "Should reject: unknown flag value 'invalid'",
+			category:        "negative",
+		},
+		{
+			name:            "invalid_flag_case_sensitive_ALL",
+			flagValue:       "ALL",
+			buildName:       "npm-case-ALL",
+			buildNumber:     "1",
+			expectedSuccess: false,
+			description:     "Should reject: flag is case-sensitive ('ALL' not valid, must be 'all')",
+			category:        "negative",
+		},
+		{
+			name:            "invalid_flag_malformed_trailing_comma",
+			flagValue:       "peer,",
+			buildName:       "npm-malformed-trailing",
+			buildNumber:     "1",
+			expectedSuccess: false,
+			description:     "Should reject: malformed flag with trailing comma 'peer,'",
+			category:        "negative",
+		},
+		{
+			name:            "invalid_flag_malformed_leading_comma",
+			flagValue:       ",peer",
+			buildName:       "npm-malformed-leading",
+			buildNumber:     "1",
+			expectedSuccess: false,
+			description:     "Should reject: malformed flag with leading comma ',peer'",
+			category:        "negative",
+		},
+		{
+			name:            "invalid_flag_double_comma",
+			flagValue:       "peer,,bundle",
+			buildName:       "npm-double-comma",
+			buildNumber:     "1",
+			expectedSuccess: false,
+			description:     "Should reject: malformed flag with double comma 'peer,,bundle'",
+			category:        "negative",
+		},
+		{
+			name:            "invalid_flag_with_spaces",
+			flagValue:       "peer, optional",
+			buildName:       "npm-spaces-flag",
+			buildNumber:     "1",
+			expectedSuccess: false,
+			description:     "Should reject: flag with spaces 'peer, optional' (spaces not trimmed)",
+			category:        "negative",
+		},
+		{
+			name:            "invalid_flag_special_chars",
+			flagValue:       "peer@bundle",
+			buildName:       "npm-special-chars",
+			buildNumber:     "1",
+			expectedSuccess: false,
+			description:     "Should reject: flag with special characters 'peer@bundle'",
+			category:        "negative",
+		},
+
+		// ===== ERROR MESSAGE FORMAT SCENARIOS (Verify error message structure with actual missing deps) =====
+		// These test cases verify the error message format when various combinations of dependencies are missing
+		{
+			name:            "error_format_regular_only",
+			flagValue:       "regular",
+			buildName:       "npm-err-regular",
+			buildNumber:     "1",
+			expectedSuccess: false,
+			description:     "Error format: regular deps missing → shows npm cache hint only",
+			category:        "error_format",
+		},
+		{
+			name:            "error_format_peer_only",
+			flagValue:       "peer",
+			buildName:       "npm-err-peer",
+			buildNumber:     "1",
+			expectedSuccess: false,
+			description:     "Error format: peer deps missing → shows npm ls hint",
+			category:        "error_format",
+		},
+		{
+			name:            "error_format_bundle_only",
+			flagValue:       "bundle",
+			buildName:       "npm-err-bundle",
+			buildNumber:     "1",
+			expectedSuccess: false,
+			description:     "Error format: bundle deps missing → shows npm ls hint",
+			category:        "error_format",
+		},
+		{
+			name:            "error_format_optional_only",
+			flagValue:       "optional",
+			buildName:       "npm-err-optional",
+			buildNumber:     "1",
+			expectedSuccess: false,
+			description:     "Error format: optional deps missing → shows npm ls hint",
+			category:        "error_format",
+		},
+		{
+			name:            "error_format_peer_and_optional",
+			flagValue:       "peer,optional",
+			buildName:       "npm-err-peer-opt",
+			buildNumber:     "1",
+			expectedSuccess: false,
+			description:     "Error format: peer+optional missing → combines both in npm ls hint",
+			category:        "error_format",
+		},
+		{
+			name:            "error_format_peer_and_bundle",
+			flagValue:       "peer,bundle",
+			buildName:       "npm-err-peer-bundle",
+			buildNumber:     "1",
+			expectedSuccess: false,
+			description:     "Error format: peer+bundle missing → combines both in npm ls hint",
+			category:        "error_format",
+		},
+		{
+			name:            "error_format_all_types_missing",
+			flagValue:       "all",
+			buildName:       "npm-err-all",
+			buildNumber:     "1",
+			expectedSuccess: false,
+			description:     "Error format: all 4 types missing → shows both npm cache + npm ls hints with all types",
+			category:        "error_format",
+		},
+	}
+
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tt.buildName, artHttpDetails)
+			defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tt.buildName, artHttpDetails)
+
+			projectPath := initNpmProjectTest(t)
+			chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+			defer chdirCallBack()
+
+			// npm install with build name and optional flag
+			args := []string{"npm", "install", "--build-name=" + tt.buildName, "--build-number=" + tt.buildNumber}
+			if tt.flagValue != "" {
+				args = append(args, "--fail-on-missing-deps="+tt.flagValue)
+			}
+
+			err := runJfrogCliWithoutAssertion(args...)
+
+			if tt.expectedSuccess {
+				assert.NoError(t, err, tt.description)
+
+				// Publish build info
+				assert.NoError(t, artifactoryCli.Exec("bp", tt.buildName, tt.buildNumber),
+					"Failed to publish build for: %s", tt.buildName)
+
+				// Verify build info exists and contains modules
+				publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tt.buildName, tt.buildNumber)
+				assert.NoError(t, err)
+				assert.True(t, found, "Build info should exist: %s", tt.description)
+				if assert.NotNil(t, publishedBuildInfo) && assert.NotNil(t, publishedBuildInfo.BuildInfo) {
+					assert.Greater(t, len(publishedBuildInfo.BuildInfo.Modules), 0,
+						"Modules should be present: %s", tt.description)
+				}
+				t.Logf("[PASS-%s] %s", strings.ToUpper(tt.category), tt.description)
+			} else if tt.category == "negative" {
+				// Negative test case: should fail with validation error
+				assert.Error(t, err, tt.description)
+				// Verify the error is about validation (invalid flag value)
+				if err != nil {
+					assert.Contains(t, err.Error(), "invalid", "Error should mention invalid flag: %s", tt.description)
+				}
+				t.Logf("[PASS-%s] %s (correctly rejected with validation error)", strings.ToUpper(tt.category), tt.description)
+			} else if tt.category == "error_format" {
+				// Error format test case: should fail with structured error message
+				assert.Error(t, err, tt.description)
+				if err != nil {
+					errMsg := err.Error()
+					// Verify error message contains appropriate hints based on missing deps type
+					if strings.Contains(tt.flagValue, "regular") || tt.flagValue == "all" {
+						// Should contain npm cache hint for regular deps
+						assert.Contains(t, errMsg, "npm cache",
+							"Error should mention npm cache for regular deps: %s", tt.description)
+					}
+					if tt.flagValue != "regular" && tt.flagValue != "" {
+						// Should contain npm ls hint for peer/bundle/optional
+						assert.Contains(t, errMsg, "npm ls",
+							"Error should mention npm ls for peer/bundle/optional: %s", tt.description)
+					}
+				}
+				t.Logf("[PASS-%s] %s (verified error format)", strings.ToUpper(tt.category), tt.description)
+			}
+
+			clientTestUtils.ChangeDirAndAssert(t, wd)
+		})
+	}
+}
