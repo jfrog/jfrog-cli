@@ -41,6 +41,24 @@ const (
 	JfrogCliServerID = `	JFROG_CLI_SERVER_ID
 		Server ID configured using the config command.`
 
+	JfrogCliUrl = `	JFROG_CLI_URL
+		[Default: None]
+		JFrog platform URL, used unless the --url command option is sent.`
+
+	//#nosec G101
+	JfrogCliAccessToken = `	JFROG_CLI_ACCESS_TOKEN
+		[Default: None]
+		JFrog access token, used unless the --access-token command option is sent.`
+
+	JfrogCliUser = `	JFROG_CLI_USER
+		[Default: None]
+		JFrog username, used unless the --user command option is sent.`
+
+	//#nosec G101
+	JfrogCliPassword = `	JFROG_CLI_PASSWORD
+		[Default: None]
+		JFrog password, used unless the --password command option is sent.`
+
 	Ci = `	CI
 		[Default: false]
 		If true, disables interactive prompts and progress bar.`
@@ -138,6 +156,10 @@ func GetGlobalEnvVars() string {
 		JfrogCliBuildNumber,
 		JfrogCliBuildProject,
 		JfrogCliServerID,
+		JfrogCliUrl,
+		JfrogCliAccessToken,
+		JfrogCliUser,
+		JfrogCliPassword,
 		Ci,
 		JfrogCliPluginsServer,
 		JfrogCliPluginsRepo,
