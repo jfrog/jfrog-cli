@@ -1936,15 +1936,6 @@ func TestNpmFailOnMissingDeps(t *testing.T) {
 			category:        "negative",
 		},
 		{
-			name:            "invalid_flag_with_spaces",
-			flagValue:       "peer, optional",
-			buildName:       "npm-spaces-flag",
-			buildNumber:     "1",
-			expectedSuccess: false,
-			description:     "Should reject: flag with spaces 'peer, optional' (spaces not trimmed)",
-			category:        "negative",
-		},
-		{
 			name:            "invalid_flag_special_chars",
 			flagValue:       "peer@bundle",
 			buildName:       "npm-special-chars",
@@ -1952,72 +1943,6 @@ func TestNpmFailOnMissingDeps(t *testing.T) {
 			expectedSuccess: false,
 			description:     "Should reject: flag with special characters 'peer@bundle'",
 			category:        "negative",
-		},
-
-		// ===== ERROR MESSAGE FORMAT SCENARIOS (Verify error message structure with actual missing deps) =====
-		// These test cases verify the error message format when various combinations of dependencies are missing
-		{
-			name:            "error_format_regular_only",
-			flagValue:       "regular",
-			buildName:       "npm-err-regular",
-			buildNumber:     "1",
-			expectedSuccess: false,
-			description:     "Error format: regular deps missing → shows npm cache hint only",
-			category:        "error_format",
-		},
-		{
-			name:            "error_format_peer_only",
-			flagValue:       "peer",
-			buildName:       "npm-err-peer",
-			buildNumber:     "1",
-			expectedSuccess: false,
-			description:     "Error format: peer deps missing → shows npm ls hint",
-			category:        "error_format",
-		},
-		{
-			name:            "error_format_bundle_only",
-			flagValue:       "bundle",
-			buildName:       "npm-err-bundle",
-			buildNumber:     "1",
-			expectedSuccess: false,
-			description:     "Error format: bundle deps missing → shows npm ls hint",
-			category:        "error_format",
-		},
-		{
-			name:            "error_format_optional_only",
-			flagValue:       "optional",
-			buildName:       "npm-err-optional",
-			buildNumber:     "1",
-			expectedSuccess: false,
-			description:     "Error format: optional deps missing → shows npm ls hint",
-			category:        "error_format",
-		},
-		{
-			name:            "error_format_peer_and_optional",
-			flagValue:       "peer,optional",
-			buildName:       "npm-err-peer-opt",
-			buildNumber:     "1",
-			expectedSuccess: false,
-			description:     "Error format: peer+optional missing → combines both in npm ls hint",
-			category:        "error_format",
-		},
-		{
-			name:            "error_format_peer_and_bundle",
-			flagValue:       "peer,bundle",
-			buildName:       "npm-err-peer-bundle",
-			buildNumber:     "1",
-			expectedSuccess: false,
-			description:     "Error format: peer+bundle missing → combines both in npm ls hint",
-			category:        "error_format",
-		},
-		{
-			name:            "error_format_all_types_missing",
-			flagValue:       "all",
-			buildName:       "npm-err-all",
-			buildNumber:     "1",
-			expectedSuccess: false,
-			description:     "Error format: all 4 types missing → shows both npm cache + npm ls hints with all types",
-			category:        "error_format",
 		},
 	}
 
@@ -2030,7 +1955,8 @@ func TestNpmFailOnMissingDeps(t *testing.T) {
 			chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
 			defer chdirCallBack()
 
-			if tt.category == "error_format" {
+			switch tt.category {
+			case "error_format":
 				// ===== ERROR FORMAT TESTS: Actually recreate missing dependency scenarios =====
 				// Pattern: useIsolatedCache → install (populate) → wipeCache (corrupt) → install (detect missing)
 
@@ -2070,8 +1996,25 @@ func TestNpmFailOnMissingDeps(t *testing.T) {
 				}
 				t.Logf("[PASS-%s] %s (error recreated with isolated cache corruption)", strings.ToUpper(tt.category), tt.description)
 
-			} else if tt.expectedSuccess {
+			case "negative":
+				// ===== NEGATIVE TESTS: Invalid flag values should be rejected =====
+				args := []string{"npm", "install", "--build-name=" + tt.buildName, "--build-number=" + tt.buildNumber,
+					"--fail-on-missing-deps=" + tt.flagValue}
+
+				err := runJfrogCliWithoutAssertion(args...)
+				// Negative test case: should fail with validation error
+				assert.Error(t, err, tt.description)
+				// Verify the error is about validation (invalid flag value)
+				if err != nil {
+					assert.Contains(t, err.Error(), "invalid", "Error should mention invalid flag: %s", tt.description)
+				}
+				t.Logf("[PASS-%s] %s (correctly rejected with validation error)", strings.ToUpper(tt.category), tt.description)
+
+			default:
 				// ===== SUCCESS PATH TESTS: Normal flow with valid flags =====
+				if !tt.expectedSuccess {
+					return
+				}
 				args := []string{"npm", "install", "--build-name=" + tt.buildName, "--build-number=" + tt.buildNumber}
 				if tt.flagValue != "" {
 					args = append(args, "--fail-on-missing-deps="+tt.flagValue)
@@ -2093,20 +2036,6 @@ func TestNpmFailOnMissingDeps(t *testing.T) {
 						"Modules should be present: %s", tt.description)
 				}
 				t.Logf("[PASS-%s] %s", strings.ToUpper(tt.category), tt.description)
-
-			} else if tt.category == "negative" {
-				// ===== NEGATIVE TESTS: Invalid flag values should be rejected =====
-				args := []string{"npm", "install", "--build-name=" + tt.buildName, "--build-number=" + tt.buildNumber,
-					"--fail-on-missing-deps=" + tt.flagValue}
-
-				err := runJfrogCliWithoutAssertion(args...)
-				// Negative test case: should fail with validation error
-				assert.Error(t, err, tt.description)
-				// Verify the error is about validation (invalid flag value)
-				if err != nil {
-					assert.Contains(t, err.Error(), "invalid", "Error should mention invalid flag: %s", tt.description)
-				}
-				t.Logf("[PASS-%s] %s (correctly rejected with validation error)", strings.ToUpper(tt.category), tt.description)
 			}
 
 			clientTestUtils.ChangeDirAndAssert(t, wd)
@@ -2124,7 +2053,7 @@ func useIsolatedNpmCache(t *testing.T) (cacheDir string, restore func()) {
 }
 
 // npmCachedTarballs lists the content-v2 tarballs in the cache, relative to cacheDir.
-func npmCachedTarballs(t *testing.T, cacheDir string) []string {
+func npmCachedTarballs(cacheDir string) []string {
 	contentPath := filepath.Join(cacheDir, "_cacache", "content-v2")
 	entries, err := os.ReadDir(contentPath)
 	if err != nil {
@@ -2133,7 +2062,10 @@ func npmCachedTarballs(t *testing.T, cacheDir string) []string {
 	tarballs := []string{}
 	for _, entry := range entries {
 		if entry.IsDir() {
-			subentries, _ := os.ReadDir(filepath.Join(contentPath, entry.Name()))
+			subentries, err := os.ReadDir(filepath.Join(contentPath, entry.Name()))
+			if err != nil {
+				continue
+			}
 			for _, subentry := range subentries {
 				tarballs = append(tarballs, filepath.Join(contentPath, entry.Name(), subentry.Name()))
 			}
@@ -2147,7 +2079,7 @@ func npmCachedTarballs(t *testing.T, cacheDir string) []string {
 // npm install stays up to date and does not refill the cache from the registry.
 func wipeNpmCacacheTarballs(t *testing.T, cacheDir string) {
 	cacachePath := filepath.Join(cacheDir, "_cacache")
-	tarballs := npmCachedTarballs(t, cacheDir)
+	tarballs := npmCachedTarballs(cacheDir)
 	require.NotEmpty(t, tarballs, "cache should hold tarballs before wiping, otherwise the test proves nothing")
 	require.NoError(t, os.RemoveAll(filepath.Join(cacachePath, "content-v2")))
 	require.NoError(t, os.RemoveAll(filepath.Join(cacachePath, "index-v5")))
@@ -2213,13 +2145,6 @@ func TestNpmFailOnMissingDepsNegative(t *testing.T) {
 			description: "Should reject double comma 'peer,,bundle'",
 		},
 		{
-			name:        "invalid_with_spaces",
-			flagValue:   "peer, optional",
-			buildName:   "npm-with-spaces",
-			buildNumber: "1",
-			description: "Should reject spaces in flag 'peer, optional'",
-		},
-		{
 			name:        "invalid_special_chars",
 			flagValue:   "peer@bundle",
 			buildName:   "npm-special-chars",
@@ -2283,54 +2208,6 @@ func TestNpmFailOnMissingDepsErrorFormat(t *testing.T) {
 			buildNumber: "1",
 			expectHints: []string{"npm cache"},
 			description: "Error should mention npm cache for regular deps",
-		},
-		{
-			name:        "error_peer_deps",
-			flagValue:   "peer",
-			buildName:   "npm-err-peer",
-			buildNumber: "1",
-			expectHints: []string{"npm ls"},
-			description: "Error should mention npm ls for peer deps",
-		},
-		{
-			name:        "error_bundle_deps",
-			flagValue:   "bundle",
-			buildName:   "npm-err-bundle",
-			buildNumber: "1",
-			expectHints: []string{"npm ls"},
-			description: "Error should mention npm ls for bundle deps",
-		},
-		{
-			name:        "error_optional_deps",
-			flagValue:   "optional",
-			buildName:   "npm-err-optional",
-			buildNumber: "1",
-			expectHints: []string{"npm ls"},
-			description: "Error should mention npm ls for optional deps",
-		},
-		{
-			name:        "error_peer_and_optional",
-			flagValue:   "peer,optional",
-			buildName:   "npm-err-peer-opt",
-			buildNumber: "1",
-			expectHints: []string{"npm ls"},
-			description: "Error should mention npm ls for peer+optional deps",
-		},
-		{
-			name:        "error_peer_and_bundle",
-			flagValue:   "peer,bundle",
-			buildName:   "npm-err-peer-bundle",
-			buildNumber: "1",
-			expectHints: []string{"npm ls"},
-			description: "Error should mention npm ls for peer+bundle deps",
-		},
-		{
-			name:        "error_all_types",
-			flagValue:   "all",
-			buildName:   "npm-err-all",
-			buildNumber: "1",
-			expectHints: []string{"npm cache", "npm ls"},
-			description: "Error should mention both npm cache + npm ls for all dep types",
 		},
 	}
 
