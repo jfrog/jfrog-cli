@@ -2030,40 +2030,29 @@ func TestNpmFailOnMissingDeps(t *testing.T) {
 			chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
 			defer chdirCallBack()
 
-			// npm install with build name and optional flag
-			args := []string{"npm", "install", "--build-name=" + tt.buildName, "--build-number=" + tt.buildNumber}
-			if tt.flagValue != "" {
-				args = append(args, "--fail-on-missing-deps="+tt.flagValue)
-			}
+			if tt.category == "error_format" {
+				// ===== ERROR FORMAT TESTS: Actually recreate missing dependency scenarios =====
+				// Pattern: useIsolatedCache → install (populate) → wipeCache (corrupt) → install (detect missing)
 
-			err := runJfrogCliWithoutAssertion(args...)
+				cacheDir, restoreCache := useIsolatedNpmCache(t)
+				defer restoreCache()
 
-			if tt.expectedSuccess {
-				assert.NoError(t, err, tt.description)
+				// STEP 1: Initial install to populate the isolated cache
+				installArgs := []string{"npm", "install", "--cache=" + cacheDir}
+				initialErr := runJfrogCliWithoutAssertion(installArgs...)
+				assert.NoError(t, initialErr, "Initial cache population should succeed for: %s", tt.description)
 
-				// Publish build info
-				assert.NoError(t, artifactoryCli.Exec("bp", tt.buildName, tt.buildNumber),
-					"Failed to publish build for: %s", tt.buildName)
+				// STEP 2: Corrupt the cache by removing tarballs to simulate missing dependencies
+				wipeNpmCacacheTarballs(t, cacheDir)
 
-				// Verify build info exists and contains modules
-				publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tt.buildName, tt.buildNumber)
-				assert.NoError(t, err)
-				assert.True(t, found, "Build info should exist: %s", tt.description)
-				if assert.NotNil(t, publishedBuildInfo) && assert.NotNil(t, publishedBuildInfo.BuildInfo) {
-					assert.Greater(t, len(publishedBuildInfo.BuildInfo.Modules), 0,
-						"Modules should be present: %s", tt.description)
-				}
-				t.Logf("[PASS-%s] %s", strings.ToUpper(tt.category), tt.description)
-			} else if tt.category == "negative" {
-				// Negative test case: should fail with validation error
-				assert.Error(t, err, tt.description)
-				// Verify the error is about validation (invalid flag value)
-				if err != nil {
-					assert.Contains(t, err.Error(), "invalid", "Error should mention invalid flag: %s", tt.description)
-				}
-				t.Logf("[PASS-%s] %s (correctly rejected with validation error)", strings.ToUpper(tt.category), tt.description)
-			} else if tt.category == "error_format" {
-				// Error format test case: should fail with structured error message
+				// STEP 3: Second install with flag should fail because tarballs are missing
+				args := []string{"npm", "install", "--cache=" + cacheDir,
+					"--build-name=" + tt.buildName, "--build-number=" + tt.buildNumber,
+					"--fail-on-missing-deps=" + tt.flagValue}
+
+				err := runJfrogCliWithoutAssertion(args...)
+
+				// STEP 4: Verify error occurs and message is properly formatted
 				assert.Error(t, err, tt.description)
 				if err != nil {
 					errMsg := err.Error()
@@ -2079,10 +2068,88 @@ func TestNpmFailOnMissingDeps(t *testing.T) {
 							"Error should mention npm ls for peer/bundle/optional: %s", tt.description)
 					}
 				}
-				t.Logf("[PASS-%s] %s (verified error format)", strings.ToUpper(tt.category), tt.description)
+				t.Logf("[PASS-%s] %s (error recreated with isolated cache corruption)", strings.ToUpper(tt.category), tt.description)
+
+			} else if tt.expectedSuccess {
+				// ===== SUCCESS PATH TESTS: Normal flow with valid flags =====
+				args := []string{"npm", "install", "--build-name=" + tt.buildName, "--build-number=" + tt.buildNumber}
+				if tt.flagValue != "" {
+					args = append(args, "--fail-on-missing-deps="+tt.flagValue)
+				}
+
+				err := runJfrogCliWithoutAssertion(args...)
+				assert.NoError(t, err, tt.description)
+
+				// Publish build info
+				assert.NoError(t, artifactoryCli.Exec("bp", tt.buildName, tt.buildNumber),
+					"Failed to publish build for: %s", tt.buildName)
+
+				// Verify build info exists and contains modules
+				publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tt.buildName, tt.buildNumber)
+				assert.NoError(t, err)
+				assert.True(t, found, "Build info should exist: %s", tt.description)
+				if assert.NotNil(t, publishedBuildInfo) && assert.NotNil(t, publishedBuildInfo.BuildInfo) {
+					assert.Greater(t, len(publishedBuildInfo.BuildInfo.Modules), 0,
+						"Modules should be present: %s", tt.description)
+				}
+				t.Logf("[PASS-%s] %s", strings.ToUpper(tt.category), tt.description)
+
+			} else if tt.category == "negative" {
+				// ===== NEGATIVE TESTS: Invalid flag values should be rejected =====
+				args := []string{"npm", "install", "--build-name=" + tt.buildName, "--build-number=" + tt.buildNumber,
+					"--fail-on-missing-deps=" + tt.flagValue}
+
+				err := runJfrogCliWithoutAssertion(args...)
+				// Negative test case: should fail with validation error
+				assert.Error(t, err, tt.description)
+				// Verify the error is about validation (invalid flag value)
+				if err != nil {
+					assert.Contains(t, err.Error(), "invalid", "Error should mention invalid flag: %s", tt.description)
+				}
+				t.Logf("[PASS-%s] %s (correctly rejected with validation error)", strings.ToUpper(tt.category), tt.description)
 			}
 
 			clientTestUtils.ChangeDirAndAssert(t, wd)
 		})
 	}
+}
+
+// useIsolatedNpmCache points npm at a dedicated cache directory via npm_config_cache.
+// Callers must also pass --cache=<dir> to every npm invocation: the env var alone loses to an
+// NPM_CONFIG_CACHE already exported by the environment, which makes 'npm config get cache'
+// (how the build-info collector locates the cache) report a directory the test never wiped.
+func useIsolatedNpmCache(t *testing.T) (cacheDir string, restore func()) {
+	cacheDir = t.TempDir()
+	return cacheDir, clientTestUtils.SetEnvWithCallbackAndAssert(t, "npm_config_cache", cacheDir)
+}
+
+// npmCachedTarballs lists the content-v2 tarballs in the cache, relative to cacheDir.
+func npmCachedTarballs(t *testing.T, cacheDir string) []string {
+	contentPath := filepath.Join(cacheDir, "_cacache", "content-v2")
+	entries, err := os.ReadDir(contentPath)
+	if err != nil {
+		return nil
+	}
+	tarballs := []string{}
+	for _, entry := range entries {
+		if entry.IsDir() {
+			subentries, _ := os.ReadDir(filepath.Join(contentPath, entry.Name()))
+			for _, subentry := range subentries {
+				tarballs = append(tarballs, filepath.Join(contentPath, entry.Name(), subentry.Name()))
+			}
+		}
+	}
+	return tarballs
+}
+
+// wipeNpmCacacheTarballs removes cached tarballs and index-v5 so xml/json cannot be checksummed.
+// GetNpmConfigCache requires _cacache to exist; node_modules is left in place so the next
+// npm install stays up to date and does not refill the cache from the registry.
+func wipeNpmCacacheTarballs(t *testing.T, cacheDir string) {
+	cacachePath := filepath.Join(cacheDir, "_cacache")
+	tarballs := npmCachedTarballs(t, cacheDir)
+	require.NotEmpty(t, tarballs, "cache should hold tarballs before wiping, otherwise the test proves nothing")
+	require.NoError(t, os.RemoveAll(filepath.Join(cacachePath, "content-v2")))
+	require.NoError(t, os.RemoveAll(filepath.Join(cacachePath, "index-v5")))
+	require.NoError(t, os.MkdirAll(cacachePath, 0755))
 }
