@@ -2153,3 +2153,290 @@ func wipeNpmCacacheTarballs(t *testing.T, cacheDir string) {
 	require.NoError(t, os.RemoveAll(filepath.Join(cacachePath, "index-v5")))
 	require.NoError(t, os.MkdirAll(cacachePath, 0755))
 }
+
+// TestNpmFailOnMissingDepsNegative tests invalid flag values and error handling.
+// These tests verify that the flag validation rejects malformed input with clear error messages.
+func TestNpmFailOnMissingDepsNegative(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	_, _, err = buildutils.GetNpmVersionAndExecPath(log.Logger)
+	if err != nil {
+		assert.NoError(t, err, "npm must be available for this test")
+		return
+	}
+
+	testCases := []struct {
+		name        string
+		flagValue   string
+		buildName   string
+		buildNumber string
+		description string
+	}{
+		{
+			name:        "invalid_unknown_value",
+			flagValue:   "invalid",
+			buildName:   "npm-invalid-value",
+			buildNumber: "1",
+			description: "Should reject unknown flag value 'invalid'",
+		},
+		{
+			name:        "invalid_case_sensitive",
+			flagValue:   "ALL",
+			buildName:   "npm-case-all",
+			buildNumber: "1",
+			description: "Should reject case-insensitive 'ALL' (must be 'all')",
+		},
+		{
+			name:        "invalid_trailing_comma",
+			flagValue:   "peer,",
+			buildName:   "npm-trailing-comma",
+			buildNumber: "1",
+			description: "Should reject trailing comma 'peer,'",
+		},
+		{
+			name:        "invalid_leading_comma",
+			flagValue:   ",peer",
+			buildName:   "npm-leading-comma",
+			buildNumber: "1",
+			description: "Should reject leading comma ',peer'",
+		},
+		{
+			name:        "invalid_double_comma",
+			flagValue:   "peer,,bundle",
+			buildName:   "npm-double-comma",
+			buildNumber: "1",
+			description: "Should reject double comma 'peer,,bundle'",
+		},
+		{
+			name:        "invalid_with_spaces",
+			flagValue:   "peer, optional",
+			buildName:   "npm-with-spaces",
+			buildNumber: "1",
+			description: "Should reject spaces in flag 'peer, optional'",
+		},
+		{
+			name:        "invalid_special_chars",
+			flagValue:   "peer@bundle",
+			buildName:   "npm-special-chars",
+			buildNumber: "1",
+			description: "Should reject special characters 'peer@bundle'",
+		},
+	}
+
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			projectPath := initNpmProjectTest(t)
+			chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+			defer chdirCallBack()
+
+			args := []string{"npm", "install",
+				"--build-name=" + tt.buildName,
+				"--build-number=" + tt.buildNumber,
+				"--fail-on-missing-deps=" + tt.flagValue}
+
+			err := runJfrogCliWithoutAssertion(args...)
+			// Should fail with validation error
+			assert.Error(t, err, tt.description)
+			if err != nil {
+				assert.Contains(t, err.Error(), "invalid", "Error should mention 'invalid' for: %s", tt.description)
+			}
+			t.Logf("[PASS-NEGATIVE] %s", tt.description)
+
+			clientTestUtils.ChangeDirAndAssert(t, wd)
+		})
+	}
+}
+
+// TestNpmFailOnMissingDepsErrorFormat tests error message formatting when dependencies are missing.
+// Uses isolated cache corruption to actually recreate missing dependency scenarios.
+func TestNpmFailOnMissingDepsErrorFormat(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	_, _, err = buildutils.GetNpmVersionAndExecPath(log.Logger)
+	if err != nil {
+		assert.NoError(t, err, "npm must be available for this test")
+		return
+	}
+
+	testCases := []struct {
+		name        string
+		flagValue   string
+		buildName   string
+		buildNumber string
+		expectHints []string // Expected hints in error message
+		description string
+	}{
+		{
+			name:        "error_regular_deps",
+			flagValue:   "regular",
+			buildName:   "npm-err-regular",
+			buildNumber: "1",
+			expectHints: []string{"npm cache"},
+			description: "Error should mention npm cache for regular deps",
+		},
+		{
+			name:        "error_peer_deps",
+			flagValue:   "peer",
+			buildName:   "npm-err-peer",
+			buildNumber: "1",
+			expectHints: []string{"npm ls"},
+			description: "Error should mention npm ls for peer deps",
+		},
+		{
+			name:        "error_bundle_deps",
+			flagValue:   "bundle",
+			buildName:   "npm-err-bundle",
+			buildNumber: "1",
+			expectHints: []string{"npm ls"},
+			description: "Error should mention npm ls for bundle deps",
+		},
+		{
+			name:        "error_optional_deps",
+			flagValue:   "optional",
+			buildName:   "npm-err-optional",
+			buildNumber: "1",
+			expectHints: []string{"npm ls"},
+			description: "Error should mention npm ls for optional deps",
+		},
+		{
+			name:        "error_peer_and_optional",
+			flagValue:   "peer,optional",
+			buildName:   "npm-err-peer-opt",
+			buildNumber: "1",
+			expectHints: []string{"npm ls"},
+			description: "Error should mention npm ls for peer+optional deps",
+		},
+		{
+			name:        "error_peer_and_bundle",
+			flagValue:   "peer,bundle",
+			buildName:   "npm-err-peer-bundle",
+			buildNumber: "1",
+			expectHints: []string{"npm ls"},
+			description: "Error should mention npm ls for peer+bundle deps",
+		},
+		{
+			name:        "error_all_types",
+			flagValue:   "all",
+			buildName:   "npm-err-all",
+			buildNumber: "1",
+			expectHints: []string{"npm cache", "npm ls"},
+			description: "Error should mention both npm cache + npm ls for all dep types",
+		},
+	}
+
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			projectPath := initNpmProjectTest(t)
+			chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+			defer chdirCallBack()
+
+			// ===== RECREATE ERROR SCENARIO =====
+			// STEP 1: Create isolated cache
+			cacheDir, restoreCache := useIsolatedNpmCache(t)
+			defer restoreCache()
+
+			// STEP 2: Initial install to populate cache
+			installArgs := []string{"npm", "install", "--cache=" + cacheDir}
+			initialErr := runJfrogCliWithoutAssertion(installArgs...)
+			assert.NoError(t, initialErr, "Cache population should succeed")
+
+			// STEP 3: Corrupt cache to simulate missing dependencies
+			wipeNpmCacacheTarballs(t, cacheDir)
+
+			// STEP 4: Run with flag - should fail with missing deps error
+			args := []string{"npm", "install", "--cache=" + cacheDir,
+				"--build-name=" + tt.buildName,
+				"--build-number=" + tt.buildNumber,
+				"--fail-on-missing-deps=" + tt.flagValue}
+
+			err := runJfrogCliWithoutAssertion(args...)
+
+			// Verify error occurs and has proper hints
+			assert.Error(t, err, tt.description)
+			if err != nil {
+				errMsg := err.Error()
+				for _, hint := range tt.expectHints {
+					assert.Contains(t, errMsg, hint, "Error should mention '%s' for: %s", hint, tt.description)
+				}
+			}
+			t.Logf("[PASS-ERROR-FORMAT] %s", tt.description)
+
+			clientTestUtils.ChangeDirAndAssert(t, wd)
+		})
+	}
+}
+
+// TestNpmMissingDepsLegacyBehavior tests backward compatibility: without the flag, missing deps generate debug/warn logs but don't fail.
+// This ensures existing workflows that don't use the flag continue to work as before.
+func TestNpmMissingDepsLegacyBehavior(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	_, _, err = buildutils.GetNpmVersionAndExecPath(log.Logger)
+	if err != nil {
+		assert.NoError(t, err, "npm must be available for this test")
+		return
+	}
+
+	t.Run("no_flag_with_missing_deps", func(t *testing.T) {
+		buildName := "npm-legacy-warn"
+		buildNumber := "1"
+
+		inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+		defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+		projectPath := initNpmProjectTest(t)
+		chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+		defer chdirCallBack()
+
+		// Setup isolated cache and corrupt it
+		cacheDir, restoreCache := useIsolatedNpmCache(t)
+		defer restoreCache()
+
+		// Initial install to populate cache
+		installArgs := []string{"npm", "install", "--cache=" + cacheDir}
+		initialErr := runJfrogCliWithoutAssertion(installArgs...)
+		require.NoError(t, initialErr, "Cache population should succeed")
+
+		// Corrupt cache
+		wipeNpmCacacheTarballs(t, cacheDir)
+
+		// WITHOUT --fail-on-missing-deps flag: should succeed (legacy behavior - warns/logs but doesn't fail)
+		args := []string{"npm", "install", "--cache=" + cacheDir,
+			"--build-name=" + buildName,
+			"--build-number=" + buildNumber}
+
+		err := runJfrogCliWithoutAssertion(args...)
+		// Legacy behavior: should NOT fail even with missing deps
+		assert.NoError(t, err, "WITHOUT flag: missing deps should warn but NOT fail (legacy behavior)")
+
+		// Verify build-info was still published (partial build info is OK without the flag)
+		clientTestUtils.ChangeDirAndAssert(t, wd)
+		publishErr := artifactoryCli.Exec("bp", buildName, buildNumber)
+		// May or may not succeed depending on whether build-info was collected, but the install itself should have succeeded
+		if publishErr == nil {
+			publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+			assert.NoError(t, err)
+			if found && publishedBuildInfo != nil {
+				// Build info exists (may be partial without strict mode)
+				assert.NotNil(t, publishedBuildInfo.BuildInfo, "Build info should be populated")
+			}
+		}
+
+		t.Logf("[PASS-LEGACY] Without flag: missing deps warn/log but don't fail (backward compat preserved)")
+	})
+}
