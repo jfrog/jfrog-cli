@@ -3,6 +3,7 @@ package buildtools
 import (
 	"errors"
 	"fmt"
+
 	"io/fs"
 	"os"
 	"os/exec"
@@ -11,11 +12,13 @@ import (
 	"strconv"
 	"strings"
 
+	dotnetutils "github.com/jfrog/build-info-go/build/utils/dotnet"
 	alpinecommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/alpine"
 	aptcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/apt"
 	cargocommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/cargo"
 	conancommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/conan"
 	nixcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nix"
+	nugetcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nuget"
 	rubycommandexec "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/ruby"
 
 	"github.com/BurntSushi/toml"
@@ -1045,9 +1048,20 @@ func NugetCmd(c *cli.Context) error {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	configFilePath, err := getProjectConfigPathOrThrow(project.Nuget, "nuget", "nuget-config")
+	configFilePath, configExists, err := project.GetProjectConfFilePath(project.Nuget)
 	if err != nil {
 		return err
+	}
+
+	// FlexPack bypasses all config file requirements (only when no config exists)
+	if artutils.ShouldRunNative(configFilePath) && !configExists {
+		return runNugetFlexPackCmd(c, dotnetutils.Nuget)
+	}
+
+	if !configExists {
+		if configFilePath, err = getProjectConfigPathOrThrow(project.Nuget, "nuget", "nuget-config"); err != nil {
+			return err
+		}
 	}
 
 	rtDetails, targetRepo, useNugetV2, err := getNugetAndDotnetConfigFields(configFilePath)
@@ -1089,10 +1103,20 @@ func DotnetCmd(c *cli.Context) error {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	// Get configuration file path.
-	configFilePath, err := getProjectConfigPathOrThrow(project.Dotnet, "dotnet", "dotnet-config")
+	configFilePath, configExists, err := project.GetProjectConfFilePath(project.Dotnet)
 	if err != nil {
 		return err
+	}
+
+	// FlexPack bypasses all config file requirements (only when no config exists)
+	if artutils.ShouldRunNative(configFilePath) && !configExists {
+		return runNugetFlexPackCmd(c, dotnetutils.DotnetCore)
+	}
+
+	if !configExists {
+		if configFilePath, err = getProjectConfigPathOrThrow(project.Dotnet, "dotnet", "dotnet-config"); err != nil {
+			return err
+		}
 	}
 
 	rtDetails, targetRepo, useNugetV2, err := getNugetAndDotnetConfigFields(configFilePath)
@@ -2175,6 +2199,93 @@ func ConanCmd(c *cli.Context) error {
 	conanCommand := conancommand.NewConanCommand().SetCommandName(cmdName).SetArgs(conanArgs).SetBuildConfiguration(buildConfiguration).SetServerDetails(serverDetails)
 
 	return commands.ExecWithPackageManager(conanCommand, project.Conan.String())
+}
+
+// runNugetFlexPackCmd handles NuGet/dotnet commands in FlexPack native mode.
+// No project config file is required; server details come from --server-id or the default profile.
+func runNugetFlexPackCmd(c *cli.Context, toolchainType dotnetutils.ToolchainType) error {
+	// ShowCmdHelpIfNeeded only catches --help when it is the sole argument (e.g. "jf nuget --help").
+	// For subcommand help ("jf nuget push --help", "jf dotnet restore -h") the flag sits after
+	// the subcommand name, so SkipFlagParsing passes the whole slice to us. Intercept it here
+	// before any arg is forwarded to the native tool, which would reject --help with an error.
+	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), c.Command.Name); show || err != nil {
+		return err
+	}
+
+	args := cliutils.ExtractCommand(c)
+
+	args, serverID, err := coreutils.ExtractServerIdFromCommand(args)
+	if err != nil {
+		return fmt.Errorf("extract server ID: %w", err)
+	}
+
+	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
+	if err != nil {
+		return err
+	}
+
+	// Extract --repo-resolve and --repo flags.
+	var repoResolve, repoDeploy string
+	filteredArgs, repoResolve, err = coreutils.ExtractStringOptionFromArgs(filteredArgs, "repo-resolve")
+	if err != nil {
+		return fmt.Errorf("extract --repo-resolve: %w", err)
+	}
+	filteredArgs, repoDeploy, err = coreutils.ExtractStringOptionFromArgs(filteredArgs, "repo")
+	if err != nil {
+		return fmt.Errorf("extract --repo: %w", err)
+	}
+
+	useNugetV2, err := cliutils.ExtractBoolFlagFromArgs(&filteredArgs, "nuget-v2")
+	if err != nil {
+		return err
+	}
+	// --allow-insecure-connections mirrors the legacy nuget/dotnet path: it permits a plain
+	// http:// package source, which NuGet 6.8+ otherwise rejects. It is deliberately NOT
+	// --insecure-tls, which elsewhere in the CLI means "skip TLS certificate verification".
+	allowInsecure, err := cliutils.ExtractBoolFlagFromArgs(&filteredArgs, "allow-insecure-connections")
+	if err != nil {
+		return err
+	}
+	cmdName, nugetArgs := getNugetCommandName(filteredArgs, toolchainType)
+	workingDir, err := filepath.Abs(".")
+	if err != nil {
+		return err
+	}
+
+	nugetCmd := nugetcommand.NewNuGetFlexPackCommand().
+		SetToolchainType(toolchainType).
+		SetSubCommand(cmdName).
+		SetArgs(nugetArgs).
+		SetRepoResolve(repoResolve).
+		SetRepoDeploy(repoDeploy).
+		SetUseNugetV2(useNugetV2).
+		SetAllowInsecureConnections(allowInsecure).
+		SetBuildConfiguration(buildConfiguration).
+		SetWorkingDir(workingDir)
+
+	// Always attempt to load server details from --server-id or the default configured server.
+	// Credential injection into the temp nuget.config happens later in Run() only when needed
+	// (i.e. --repo-resolve/--repo is set and no existing nuget.config credentials take priority).
+	serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, false)
+	if err != nil && serverID != "" {
+		// Only fail hard when a specific --server-id was requested but not found.
+		return fmt.Errorf("server-id %q not found: %w", serverID, err)
+	}
+	if err == nil {
+		nugetCmd.SetServerDetails(serverDetails)
+	}
+
+	return commands.ExecWithPackageManager(nugetCmd, project.Nuget.String())
+}
+
+// getNugetCommandName parses the native NuGet command and handles dotnet's two-token
+// "nuget push" subcommand without changing the argument list for any other command.
+func getNugetCommandName(args []string, toolchainType dotnetutils.ToolchainType) (string, []string) {
+	commandName, commandArgs := getCommandName(args)
+	if toolchainType == dotnetutils.DotnetCore && commandName == "nuget" && len(commandArgs) > 0 && commandArgs[0] == "push" {
+		return "nuget push", commandArgs[1:]
+	}
+	return commandName, commandArgs
 }
 
 func CargoCmd(c *cli.Context) error {

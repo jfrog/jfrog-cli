@@ -209,6 +209,21 @@ func Info() Metadata {
 	}
 }
 
+// RequireFullBundle returns an error when this binary was built without the full
+// rdme-admin OpenAPI bundle (e.g. plain `go build` or Homebrew source builds).
+// `jf api docs search` and `jf api docs describe` call this before serving
+// from the embedded catalog.
+func RequireFullBundle() error {
+	if Bundle == "full" {
+		return nil
+	}
+	return fmt.Errorf(
+		"this command requires the full OpenAPI spec bundle, but this binary embeds the %q bundle "+
+			"(typical of source/Homebrew builds). Install the official release from "+
+			"https://install-cli.jfrog.io for full `jf api docs` support",
+		Bundle)
+}
+
 // isSpecFile reports whether name is a top-level OpenAPI YAML file that should
 // be parsed. Excludes rdme-admin's per-endpoint _order.yaml nav files and any
 // dotfile (including this package's own full/.placeholder.yaml).
