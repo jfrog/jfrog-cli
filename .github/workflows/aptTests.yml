@@ -82,7 +82,19 @@ jobs:
             "${{ matrix.distro.image }}" \
             bash -c '
               set -eu
-              apt-get update -y
+
+              # Debian bullseye's bullseye-security suite on deb.debian.org has been emptied
+              # out now that regular security support has ended, so its Packages index
+              # advertises versions whose .deb files 404 on the pool. Repoint it at a pinned
+              # snapshot.debian.org timestamp, which keeps the packages we need available.
+              if [ "$APT_TEST_DIST" = "bullseye" ]; then
+                sed -i "s|^deb http://deb.debian.org/debian-security bullseye-security main|deb http://snapshot.debian.org/archive/debian-security/20260824T000000Z bullseye-security main|" /etc/apt/sources.list
+                APT_OPTS="-o Acquire::Check-Valid-Until=false"
+              else
+                APT_OPTS=""
+              fi
+
+              apt-get $APT_OPTS update -y
               apt-get install -y --no-install-recommends gnupg sudo
 
               if [ "$USER_MODE" = "nonroot" ]; then
