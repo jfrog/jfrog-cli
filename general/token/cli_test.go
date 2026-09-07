@@ -32,7 +32,7 @@ func TestPrintTokenResponse_JSON(t *testing.T) {
 	data := sampleTokenResponse(t)
 
 	var buf bytes.Buffer
-	err := printTokenResponse(data, coreformat.Json, &buf)
+	err := printTokenResponse(data, coreformat.Json, &buf, "username")
 	require.NoError(t, err)
 
 	// JSON format uses log.Output (writes to the real logger, not the writer).
@@ -47,7 +47,7 @@ func TestPrintTokenResponse_Table(t *testing.T) {
 	data := sampleTokenResponse(t)
 
 	var buf bytes.Buffer
-	err := printTokenResponse(data, coreformat.Table, &buf)
+	err := printTokenResponse(data, coreformat.Table, &buf, "username")
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -64,6 +64,7 @@ func TestPrintTokenResponse_Table(t *testing.T) {
 	assert.Contains(t, output, "applied-permissions/user")
 	assert.Contains(t, output, "token_type")
 	assert.Contains(t, output, "Bearer")
+	assert.Contains(t, output, "username")
 }
 
 func TestPrintTokenResponse_Table_AccessTokenTruncated(t *testing.T) {
@@ -73,7 +74,7 @@ func TestPrintTokenResponse_Table_AccessTokenTruncated(t *testing.T) {
 	require.NoError(t, err)
 
 	var buf bytes.Buffer
-	require.NoError(t, printTokenResponse(data, coreformat.Table, &buf))
+	require.NoError(t, printTokenResponse(data, coreformat.Table, &buf, "username"))
 
 	output := buf.String()
 	assert.Contains(t, output, "access_token")
@@ -91,7 +92,7 @@ func TestPrintTokenResponse_Table_AbsentFieldsOmitted(t *testing.T) {
 	require.NoError(t, err)
 
 	var buf bytes.Buffer
-	require.NoError(t, printTokenResponse(data, coreformat.Table, &buf))
+	require.NoError(t, printTokenResponse(data, coreformat.Table, &buf, "username"))
 
 	output := buf.String()
 	assert.NotContains(t, output, "token_id")
@@ -100,7 +101,7 @@ func TestPrintTokenResponse_Table_AbsentFieldsOmitted(t *testing.T) {
 }
 
 func TestPrintTokenResponse_UnsupportedFormat(t *testing.T) {
-	err := printTokenResponse([]byte("{}"), coreformat.Sarif, &bytes.Buffer{})
+	err := printTokenResponse([]byte("{}"), coreformat.Sarif, &bytes.Buffer{}, "username")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "unsupported format")
 }
@@ -181,4 +182,3 @@ func TestPrintOidcTokenResponse_UnsupportedFormat(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "unsupported format")
 }
-
