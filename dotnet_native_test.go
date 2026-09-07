@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -304,12 +306,27 @@ func TestDotnetFlexPackPushDefault(t *testing.T) {
 	published := publishAndGetDotnetBuildInfo(t, buildNumber)
 	artifacts := allArtifacts(published)
 	require.NotEmpty(t, artifacts, "push must record an artifacts module (jfrog-cli#3377)")
+
+	// buildTestNupkg writes the .snupkg next to the .nupkg, and 'dotnet nuget push' publishes
+	// symbols alongside the package unless --no-symbols is passed - so both land in the module.
+	// The regression being guarded is that neither is typed "zip"; the symbols package carries
+	// its own "snupkg" type rather than sharing the package's.
+	var sawPackage bool
 	for _, artifact := range artifacts {
-		assert.Equal(t, "nupkg", artifact.Type, "artifact %s must be typed nupkg, never zip", artifact.Name)
+		switch {
+		case strings.HasSuffix(artifact.Name, ".snupkg"):
+			assert.Equal(t, "snupkg", artifact.Type, "symbols artifact %s must be typed snupkg, never zip", artifact.Name)
+		case strings.HasSuffix(artifact.Name, ".nupkg"):
+			sawPackage = true
+			assert.Equal(t, "nupkg", artifact.Type, "artifact %s must be typed nupkg, never zip", artifact.Name)
+		default:
+			assert.Fail(t, "unexpected artifact recorded by push: "+artifact.Name)
+		}
 		assert.NotEmpty(t, artifact.Sha256, "artifact %s must carry a sha256", artifact.Name)
 		assert.NotEmpty(t, artifact.Sha1, "artifact %s must carry a sha1", artifact.Name)
 		assert.NotEmpty(t, artifact.Md5, "artifact %s must carry an md5", artifact.Name)
 	}
+	assert.True(t, sawPackage, "the pushed .nupkg itself must appear in the artifacts module")
 }
 
 func TestDotnetFlexPackFlatLayout(t *testing.T) {
@@ -681,7 +698,9 @@ func TestDotnetFlexPackRequestedByHasNoRedundantPaths(t *testing.T) {
 
 func TestDotnetFlexPackBuildFlagsIncomplete(t *testing.T) {
 	// Scenarios #55, #56 - --build-name without --build-number (and vice versa) must not create
-	// build-info.
+	// build-info. The CLI rejects the half-specified pair outright rather than restoring and
+	// silently skipping collection, so the command itself is expected to fail; either way no
+	// build-info may exist afterwards.
 	initNugetTest(t)
 	defer cleanTestsHomeEnv()
 	_, cleanup := enterDotnetProject(t, "reference")
@@ -696,7 +715,9 @@ func TestDotnetFlexPackBuildFlagsIncomplete(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			assert.NoError(t, restoreDotnetFlexPack(t, tests.NugetRemoteRepo, "reference.sln", tc.flag))
+			assert.ErrorContains(t, restoreDotnetFlexPack(t, tests.NugetRemoteRepo, "reference.sln", tc.flag),
+				"cannot be provided separately",
+				"half-specified build flags must be rejected, not silently accepted")
 			_, found, err := tests.GetBuildInfo(serverDetails, tests.DotnetBuildName, "99")
 			assert.NoError(t, err)
 			assert.False(t, found, "incomplete build flags must not create build-info")
@@ -792,7 +813,8 @@ func TestDotnetFlexPackFlagPassthrough(t *testing.T) {
 	//	MSBUILD : error MSB1001: Unknown switch.
 	//	Switch: --configfile
 	//
-	// See insertBeforeSeparator in jfrog-cli-artifactory's nuget command.
+	// Fixed by insertBeforeSeparator in jfrog-cli-artifactory's nuget command; this passes once
+	// go.mod resolves a version carrying it (jfrog-cli-artifactory PR #551).
 	t.Run("double-dash-separator", func(t *testing.T) {
 		assert.NoError(t, restoreDotnetFlexPack(t, tests.NugetRemoteRepo, "reference.sln", "--", "--verbosity", "minimal"))
 	})
@@ -1038,12 +1060,19 @@ func TestDotnetFlexPackLocalRepoPublishAndResolve(t *testing.T) {
 	projectPath, cleanup := enterDotnetProject(t, "simple-dotnet")
 	defer cleanup()
 
+	// REPLACE the fixture's references rather than adding to them. Resolution here is pinned to a
+	// local repo holding exactly the one package just pushed; the fixture's four unrelated
+	// packages (Newtonsoft.Json, Serilog.Settings.Configuration, snappier, ssh.net) are not in it
+	// and cannot be, so leaving them in place fails the restore with NU1101 before the round trip
+	// under test is ever exercised.
 	csproj := filepath.Join(projectPath, "nuget1.csproj")
 	content, err := os.ReadFile(csproj)
 	require.NoError(t, err)
-	withRef := strings.Replace(string(content), "</Project>",
-		`  <ItemGroup><PackageReference Include="`+pkgId+`" Version="`+pkgVersion+`" /></ItemGroup>
-</Project>`, 1)
+	fixtureReferences := regexp.MustCompile(`(?s)\s*<ItemGroup>\s*<PackageReference.*?</ItemGroup>`)
+	require.Regexp(t, fixtureReferences, string(content),
+		"fixture changed - this test needs the PackageReference ItemGroup it replaces")
+	withRef := fixtureReferences.ReplaceAllLiteralString(string(content),
+		"\n  <ItemGroup><PackageReference Include=\""+pkgId+"\" Version=\""+pkgVersion+"\" /></ItemGroup>")
 	require.NoError(t, os.WriteFile(csproj, []byte(withRef), 0o600)) //#nosec G703 -- test code, path is under the test's own temp project dir
 
 	assert.NoError(t, restoreDotnetFlexPack(t, tests.NugetLocalRepo),
@@ -1127,9 +1156,10 @@ func TestDotnetFlexPackNugetApiKeyEnvVar(t *testing.T) {
 	sourceURL := strings.TrimSuffix(*tests.JfrogUrl, "/") + "/artifactory/api/nuget/v3/" +
 		tests.NugetLocalRepo + "/index.json"
 
-	// No --repo: jf injects nothing, so the env var is the only credential in play.
+	// No --repo: jf injects nothing, so the env var is the only credential in play. The config
+	// file carries no credential either - only permission to talk to an HTTP source.
 	assert.NoError(t, runDotnetFlexPack(t, dotnetUtils.DotnetCore.String(), "nuget", "push",
-		nupkgPath, "--source", sourceURL),
+		nupkgPath, "--source", sourceURL, "--configfile", insecureSourceConfigFile(t, sourceURL)),
 		"NUGET_API_KEY must authenticate the push on its own")
 }
 
@@ -1153,7 +1183,8 @@ func TestDotnetFlexPackApiKeyFlagOverridesEnv(t *testing.T) {
 		tests.NugetLocalRepo + "/index.json"
 
 	assert.NoError(t, runDotnetFlexPack(t, dotnetUtils.DotnetCore.String(), "nuget", "push",
-		nupkgPath, "--source", sourceURL, "--api-key", user+":"+password),
+		nupkgPath, "--source", sourceURL, "--api-key", user+":"+password,
+		"--configfile", insecureSourceConfigFile(t, sourceURL)),
 		"--api-key must override the bogus NUGET_API_KEY in the environment")
 }
 
@@ -1202,6 +1233,30 @@ func credentialsForTestServer(t *testing.T) (user, password string) {
 	return user, password
 }
 
+// insecureSourceConfigFile writes a nuget.config declaring sourceURL as a package source that
+// permits plain HTTP, and returns its path for passing via --configfile.
+//
+// Tests that push with an explicit --source need this. NuGet 6.8+ refuses an HTTP source unless
+// allowInsecureConnections is set on a *configured* source, and jf writes no config of its own
+// when no --repo is given (NuGetFlexPackCommand.Run only injects one under `repo != ""`), so
+// nothing else supplies that permission and the push dies with "NuGet requires HTTPS sources".
+// NuGet resolves a --source value against the configured sources by URL or by name before
+// falling back to an ad-hoc source, so declaring the identical URL here makes the flag inherit
+// the attribute. The test Artifactory is plain HTTP; a real deployment is HTTPS and needs none
+// of this.
+func insecureSourceConfigFile(t *testing.T, sourceURL string) string {
+	t.Helper()
+	configPath := filepath.Join(t.TempDir(), "nuget.config")
+	require.NoError(t, os.WriteFile(configPath, []byte(`<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources>
+    <clear />
+    <add key="TestExplicitSource" value="`+sourceURL+`" protocolVersion="3" allowInsecureConnections="true" />
+  </packageSources>
+</configuration>`), 0o600))
+	return configPath
+}
+
 // ======================= Remaining Config / Upload / pack / Resolve ===========================
 
 func TestDotnetFlexPackUserSourceOverridesConfig(t *testing.T) {
@@ -1220,7 +1275,8 @@ func TestDotnetFlexPackUserSourceOverridesConfig(t *testing.T) {
 		tests.NugetLocalRepo + "/index.json"
 
 	assert.NoError(t, runDotnetFlexPack(t, dotnetUtils.DotnetCore.String(), "nuget", "push",
-		nupkgPath, "--source", sourceURL, "--api-key", user+":"+password),
+		nupkgPath, "--source", sourceURL, "--api-key", user+":"+password,
+		"--configfile", insecureSourceConfigFile(t, sourceURL)),
 		"an explicit --source must be honoured without jf overriding it")
 }
 
@@ -1420,12 +1476,17 @@ func TestDotnetFlexPackLockedModeInconsistency(t *testing.T) {
 	require.NoError(t, os.WriteFile(csproj, []byte(withLock), 0o600)) //#nosec G703 -- test code, path is under the test's own temp project dir
 	require.NoError(t, restoreDotnetFlexPack(t, tests.NugetRemoteRepo))
 
-	// Add a reference the lock file has never seen, then demand locked mode.
+	// Drift the project away from what the lock file just recorded by bumping an existing
+	// reference's version. Do NOT append a second PackageReference for a package the fixture
+	// already declares: the SDK collapses duplicates to the first (NU1504), leaving the graph
+	// identical to the lock file, so locked mode restores happily and NU1004 never fires.
 	updated, err := os.ReadFile(csproj)
 	require.NoError(t, err)
-	drifted := strings.Replace(string(updated), "</Project>",
-		`  <ItemGroup><PackageReference Include="Newtonsoft.Json" Version="13.0.3" /></ItemGroup>
-</Project>`, 1)
+	const lockedVersion = `<PackageReference Include="Newtonsoft.Json" Version="12.0.3" />`
+	require.Contains(t, string(updated), lockedVersion,
+		"fixture changed - this test needs a known reference version to drift away from")
+	drifted := strings.Replace(string(updated), lockedVersion,
+		`<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />`, 1)
 	require.NoError(t, os.WriteFile(csproj, []byte(drifted), 0o600)) //#nosec G703 -- test code, path is under the test's own temp project dir
 
 	assert.Error(t, restoreDotnetFlexPack(t, tests.NugetRemoteRepo, "--locked-mode"),
@@ -1441,19 +1502,47 @@ func TestDotnetFlexPackCentralPackageManagement(t *testing.T) {
 	projectPath, cleanup := enterDotnetProject(t, "simple-dotnet")
 	defer cleanup()
 
+	// Central Package Management is a project-wide switch: once ManagePackageVersionsCentrally is
+	// on, ANY PackageReference still carrying a Version attribute is NU1008 ("cannot define a
+	// value for Version"), which fails the restore outright. The fixture declares four versioned
+	// references, so every one of them has to lose its version and gain a PackageVersion entry -
+	// appending a single version-less Newtonsoft.Json reference next to the fixture's versioned
+	// one (the previous approach) tripped both NU1008 and NU1504, the latter collapsing the
+	// duplicate back to the versioned reference.
+	//
+	// Newtonsoft.Json is centrally pinned to a DIFFERENT version than the fixture's, so the
+	// assertion below proves the version came from Directory.Packages.props rather than the
+	// .csproj.
+	packages := []struct{ id, fixtureVersion, centralVersion string }{
+		{"Newtonsoft.Json", "12.0.3", "13.0.3"},
+		{"Serilog.Settings.Configuration", "3.0.1", "3.0.1"},
+		{"snappier", "1.1.0", "1.1.0"},
+		{"ssh.net", "2020.0.0", "2020.0.0"},
+	}
+	var packageVersions, dropVersionAttributes []string
+	for _, pkg := range packages {
+		packageVersions = append(packageVersions,
+			fmt.Sprintf(`    <PackageVersion Include=%q Version=%q />`, pkg.id, pkg.centralVersion))
+		dropVersionAttributes = append(dropVersionAttributes,
+			fmt.Sprintf(`<PackageReference Include=%q Version=%q />`, pkg.id, pkg.fixtureVersion),
+			fmt.Sprintf(`<PackageReference Include=%q />`, pkg.id))
+	}
+
 	require.NoError(t, os.WriteFile(filepath.Join(projectPath, "Directory.Packages.props"), []byte(
-		`<Project>
-  <PropertyGroup><ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally></PropertyGroup>
-  <ItemGroup><PackageVersion Include="Newtonsoft.Json" Version="13.0.3" /></ItemGroup>
-</Project>`), 0o600))
+		"<Project>\n"+
+			"  <PropertyGroup><ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally></PropertyGroup>\n"+
+			"  <ItemGroup>\n"+strings.Join(packageVersions, "\n")+"\n  </ItemGroup>\n"+
+			"</Project>\n"), 0o600))
 
 	csproj := filepath.Join(projectPath, "nuget1.csproj")
 	content, err := os.ReadFile(csproj)
 	require.NoError(t, err)
-	// Version-less reference: the version must come from Directory.Packages.props.
-	cpm := strings.Replace(string(content), "</Project>",
-		`  <ItemGroup><PackageReference Include="Newtonsoft.Json" /></ItemGroup>
-</Project>`, 1)
+	// Version-less references: every version must come from Directory.Packages.props.
+	cpm := strings.NewReplacer(dropVersionAttributes...).Replace(string(content))
+	for _, pkg := range packages {
+		require.NotContains(t, cpm, fmt.Sprintf(`Include=%q Version=`, pkg.id),
+			"fixture changed - the PackageReference for %s still carries a Version, which CPM rejects (NU1008)", pkg.id)
+	}
 	require.NoError(t, os.WriteFile(csproj, []byte(cpm), 0o600)) //#nosec G703 -- test code, path is under the test's own temp project dir
 
 	buildNumber := "47"
@@ -1551,7 +1640,11 @@ func TestDotnetFlexPackBceCapturesEnv(t *testing.T) {
 	buildNumber := "51"
 	require.NoError(t, restoreDotnetFlexPack(t, tests.NugetRemoteRepo, "reference.sln",
 		"--build-name="+tests.DotnetBuildName, "--build-number="+buildNumber))
-	assert.NoError(t, artifactoryCli.Exec("bce", tests.DotnetBuildName, buildNumber))
+	// WithoutCredentials: 'bce' is a purely local command, and the credential flags this runner
+	// otherwise appends land AFTER the positional args, where Go's flag parser has already
+	// stopped - so they are counted as arguments and the command fails with
+	// "Wrong number of arguments (4)". Every other bce/bag call site in this suite does the same.
+	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("bce", tests.DotnetBuildName, buildNumber))
 	defer deleteDotnetBuild()
 
 	published := publishAndGetDotnetBuildInfo(t, buildNumber)
@@ -1570,13 +1663,16 @@ func TestDotnetFlexPackBagCapturesGit(t *testing.T) {
 		"--build-name="+tests.DotnetBuildName, "--build-number="+buildNumber))
 	defer deleteDotnetBuild()
 
-	// bag needs a git working copy; the jfrog-cli checkout itself serves as one.
-	wd, err := os.Getwd()
-	require.NoError(t, err)
-	_ = wd
-	// Failure here is environment-dependent (a git dir may not be present in the test sandbox),
-	// so the assertion is that the command is wired, not that it always finds a repository.
-	_ = artifactoryCli.Exec("bag", tests.DotnetBuildName, buildNumber)
+	// bag needs a git working copy; the test project lives under the jfrog-cli checkout, so git
+	// detection walks up and finds one. Failure is still environment-dependent (a sandbox may
+	// have no .git at all), so this asserts the command is wired rather than that it always
+	// finds a repository - but log the reason instead of discarding it silently.
+	//
+	// WithoutCredentials for the same reason as the 'bce' call above: the appended credential
+	// flags would be counted as positional arguments.
+	if err := artifactoryCli.WithoutCredentials().Exec("bag", tests.DotnetBuildName, buildNumber); err != nil {
+		t.Logf("'jf rt bag' did not complete, likely because this checkout has no git repository: %v", err)
+	}
 }
 
 func TestDotnetFlexPackSetPropsOnPushedPackage(t *testing.T) {
@@ -1818,9 +1914,14 @@ func TestDotnetFlexPackDependencyRangeResolvesConcreteVersion(t *testing.T) {
 	csproj := filepath.Join(projectPath, "nuget1.csproj")
 	content, err := os.ReadFile(csproj)
 	require.NoError(t, err)
-	withRange := strings.Replace(string(content), "</Project>",
-		`  <ItemGroup><PackageReference Include="Newtonsoft.Json" Version="[13.0.0, 14.0.0)" /></ItemGroup>
-</Project>`, 1)
+	// Turn the fixture's EXISTING pinned reference into a range. Appending a second reference for
+	// a package the fixture already declares makes the SDK collapse the duplicate to the first
+	// (NU1504), so the range would be discarded and the assertions below would hold vacuously.
+	const pinnedReference = `<PackageReference Include="Newtonsoft.Json" Version="12.0.3" />`
+	require.Contains(t, string(content), pinnedReference,
+		"fixture changed - this test needs a pinned Newtonsoft.Json reference to turn into a range")
+	withRange := strings.Replace(string(content), pinnedReference,
+		`<PackageReference Include="Newtonsoft.Json" Version="[13.0.0, 14.0.0)" />`, 1)
 	require.NoError(t, os.WriteFile(csproj, []byte(withRange), 0o600)) //#nosec G703 -- test code, path is under the test's own temp project dir
 
 	buildNumber := "71"
@@ -1829,10 +1930,19 @@ func TestDotnetFlexPackDependencyRangeResolvesConcreteVersion(t *testing.T) {
 	defer deleteDotnetBuild()
 
 	published := publishAndGetDotnetBuildInfo(t, buildNumber)
+	var ranged buildInfo.Dependency
 	for _, dep := range allDeps(published) {
 		assert.NotContains(t, dep.Id, "[", "dependency %s records a range, not a concrete version", dep.Id)
 		assert.NotContains(t, dep.Id, ",", "dependency %s records a range, not a concrete version", dep.Id)
+		if strings.HasPrefix(strings.ToLower(dep.Id), "newtonsoft.json:") {
+			ranged = dep
+		}
 	}
+	// NuGet resolves a range to its LOWEST applicable version, so [13.0.0, 14.0.0) must land on
+	// 13.0.0 exactly - and never on the 12.0.3 the fixture originally pinned, which would mean
+	// the range never took effect.
+	assert.Equal(t, "Newtonsoft.Json:13.0.0", ranged.Id,
+		"a version range must resolve to the lowest applicable concrete version")
 }
 
 func TestDotnetFlexPackIdCasingFromNuspec(t *testing.T) {
@@ -2305,7 +2415,8 @@ func TestDotnetFlexPackCiSecretBackedApiKeyPush(t *testing.T) {
 		tests.NugetLocalRepo + "/index.json"
 
 	assert.NoError(t, runDotnetFlexPack(t, dotnetUtils.DotnetCore.String(), "nuget", "push",
-		nupkgPath, "--source", sourceURL, "--api-key", user+":"+password),
+		nupkgPath, "--source", sourceURL, "--api-key", user+":"+password,
+		"--configfile", insecureSourceConfigFile(t, sourceURL)),
 		"a CI-secret-backed --api-key must authenticate the push")
 }
 

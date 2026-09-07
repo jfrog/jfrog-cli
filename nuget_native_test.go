@@ -1509,7 +1509,11 @@ func TestNugetFlexPackBagGitCapture(t *testing.T) {
 	// 'bag' inspects the current working directory's git repository - run it from the repo
 	// checkout root (this test binary's own working tree) rather than a throwaway temp dir.
 	defer clientTestUtils.ChangeDirWithCallback(t, wd, wd)()
-	bagErr := artifactoryCli.Exec("bag", buildName, buildNumber)
+	// WithoutCredentials: 'bag' is a local command, and the credential flags this runner appends
+	// land after the positional args, where Go's flag parser has already stopped - so they are
+	// counted as arguments ("Wrong number of arguments (4)"), which previously made this test
+	// skip while blaming a missing git repository.
+	bagErr := artifactoryCli.WithoutCredentials().Exec("bag", buildName, buildNumber)
 	if bagErr != nil {
 		t.Skipf("'jf rt bag' failed, likely because this checkout isn't a git repository: %v", bagErr)
 	}
@@ -2516,7 +2520,8 @@ func TestNugetFlexPackAzureDevOpsVcsDetection(t *testing.T) {
 	bagErr := func() error {
 		cb := clientTestUtils.ChangeDirWithCallback(t, wd, wd)
 		defer cb()
-		return artifactoryCli.Exec("bag", buildName, buildNumber)
+		// WithoutCredentials - see the sibling 'bag' call above.
+		return artifactoryCli.WithoutCredentials().Exec("bag", buildName, buildNumber)
 	}()
 	if bagErr != nil {
 		t.Skipf("'jf rt bag' failed, likely because this checkout isn't a git repository: %v", bagErr)
