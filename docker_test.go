@@ -92,20 +92,24 @@ func initNativeDockerWithArtTest(t *testing.T) func() {
 
 // initDockerBuildTest initializes test environment for docker build tests with JFROG_RUN_NATIVE enabled
 func initDockerBuildTest(t *testing.T) func() {
-	// Set JFROG_RUN_NATIVE=true for docker build tests
-	clientTestUtils.SetEnvAndAssert(t, "JFROG_RUN_NATIVE", "true")
-
-	// Initialize native docker test setup
+	// Initialize native docker test setup FIRST. It calls t.Skip when '-test.docker=true' is
+	// absent, and t.Skip runs runtime.Goexit: this function never returns, so the caller's
+	// 'defer cleanup()' is never registered. Anything set up before this line therefore leaks
+	// into every subsequent test in the binary - which is exactly what happened when
+	// JFROG_RUN_NATIVE was set above it, silently forcing later 'jf nuget'/'jf dotnet' tests
+	// down the FlexPack path.
 	cleanupNativeDocker := initNativeDockerWithArtTest(t)
+
+	// Set JFROG_RUN_NATIVE=true for docker build tests. Restored via t.Cleanup rather than the
+	// returned closure so it is undone even if a later helper below skips or fails the test.
+	clientTestUtils.SetEnvAndAssert(t, "JFROG_RUN_NATIVE", "true")
+	t.Cleanup(func() {
+		clientTestUtils.UnSetEnvAndAssert(t, "JFROG_RUN_NATIVE")
+	})
 
 	// if this is an external JFrog instance, no need to setup buildx with insecure registry
 	if strings.HasPrefix(*tests.JfrogUrl, "https://") {
-		return func() {
-			// Restore JFROG_RUN_NATIVE
-			clientTestUtils.UnSetEnvAndAssert(t, "JFROG_RUN_NATIVE")
-			// Run native docker cleanup
-			cleanupNativeDocker()
-		}
+		return cleanupNativeDocker
 	}
 	// Setup buildx builder with insecure registry config for localhost
 	builderName := "jfrog-test-builder"
@@ -115,8 +119,6 @@ func initDockerBuildTest(t *testing.T) func() {
 	return func() {
 		// Cleanup buildx builder
 		cleanupBuilder()
-		// Restore JFROG_RUN_NATIVE
-		clientTestUtils.UnSetEnvAndAssert(t, "JFROG_RUN_NATIVE")
 		// Run native docker cleanup
 		cleanupNativeDocker()
 	}

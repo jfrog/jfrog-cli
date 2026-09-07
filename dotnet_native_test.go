@@ -535,11 +535,21 @@ func TestDotnetFlexPackTransitiveDepsResolved(t *testing.T) {
 	defer deleteDotnetBuild()
 
 	published := publishAndGetDotnetBuildInfo(t, buildNumber)
+
+	// A dependency is transitively requested when some *other package* pulled it in, i.e. a
+	// RequestedBy path that starts with anything other than the enclosing module. Do not test
+	// this with len(path) > 1: solution.go's stripModuleFromRequestedBy drops the trailing
+	// module ID from every chain under the FlexPack module-ID convention, so a one-level
+	// transitive dep is ["bootstrap:4.0.0"] and a direct dep is ["reference:1.0.0"] - both
+	// length 1. This fixture's graph is exactly one level deep (bootstrap -> jQuery/popper.js,
+	// NuGet.Core -> Microsoft.Web.Xdt), so a length test finds nothing at all.
 	var transitive int
-	for _, dep := range allDeps(published) {
-		for _, path := range dep.RequestedBy {
-			if len(path) > 1 {
-				transitive++
+	for _, module := range published.BuildInfo.Modules {
+		for _, dep := range module.Dependencies {
+			for _, path := range dep.RequestedBy {
+				if len(path) > 0 && path[0] != module.Id {
+					transitive++
+				}
 			}
 		}
 	}
@@ -1593,14 +1603,19 @@ func TestDotnetFlexPackPrivateAssetsScope(t *testing.T) {
 	projectPath, cleanup := enterDotnetProject(t, "simple-dotnet")
 	defer cleanup()
 
+	// Mark the fixture's EXISTING Newtonsoft.Json reference private rather than appending a
+	// second PackageReference for it: duplicate PackageReference items for one package are
+	// deduplicated by the SDK (NU1504), which keeps the first - the plain one - so an appended
+	// PrivateAssets="all" never reaches project.assets.json as suppressParent and the dependency
+	// stays in the default "compile" scope.
 	csproj := filepath.Join(projectPath, "nuget1.csproj")
 	content, err := os.ReadFile(csproj)
 	require.NoError(t, err)
-	withPrivate := strings.Replace(string(content), "</Project>",
-		`  <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" PrivateAssets="all" />
-  </ItemGroup>
-</Project>`, 1)
+	const plainReference = `<PackageReference Include="Newtonsoft.Json" Version="12.0.3" />`
+	require.Contains(t, string(content), plainReference,
+		"fixture changed - this test needs a plain Newtonsoft.Json reference to mark private")
+	withPrivate := strings.Replace(string(content), plainReference,
+		`<PackageReference Include="Newtonsoft.Json" Version="12.0.3" PrivateAssets="all" />`, 1)
 	require.NoError(t, os.WriteFile(csproj, []byte(withPrivate), 0o600)) //#nosec G703 -- test code, path is under the test's own temp project dir
 
 	buildNumber := "53"
@@ -1609,12 +1624,22 @@ func TestDotnetFlexPackPrivateAssetsScope(t *testing.T) {
 	defer deleteDotnetBuild()
 
 	published := publishAndGetDotnetBuildInfo(t, buildNumber)
+	var sawPrivate, sawOrdinary bool
 	for _, dep := range allDeps(published) {
-		if strings.HasPrefix(strings.ToLower(dep.Id), "newtonsoft.json:") {
+		switch {
+		case strings.HasPrefix(strings.ToLower(dep.Id), "newtonsoft.json:"):
+			sawPrivate = true
 			assert.Contains(t, dep.Scopes, "private",
 				"PrivateAssets=all must map to the private scope, got %v", dep.Scopes)
+		// Scenario #65's other half: an untouched reference keeps the default scope.
+		case strings.HasPrefix(strings.ToLower(dep.Id), "serilog.settings.configuration:"):
+			sawOrdinary = true
+			assert.Contains(t, dep.Scopes, "compile",
+				"an ordinary reference must keep the compile scope, got %v", dep.Scopes)
 		}
 	}
+	assert.True(t, sawPrivate, "the private-scoped dependency must appear in build-info")
+	assert.True(t, sawOrdinary, "the ordinary dependency must appear in build-info")
 }
 
 func TestDotnetFlexPackProjectReferenceNotADependency(t *testing.T) {
