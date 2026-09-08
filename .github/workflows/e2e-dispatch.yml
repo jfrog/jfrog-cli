@@ -1,12 +1,8 @@
 # Ported from .jfrog-pipelines/pipelines.yml (JFrog Pipelines is EOL)
 #
-# BEST-EFFORT PORT — see the PR description for what could not be verified:
-# the two Jenkins-triggered steps (provisioning/tearing down the ephemeral
-# Artifactory) are reimplemented against the generic Jenkins remote build API
-# (crumb + queue-item polling), since JFrog Pipelines' native "Jenkins step
-# type" doesn't expose how it itself talks to Jenkins. Everything else below
-# — the GitHub Actions dispatch-and-poll logic — is copied close to verbatim
-# from the original bash, which was already host-agnostic.
+# The actual logic lives in .github/scripts/e2e-dispatch.sh, which is also
+# runnable locally — export the same env vars this workflow sets and run it
+# directly from a checkout of jfrog/jfrog-cli.
 name: E2E Dispatch
 on:
   workflow_dispatch:
@@ -15,20 +11,12 @@ on:
         description: "Artifactory version for the ephemeral environment"
         required: false
       skip_env_setup:
-        description: "Skip ephemeral environment provisioning (use an existing ARTIFACTORY_URL)"
+        description: "Skip ephemeral environment provisioning (use an existing artifactory_url)"
         required: false
         default: "false"
       artifactory_url:
         description: "Artifactory URL to use for tests when skip_env_setup is true"
         required: false
-      github_api_url:
-        description: "GitHub API root for the workflows repo (github.com: https://api.github.com; GHE: https://<host>/api/v3)"
-        required: false
-        default: "https://github.jfrog.info/api/v3"
-      github_workflows_repo:
-        description: "org/repo hosting the *Tests.yml workflow_dispatch files"
-        required: false
-        default: "JFROG/jfrog-cli-workflows"
       github_workflows_ref:
         description: "Branch or tag in the workflows repo to dispatch from"
         required: false
@@ -36,18 +24,6 @@ on:
       jfrog_cli_github_ref:
         description: "Git ref of jfrog/jfrog-cli to pass to the dispatched workflows (defaults to this run's commit)"
         required: false
-      ghe_actions_runner:
-        description: "runs-on label the dispatched workflows should use"
-        required: false
-        default: "artifactory-dind-amd-scale-set"
-      logs_to_kibana:
-        description: "Forward ephemeral Artifactory logs to Kibana"
-        required: false
-        default: "true"
-      deployment_sizing:
-        description: "Artifactory deployment sizing profile"
-        required: false
-        default: "common"
       max_run_retries:
         description: "Per-workflow rerun-failed-jobs budget"
         required: false
@@ -61,25 +37,25 @@ jobs:
   e2e-dispatch:
     runs-on: ubuntu-latest
     env:
-      GRADLE_OPTS: "-Dorg.gradle.daemon=false"
       RT_VERSION: ${{ github.event.inputs.rt_version }}
       SKIP_ENV_SETUP: ${{ github.event.inputs.skip_env_setup }}
+      ARTIFACTORY_URL: ${{ github.event.inputs.artifactory_url }}
+      GITHUB_API_URL: "https://github.jfrog.info/api/v3"
+      GITHUB_WORKFLOWS_REPO: "JFROG/jfrog-cli-workflows"
+      GITHUB_WORKFLOWS_REF: ${{ github.event.inputs.github_workflows_ref }}
+      JFROG_CLI_GITHUB_REPO: jfrog/jfrog-cli
+      JFROG_CLI_GITHUB_REF: ${{ github.event.inputs.jfrog_cli_github_ref || github.sha }}
+      GHE_ACTIONS_RUNNER: "artifactory-dind-amd-scale-set"
+      LOGS_TO_KIBANA: "true"
+      DEPLOYMENT_SIZING: "common"
+      MAX_RUN_RETRIES: ${{ github.event.inputs.max_run_retries }}
+      MAX_WAIT_SECONDS: ${{ github.event.inputs.max_wait_seconds }}
       MASTER_KEY: ${{ secrets.JFROG_CLI_TESTS_MASTER_KEY }}
       JFROG_ADMIN_USERNAME: ${{ secrets.JFROG_CLI_TESTS_USERNAME }}
       JFROG_ADMIN_PASSWORD: ${{ secrets.JFROG_CLI_TESTS_PASSWORD }}
       JFROG_ADMIN_TOKEN: ${{ secrets.JFROG_CLI_TESTS_TOKEN }}
-      GITHUB_API_URL_TARGET: ${{ github.event.inputs.github_api_url }}
-      GITHUB_WORKFLOWS_REPO: ${{ github.event.inputs.github_workflows_repo }}
-      GITHUB_WORKFLOWS_REF: ${{ github.event.inputs.github_workflows_ref }}
-      JFROG_CLI_GITHUB_REPO: jfrog/jfrog-cli
-      JFROG_CLI_GITHUB_REF: ${{ github.event.inputs.jfrog_cli_github_ref || github.sha }}
       GITHUB_DISPATCH_TOKEN: ${{ secrets.GITHUB_DISPATCH_TOKEN }}
       JFROG_CLI_GH_TOKEN: ${{ secrets.JFROG_CLI_GH_TOKEN }}
-      GHE_ACTIONS_RUNNER: ${{ github.event.inputs.ghe_actions_runner }}
-      LOGS_TO_KIBANA: ${{ github.event.inputs.logs_to_kibana }}
-      DEPLOYMENT_SIZING: ${{ github.event.inputs.deployment_sizing }}
-      MAX_RUN_RETRIES: ${{ github.event.inputs.max_run_retries }}
-      MAX_WAIT_SECONDS: ${{ github.event.inputs.max_wait_seconds }}
       JENKINS_URL: ${{ secrets.JENKINS_ENTPLUS_RT_URL }}
       JENKINS_USER: ${{ secrets.JENKINS_ENTPLUS_RT_USER }}
       JENKINS_TOKEN: ${{ secrets.JENKINS_ENTPLUS_RT_TOKEN }}
@@ -87,246 +63,5 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Generate environment details
-        id: env_details
-        run: |
-          echo "Starting CLI tests"
-          echo "Using RT_VERSION=${RT_VERSION}"
-          suffix=$(date +%s)
-          server_name="cli${suffix}"
-          env_url="https://${server_name}.jfrogdev.org"
-          prefix="${server_name%${suffix}}"
-
-          echo "prefix=${prefix}" >> "$GITHUB_OUTPUT"
-          echo "suffix=${suffix}" >> "$GITHUB_OUTPUT"
-          echo "server_name=${server_name}" >> "$GITHUB_OUTPUT"
-
-          if [[ "${SKIP_ENV_SETUP}" == "true" ]]; then
-            echo "SKIP_ENV_SETUP is true, using provided artifactory_url input"
-            echo "art_url=${{ github.event.inputs.artifactory_url }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "art_url=${env_url}" >> "$GITHUB_OUTPUT"
-          fi
-
-      # --- Jenkins step: tools/platform/environment_setup_gen2 ---
-      # Best-effort generic Jenkins remote-build-API port: get a CSRF crumb,
-      # POST to buildWithParameters, follow the returned queue item until it
-      # has a build number, then poll that build until it's done.
-      # VERIFY: confirm the job path segments below (tools/platform/...)
-      # resolve the same way against your Jenkins instance as they did
-      # through JFrog Pipelines' native Jenkins integration.
-      - name: Provision ephemeral Artifactory
-        if: ${{ github.event.inputs.skip_env_setup != 'true' }}
-        run: |
-          set -euo pipefail
-          JOB_PATH="job/tools/job/platform/job/environment_setup_gen2"
-          CRUMB_JSON=$(curl -sS -u "${JENKINS_USER}:${JENKINS_TOKEN}" "${JENKINS_URL}/crumbIssuer/api/json" || echo '{}')
-          CRUMB_FIELD=$(echo "$CRUMB_JSON" | jq -r '.crumbRequestField // empty')
-          CRUMB=$(echo "$CRUMB_JSON" | jq -r '.crumb // empty')
-
-          QUEUE_LOCATION=$(curl -sS -D - -o /dev/null -u "${JENKINS_USER}:${JENKINS_TOKEN}" \
-            ${CRUMB:+-H "${CRUMB_FIELD}: ${CRUMB}"} \
-            --data-urlencode "SERVER_NAME=${{ steps.env_details.outputs.server_name }}" \
-            --data-urlencode "DEPLOYMENT_TYPE=onprem" \
-            --data-urlencode "ACCOUNT_TYPE=enterprise_plus" \
-            --data-urlencode "GROUP=ARTIFACTORY" \
-            --data-urlencode "EXPIRY=2d" \
-            --data-urlencode "LOGS_TO_KIBANA=${LOGS_TO_KIBANA}" \
-            --data-urlencode "DEPLOYMENT_SIZING=${DEPLOYMENT_SIZING}" \
-            --data-urlencode "EXTRA_PARAMS=conf_artifactory_unified_version=${RT_VERSION} master_key=${MASTER_KEY}" \
-            "${JENKINS_URL}/${JOB_PATH}/buildWithParameters" \
-            | grep -i '^Location:' | tr -d '\r' | awk '{print $2}')
-
-          echo "Queued at: ${QUEUE_LOCATION}"
-          BUILD_URL=""
-          for _ in $(seq 1 30); do
-            Q_JSON=$(curl -sS -u "${JENKINS_USER}:${JENKINS_TOKEN}" "${QUEUE_LOCATION}api/json")
-            BUILD_URL=$(echo "$Q_JSON" | jq -r '.executable.url // empty')
-            [[ -n "$BUILD_URL" ]] && break
-            sleep 10
-          done
-          if [[ -z "$BUILD_URL" ]]; then
-            echo "ERROR: environment_setup_gen2 never left the queue"; exit 1
-          fi
-          echo "Building at: ${BUILD_URL}"
-
-          while true; do
-            B_JSON=$(curl -sS -u "${JENKINS_USER}:${JENKINS_TOKEN}" "${BUILD_URL}api/json")
-            BUILDING=$(echo "$B_JSON" | jq -r '.building')
-            [[ "$BUILDING" == "false" ]] && break
-            sleep 15
-          done
-          RESULT=$(echo "$B_JSON" | jq -r '.result')
-          echo "environment_setup_gen2 result: ${RESULT}"
-          [[ "$RESULT" == "SUCCESS" ]] || { echo "ERROR: environment provisioning failed"; exit 1; }
-
-      - name: Mint OAuth token for the environment
-        if: ${{ always() && !cancelled() }}
-        id: oauth
-        run: |
-          set -euo pipefail
-          ART_URL="${{ steps.env_details.outputs.art_url }}"
-          JOIN_KEY="${MASTER_KEY}"
-
-          echo "Installing JFrog CLI 2.54.0"
-          curl -fL https://getcli.jfrog.io/v2 | sh -s 2.54.0
-          export PATH=$PATH:$HOME/.jfrog
-          jfrog plugin install access@v7.66.0
-
-          SUPPORT_OUTPUT=$(jfrog access support-token --url="${ART_URL}/access" --join-key="${JOIN_KEY}" 2>&1)
-          SUPPORT_TOKEN=$(echo "${SUPPORT_OUTPUT}" | grep -o 'JF_ACCESS_ADMIN_TOKEN=.*' | cut -d'=' -f2-)
-          [[ -n "${SUPPORT_TOKEN}" ]] || { echo "ERROR: support token empty: ${SUPPORT_OUTPUT}"; exit 1; }
-
-          OAUTH_RESPONSE=$(curl -s -w "\nHTTP_CODE:%{http_code}" --location "${ART_URL}/access/api/v1/oauth/token" \
-            --header 'Content-Type: application/x-www-form-urlencoded' \
-            --header "Authorization: Bearer ${SUPPORT_TOKEN}" \
-            --data-urlencode "username=${JFROG_ADMIN_USERNAME}" \
-            --data-urlencode 'scope=applied-permissions/admin' \
-            --data-urlencode 'expires_in=36000' \
-            --data-urlencode 'grant_type=client_credentials' \
-            --data-urlencode 'audience=*@*')
-          OAUTH_HTTP_CODE=$(echo "${OAUTH_RESPONSE}" | grep "HTTP_CODE:" | cut -d':' -f2)
-          OAUTH_BODY=$(echo "${OAUTH_RESPONSE}" | grep -v "HTTP_CODE:")
-          [[ "${OAUTH_HTTP_CODE}" == "200" ]] || { echo "ERROR: oauth HTTP ${OAUTH_HTTP_CODE}: ${OAUTH_BODY}"; exit 1; }
-
-          OAUTH_TOKEN=$(echo "${OAUTH_BODY}" | jq -r .access_token)
-          [[ -n "${OAUTH_TOKEN}" && "${OAUTH_TOKEN}" != "null" ]] || { echo "ERROR: could not parse access_token"; exit 1; }
-
-          echo "::add-mask::${OAUTH_TOKEN}"
-          echo "token=${OAUTH_TOKEN}" >> "$GITHUB_OUTPUT"
-          echo "url=${ART_URL}" >> "$GITHUB_OUTPUT"
-
-      - name: Dispatch and monitor GitHub Actions test workflows
-        if: ${{ always() && !cancelled() && steps.oauth.outcome == 'success' }}
-        run: |
-          set -eo pipefail
-          fail() { echo "ERROR: $1"; exit 1; }
-
-          OAUTH_TOKEN="${{ steps.oauth.outputs.token }}"
-          JFROG_URL="${{ steps.oauth.outputs.url }}"
-          CLI_REF="${JFROG_CLI_GITHUB_REF}"
-
-          GH_API_URL="${GITHUB_API_URL_TARGET:-https://github.jfrog.info/api/v3}"
-          GH_WORKFLOWS_REPO="${GITHUB_WORKFLOWS_REPO:-JFROG/jfrog-cli-workflows}"
-          GH_WORKFLOWS_REF="${GITHUB_WORKFLOWS_REF:-master}"
-          GH_JF_CLI_REPO="${JFROG_CLI_GITHUB_REPO:-jfrog/jfrog-cli}"
-          GH_ACTIONS_RUNNER="${GHE_ACTIONS_RUNNER:-artifactory-dind-amd-scale-set}"
-          MAX_RUN_RETRIES_RESOLVED="${MAX_RUN_RETRIES:-2}"
-          MAX_WAIT_RESOLVED="${MAX_WAIT_SECONDS:-14400}"
-
-          GITHUB_TOKEN_RESOLVED="${GITHUB_DISPATCH_TOKEN:-}"
-          [[ -z "${GITHUB_TOKEN_RESOLVED}" ]] && GITHUB_TOKEN_RESOLVED="${JFROG_CLI_GH_TOKEN:-}"
-          [[ -z "${GITHUB_TOKEN_RESOLVED}" ]] && fail "No GitHub token for API calls (set GITHUB_DISPATCH_TOKEN)"
-
-          WORKFLOW_FILES="artifactoryTests.yml goTests.yml npmTests.yml pnpmTests.yml pythonTests.yml mavenTests.yml gradleTests.yml nugetTests.yml conanTests.yml helmTests.yml lifecycleTests.yml accessTests.yml pluginsTests.yml dockerTests.yml podmanTests.yml distributionTests.yml"
-
-          REPO_CODE=$(curl -sS -o /tmp/gh_repo.json -w "%{http_code}" \
-            -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${GITHUB_TOKEN_RESOLVED}" \
-            -H "X-GitHub-Api-Version: 2022-11-28" "${GH_API_URL}/repos/${GH_WORKFLOWS_REPO}")
-          [[ "${REPO_CODE}" == "200" ]] || fail "Cannot access ${GH_WORKFLOWS_REPO} (HTTP ${REPO_CODE}): $(cat /tmp/gh_repo.json)"
-
-          curl -sS -o /tmp/gh_workflows.json \
-            -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${GITHUB_TOKEN_RESOLVED}" \
-            -H "X-GitHub-Api-Version: 2022-11-28" "${GH_API_URL}/repos/${GH_WORKFLOWS_REPO}/actions/workflows"
-
-          COMMON_INPUTS=$(jq -n \
-            --arg jfrog_cli_repository "${GH_JF_CLI_REPO}" --arg jfrog_cli_ref "${CLI_REF}" \
-            --arg jfrog_url "${JFROG_URL}" --arg jfrog_admin_token "${OAUTH_TOKEN}" --arg runner "${GH_ACTIONS_RUNNER}" \
-            '{jfrog_cli_repository:$jfrog_cli_repository, jfrog_cli_ref:$jfrog_cli_ref, jfrog_url:$jfrog_url, jfrog_admin_token:$jfrog_admin_token, runner:$runner}')
-
-          DISPATCHED=""
-          for GH_WF_FILE in ${WORKFLOW_FILES}; do
-            WORKFLOW_ID=$(jq -r --arg f "${GH_WF_FILE}" '.workflows[] | select(.path | endswith($f)) | .id' /tmp/gh_workflows.json | head -1)
-            [[ -z "${WORKFLOW_ID}" || "${WORKFLOW_ID}" == "null" ]] && { echo "WARNING: ${GH_WF_FILE} not indexed, skipping"; continue; }
-
-            case "${GH_WF_FILE}" in
-              distributionTests.yml) INPUTS=$(echo "${COMMON_INPUTS}" | jq --arg jfrog_user "${JFROG_ADMIN_USERNAME:-admin}" '. + {jfrog_user:$jfrog_user}') ;;
-              *) INPUTS="${COMMON_INPUTS}" ;;
-            esac
-            DISPATCH_BODY=$(jq -n --arg ref "${GH_WORKFLOWS_REF}" --argjson inputs "${INPUTS}" '{ref:$ref, inputs:$inputs}')
-
-            HTTP_CODE=$(curl -sS -o /tmp/gh_dispatch_resp.txt -w "%{http_code}" -X POST \
-              -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${GITHUB_TOKEN_RESOLVED}" \
-              -H "X-GitHub-Api-Version: 2022-11-28" -d "${DISPATCH_BODY}" \
-              "${GH_API_URL}/repos/${GH_WORKFLOWS_REPO}/actions/workflows/${WORKFLOW_ID}/dispatches")
-            [[ "${HTTP_CODE}" == "204" ]] || fail "Dispatch failed for ${GH_WF_FILE} (HTTP ${HTTP_CODE}): $(cat /tmp/gh_dispatch_resp.txt)"
-            echo "Dispatched ${GH_WF_FILE} (id=${WORKFLOW_ID})"
-            DISPATCHED="${DISPATCHED} ${GH_WF_FILE}:${WORKFLOW_ID}"
-          done
-          [[ -n "${DISPATCHED}" ]] || fail "No workflows were dispatched"
-
-          echo "Waiting 30s for runs to appear..."
-          sleep 30
-          RUN_ENTRIES=""
-          for ENTRY in ${DISPATCHED}; do
-            GH_WF_FILE="${ENTRY%%:*}"; WF_ID="${ENTRY##*:}"; RUN_ID=""
-            for attempt in $(seq 1 20); do
-              RUN_ID=$(curl -sS -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${GITHUB_TOKEN_RESOLVED}" \
-                -H "X-GitHub-Api-Version: 2022-11-28" \
-                "${GH_API_URL}/repos/${GH_WORKFLOWS_REPO}/actions/workflows/${WF_ID}/runs?per_page=1&event=workflow_dispatch" \
-                | jq -r '.workflow_runs[0].id // empty')
-              [[ -n "${RUN_ID}" && "${RUN_ID}" != "null" ]] && break
-              sleep 10
-            done
-            [[ -n "${RUN_ID}" && "${RUN_ID}" != "null" ]] || fail "Could not resolve run id for ${GH_WF_FILE}"
-            RUN_ENTRIES="${RUN_ENTRIES} ${GH_WF_FILE}:${RUN_ID}"
-          done
-
-          RETRIES_LEFT=""
-          for ENTRY in ${RUN_ENTRIES}; do GH_WF_FILE="${ENTRY%%:*}"; RETRIES_LEFT="${RETRIES_LEFT} ${GH_WF_FILE}=${MAX_RUN_RETRIES_RESOLVED}"; done
-          get_retries_left() { echo "${RETRIES_LEFT}" | tr ' ' '\n' | awk -F= -v n="$1" '$1==n{print $2; exit}'; }
-          set_retries_left() { local n="$1" c="$2" r=""; for kv in ${RETRIES_LEFT}; do case "$kv" in "$n="*) r="$r $n=$c";; *) r="$r $kv";; esac; done; RETRIES_LEFT="$r"; }
-
-          ELAPSED=0; INTERVAL=60
-          while [[ ${ELAPSED} -lt ${MAX_WAIT_RESOLVED} ]]; do
-            ALL_DONE=true; ANY_FAILED=false; SUMMARY=""
-            for ENTRY in ${RUN_ENTRIES}; do
-              GH_WF_FILE="${ENTRY%%:*}"; RUN_ID="${ENTRY##*:}"
-              RUN_JSON=$(curl -sS -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${GITHUB_TOKEN_RESOLVED}" \
-                -H "X-GitHub-Api-Version: 2022-11-28" "${GH_API_URL}/repos/${GH_WORKFLOWS_REPO}/actions/runs/${RUN_ID}")
-              STATUS=$(echo "$RUN_JSON" | jq -r '.status // empty')
-              CONCLUSION=$(echo "$RUN_JSON" | jq -r '.conclusion // empty')
-              if [[ "${STATUS}" != "completed" ]]; then
-                ALL_DONE=false; SUMMARY="${SUMMARY}${GH_WF_FILE}:${STATUS};"
-              elif [[ "${CONCLUSION}" != "success" ]]; then
-                RL=$(get_retries_left "${GH_WF_FILE}"); RL="${RL:-0}"
-                if [[ "${RL}" -gt 0 ]]; then
-                  RR_CODE=$(curl -sS -o /dev/null -w "%{http_code}" -X POST \
-                    -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${GITHUB_TOKEN_RESOLVED}" \
-                    -H "X-GitHub-Api-Version: 2022-11-28" "${GH_API_URL}/repos/${GH_WORKFLOWS_REPO}/actions/runs/${RUN_ID}/rerun-failed-jobs")
-                  if [[ "${RR_CODE}" == "201" ]]; then
-                    set_retries_left "${GH_WF_FILE}" "$((RL-1))"; ALL_DONE=false; SUMMARY="${SUMMARY}${GH_WF_FILE}:retrying;"
-                  else
-                    ANY_FAILED=true; SUMMARY="${SUMMARY}${GH_WF_FILE}:${CONCLUSION};"
-                  fi
-                else
-                  ANY_FAILED=true; SUMMARY="${SUMMARY}${GH_WF_FILE}:${CONCLUSION};"
-                fi
-              else
-                SUMMARY="${SUMMARY}${GH_WF_FILE}:success;"
-              fi
-            done
-            if [[ "${ALL_DONE}" == "true" ]]; then
-              [[ "${ANY_FAILED}" == "true" ]] && fail "One or more workflow runs failed. ${SUMMARY}"
-              echo "All workflow runs completed successfully. ${SUMMARY}"; exit 0
-            fi
-            sleep "${INTERVAL}"; ELAPSED=$((ELAPSED + INTERVAL))
-          done
-          fail "Timed out after ${MAX_WAIT_RESOLVED}s. ${SUMMARY}"
-
-      # --- Jenkins step: tools/platform/environment_operate (ACTION=delete) ---
-      - name: Tear down ephemeral Artifactory
-        if: ${{ always() && github.event.inputs.skip_env_setup != 'true' }}
-        run: |
-          set -euo pipefail
-          JOB_PATH="job/tools/job/platform/job/environment_operate"
-          CRUMB_JSON=$(curl -sS -u "${JENKINS_USER}:${JENKINS_TOKEN}" "${JENKINS_URL}/crumbIssuer/api/json" || echo '{}')
-          CRUMB_FIELD=$(echo "$CRUMB_JSON" | jq -r '.crumbRequestField // empty')
-          CRUMB=$(echo "$CRUMB_JSON" | jq -r '.crumb // empty')
-
-          curl -sS -o /dev/null -u "${JENKINS_USER}:${JENKINS_TOKEN}" \
-            ${CRUMB:+-H "${CRUMB_FIELD}: ${CRUMB}"} \
-            --data-urlencode "SERVER_NAME=${{ steps.env_details.outputs.server_name }}" \
-            --data-urlencode "ACTION=delete" \
-            "${JENKINS_URL}/${JOB_PATH}/buildWithParameters"
-          echo "Teardown triggered for ${{ steps.env_details.outputs.server_name }}"
+      - name: Run e2e dispatch
+        run: .github/scripts/e2e-dispatch.sh
