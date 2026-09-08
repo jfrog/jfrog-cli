@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	dotnetutils "github.com/jfrog/build-info-go/build/utils/dotnet"
 	containerutils "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/ocicontainer"
 	"github.com/jfrog/jfrog-cli-core/v2/plugins/components"
 	securityDocs "github.com/jfrog/jfrog-cli-security/cli/docs"
@@ -12,6 +13,53 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli"
 )
+
+func TestGetNugetCommandName(t *testing.T) {
+	tests := []struct {
+		name            string
+		toolchainType   dotnetutils.ToolchainType
+		args            []string
+		expectedCommand string
+		expectedArgs    []string
+	}{
+		{
+			name:            "dotnet nuget push",
+			toolchainType:   dotnetutils.DotnetCore,
+			args:            []string{"nuget", "push", "Package.1.0.0.nupkg", "--skip-duplicate"},
+			expectedCommand: "nuget push",
+			expectedArgs:    []string{"Package.1.0.0.nupkg", "--skip-duplicate"},
+		},
+		{
+			name:            "dotnet restore",
+			toolchainType:   dotnetutils.DotnetCore,
+			args:            []string{"restore", "Project.csproj"},
+			expectedCommand: "restore",
+			expectedArgs:    []string{"Project.csproj"},
+		},
+		{
+			name:            "nuget push remains one token",
+			toolchainType:   dotnetutils.Nuget,
+			args:            []string{"push", "Package.1.0.0.nupkg"},
+			expectedCommand: "push",
+			expectedArgs:    []string{"Package.1.0.0.nupkg"},
+		},
+		{
+			name:            "dotnet nuget non-push passthrough",
+			toolchainType:   dotnetutils.DotnetCore,
+			args:            []string{"nuget", "locals", "all", "--clear"},
+			expectedCommand: "nuget",
+			expectedArgs:    []string{"locals", "all", "--clear"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			actualCommand, actualArgs := getNugetCommandName(test.args, test.toolchainType)
+			assert.Equal(t, test.expectedCommand, actualCommand)
+			assert.Equal(t, test.expectedArgs, actualArgs)
+		})
+	}
+}
 
 func TestExtractDockerBuildOptionsFromArgs(t *testing.T) {
 	tests := []struct {

@@ -16,7 +16,6 @@ import (
 	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/urfave/cli"
 )
 
 func TestNormalizeApiPath(t *testing.T) {
@@ -34,22 +33,8 @@ func TestFormatResponses(t *testing.T) {
 	}))
 }
 
-// newDescribeApp builds a minimal cli.App exercising runDescribeCmd exactly
-// like the real "describe" subcommand's flag set -- same technique as
-// newSearchApp in docs_search_test.go.
-func newDescribeApp(stdOut *bytes.Buffer, capturedErr *error) *cli.App {
-	app := cli.NewApp()
-	app.Flags = []cli.Flag{
-		cli.StringFlag{Name: "format"},
-	}
-	app.Action = func(c *cli.Context) error {
-		*capturedErr = runDescribeCmd(c, stdOut)
-		return nil
-	}
-	return app
-}
-
 func TestRunDescribeCmd_KnownGetOperation(t *testing.T) {
+	allowStubApiDocsBundle(t)
 	result := runDescribeJSON(t, "GET", "/access/api/v2/users")
 	assert.Equal(t, "GET", result["method"])
 	assert.Equal(t, "/access/api/v2/users", result["path"])
@@ -61,6 +46,7 @@ func TestRunDescribeCmd_KnownGetOperation(t *testing.T) {
 }
 
 func TestRunDescribeCmd_KnownPostOperation(t *testing.T) {
+	allowStubApiDocsBundle(t)
 	result := runDescribeJSON(t, "POST", "/access/api/v2/users")
 	assert.Equal(t, "POST", result["method"])
 
@@ -80,16 +66,19 @@ func TestRunDescribeCmd_KnownPostOperation(t *testing.T) {
 }
 
 func TestRunDescribeCmd_CaseInsensitiveMethod(t *testing.T) {
+	allowStubApiDocsBundle(t)
 	result := runDescribeJSON(t, "get", "/access/api/v2/users")
 	assert.Equal(t, "GET", result["method"])
 }
 
 func TestRunDescribeCmd_PathWithoutLeadingSlashNormalizes(t *testing.T) {
+	allowStubApiDocsBundle(t)
 	result := runDescribeJSON(t, "GET", "access/api/v2/users")
 	assert.Equal(t, "/access/api/v2/users", result["path"])
 }
 
 func TestRunDescribeCmd_NotFoundReturnsError(t *testing.T) {
+	allowStubApiDocsBundle(t)
 	var stdOut bytes.Buffer
 	var runErr error
 	app := newDescribeApp(&stdOut, &runErr)
@@ -115,6 +104,7 @@ func TestRunDescribeCmd_WrongNumberOfArguments(t *testing.T) {
 }
 
 func TestRunDescribeCmd_TableOutput(t *testing.T) {
+	allowStubApiDocsBundle(t)
 	var stdOut bytes.Buffer
 	var runErr error
 	app := newDescribeApp(&stdOut, &runErr)
@@ -128,10 +118,8 @@ func TestRunDescribeCmd_TableOutput(t *testing.T) {
 	assert.Contains(t, stdOut.String(), "JF API")
 }
 
-// TestRunDescribeCmd_DefaultsToJSON verifies JSON is the default output format
-// when --format is omitted, matching docs search's unconditional-JSON-default
-// convention (see TestRunSearchCmd_DefaultsToJSON).
 func TestRunDescribeCmd_DefaultsToJSON(t *testing.T) {
+	allowStubApiDocsBundle(t)
 	var out bytes.Buffer
 	prevLogger := clientlog.GetLogger()
 	t.Cleanup(func() { clientlog.SetLogger(prevLogger) })
@@ -150,11 +138,20 @@ func TestRunDescribeCmd_DefaultsToJSON(t *testing.T) {
 	assert.Empty(t, stdOut.String(), "JSON goes through the logger's Output channel, not the stdOut writer")
 }
 
-// TestSearchThenDescribe_EndToEnd guards the intended agent flow: a search
-// result's method+path must resolve cleanly through describe, and describe's
-// jf_api one-liner must match search's one-liner for the same operation (both
-// call the shared jfApiOneLiner helper).
+func TestRunDescribeCmd_RequireFullBundleFailsOnStub(t *testing.T) {
+	var stdOut bytes.Buffer
+	var runErr error
+	app := newDescribeApp(&stdOut, &runErr)
+
+	require.NoError(t, app.Run([]string{"cmd", "GET", "/access/api/v2/users"}))
+	require.Error(t, runErr)
+	assert.Contains(t, runErr.Error(), `"stub"`)
+	assert.Contains(t, runErr.Error(), "install-cli.jfrog.io")
+	assert.Empty(t, stdOut.String())
+}
+
 func TestSearchThenDescribe_EndToEnd(t *testing.T) {
+	allowStubApiDocsBundle(t)
 	matches := filterAndScore(stubOps(t), "user", "", "")
 	require.NotEmpty(t, matches)
 	top := matches[0]
@@ -163,30 +160,4 @@ func TestSearchThenDescribe_EndToEnd(t *testing.T) {
 	assert.Equal(t, top.Method, result["method"])
 	assert.Equal(t, top.Path, result["path"])
 	assert.Equal(t, top.JfApi, result["jf_api"])
-}
-
-// runDescribeJSON runs the describe app with JSON output (the default) and
-// returns the parsed result body -- same technique as runSearchJSON in
-// docs_search_test.go. The logger's Info/Warn channel is routed to a separate
-// buffer from its Output channel so stray log lines can't corrupt the JSON
-// body being unmarshaled here.
-func runDescribeJSON(t *testing.T, method, path string) map[string]any {
-	t.Helper()
-	var jsonOut, logOut bytes.Buffer
-	logger := clientlog.NewLoggerWithFlags(clientlog.INFO, &logOut, 0)
-	logger.SetOutputWriter(&jsonOut)
-	prevLogger := clientlog.GetLogger()
-	t.Cleanup(func() { clientlog.SetLogger(prevLogger) })
-	clientlog.SetLogger(logger)
-
-	var stdOut bytes.Buffer
-	var runErr error
-	app := newDescribeApp(&stdOut, &runErr)
-
-	require.NoError(t, app.Run([]string{"cmd", method, path}))
-	require.NoError(t, runErr)
-
-	var result map[string]any
-	require.NoError(t, json.Unmarshal(jsonOut.Bytes(), &result), "output should be parseable JSON")
-	return result
 }

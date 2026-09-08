@@ -31,7 +31,6 @@ import (
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/slices"
 )
 
 func initNugetTest(t *testing.T) {
@@ -86,7 +85,9 @@ func TestDotnetResolve(t *testing.T) {
 func testNativeNugetDotnetResolve(t *testing.T, uniqueTests []testDescriptor, buildName string, projectType project.ProjectType) {
 	initNugetTest(t)
 	clearNuGetHTTPCache(t)
-	testDescriptors := append(slices.Clone(uniqueTests), []testDescriptor{
+	combined := make([]testDescriptor, 0, len(uniqueTests))
+	combined = append(combined, uniqueTests...)
+	combined = append(combined, []testDescriptor{
 		{"referencewithoutmodulechange", "reference", []string{projectType.String(), "restore"}, []string{"reference"}, []int{6}},
 		{"referencewithmodulechange", "reference", []string{projectType.String(), "restore", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{6}},
 		{"multireferencewithoutmodulechange", "multireference", []string{projectType.String(), "restore"}, []string{"proj1", "proj2"}, []int{5, 3}},
@@ -96,7 +97,7 @@ func testNativeNugetDotnetResolve(t *testing.T, uniqueTests []testDescriptor, bu
 		{"multireferencesingleprojectcsproj", "multireference", []string{projectType.String(), "restore", "src/multireference.proj2/proj2.csproj"}, []string{"proj2"}, []int{3}},
 		{"sln_and_proj_different_locations", "differentlocations", []string{projectType.String(), "restore", "solutions/differentlocations.sln"}, []string{"proj1", "proj2"}, []int{5, 3}},
 	}...)
-	for buildNumber, test := range testDescriptors {
+	for buildNumber, test := range combined {
 		projectPath := createNugetProject(t, test.project)
 		err := createConfigFileForTest([]string{projectPath}, tests.NugetRemoteRepo, "", t, projectType, false)
 		if err != nil {
@@ -177,7 +178,10 @@ func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expe
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 }
 
-// Add allow insecure connection for testings to work with localhost server
+// Add --allow-insecure-connections for tests that use a localhost server. Every call site in
+// this file creates a legacy nuget-config/dotnet-config file, so the command always runs through
+// the legacy NugetCmd/DotnetCmd path (see buildtools/cli.go), which only recognizes this flag
+// name - not FlexPack's "--insecure-tls".
 func allowInsecureConnectionForTests(args *[]string) {
 	*args = append(*args, "--allow-insecure-connections")
 }
