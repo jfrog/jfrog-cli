@@ -40,6 +40,13 @@ Gotchas:
 - Without JFROG_RUN_NATIVE=true, 'jf dotnet-config' must be run first, and the native-only
   flags --repo-resolve / --server-id are not supported.
 - 'jf dotnet nuget push' is a two-token sub-command; plain 'jf dotnet push' is not a command.
+- --repo-resolve routes the restore that a sub-command performs. restore, build, publish and
+  pack all restore (publish and pack implicitly, unless --no-restore is passed), so all four
+  honour it. 'dotnet add package' also restores, but the .NET SDK gives it no config-file
+  option, so --repo-resolve cannot be applied there; run 'jf dotnet restore' first.
+- Build-info dependencies are collected for restore-family sub-commands, and artifacts for
+  pack and 'nuget push'. A pack that produces no package - for example every project already
+  up to date - records an empty module rather than failing.
 - Mixing 'jf nuget' and 'jf dotnet' configs in the same directory can create confused resolution.
 
 Related: jf dotnet-config, jf nuget`
