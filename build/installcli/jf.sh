@@ -59,7 +59,7 @@ else
     esac
 fi
 
-BASE_URL="${JFROG_CLI_RELEASES_BASE_URL:-https://releases.jfrog.io/artifactory/jfrog-cli}"
+BASE_URL="https://releases.jfrog.io/artifactory/jfrog-cli"
 URL="${BASE_URL}/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-${CLI_OS}-${ARCH}/${FILE_NAME}"
 echo "Downloading from: $URL"
 curl -XGET "$URL" -L -g -o "$FILE_NAME"

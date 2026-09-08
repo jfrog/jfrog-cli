@@ -152,6 +152,15 @@ run_case() {
     mkdir -p "$fixture_root"
     make_fixture_tree "$fixture_root" "$cli_major_ver" "$file_name" "$case_name" "$fixture_version"
 
+    # The shipped script has no runtime override for its download URL (an
+    # env var hook there would itself be an attack surface in production -
+    # see the PR review comment this responds to). To point a script at our
+    # local file:// fixtures for testing, patch a throwaway copy's hardcoded
+    # BASE_URL instead of the real script.
+    script_under_test="$work_dir/$(basename "$script")"
+    sed "s#^BASE_URL=.*#BASE_URL=\"file://$fixture_root\"#" "$REPO_ROOT/$script" > "$script_under_test"
+    chmod +x "$script_under_test"
+
     run_dir="$work_dir/run"
     mkdir -p "$run_dir"
 
@@ -160,8 +169,7 @@ run_case() {
         cd "$run_dir"
         # shellcheck disable=SC2086 # intentionally unquoted: empty means "no
         # positional arg at all" for setupcli, not an empty-string arg.
-        JFROG_CLI_RELEASES_BASE_URL="file://$fixture_root" \
-            sh "$REPO_ROOT/$script" $script_arg </dev/null
+        sh "$script_under_test" $script_arg </dev/null
     ) || status=$?
 
     label="$script [$case_name]"
