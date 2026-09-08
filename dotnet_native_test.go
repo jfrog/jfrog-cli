@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -14,6 +15,7 @@ import (
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/auth"
+	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -1257,6 +1259,23 @@ func credentialsForTestServer(t *testing.T) (user, password string) {
 	return user, password
 }
 
+// assertArtifactExists checks that repoRelativePath is present in Artifactory.
+//
+// Existence is checked over HTTP rather than through getFlexPackItemProps: an item with no
+// properties is indistinguishable from a missing one through that helper, and only some pushed
+// files ever acquire properties. A .nupkg picks up nuget.id/nuget.version when Artifactory
+// indexes it, and anything pushed under --build-name/--build-number gets stamped by jf - but a
+// .snupkg pushed without build flags legitimately has none, which is not the same as absent.
+func assertArtifactExists(t *testing.T, repoRelativePath, message string) {
+	t.Helper()
+	client, err := httpclient.ClientBuilder().Build()
+	require.NoError(t, err)
+	_, res, err := client.GetRemoteFileDetails(serverDetails.ArtifactoryUrl+repoRelativePath, artHttpDetails)
+	if assert.NoError(t, err, message) {
+		assert.Equal(t, http.StatusOK, res.StatusCode, message)
+	}
+}
+
 // insecureSourceConfigFile writes a nuget.config declaring sourceURL as a package source that
 // permits plain HTTP, and returns its path for passing via --configfile.
 //
@@ -1415,20 +1434,25 @@ func TestDotnetFlexPackPackIncludeSymbols(t *testing.T) {
 		"--build-name="+tests.DotnetBuildName, "--build-number="+buildNumber))
 	defer deleteDotnetBuild()
 
-	// Assert the collection, not just the exit code: --include-symbols only matters if the
-	// produced .snupkg reaches build-info alongside the .nupkg.
+	// Assert the collection, not just the exit code: --include-symbols only matters if the symbol
+	// package it produces reaches build-info alongside the primary one.
+	//
+	// That package is "<id>.<version>.symbols.nupkg", NOT ".snupkg": --include-symbols alone
+	// leaves SymbolPackageFormat at its default of "symbols.nupkg", and .snupkg requires
+	// -p:SymbolPackageFormat=snupkg. Note the suffix ordering below - ".symbols.nupkg" also ends
+	// in ".nupkg", so testing for the primary package first would swallow it.
 	published := publishAndGetDotnetBuildInfo(t, buildNumber)
 	var sawPackage, sawSymbols bool
 	for _, artifact := range allArtifacts(published) {
 		switch {
-		case strings.HasSuffix(artifact.Name, ".snupkg"):
+		case strings.HasSuffix(artifact.Name, ".symbols.nupkg"), strings.HasSuffix(artifact.Name, ".snupkg"):
 			sawSymbols = true
 		case strings.HasSuffix(artifact.Name, ".nupkg"):
 			sawPackage = true
 		}
 	}
 	assert.True(t, sawPackage, "pack must record the produced .nupkg")
-	assert.True(t, sawSymbols, "--include-symbols must record the produced .snupkg too")
+	assert.True(t, sawSymbols, "--include-symbols must record the produced symbols package too")
 }
 
 func TestDotnetFlexPackPackSolutionMultipleProjects(t *testing.T) {
@@ -2590,8 +2614,12 @@ func TestDotnetFlexPackSymbolRoundTrip(t *testing.T) {
 	nupkgPath, snupkgPath := buildTestNupkg(t, "DotnetSymbolRoundTrip", "1.0.0")
 	require.NoError(t, pushNupkgDotnetFlexPack(t, nupkgPath, tests.NugetLocalRepo))
 
-	assert.NotNil(t, getFlexPackItemProps(t, tests.NugetLocalRepo+"/"+filepath.Base(nupkgPath)),
+	// "Retrievable" means present in the repository. This push names no build, so nothing is
+	// stamped, and a .snupkg carries none of the nuget.* properties Artifactory attaches when it
+	// indexes a primary package - checking properties here would report a file that round-tripped
+	// perfectly well as missing.
+	assertArtifactExists(t, tests.NugetLocalRepo+"/"+filepath.Base(nupkgPath),
 		"the primary package must be retrievable")
-	assert.NotNil(t, getFlexPackItemProps(t, tests.NugetLocalRepo+"/"+filepath.Base(snupkgPath)),
+	assertArtifactExists(t, tests.NugetLocalRepo+"/"+filepath.Base(snupkgPath),
 		"the co-pushed symbol package must be retrievable")
 }
