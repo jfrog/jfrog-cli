@@ -1411,9 +1411,24 @@ func TestDotnetFlexPackPackIncludeSymbols(t *testing.T) {
 	outputDir := filepath.Join(projectPath, "packed")
 	buildNumber := "43"
 	require.NoError(t, restoreDotnetFlexPack(t, tests.NugetRemoteRepo))
-	assert.NoError(t, packDotnetFlexPack(t, "--include-symbols", "--output", outputDir, "--no-restore",
+	require.NoError(t, packDotnetFlexPack(t, "--include-symbols", "--output", outputDir, "--no-restore",
 		"--build-name="+tests.DotnetBuildName, "--build-number="+buildNumber))
 	defer deleteDotnetBuild()
+
+	// Assert the collection, not just the exit code: --include-symbols only matters if the
+	// produced .snupkg reaches build-info alongside the .nupkg.
+	published := publishAndGetDotnetBuildInfo(t, buildNumber)
+	var sawPackage, sawSymbols bool
+	for _, artifact := range allArtifacts(published) {
+		switch {
+		case strings.HasSuffix(artifact.Name, ".snupkg"):
+			sawSymbols = true
+		case strings.HasSuffix(artifact.Name, ".nupkg"):
+			sawPackage = true
+		}
+	}
+	assert.True(t, sawPackage, "pack must record the produced .nupkg")
+	assert.True(t, sawSymbols, "--include-symbols must record the produced .snupkg too")
 }
 
 func TestDotnetFlexPackPackSolutionMultipleProjects(t *testing.T) {
