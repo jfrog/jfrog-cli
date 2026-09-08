@@ -27,7 +27,7 @@ jobs:
             version: 2022
           - name: macos
             version: 14
-        pnpm-version: [10, 11]
+        pnpm-version: [10, 11, 12]
     runs-on: ${{ matrix.os.name }}-${{ matrix.os.version }}
     steps:
       - name: Skip macOS - JGC-413
@@ -55,7 +55,8 @@ jobs:
         if: matrix.os.name != 'macos'
         uses: actions/setup-node@v7
         with:
-          # pnpm 11 requires Node >=22.13 (pnpm 10 only requires >=18.12, so 22 covers both legs).
+          # pnpm 11+ requires Node >=22.13 (pnpm 10 only requires >=18.12, so 22.13 covers all
+          # three tested legs - no evidence pnpm 12 raised this floor further).
           node-version: "22.13"
 
       - name: Install pnpm ${{ matrix.pnpm-version }}
