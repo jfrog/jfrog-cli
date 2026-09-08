@@ -70,6 +70,22 @@ jobs:
           sh build/getcli/jfrog.sh
           ./jfrog --version
 
+      - name: Test setup CLI - jf (download, verify, and PATH install only)
+        run: |
+          # jf setup with no package-manager arg drops into an interactive
+          # picker; with stdin from /dev/null it fails fast (non-zero exit)
+          # rather than hanging. That's fine here - this step only checks
+          # that the download + checksum verification + PATH-install steps
+          # before it succeeded, not that the interactive wizard completed.
+          # build/setupcli/jf.sh moves the binary onto PATH (into
+          # /usr/local/bin or similar), it does not leave it in this step's
+          # working directory - and on Windows it's named jf.exe, not jf -
+          # so invoke it via PATH resolution rather than a cwd-relative path.
+          out=$(sh build/setupcli/jf.sh </dev/null 2>&1 || true)
+          printf '%s\n' "$out"
+          echo "$out" | grep -q "Checksum verified" || exit 1
+          echo "$out" | grep -q "was installed in" || exit 1
+
       - name: Check Windows Certificate Expiration Date
         shell: pwsh
         run: |
@@ -85,7 +101,7 @@ jobs:
 
       - name: Test Build CLI - sh
         run: |
-          rm ./jf
+          rm -f ./jf
           sh build/build.sh
           ./jf --version
         if: matrix.os.name == 'macos' || matrix.os.name == 'ubuntu'
@@ -118,3 +134,21 @@ jobs:
           npm version $latest_version --allow-same-version
           npm install --no-audit
           ./bin/jf${{ matrix.os.osSuffix }} --version
+
+  checksum-verification-unit-tests:
+    name: Install script checksum verification (unit tests)
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
+
+      - name: Setup FastCI
+        uses: jfrog-fastci/fastci@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          fastci_otel_token: ${{ secrets.FASTCI_TOKEN }}
+
+      - name: Run install script checksum verification tests
+        run: sh build/scripts_test/run_tests.sh
