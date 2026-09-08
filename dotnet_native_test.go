@@ -466,14 +466,16 @@ func TestDotnetFlexPackDetailedSummary(t *testing.T) {
 	// What must NOT happen is the flag being forwarded to the native tool as if it were an
 	// argument: 'dotnet nuget push' takes the package path positionally, so an unrecognised
 	// --detailed-summary=true is read as a second package and the push dies with
-	// "error: File does not exist (--detailed-summary=true)". That is the failure this pins.
+	// "error: File does not exist (--detailed-summary=true)" on the console. jf surfaces that as
+	// a wrapped exit status rather than propagating the native tool's message, so the assertion
+	// is on failure itself, not on the text.
 	// Replace it with a positive assertion if detailed summary is ever wired for FlexPack push.
 	initNugetTest(t)
 	defer cleanTestsHomeEnv()
 
 	nupkgPath, _ := buildTestNupkg(t, "DotnetDetailedSummary", "1.0.0")
 	err := pushNupkgDotnetFlexPack(t, nupkgPath, tests.NugetLocalRepo, "--detailed-summary=true")
-	assert.ErrorContains(t, err, "File does not exist",
+	assert.ErrorContains(t, err, "dotnet nuget push failed",
 		"unsupported --detailed-summary currently reaches the native client as a package path; "+
 			"if this now passes, the flag has been wired up and this test should assert the summary output")
 }
