@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	dotnetutils "github.com/jfrog/build-info-go/build/utils/dotnet"
+	"github.com/jfrog/build-info-go/flexpack"
 	alpinecommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/alpine"
 	aptcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/apt"
 	cargocommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/cargo"
@@ -1054,8 +1055,7 @@ func extractPnpmOptionsFromArgs(args []string) (serverDetails *coreConfig.Server
 // configFilePath is only used for the warning message; pass configExists to say whether one
 // was found. pmName names the package manager for the 'jf <pm>-config' hint.
 func shouldRunNuGetFlexPack(configFilePath string, configExists bool, pmName string) bool {
-	// ShouldRunNative("") is IsFlexPackEnabled() with no config-path condition attached.
-	if !artutils.ShouldRunNative("") {
+	if !flexpack.IsFlexPackEnabled() {
 		return false
 	}
 	if configExists {
