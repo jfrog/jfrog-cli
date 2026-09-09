@@ -1704,11 +1704,13 @@ func TestNpmPublishWithLocalGitVcsProps(t *testing.T) {
 // Tests all permutations and combinations of --fail-on-uncollected-deps flag
 //
 // SUCCESS PATHS (what we test end-to-end with real apmtest server):
-// - Backward compatibility (no flag)
-// - All individual flag values: all, peer, optional, regular, bundle
-// - 8 permutations/combinations of 2+ flags
-// - 3 semantic edge cases verifying exclusion logic
-// Total: 15 subtests covering all realistic success scenarios
+//   - Backward compatibility (no flag)
+//   - All individual flag values: all, peer, optional, regular, bundle
+//   - 6 permutations/combinations of 2+ flags (excludes 'all' combined with another value - that's
+//     rejected as invalid, see the NEGATIVE cases below)
+//   - 3 semantic edge cases verifying exclusion logic
+//
+// Total: 13 subtests covering all realistic success scenarios
 //
 // IMPORTANT: every case above expects success. This project (npmproject, shared with most other npm
 // tests in this file) declares no peer, bundle, or optional dependencies at all, so setting
@@ -1743,13 +1745,14 @@ func TestNpmFailOnUncollectedDeps(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name            string
-		flagValue       string
-		buildName       string
-		buildNumber     string
-		expectedSuccess bool
-		description     string
-		category        string // "backward_compat", "individual", "combo", "semantic"
+		name              string
+		flagValue         string
+		buildName         string
+		buildNumber       string
+		expectedSuccess   bool
+		description       string
+		category          string // "backward_compat", "individual", "combo", "semantic", "negative"
+		expectedErrorHint string // for category "negative": substring the validation error must contain
 	}{
 		// ===== 1. BACKWARD COMPATIBILITY =====
 		{
@@ -1847,15 +1850,6 @@ func TestNpmFailOnUncollectedDeps(t *testing.T) {
 			description:     "Combo: regular + optional (2-way combination)",
 			category:        "combo",
 		},
-		{
-			name:            "combo_all_peer",
-			flagValue:       "all,peer",
-			buildName:       "npm-combo-all-peer",
-			buildNumber:     "1",
-			expectedSuccess: true,
-			description:     "Combo: all + peer (redundant but valid - all subsumes peer)",
-			category:        "combo",
-		},
 		// 3-flag combinations
 		{
 			name:            "combo_peer_optional_bundle",
@@ -1864,15 +1858,6 @@ func TestNpmFailOnUncollectedDeps(t *testing.T) {
 			buildNumber:     "1",
 			expectedSuccess: true,
 			description:     "Combo: peer + optional + bundle (3-way combination)",
-			category:        "combo",
-		},
-		{
-			name:            "combo_all_optional_bundle",
-			flagValue:       "all,optional,bundle",
-			buildName:       "npm-combo-all-opt-bundle",
-			buildNumber:     "1",
-			expectedSuccess: true,
-			description:     "Combo: all + optional + bundle (all subsumes others)",
 			category:        "combo",
 		},
 		{
@@ -1917,58 +1902,84 @@ func TestNpmFailOnUncollectedDeps(t *testing.T) {
 
 		// ===== NEGATIVE SCENARIOS (Invalid Inputs) =====
 		{
-			name:            "invalid_flag_unknown_value",
-			flagValue:       "invalid",
-			buildName:       "npm-invalid-flag",
-			buildNumber:     "1",
-			expectedSuccess: false,
-			description:     "Should reject: unknown flag value 'invalid'",
-			category:        "negative",
+			name:              "invalid_flag_unknown_value",
+			flagValue:         "invalid",
+			buildName:         "npm-invalid-flag",
+			buildNumber:       "1",
+			expectedSuccess:   false,
+			description:       "Should reject: unknown flag value 'invalid'",
+			category:          "negative",
+			expectedErrorHint: "invalid",
 		},
 		{
-			name:            "invalid_flag_case_sensitive_ALL",
-			flagValue:       "ALL",
-			buildName:       "npm-case-ALL",
-			buildNumber:     "1",
-			expectedSuccess: false,
-			description:     "Should reject: flag is case-sensitive ('ALL' not valid, must be 'all')",
-			category:        "negative",
+			name:              "invalid_flag_case_sensitive_ALL",
+			flagValue:         "ALL",
+			buildName:         "npm-case-ALL",
+			buildNumber:       "1",
+			expectedSuccess:   false,
+			description:       "Should reject: flag is case-sensitive ('ALL' not valid, must be 'all')",
+			category:          "negative",
+			expectedErrorHint: "invalid",
 		},
 		{
-			name:            "invalid_flag_malformed_trailing_comma",
-			flagValue:       "peer,",
-			buildName:       "npm-malformed-trailing",
-			buildNumber:     "1",
-			expectedSuccess: false,
-			description:     "Should reject: malformed flag with trailing comma 'peer,'",
-			category:        "negative",
+			name:              "invalid_flag_malformed_trailing_comma",
+			flagValue:         "peer,",
+			buildName:         "npm-malformed-trailing",
+			buildNumber:       "1",
+			expectedSuccess:   false,
+			description:       "Should reject: malformed flag with trailing comma 'peer,'",
+			category:          "negative",
+			expectedErrorHint: "invalid",
 		},
 		{
-			name:            "invalid_flag_malformed_leading_comma",
-			flagValue:       ",peer",
-			buildName:       "npm-malformed-leading",
-			buildNumber:     "1",
-			expectedSuccess: false,
-			description:     "Should reject: malformed flag with leading comma ',peer'",
-			category:        "negative",
+			name:              "invalid_flag_malformed_leading_comma",
+			flagValue:         ",peer",
+			buildName:         "npm-malformed-leading",
+			buildNumber:       "1",
+			expectedSuccess:   false,
+			description:       "Should reject: malformed flag with leading comma ',peer'",
+			category:          "negative",
+			expectedErrorHint: "invalid",
 		},
 		{
-			name:            "invalid_flag_double_comma",
-			flagValue:       "peer,,bundle",
-			buildName:       "npm-double-comma",
-			buildNumber:     "1",
-			expectedSuccess: false,
-			description:     "Should reject: malformed flag with double comma 'peer,,bundle'",
-			category:        "negative",
+			name:              "invalid_flag_double_comma",
+			flagValue:         "peer,,bundle",
+			buildName:         "npm-double-comma",
+			buildNumber:       "1",
+			expectedSuccess:   false,
+			description:       "Should reject: malformed flag with double comma 'peer,,bundle'",
+			category:          "negative",
+			expectedErrorHint: "invalid",
 		},
 		{
-			name:            "invalid_flag_special_chars",
-			flagValue:       "peer@bundle",
-			buildName:       "npm-special-chars",
-			buildNumber:     "1",
-			expectedSuccess: false,
-			description:     "Should reject: flag with special characters 'peer@bundle'",
-			category:        "negative",
+			name:              "invalid_flag_special_chars",
+			flagValue:         "peer@bundle",
+			buildName:         "npm-special-chars",
+			buildNumber:       "1",
+			expectedSuccess:   false,
+			description:       "Should reject: flag with special characters 'peer@bundle'",
+			category:          "negative",
+			expectedErrorHint: "invalid",
+		},
+		{
+			name:              "invalid_flag_all_combined_with_peer",
+			flagValue:         "all,peer",
+			buildName:         "npm-combo-all-peer",
+			buildNumber:       "1",
+			expectedSuccess:   false,
+			description:       "Should reject: 'all' combined with another value 'all,peer'",
+			category:          "negative",
+			expectedErrorHint: "cannot be combined",
+		},
+		{
+			name:              "invalid_flag_all_combined_with_optional_bundle",
+			flagValue:         "all,optional,bundle",
+			buildName:         "npm-combo-all-opt-bundle",
+			buildNumber:       "1",
+			expectedSuccess:   false,
+			description:       "Should reject: 'all' combined with other values 'all,optional,bundle'",
+			category:          "negative",
+			expectedErrorHint: "cannot be combined",
 		},
 	}
 
@@ -2030,9 +2041,8 @@ func TestNpmFailOnUncollectedDeps(t *testing.T) {
 				err := runJfrogCliWithoutAssertion(args...)
 				// Negative test case: should fail with validation error
 				assert.Error(t, err, tt.description)
-				// Verify the error is about validation (invalid flag value)
 				if err != nil {
-					assert.Contains(t, err.Error(), "invalid", "Error should mention invalid flag: %s", tt.description)
+					assert.Contains(t, err.Error(), tt.expectedErrorHint, "Error should mention '%s': %s", tt.expectedErrorHint, tt.description)
 				}
 				t.Logf("[PASS-%s] %s (correctly rejected with validation error)", strings.ToUpper(tt.category), tt.description)
 
