@@ -1256,18 +1256,18 @@ func TestDotnetFlexPackStampWithBadTokenPreservesPushExit(t *testing.T) {
 	if user == "" || password == "" {
 		t.Skip("Test server credentials are not available as user/password, so the push cannot be made to succeed independently of the stamp.")
 	}
-	badTokenServerId := "cli-dotnet-bad-token-server"
+	brokenAuthServerId := "cli-dotnet-broken-auth-server"
 	configCli := coreTests.NewJfrogCli(execMain, "jfrog config", "")
-	require.NoError(t, configCli.Exec("add", badTokenServerId, "--interactive=false",
+	require.NoError(t, configCli.Exec("add", brokenAuthServerId, "--interactive=false",
 		"--url="+*tests.JfrogUrl, "--access-token=not-a-valid-token", "--enc-password=false"))
-	defer func() { _ = configCli.Exec("rm", badTokenServerId, "--quiet") }()
+	defer func() { _ = configCli.Exec("rm", brokenAuthServerId, "--quiet") }()
 
 	// The native push authenticates from --api-key and succeeds; the stamping call authenticates
 	// from the JFrog server config and must fail.
 	err := runDotnetFlexPack(t, dotnetUtils.DotnetCore.String(), "nuget", "push", nupkgPath,
 		"--source", sourceURL, "--api-key", user+":"+password,
 		"--configfile", insecureSourceConfigFile(t, sourceURL),
-		"--server-id="+badTokenServerId,
+		"--server-id="+brokenAuthServerId,
 		"--build-name="+tests.DotnetBuildName, "--build-number=31")
 	defer deleteDotnetBuild()
 
