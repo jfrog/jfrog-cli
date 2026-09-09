@@ -85,9 +85,16 @@ func initNativeDockerWithArtTest(t *testing.T) func() {
 	}
 	// Create server config to use with the command.
 	createJfrogHomeConfig(t, true)
-	return func() {
+	// Restore the home dir through t.Cleanup rather than the returned closure. Callers receive
+	// that closure and defer it, but anything running between this line and their defer can
+	// Goexit - a t.Skip or a failed require in initDockerBuildTest's buildx setup - and the defer
+	// is then never registered, leaking JFROG_CLI_HOME_DIR into every later test in the binary.
+	// That is the same failure shape as the JFROG_RUN_NATIVE leak fixed in initDockerBuildTest.
+	// The returned func is kept so existing call sites need no change; it is now a no-op.
+	t.Cleanup(func() {
 		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
-	}
+	})
+	return func() {}
 }
 
 // initDockerBuildTest initializes test environment for docker build tests with JFROG_RUN_NATIVE enabled

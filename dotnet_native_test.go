@@ -445,15 +445,38 @@ func TestDotnetFlexPackPushWildcardGlob(t *testing.T) {
 	initNugetTest(t)
 	defer cleanTestsHomeEnv()
 
+	// buildTestNupkg gives each package its own t.TempDir(), so a glob over one of those
+	// directories can only ever match a single file - the wildcard was never exercised. Collect
+	// both into one directory this test owns.
 	first, _ := buildTestNupkg(t, "DotnetGlobOne", "1.0.0")
 	second, _ := buildTestNupkg(t, "DotnetGlobTwo", "1.0.0")
-	require.NotEqual(t, filepath.Dir(first), "", "fixture dir must exist")
+	globDir := t.TempDir()
+	for _, src := range []string{first, second} {
+		content, err := os.ReadFile(src)
+		require.NoError(t, err)
+		require.NoError(t, os.WriteFile(filepath.Join(globDir, filepath.Base(src)), content, 0o600)) //#nosec G703 -- test code, path is under the test's own temp dir
+	}
+	matches, err := filepath.Glob(filepath.Join(globDir, "*.nupkg"))
+	require.NoError(t, err)
+	require.Len(t, matches, 2, "the glob must match both packages, otherwise the wildcard is untested")
 
 	buildNumber := "16"
-	glob := filepath.Join(filepath.Dir(second), "*.nupkg")
-	assert.NoError(t, pushNupkgDotnetFlexPack(t, glob, tests.NugetLocalRepo,
+	glob := filepath.Join(globDir, "*.nupkg")
+	require.NoError(t, pushNupkgDotnetFlexPack(t, glob, tests.NugetLocalRepo,
 		"--build-name="+tests.DotnetBuildName, "--build-number="+buildNumber))
 	defer deleteDotnetBuild()
+
+	// Every matched package must reach the repo and be recorded, not just the first.
+	published := publishAndGetDotnetBuildInfo(t, buildNumber)
+	recorded := map[string]bool{}
+	for _, artifact := range allArtifacts(published) {
+		recorded[artifact.Name] = true
+	}
+	for _, src := range []string{first, second} {
+		name := filepath.Base(src)
+		assert.True(t, recorded[name], "wildcard push must record %s in build-info", name)
+		assertArtifactExists(t, tests.NugetLocalRepo+"/"+name, "wildcard push must upload "+name)
+	}
 }
 
 func TestDotnetFlexPackDetailedSummary(t *testing.T) {
@@ -1226,17 +1249,31 @@ func TestDotnetFlexPackStampWithBadTokenPreservesPushExit(t *testing.T) {
 	sourceURL := strings.TrimSuffix(*tests.JfrogUrl, "/") + "/artifactory/api/nuget/v3/" +
 		tests.NugetLocalRepo + "/index.json"
 
-	// A server profile whose token is invalid: the native push authenticates from --source, while
-	// the stamping call authenticates from the JFrog server config and must fail.
-	restoreToken := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_CLI_ACCESS_TOKEN", "not-a-valid-token")
-	defer restoreToken()
+	// The server profile must EXIST but hold an invalid token. Naming a profile that does not
+	// exist fails during server-id resolution, before the native push runs at all, so the test
+	// would pass without ever reaching the stamping step it is named for.
+	user, password := credentialsForTestServer(t)
+	if user == "" || password == "" {
+		t.Skip("Test server credentials are not available as user/password, so the push cannot be made to succeed independently of the stamp.")
+	}
+	badTokenServerId := "cli-dotnet-bad-token-server"
+	configCli := coreTests.NewJfrogCli(execMain, "jfrog config", "")
+	require.NoError(t, configCli.Exec("add", badTokenServerId, "--interactive=false",
+		"--url="+*tests.JfrogUrl, "--access-token=not-a-valid-token", "--enc-password=false"))
+	defer func() { _ = configCli.Exec("rm", badTokenServerId, "--quiet") }()
 
+	// The native push authenticates from --api-key and succeeds; the stamping call authenticates
+	// from the JFrog server config and must fail.
 	err := runDotnetFlexPack(t, dotnetUtils.DotnetCore.String(), "nuget", "push", nupkgPath,
-		"--source", sourceURL, "--server-id=cli-dotnet-no-such-server",
+		"--source", sourceURL, "--api-key", user+":"+password,
+		"--configfile", insecureSourceConfigFile(t, sourceURL),
+		"--server-id="+badTokenServerId,
 		"--build-name="+tests.DotnetBuildName, "--build-number=31")
 	defer deleteDotnetBuild()
 
 	assert.Error(t, err, "a failing property-stamp step must surface an error, not be swallowed")
+	assertArtifactExists(t, tests.NugetLocalRepo+"/"+filepath.Base(nupkgPath),
+		"the push must have succeeded; only the stamping step may fail")
 }
 
 // credentialsForTestServer returns the username and password/token for the test Artifactory, or
@@ -1355,7 +1392,11 @@ func TestDotnetFlexPackSymbolOnlyPush(t *testing.T) {
 	defer deleteDotnetBuild()
 
 	published := publishAndGetDotnetBuildInfo(t, buildNumber)
-	for _, artifact := range allArtifacts(published) {
+	artifacts := allArtifacts(published)
+	// Guard the loop: a positive claim asserted only inside a range over a possibly-empty slice
+	// passes when nothing was collected, which is the failure this test exists to catch.
+	require.NotEmpty(t, artifacts, "a symbol-only push must record an artifacts module")
+	for _, artifact := range artifacts {
 		assert.Equal(t, "snupkg", artifact.Type,
 			"a symbol-only push must record type snupkg, got %s for %s", artifact.Type, artifact.Name)
 	}
@@ -1388,11 +1429,25 @@ func TestDotnetFlexPackStampFailureSurfaces(t *testing.T) {
 	sourceURL := strings.TrimSuffix(*tests.JfrogUrl, "/") + "/artifactory/api/nuget/v3/" +
 		tests.NugetLocalRepo + "/index.json"
 
+	// The push itself must SUCCEED so the error can only come from the stamping step: give it
+	// working credentials and a config permitting the plain-HTTP test source, and let --repo name
+	// a repository that does not exist so the post-push repo resolution is what fails.
+	user, password := credentialsForTestServer(t)
+	if user == "" || password == "" {
+		t.Skip("Test server credentials are not available as user/password, so the push cannot be made to succeed independently of the stamp.")
+	}
 	err := runDotnetFlexPack(t, dotnetUtils.DotnetCore.String(), "nuget", "push", nupkgPath,
-		"--source", sourceURL, "--repo=cli-dotnet-stamp-target-missing",
+		"--source", sourceURL, "--api-key", user+":"+password,
+		"--configfile", insecureSourceConfigFile(t, sourceURL),
+		"--repo=cli-dotnet-stamp-target-missing",
 		"--build-name="+tests.DotnetBuildName, "--build-number=42")
 	defer deleteDotnetBuild()
 	assert.Error(t, err, "a failing stamp step must surface an error")
+	// Pin that the failure is the stamp, not the upload: the package must be in the repo the
+	// --source named. If the push had failed this assertion fails too, and the test is no longer
+	// silently passing on an error raised before stamping was ever attempted.
+	assertArtifactExists(t, tests.NugetLocalRepo+"/"+filepath.Base(nupkgPath),
+		"the push must have succeeded; only the stamping step may fail")
 }
 
 func TestDotnetFlexPackDeploymentView(t *testing.T) {
@@ -1636,6 +1691,13 @@ func TestDotnetFlexPackGlobalPackagesFolderFromConfig(t *testing.T) {
 	projectPath, cleanup := enterDotnetProject(t, "reference")
 	defer cleanup()
 
+	// enterDotnetProject exports NUGET_PACKAGES, which outranks globalPackagesFolder in every
+	// config file - so with it set, the custom folder could never be created and the assertion
+	// below would hold no matter whose config NuGet read. Drop it for this test so the outcome
+	// actually depends on the config file.
+	restorePackagesEnv := clientTestUtils.SetEnvWithCallbackAndAssert(t, "NUGET_PACKAGES", "")
+	defer restorePackagesEnv()
+
 	customFolder := filepath.Join(projectPath, "config-driven-packages")
 	require.NoError(t, os.WriteFile(filepath.Join(projectPath, "nuget.config"), []byte(
 		`<?xml version="1.0" encoding="utf-8"?>
@@ -1645,6 +1707,17 @@ func TestDotnetFlexPackGlobalPackagesFolderFromConfig(t *testing.T) {
   </config>
 </configuration>`), 0o600))
 
+	// Baseline: with no --repo-resolve, jf injects no config file, so the user's own
+	// globalPackagesFolder is the one in force and the folder appears. Without this half the
+	// test cannot tell "jf overrode the config" from "the setting never worked here".
+	assert.NoError(t, runDotnetFlexPack(t, dotnetUtils.DotnetCore.String(), "restore", "reference.sln"))
+	if _, err := os.Stat(customFolder); err != nil {
+		t.Skipf("the SDK did not honour globalPackagesFolder from the project's nuget.config, so the override this test pins cannot be observed: %v", err)
+	}
+	require.NoError(t, os.RemoveAll(customFolder))
+
+	// With --repo-resolve, FlexPack passes its own --configfile and NuGet honours only that
+	// file, so the user's globalPackagesFolder is not applied.
 	assert.NoError(t, restoreDotnetFlexPack(t, tests.NugetRemoteRepo, "reference.sln"))
 	_, err := os.Stat(customFolder)
 	assert.True(t, os.IsNotExist(err),
@@ -2022,12 +2095,17 @@ func TestDotnetFlexPackIdCasingFromNuspec(t *testing.T) {
 	defer deleteDotnetBuild()
 
 	published := publishAndGetDotnetBuildInfo(t, buildNumber)
+	var sawModule bool
 	for _, m := range published.BuildInfo.Modules {
 		if strings.EqualFold(strings.SplitN(m.Id, ":", 2)[0], pkgId) {
+			sawModule = true
 			assert.True(t, strings.HasPrefix(m.Id, pkgId),
 				"module id %q must use the .nuspec casing %q", m.Id, pkgId)
 		}
 	}
+	// Without this the whole assertion sits inside an if that may never be entered, and the test
+	// passes when no module for the pushed package was recorded at all.
+	assert.True(t, sawModule, "a module for %s must be recorded", pkgId)
 }
 
 func TestDotnetFlexPackDependencyNotSkippedWhenCacheMissing(t *testing.T) {
@@ -2257,11 +2335,16 @@ func TestDotnetFlexPackMultiTargetFrameworkGraph(t *testing.T) {
 	csproj := filepath.Join(projectPath, "nuget1.csproj")
 	content, err := os.ReadFile(csproj)
 	require.NoError(t, err)
-	// Swap the single TargetFramework for a multi-target TargetFrameworks list.
-	multi := strings.NewReplacer(
-		"<TargetFramework>netstandard2.0</TargetFramework>", "<TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>",
-		"<TargetFramework>net8.0</TargetFramework>", "<TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>",
-	).Replace(string(content))
+	// Swap the single TargetFramework for a multi-target TargetFrameworks list. Match whatever
+	// TFM the fixture declares rather than a hard-coded list: naming specific frameworks made
+	// this a silent no-op when the fixture moved to net7.0, and the test then passed on an
+	// ordinary single-target restore.
+	singleTfm := regexp.MustCompile(`<TargetFramework>([^<]+)</TargetFramework>`)
+	found := singleTfm.FindStringSubmatch(string(content))
+	require.NotNil(t, found, "fixture must declare a single <TargetFramework> to expand")
+	frameworks := found[1] + ";netstandard2.0"
+	multi := singleTfm.ReplaceAllLiteralString(string(content), "<TargetFrameworks>"+frameworks+"</TargetFrameworks>")
+	require.NotEqual(t, string(content), multi, "the multi-target rewrite must actually change the project")
 	require.NoError(t, os.WriteFile(csproj, []byte(multi), 0o600)) //#nosec G703 -- test code, path is under the test's own temp project dir
 
 	buildNumber := "80"
@@ -2272,6 +2355,14 @@ func TestDotnetFlexPackMultiTargetFrameworkGraph(t *testing.T) {
 		t.Skipf("multi-target restore unavailable in this SDK image: %v", err)
 	}
 	defer deleteDotnetBuild()
+
+	// Prove the restore really was multi-target before asserting on the graph, otherwise a
+	// regression back to a single TFM would look like a pass.
+	assets, err := os.ReadFile(filepath.Join(projectPath, "obj", "project.assets.json"))
+	require.NoError(t, err)
+	for _, tfm := range strings.Split(frameworks, ";") {
+		assert.Contains(t, string(assets), tfm, "project.assets.json must carry a target for %s", tfm)
+	}
 
 	published := publishAndGetDotnetBuildInfo(t, buildNumber)
 	assert.NotEmpty(t, allDeps(published), "each TFM's dependencies must be collected")
@@ -2535,10 +2626,16 @@ func TestDotnetFlexPackVirtualRepoPushConvention(t *testing.T) {
 	}
 	defer deleteDotnetBuild()
 
+	// Assert the resolved repo positively. "not the virtual repo" over a possibly-empty slice
+	// could pass three different ways - no artifacts, an empty field, or any other repo name -
+	// without ever showing that resolveLocalDeployRepo picked the virtual repo's deployment
+	// target. The testdata config sets that target to NugetLocalRepo.
 	published := publishAndGetDotnetBuildInfo(t, buildNumber)
-	for _, artifact := range allArtifacts(published) {
-		assert.NotEqual(t, tests.NugetVirtualRepo, artifact.OriginalDeploymentRepo,
-			"build-info must record the resolved local repo, not the virtual repo %s",
+	artifacts := allArtifacts(published)
+	require.NotEmpty(t, artifacts, "a push through a virtual repo must record artifacts")
+	for _, artifact := range artifacts {
+		assert.Equal(t, tests.NugetLocalRepo, artifact.OriginalDeploymentRepo,
+			"build-info must record the virtual repo's defaultDeploymentRepo, not %s",
 			tests.NugetVirtualRepo)
 	}
 }
@@ -2566,11 +2663,21 @@ func TestDotnetFlexPackLegacySymbolsFormat(t *testing.T) {
 	}
 	defer deleteDotnetBuild()
 
+	// Assert the positive contract. "not zip" cannot fail - packageArtifactType only ever returns
+	// nupkg or snupkg - so it proved nothing. newArtifactFromFile types a .symbols.nupkg as
+	// snupkg and stores it flat under the renamed <id>.<version>.nupkg, Artifactory dropping the
+	// ".symbols" segment; that mapping is what this pins.
 	published := publishAndGetDotnetBuildInfo(t, buildNumber)
+	var legacy buildInfo.Artifact
 	for _, artifact := range allArtifacts(published) {
-		assert.NotEqual(t, "zip", artifact.Type,
-			"legacy symbol package %s must not be typed zip", artifact.Name)
+		if strings.HasSuffix(artifact.Name, ".symbols.nupkg") {
+			legacy = artifact
+		}
 	}
+	require.NotEmpty(t, legacy.Name, "the pushed legacy symbols package must be recorded")
+	assert.Equal(t, "snupkg", legacy.Type, "a .symbols.nupkg is a symbol package")
+	assert.Equal(t, strings.TrimSuffix(filepath.Base(legacyPath), ".symbols.nupkg")+".nupkg", legacy.Path,
+		"Artifactory renames a legacy symbols package, dropping the .symbols segment")
 }
 
 func TestDotnetFlexPackSolutionPackPushPerModule(t *testing.T) {
