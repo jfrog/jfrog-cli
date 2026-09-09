@@ -1262,16 +1262,23 @@ func TestDotnetFlexPackStampWithBadTokenPreservesPushExit(t *testing.T) {
 		"--url="+*tests.JfrogUrl, "--access-token=not-a-valid-token", "--enc-password=false"))
 	defer func() { _ = configCli.Exec("rm", brokenAuthServerId, "--quiet") }()
 
-	// The native push authenticates from --api-key and succeeds; the stamping call authenticates
-	// from the JFrog server config and must fail.
+	// --repo is required, not optional decoration: the post-push step returns early when no
+	// deploy repo is set ("anonymous push, nothing to stamp"), so without it the run ends with
+	// "artifact info collected" and no error, and the failure this test is named for never
+	// happens. With --repo set, the post-push work resolves the repository through the
+	// broken-token server and fails there.
+	//
+	// The push itself still succeeds: --source with --api-key and the user's own --configfile
+	// means jf injects nothing, so the bad token never reaches the upload.
 	err := runDotnetFlexPack(t, dotnetUtils.DotnetCore.String(), "nuget", "push", nupkgPath,
 		"--source", sourceURL, "--api-key", user+":"+password,
 		"--configfile", insecureSourceConfigFile(t, sourceURL),
+		"--repo="+tests.NugetLocalRepo,
 		"--server-id="+brokenAuthServerId,
 		"--build-name="+tests.DotnetBuildName, "--build-number=31")
 	defer deleteDotnetBuild()
 
-	assert.Error(t, err, "a failing property-stamp step must surface an error, not be swallowed")
+	assert.Error(t, err, "a post-push build-info failure must surface an error, not be swallowed")
 	assertArtifactExists(t, tests.NugetLocalRepo+"/"+filepath.Base(nupkgPath),
 		"the push must have succeeded; only the stamping step may fail")
 }
