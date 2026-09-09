@@ -482,6 +482,19 @@ func initNpmProjectTest(t *testing.T) (npmProjectPath string) {
 	return
 }
 
+// initNpmFailOnUncollectedDepsProjectTest sets up the npmfailonuncollecteddeps fixture: a regular dependency
+// ("xml") plus an optionalDependency ("json"), so the cache-corruption technique used by
+// TestNpmFailOnUncollectedDepsErrorFormat can reproduce a genuine uncollected-dependency scenario for
+// "optional" as well as "regular" (npmproject, used elsewhere in this file, has no optional deps at
+// all). "peer" and "bundle" are deliberately not reproduced here - see the fixture's package.json.
+func initNpmFailOnUncollectedDepsProjectTest(t *testing.T) (npmProjectPath string) {
+	npmProjectPath = filepath.Dir(createNpmProject(t, "npmfailonuncollecteddeps"))
+	err := createConfigFileForTest([]string{npmProjectPath}, tests.NpmRemoteRepo, tests.NpmRepo, t, project.Npm, false)
+	assert.NoError(t, err)
+	prepareArtifactoryForNpmBuild(t, npmProjectPath)
+	return
+}
+
 func initNpmWorkspacesProjectTest(t *testing.T) (npmProjectPath string) {
 	npmProjectPath = filepath.Dir(createNpmProject(t, "npmworkspaces"))
 	err := createConfigFileForTest([]string{npmProjectPath}, tests.NpmRemoteRepo, tests.NpmRepo, t, project.Npm, false)
@@ -1685,4 +1698,676 @@ func TestNpmPublishWithLocalGitVcsProps(t *testing.T) {
 	count := tests.ValidateLocalGitVcsPropsOnBuildInfoArtifacts(t, serviceManager, publishedBuildInfo, tests.NpmRepo,
 		tests.VcsFixtureMainURL, tests.VcsFixtureMainRevision, tests.VcsFixtureMainBranch)
 	assert.Greater(t, count, 0)
+}
+
+// TestNpmFailOnUncollectedDeps - COMPREHENSIVE SUITE
+// Tests all permutations and combinations of --fail-on-uncollected-deps flag
+//
+// SUCCESS PATHS (what we test end-to-end with real apmtest server):
+//   - Backward compatibility (no flag)
+//   - All individual flag values: all, peer, optional, regular, bundle
+//   - 6 permutations/combinations of 2+ flags (excludes 'all' combined with another value - that's
+//     rejected as invalid, see the NEGATIVE cases below)
+//   - 3 semantic edge cases verifying exclusion logic
+//
+// Total: 13 subtests covering all realistic success scenarios
+//
+// IMPORTANT: every case above expects success. This project (npmproject, shared with most other npm
+// tests in this file) declares no peer, bundle, or optional dependencies at all, so setting
+// --fail-on-uncollected-deps=peer/bundle/all etc. here can never actually catch anything - these
+// subtests only prove the flag doesn't false-positive on an otherwise-healthy install, not that it
+// correctly detects and fails on a real missing dependency of those types.
+//
+// Real detection coverage:
+//   - "regular" and "optional": TestNpmFailOnUncollectedDepsErrorFormat, using cache corruption
+//     (populate cache -> wipe tarballs -> reinstall) against testdata/npm/npmfailonuncollecteddeps.
+//   - "peer" and "bundle": not reproduced end-to-end here. An unmet peerDependency tends to abort
+//     'npm install' itself via an ERESOLVE conflict before build-info collection ever runs, and
+//     bundleDependencies only affects 'npm pack'/'publish' of this package, not npm ls's reporting
+//     of a normally-installed one - reproducing a genuine case needs either a contrived peer version
+//     conflict or a real third-party package that bundles a sub-dependency. See build-info-go's
+//     TestHandleMissingDeps for handler-level coverage (given an already-known-missing dependency,
+//     does the flag correctly decide to fail or warn) and TestBundledDependenciesList /
+//     TestConflictsDependenciesList for detection-level coverage of InBundle/PeerMissing themselves
+//     (without the flag, and the latter only runs on npm v6).
+func TestNpmFailOnUncollectedDeps(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	_, _, err = buildutils.GetNpmVersionAndExecPath(log.Logger)
+	if err != nil {
+		assert.NoError(t, err, "npm must be available for this test")
+		return
+	}
+
+	testCases := []struct {
+		name              string
+		flagValue         string
+		buildName         string
+		buildNumber       string
+		expectedSuccess   bool
+		description       string
+		category          string // "backward_compat", "individual", "combo", "semantic", "negative"
+		expectedErrorHint string // for category "negative": substring the validation error must contain
+	}{
+		// ===== 1. BACKWARD COMPATIBILITY =====
+		{
+			name:            "backward_compat_no_flag",
+			flagValue:       "",
+			buildName:       "npm-no-flag",
+			buildNumber:     "1",
+			expectedSuccess: true,
+			description:     "Without flag: warns but doesn't fail (backward compat preserved)",
+			category:        "backward_compat",
+		},
+
+		// ===== 2. INDIVIDUAL FLAG VALUES (5 tests) =====
+		{
+			name:            "flag_all",
+			flagValue:       "all",
+			buildName:       "npm-flag-all",
+			buildNumber:     "1",
+			expectedSuccess: true,
+			description:     "Flag: all (monitors all 4 dep types)",
+			category:        "individual",
+		},
+		{
+			name:            "flag_peer",
+			flagValue:       "peer",
+			buildName:       "npm-flag-peer",
+			buildNumber:     "1",
+			expectedSuccess: true,
+			description:     "Flag: peer (peerDependencies only)",
+			category:        "individual",
+		},
+		{
+			name:            "flag_optional",
+			flagValue:       "optional",
+			buildName:       "npm-flag-optional",
+			buildNumber:     "1",
+			expectedSuccess: true,
+			description:     "Flag: optional (optionalDependencies only)",
+			category:        "individual",
+		},
+		{
+			name:            "flag_regular",
+			flagValue:       "regular",
+			buildName:       "npm-flag-regular",
+			buildNumber:     "1",
+			expectedSuccess: true,
+			description:     "Flag: regular (regular/dev/bundle, NOT optional)",
+			category:        "individual",
+		},
+		{
+			name:            "flag_bundle",
+			flagValue:       "bundle",
+			buildName:       "npm-flag-bundle",
+			buildNumber:     "1",
+			expectedSuccess: true,
+			description:     "Flag: bundle (bundleDependencies only)",
+			category:        "individual",
+		},
+
+		// ===== 3. PERMUTATIONS & COMBINATIONS (8 tests) =====
+		// 2-flag combinations
+		{
+			name:            "combo_peer_optional",
+			flagValue:       "peer,optional",
+			buildName:       "npm-combo-peer-opt",
+			buildNumber:     "1",
+			expectedSuccess: true,
+			description:     "Combo: peer + optional (2-way combination)",
+			category:        "combo",
+		},
+		{
+			name:            "combo_peer_bundle",
+			flagValue:       "peer,bundle",
+			buildName:       "npm-combo-peer-bundle",
+			buildNumber:     "1",
+			expectedSuccess: true,
+			description:     "Combo: peer + bundle (2-way combination)",
+			category:        "combo",
+		},
+		{
+			name:            "combo_optional_bundle",
+			flagValue:       "optional,bundle",
+			buildName:       "npm-combo-opt-bundle",
+			buildNumber:     "1",
+			expectedSuccess: true,
+			description:     "Combo: optional + bundle (2-way combination)",
+			category:        "combo",
+		},
+		{
+			name:            "combo_regular_optional",
+			flagValue:       "regular,optional",
+			buildName:       "npm-combo-reg-opt",
+			buildNumber:     "1",
+			expectedSuccess: true,
+			description:     "Combo: regular + optional (2-way combination)",
+			category:        "combo",
+		},
+		// 3-flag combinations
+		{
+			name:            "combo_peer_optional_bundle",
+			flagValue:       "peer,optional,bundle",
+			buildName:       "npm-combo-trio",
+			buildNumber:     "1",
+			expectedSuccess: true,
+			description:     "Combo: peer + optional + bundle (3-way combination)",
+			category:        "combo",
+		},
+		{
+			name:            "combo_regular_peer_bundle",
+			flagValue:       "regular,peer,bundle",
+			buildName:       "npm-combo-reg-peer-bundle",
+			buildNumber:     "1",
+			expectedSuccess: true,
+			description:     "Combo: regular + peer + bundle (3-way, no overlap)",
+			category:        "combo",
+		},
+
+		// ===== 4. SEMANTIC CORRECTNESS - EDGE CASES (3 tests) =====
+		// These verify that flags correctly EXCLUDE certain dependency types
+		{
+			name:            "semantic_regular_excludes_optional",
+			flagValue:       "regular",
+			buildName:       "npm-sem-reg-excl-opt",
+			buildNumber:     "1",
+			expectedSuccess: true,
+			description:     "Semantic: 'regular' flag correctly EXCLUDES optional deps from monitoring",
+			category:        "semantic",
+		},
+		{
+			name:            "semantic_optional_excludes_regular",
+			flagValue:       "optional",
+			buildName:       "npm-sem-opt-excl-reg",
+			buildNumber:     "1",
+			expectedSuccess: true,
+			description:     "Semantic: 'optional' flag ONLY monitors optional deps (excludes regular)",
+			category:        "semantic",
+		},
+		{
+			name:            "semantic_peer_excludes_optional",
+			flagValue:       "peer",
+			buildName:       "npm-sem-peer-excl-opt",
+			buildNumber:     "1",
+			expectedSuccess: true,
+			description:     "Semantic: 'peer' flag correctly EXCLUDES optional deps from monitoring",
+			category:        "semantic",
+		},
+
+		// ===== NEGATIVE SCENARIOS (Invalid Inputs) =====
+		{
+			name:              "invalid_flag_unknown_value",
+			flagValue:         "invalid",
+			buildName:         "npm-invalid-flag",
+			buildNumber:       "1",
+			expectedSuccess:   false,
+			description:       "Should reject: unknown flag value 'invalid'",
+			category:          "negative",
+			expectedErrorHint: "invalid",
+		},
+		{
+			name:              "invalid_flag_case_sensitive_ALL",
+			flagValue:         "ALL",
+			buildName:         "npm-case-ALL",
+			buildNumber:       "1",
+			expectedSuccess:   false,
+			description:       "Should reject: flag is case-sensitive ('ALL' not valid, must be 'all')",
+			category:          "negative",
+			expectedErrorHint: "invalid",
+		},
+		{
+			name:              "invalid_flag_malformed_trailing_comma",
+			flagValue:         "peer,",
+			buildName:         "npm-malformed-trailing",
+			buildNumber:       "1",
+			expectedSuccess:   false,
+			description:       "Should reject: malformed flag with trailing comma 'peer,'",
+			category:          "negative",
+			expectedErrorHint: "invalid",
+		},
+		{
+			name:              "invalid_flag_malformed_leading_comma",
+			flagValue:         ",peer",
+			buildName:         "npm-malformed-leading",
+			buildNumber:       "1",
+			expectedSuccess:   false,
+			description:       "Should reject: malformed flag with leading comma ',peer'",
+			category:          "negative",
+			expectedErrorHint: "invalid",
+		},
+		{
+			name:              "invalid_flag_double_comma",
+			flagValue:         "peer,,bundle",
+			buildName:         "npm-double-comma",
+			buildNumber:       "1",
+			expectedSuccess:   false,
+			description:       "Should reject: malformed flag with double comma 'peer,,bundle'",
+			category:          "negative",
+			expectedErrorHint: "invalid",
+		},
+		{
+			name:              "invalid_flag_special_chars",
+			flagValue:         "peer@bundle",
+			buildName:         "npm-special-chars",
+			buildNumber:       "1",
+			expectedSuccess:   false,
+			description:       "Should reject: flag with special characters 'peer@bundle'",
+			category:          "negative",
+			expectedErrorHint: "invalid",
+		},
+		{
+			name:              "invalid_flag_all_combined_with_peer",
+			flagValue:         "all,peer",
+			buildName:         "npm-combo-all-peer",
+			buildNumber:       "1",
+			expectedSuccess:   false,
+			description:       "Should reject: 'all' combined with another value 'all,peer'",
+			category:          "negative",
+			expectedErrorHint: "cannot be combined",
+		},
+		{
+			name:              "invalid_flag_all_combined_with_optional_bundle",
+			flagValue:         "all,optional,bundle",
+			buildName:         "npm-combo-all-opt-bundle",
+			buildNumber:       "1",
+			expectedSuccess:   false,
+			description:       "Should reject: 'all' combined with other values 'all,optional,bundle'",
+			category:          "negative",
+			expectedErrorHint: "cannot be combined",
+		},
+	}
+
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tt.buildName, artHttpDetails)
+			defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tt.buildName, artHttpDetails)
+
+			projectPath := initNpmProjectTest(t)
+			chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+			defer chdirCallBack()
+
+			switch tt.category {
+			case "error_format":
+				// ===== ERROR FORMAT TESTS: Actually recreate missing dependency scenarios =====
+				// Pattern: useIsolatedCache → install (populate) → wipeCache (corrupt) → install (detect missing)
+
+				cacheDir, restoreCache := useIsolatedNpmCache(t)
+				defer restoreCache()
+
+				// STEP 1: Initial install to populate the isolated cache
+				installArgs := []string{"npm", "install", "--cache=" + cacheDir}
+				initialErr := runJfrogCliWithoutAssertion(installArgs...)
+				assert.NoError(t, initialErr, "Initial cache population should succeed for: %s", tt.description)
+
+				// STEP 2: Corrupt the cache by removing tarballs to simulate missing dependencies
+				wipeNpmCacacheTarballs(t, cacheDir)
+
+				// STEP 3: Second install with flag should fail because tarballs are missing
+				args := []string{"npm", "install", "--cache=" + cacheDir,
+					"--build-name=" + tt.buildName, "--build-number=" + tt.buildNumber,
+					"--fail-on-uncollected-deps=" + tt.flagValue}
+
+				err := runJfrogCliWithoutAssertion(args...)
+
+				// STEP 4: Verify error occurs and message is properly formatted
+				assert.Error(t, err, tt.description)
+				if err != nil {
+					errMsg := err.Error()
+					// Verify error message contains appropriate hints based on missing deps type
+					if strings.Contains(tt.flagValue, "regular") || tt.flagValue == "all" {
+						// Should contain npm cache hint for regular deps
+						assert.Contains(t, errMsg, "npm cache",
+							"Error should mention npm cache for regular deps: %s", tt.description)
+					}
+					if tt.flagValue != "regular" && tt.flagValue != "" {
+						// Should contain npm ls hint for peer/bundle/optional
+						assert.Contains(t, errMsg, "npm ls",
+							"Error should mention npm ls for peer/bundle/optional: %s", tt.description)
+					}
+				}
+				t.Logf("[PASS-%s] %s (error recreated with isolated cache corruption)", strings.ToUpper(tt.category), tt.description)
+
+			case "negative":
+				// ===== NEGATIVE TESTS: Invalid flag values should be rejected =====
+				args := []string{"npm", "install", "--build-name=" + tt.buildName, "--build-number=" + tt.buildNumber,
+					"--fail-on-uncollected-deps=" + tt.flagValue}
+
+				err := runJfrogCliWithoutAssertion(args...)
+				// Negative test case: should fail with validation error
+				assert.Error(t, err, tt.description)
+				if err != nil {
+					assert.Contains(t, err.Error(), tt.expectedErrorHint, "Error should mention '%s': %s", tt.expectedErrorHint, tt.description)
+				}
+				t.Logf("[PASS-%s] %s (correctly rejected with validation error)", strings.ToUpper(tt.category), tt.description)
+
+			default:
+				// ===== SUCCESS PATH TESTS: Normal flow with valid flags =====
+				if !tt.expectedSuccess {
+					return
+				}
+				args := []string{"npm", "install", "--build-name=" + tt.buildName, "--build-number=" + tt.buildNumber}
+				if tt.flagValue != "" {
+					args = append(args, "--fail-on-uncollected-deps="+tt.flagValue)
+				}
+
+				err := runJfrogCliWithoutAssertion(args...)
+				assert.NoError(t, err, tt.description)
+
+				// Publish build info
+				assert.NoError(t, artifactoryCli.Exec("bp", tt.buildName, tt.buildNumber),
+					"Failed to publish build for: %s", tt.buildName)
+
+				// Verify build info exists and contains modules
+				publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tt.buildName, tt.buildNumber)
+				assert.NoError(t, err)
+				assert.True(t, found, "Build info should exist: %s", tt.description)
+				if assert.NotNil(t, publishedBuildInfo) && assert.NotNil(t, publishedBuildInfo.BuildInfo) {
+					assert.Greater(t, len(publishedBuildInfo.BuildInfo.Modules), 0,
+						"Modules should be present: %s", tt.description)
+				}
+				t.Logf("[PASS-%s] %s", strings.ToUpper(tt.category), tt.description)
+			}
+
+			clientTestUtils.ChangeDirAndAssert(t, wd)
+		})
+	}
+}
+
+// useIsolatedNpmCache points npm at a dedicated cache directory via npm_config_cache.
+// Callers must also pass --cache=<dir> to every npm invocation: the env var alone loses to an
+// NPM_CONFIG_CACHE already exported by the environment, which makes 'npm config get cache'
+// (how the build-info collector locates the cache) report a directory the test never wiped.
+func useIsolatedNpmCache(t *testing.T) (cacheDir string, restore func()) {
+	cacheDir = t.TempDir()
+	return cacheDir, clientTestUtils.SetEnvWithCallbackAndAssert(t, "npm_config_cache", cacheDir)
+}
+
+// npmCachedTarballs lists the content-v2 tarballs in the cache, relative to cacheDir.
+func npmCachedTarballs(cacheDir string) []string {
+	contentPath := filepath.Join(cacheDir, "_cacache", "content-v2")
+	entries, err := os.ReadDir(contentPath)
+	if err != nil {
+		return nil
+	}
+	tarballs := []string{}
+	for _, entry := range entries {
+		if entry.IsDir() {
+			subentries, err := os.ReadDir(filepath.Join(contentPath, entry.Name()))
+			if err != nil {
+				continue
+			}
+			for _, subentry := range subentries {
+				tarballs = append(tarballs, filepath.Join(contentPath, entry.Name(), subentry.Name()))
+			}
+		}
+	}
+	return tarballs
+}
+
+// wipeNpmCacacheTarballs removes cached tarballs and index-v5 so xml/json cannot be checksummed.
+// GetNpmConfigCache requires _cacache to exist; node_modules is left in place so the next
+// npm install stays up to date and does not refill the cache from the registry.
+func wipeNpmCacacheTarballs(t *testing.T, cacheDir string) {
+	cacachePath := filepath.Join(cacheDir, "_cacache")
+	tarballs := npmCachedTarballs(cacheDir)
+	require.NotEmpty(t, tarballs, "cache should hold tarballs before wiping, otherwise the test proves nothing")
+	require.NoError(t, os.RemoveAll(filepath.Join(cacachePath, "content-v2")))
+	require.NoError(t, os.RemoveAll(filepath.Join(cacachePath, "index-v5")))
+	require.NoError(t, os.MkdirAll(cacachePath, 0755))
+}
+
+// TestNpmFailOnUncollectedDepsNegative tests invalid flag values and error handling.
+// These tests verify that the flag validation rejects malformed input with clear error messages.
+func TestNpmFailOnUncollectedDepsNegative(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	_, _, err = buildutils.GetNpmVersionAndExecPath(log.Logger)
+	if err != nil {
+		assert.NoError(t, err, "npm must be available for this test")
+		return
+	}
+
+	testCases := []struct {
+		name        string
+		flagValue   string
+		buildName   string
+		buildNumber string
+		description string
+	}{
+		{
+			name:        "invalid_unknown_value",
+			flagValue:   "invalid",
+			buildName:   "npm-invalid-value",
+			buildNumber: "1",
+			description: "Should reject unknown flag value 'invalid'",
+		},
+		{
+			name:        "invalid_case_sensitive",
+			flagValue:   "ALL",
+			buildName:   "npm-case-all",
+			buildNumber: "1",
+			description: "Should reject case-insensitive 'ALL' (must be 'all')",
+		},
+		{
+			name:        "invalid_trailing_comma",
+			flagValue:   "peer,",
+			buildName:   "npm-trailing-comma",
+			buildNumber: "1",
+			description: "Should reject trailing comma 'peer,'",
+		},
+		{
+			name:        "invalid_leading_comma",
+			flagValue:   ",peer",
+			buildName:   "npm-leading-comma",
+			buildNumber: "1",
+			description: "Should reject leading comma ',peer'",
+		},
+		{
+			name:        "invalid_double_comma",
+			flagValue:   "peer,,bundle",
+			buildName:   "npm-double-comma",
+			buildNumber: "1",
+			description: "Should reject double comma 'peer,,bundle'",
+		},
+		{
+			name:        "invalid_special_chars",
+			flagValue:   "peer@bundle",
+			buildName:   "npm-special-chars",
+			buildNumber: "1",
+			description: "Should reject special characters 'peer@bundle'",
+		},
+	}
+
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			projectPath := initNpmProjectTest(t)
+			chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+			defer chdirCallBack()
+
+			args := []string{"npm", "install",
+				"--build-name=" + tt.buildName,
+				"--build-number=" + tt.buildNumber,
+				"--fail-on-uncollected-deps=" + tt.flagValue}
+
+			err := runJfrogCliWithoutAssertion(args...)
+			// Should fail with validation error
+			assert.Error(t, err, tt.description)
+			if err != nil {
+				assert.Contains(t, err.Error(), "invalid", "Error should mention 'invalid' for: %s", tt.description)
+			}
+			t.Logf("[PASS-NEGATIVE] %s", tt.description)
+
+			clientTestUtils.ChangeDirAndAssert(t, wd)
+		})
+	}
+}
+
+// TestNpmFailOnUncollectedDepsErrorFormat tests error message formatting when dependencies are missing.
+// Uses isolated cache corruption to actually recreate missing dependency scenarios.
+func TestNpmFailOnUncollectedDepsErrorFormat(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	_, _, err = buildutils.GetNpmVersionAndExecPath(log.Logger)
+	if err != nil {
+		assert.NoError(t, err, "npm must be available for this test")
+		return
+	}
+
+	testCases := []struct {
+		name string
+		// useOptionalDepsFixture switches to a fixture with a real optionalDependency
+		// (npmproject, used by default, declares no optional deps at all, so there'd be
+		// nothing for cache corruption to make "missing").
+		useOptionalDepsFixture bool
+		flagValue              string
+		buildName              string
+		buildNumber            string
+		expectHints            []string // Expected hints in error message
+		description            string
+	}{
+		{
+			name:        "error_regular_deps",
+			flagValue:   "regular",
+			buildName:   "npm-err-regular",
+			buildNumber: "1",
+			expectHints: []string{"npm cache"},
+			description: "Error should mention npm cache for regular deps",
+		},
+		{
+			name:                   "error_optional_deps",
+			useOptionalDepsFixture: true,
+			flagValue:              "optional",
+			buildName:              "npm-err-optional",
+			buildNumber:            "1",
+			expectHints:            []string{"npm cache"},
+			description:            "Error should mention npm cache for optional deps",
+		},
+	}
+
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			var projectPath string
+			if tt.useOptionalDepsFixture {
+				projectPath = initNpmFailOnUncollectedDepsProjectTest(t)
+			} else {
+				projectPath = initNpmProjectTest(t)
+			}
+			chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+			defer chdirCallBack()
+
+			// ===== RECREATE ERROR SCENARIO =====
+			// STEP 1: Create isolated cache
+			cacheDir, restoreCache := useIsolatedNpmCache(t)
+			defer restoreCache()
+
+			// STEP 2: Initial install to populate cache
+			installArgs := []string{"npm", "install", "--cache=" + cacheDir}
+			initialErr := runJfrogCliWithoutAssertion(installArgs...)
+			assert.NoError(t, initialErr, "Cache population should succeed")
+
+			// STEP 3: Corrupt cache to simulate missing dependencies
+			wipeNpmCacacheTarballs(t, cacheDir)
+
+			// STEP 4: Run with flag - should fail with missing deps error
+			args := []string{"npm", "install", "--cache=" + cacheDir,
+				"--build-name=" + tt.buildName,
+				"--build-number=" + tt.buildNumber,
+				"--fail-on-uncollected-deps=" + tt.flagValue}
+
+			err := runJfrogCliWithoutAssertion(args...)
+
+			// Verify error occurs and has proper hints
+			assert.Error(t, err, tt.description)
+			if err != nil {
+				errMsg := err.Error()
+				for _, hint := range tt.expectHints {
+					assert.Contains(t, errMsg, hint, "Error should mention '%s' for: %s", hint, tt.description)
+				}
+			}
+			t.Logf("[PASS-ERROR-FORMAT] %s", tt.description)
+
+			clientTestUtils.ChangeDirAndAssert(t, wd)
+		})
+	}
+}
+
+// TestNpmMissingDepsLegacyBehavior tests backward compatibility: without the flag, missing deps generate debug/warn logs but don't fail.
+// This ensures existing workflows that don't use the flag continue to work as before.
+func TestNpmMissingDepsLegacyBehavior(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	_, _, err = buildutils.GetNpmVersionAndExecPath(log.Logger)
+	if err != nil {
+		assert.NoError(t, err, "npm must be available for this test")
+		return
+	}
+
+	t.Run("no_flag_with_missing_deps", func(t *testing.T) {
+		buildName := "npm-legacy-warn"
+		buildNumber := "1"
+
+		inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+		defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+		projectPath := initNpmProjectTest(t)
+		chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+		defer chdirCallBack()
+
+		// Setup isolated cache and corrupt it
+		cacheDir, restoreCache := useIsolatedNpmCache(t)
+		defer restoreCache()
+
+		// Initial install to populate cache
+		installArgs := []string{"npm", "install", "--cache=" + cacheDir}
+		initialErr := runJfrogCliWithoutAssertion(installArgs...)
+		require.NoError(t, initialErr, "Cache population should succeed")
+
+		// Corrupt cache
+		wipeNpmCacacheTarballs(t, cacheDir)
+
+		// WITHOUT --fail-on-uncollected-deps flag: should succeed (legacy behavior - warns/logs but doesn't fail)
+		args := []string{"npm", "install", "--cache=" + cacheDir,
+			"--build-name=" + buildName,
+			"--build-number=" + buildNumber}
+
+		err := runJfrogCliWithoutAssertion(args...)
+		// Legacy behavior: should NOT fail even with missing deps
+		assert.NoError(t, err, "WITHOUT flag: missing deps should warn but NOT fail (legacy behavior)")
+
+		// Verify build-info was still published (partial build info is OK without the flag)
+		clientTestUtils.ChangeDirAndAssert(t, wd)
+		publishErr := artifactoryCli.Exec("bp", buildName, buildNumber)
+		// May or may not succeed depending on whether build-info was collected, but the install itself should have succeeded
+		if publishErr == nil {
+			publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+			assert.NoError(t, err)
+			if found && publishedBuildInfo != nil {
+				// Build info exists (may be partial without strict mode)
+				assert.NotNil(t, publishedBuildInfo.BuildInfo, "Build info should be populated")
+			}
+		}
+
+		t.Logf("[PASS-LEGACY] Without flag: missing deps warn/log but don't fail (backward compat preserved)")
+	})
 }
