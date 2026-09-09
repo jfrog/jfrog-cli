@@ -2213,6 +2213,30 @@ func TestNpmFailOnUncollectedDepsNegative(t *testing.T) {
 	}
 }
 
+// TestNpmFailOnUncollectedDepsRequiresBuildInfo verifies that --fail-on-uncollected-deps, given a
+// value, requires --build-name/--build-number - mirroring --module's existing requirement on them.
+// Without this, the flag would be silently ignored (build-info collection, where it operates, never
+// runs). The actual value/build-tracking logic is unit-tested directly in jfrog-cli-artifactory
+// (TestValidateFailOnUncollectedDepsBuild); this proves Init() actually wires that check in and the
+// error reaches the user through the real command path.
+func TestNpmFailOnUncollectedDepsRequiresBuildInfo(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	projectPath := initNpmProjectTest(t)
+	chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallBack()
+
+	err = runJfrogCliWithoutAssertion("npm", "install", "--fail-on-uncollected-deps=all")
+	assert.Error(t, err)
+	if err != nil {
+		assert.Contains(t, err.Error(), "mandatory")
+	}
+}
+
 // TestNpmFailOnUncollectedDepsErrorFormat tests error message formatting when dependencies are missing.
 // Uses isolated cache corruption to actually recreate missing dependency scenarios.
 func TestNpmFailOnUncollectedDepsErrorFormat(t *testing.T) {
