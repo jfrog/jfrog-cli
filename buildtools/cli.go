@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	dotnetutils "github.com/jfrog/build-info-go/build/utils/dotnet"
+	"github.com/jfrog/build-info-go/flexpack"
 	alpinecommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/alpine"
 	aptcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/apt"
 	cargocommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/cargo"
@@ -1040,6 +1041,29 @@ func extractPnpmOptionsFromArgs(args []string) (serverDetails *coreConfig.Server
 	return serverDetails, cleanArgs, buildConfig, nil
 }
 
+// shouldRunNuGetFlexPack reports whether the FlexPack (native) path should handle a
+// 'jf nuget' / 'jf dotnet' invocation.
+//
+// JFROG_RUN_NATIVE=true takes precedence over a per-project configuration file. Previously the
+// gate was `ShouldRunNative(configFilePath) && !configExists`, so any leftover
+// .jfrog/projects/{nuget,dotnet}.yaml silently forced the legacy path even with the
+// environment variable set. That was invisible to the user, and because the legacy path does
+// not recognise the native-only flags it forwarded them to MSBuild, surfacing as an opaque
+// "MSBUILD : error MSB1001: Unknown switch --repo-resolve". The config file is now reported
+// and ignored instead.
+//
+// configFilePath is only used for the warning message; pass configExists to say whether one
+// was found. pmName names the package manager for the 'jf <pm>-config' hint.
+func shouldRunNuGetFlexPack(configFilePath string, configExists bool, pmName string) bool {
+	if !flexpack.IsFlexPackEnabled() {
+		return false
+	}
+	if configExists {
+		log.Warn(fmt.Sprintf("JFROG_RUN_NATIVE=true, so the %s configuration at %q is being ignored and the command runs in native (FlexPack) mode. Unset JFROG_RUN_NATIVE to use the legacy 'jf %s-config' path.", pmName, configFilePath, pmName))
+	}
+	return true
+}
+
 func NugetCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
@@ -1053,8 +1077,8 @@ func NugetCmd(c *cli.Context) error {
 		return err
 	}
 
-	// FlexPack bypasses all config file requirements (only when no config exists)
-	if artutils.ShouldRunNative(configFilePath) && !configExists {
+	// FlexPack bypasses all config file requirements. JFROG_RUN_NATIVE wins over a config file.
+	if shouldRunNuGetFlexPack(configFilePath, configExists, "nuget") {
 		return runNugetFlexPackCmd(c, dotnetutils.Nuget)
 	}
 
@@ -1108,8 +1132,8 @@ func DotnetCmd(c *cli.Context) error {
 		return err
 	}
 
-	// FlexPack bypasses all config file requirements (only when no config exists)
-	if artutils.ShouldRunNative(configFilePath) && !configExists {
+	// FlexPack bypasses all config file requirements. JFROG_RUN_NATIVE wins over a config file.
+	if shouldRunNuGetFlexPack(configFilePath, configExists, "dotnet") {
 		return runNugetFlexPackCmd(c, dotnetutils.DotnetCore)
 	}
 
