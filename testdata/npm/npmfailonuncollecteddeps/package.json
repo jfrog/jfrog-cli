@@ -1,0 +1,18 @@
+{
+  "name": "npm-fail-on-uncollected-deps-test",
+  "version": "1.0.0",
+  "description": "Fixture for --fail-on-uncollected-deps: a regular dependency ('xml') and an optionalDependency ('json'), both reused from testdata/npm/npmproject where they're already known to resolve cleanly. See TestNpmFailOnUncollectedDepsErrorFormat in npm_test.go for why 'peer' and 'bundle' aren't reproduced here: an unmet peerDependency tends to abort 'npm install' itself (via an ERESOLVE conflict) before build-info collection ever runs, and bundleDependencies only affects 'npm pack'/'publish' of this package, not npm ls's reporting of a normally-installed one.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "xml": "1.0.1"
+  },
+  "optionalDependencies": {
+    "json": "9.0.6"
+  }
+}

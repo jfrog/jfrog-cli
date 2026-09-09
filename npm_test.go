@@ -482,6 +482,19 @@ func initNpmProjectTest(t *testing.T) (npmProjectPath string) {
 	return
 }
 
+// initNpmFailOnUncollectedDepsProjectTest sets up the npmfailonuncollecteddeps fixture: a regular dependency
+// ("xml") plus an optionalDependency ("json"), so the cache-corruption technique used by
+// TestNpmFailOnUncollectedDepsErrorFormat can reproduce a genuine uncollected-dependency scenario for
+// "optional" as well as "regular" (npmproject, used elsewhere in this file, has no optional deps at
+// all). "peer" and "bundle" are deliberately not reproduced here - see the fixture's package.json.
+func initNpmFailOnUncollectedDepsProjectTest(t *testing.T) (npmProjectPath string) {
+	npmProjectPath = filepath.Dir(createNpmProject(t, "npmfailonuncollecteddeps"))
+	err := createConfigFileForTest([]string{npmProjectPath}, tests.NpmRemoteRepo, tests.NpmRepo, t, project.Npm, false)
+	assert.NoError(t, err)
+	prepareArtifactoryForNpmBuild(t, npmProjectPath)
+	return
+}
+
 func initNpmWorkspacesProjectTest(t *testing.T) (npmProjectPath string) {
 	npmProjectPath = filepath.Dir(createNpmProject(t, "npmworkspaces"))
 	err := createConfigFileForTest([]string{npmProjectPath}, tests.NpmRemoteRepo, tests.NpmRepo, t, project.Npm, false)
@@ -1687,8 +1700,8 @@ func TestNpmPublishWithLocalGitVcsProps(t *testing.T) {
 	assert.Greater(t, count, 0)
 }
 
-// TestNpmFailOnMissingDeps - COMPREHENSIVE SUITE
-// Tests all permutations and combinations of --fail-on-missing-deps flag
+// TestNpmFailOnUncollectedDeps - COMPREHENSIVE SUITE
+// Tests all permutations and combinations of --fail-on-uncollected-deps flag
 //
 // SUCCESS PATHS (what we test end-to-end with real apmtest server):
 // - Backward compatibility (no flag)
@@ -1697,12 +1710,25 @@ func TestNpmPublishWithLocalGitVcsProps(t *testing.T) {
 // - 3 semantic edge cases verifying exclusion logic
 // Total: 15 subtests covering all realistic success scenarios
 //
-// FAILURE PATHS (tested in build-info-go unit tests):
-// - TestHandleFailOnMissingDeps verifies all flag/depType combinations trigger correct failures
-// - All 4 dependency types: peer, optional, regular, bundle
-// - All flag combinations tested with proper mocking
-// - See: build-info-go/build/utils/npm_test.go line 816+
-func TestNpmFailOnMissingDeps(t *testing.T) {
+// IMPORTANT: every case above expects success. This project (npmproject, shared with most other npm
+// tests in this file) declares no peer, bundle, or optional dependencies at all, so setting
+// --fail-on-uncollected-deps=peer/bundle/all etc. here can never actually catch anything - these
+// subtests only prove the flag doesn't false-positive on an otherwise-healthy install, not that it
+// correctly detects and fails on a real missing dependency of those types.
+//
+// Real detection coverage:
+//   - "regular" and "optional": TestNpmFailOnUncollectedDepsErrorFormat, using cache corruption
+//     (populate cache -> wipe tarballs -> reinstall) against testdata/npm/npmfailonuncollecteddeps.
+//   - "peer" and "bundle": not reproduced end-to-end here. An unmet peerDependency tends to abort
+//     'npm install' itself via an ERESOLVE conflict before build-info collection ever runs, and
+//     bundleDependencies only affects 'npm pack'/'publish' of this package, not npm ls's reporting
+//     of a normally-installed one - reproducing a genuine case needs either a contrived peer version
+//     conflict or a real third-party package that bundles a sub-dependency. See build-info-go's
+//     TestHandleMissingDeps for handler-level coverage (given an already-known-missing dependency,
+//     does the flag correctly decide to fail or warn) and TestBundledDependenciesList /
+//     TestConflictsDependenciesList for detection-level coverage of InBundle/PeerMissing themselves
+//     (without the flag, and the latter only runs on npm v6).
+func TestNpmFailOnUncollectedDeps(t *testing.T) {
 	initNpmTest(t)
 	defer cleanNpmTest(t)
 
@@ -1974,7 +2000,7 @@ func TestNpmFailOnMissingDeps(t *testing.T) {
 				// STEP 3: Second install with flag should fail because tarballs are missing
 				args := []string{"npm", "install", "--cache=" + cacheDir,
 					"--build-name=" + tt.buildName, "--build-number=" + tt.buildNumber,
-					"--fail-on-missing-deps=" + tt.flagValue}
+					"--fail-on-uncollected-deps=" + tt.flagValue}
 
 				err := runJfrogCliWithoutAssertion(args...)
 
@@ -1999,7 +2025,7 @@ func TestNpmFailOnMissingDeps(t *testing.T) {
 			case "negative":
 				// ===== NEGATIVE TESTS: Invalid flag values should be rejected =====
 				args := []string{"npm", "install", "--build-name=" + tt.buildName, "--build-number=" + tt.buildNumber,
-					"--fail-on-missing-deps=" + tt.flagValue}
+					"--fail-on-uncollected-deps=" + tt.flagValue}
 
 				err := runJfrogCliWithoutAssertion(args...)
 				// Negative test case: should fail with validation error
@@ -2017,7 +2043,7 @@ func TestNpmFailOnMissingDeps(t *testing.T) {
 				}
 				args := []string{"npm", "install", "--build-name=" + tt.buildName, "--build-number=" + tt.buildNumber}
 				if tt.flagValue != "" {
-					args = append(args, "--fail-on-missing-deps="+tt.flagValue)
+					args = append(args, "--fail-on-uncollected-deps="+tt.flagValue)
 				}
 
 				err := runJfrogCliWithoutAssertion(args...)
@@ -2086,9 +2112,9 @@ func wipeNpmCacacheTarballs(t *testing.T, cacheDir string) {
 	require.NoError(t, os.MkdirAll(cacachePath, 0755))
 }
 
-// TestNpmFailOnMissingDepsNegative tests invalid flag values and error handling.
+// TestNpmFailOnUncollectedDepsNegative tests invalid flag values and error handling.
 // These tests verify that the flag validation rejects malformed input with clear error messages.
-func TestNpmFailOnMissingDepsNegative(t *testing.T) {
+func TestNpmFailOnUncollectedDepsNegative(t *testing.T) {
 	initNpmTest(t)
 	defer cleanNpmTest(t)
 
@@ -2162,7 +2188,7 @@ func TestNpmFailOnMissingDepsNegative(t *testing.T) {
 			args := []string{"npm", "install",
 				"--build-name=" + tt.buildName,
 				"--build-number=" + tt.buildNumber,
-				"--fail-on-missing-deps=" + tt.flagValue}
+				"--fail-on-uncollected-deps=" + tt.flagValue}
 
 			err := runJfrogCliWithoutAssertion(args...)
 			// Should fail with validation error
@@ -2177,9 +2203,9 @@ func TestNpmFailOnMissingDepsNegative(t *testing.T) {
 	}
 }
 
-// TestNpmFailOnMissingDepsErrorFormat tests error message formatting when dependencies are missing.
+// TestNpmFailOnUncollectedDepsErrorFormat tests error message formatting when dependencies are missing.
 // Uses isolated cache corruption to actually recreate missing dependency scenarios.
-func TestNpmFailOnMissingDepsErrorFormat(t *testing.T) {
+func TestNpmFailOnUncollectedDepsErrorFormat(t *testing.T) {
 	initNpmTest(t)
 	defer cleanNpmTest(t)
 
@@ -2194,12 +2220,16 @@ func TestNpmFailOnMissingDepsErrorFormat(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name        string
-		flagValue   string
-		buildName   string
-		buildNumber string
-		expectHints []string // Expected hints in error message
-		description string
+		name string
+		// useOptionalDepsFixture switches to a fixture with a real optionalDependency
+		// (npmproject, used by default, declares no optional deps at all, so there'd be
+		// nothing for cache corruption to make "missing").
+		useOptionalDepsFixture bool
+		flagValue              string
+		buildName              string
+		buildNumber            string
+		expectHints            []string // Expected hints in error message
+		description            string
 	}{
 		{
 			name:        "error_regular_deps",
@@ -2209,11 +2239,25 @@ func TestNpmFailOnMissingDepsErrorFormat(t *testing.T) {
 			expectHints: []string{"npm cache"},
 			description: "Error should mention npm cache for regular deps",
 		},
+		{
+			name:                   "error_optional_deps",
+			useOptionalDepsFixture: true,
+			flagValue:              "optional",
+			buildName:              "npm-err-optional",
+			buildNumber:            "1",
+			expectHints:            []string{"npm cache"},
+			description:            "Error should mention npm cache for optional deps",
+		},
 	}
 
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
-			projectPath := initNpmProjectTest(t)
+			var projectPath string
+			if tt.useOptionalDepsFixture {
+				projectPath = initNpmFailOnUncollectedDepsProjectTest(t)
+			} else {
+				projectPath = initNpmProjectTest(t)
+			}
 			chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
 			defer chdirCallBack()
 
@@ -2234,7 +2278,7 @@ func TestNpmFailOnMissingDepsErrorFormat(t *testing.T) {
 			args := []string{"npm", "install", "--cache=" + cacheDir,
 				"--build-name=" + tt.buildName,
 				"--build-number=" + tt.buildNumber,
-				"--fail-on-missing-deps=" + tt.flagValue}
+				"--fail-on-uncollected-deps=" + tt.flagValue}
 
 			err := runJfrogCliWithoutAssertion(args...)
 
@@ -2292,7 +2336,7 @@ func TestNpmMissingDepsLegacyBehavior(t *testing.T) {
 		// Corrupt cache
 		wipeNpmCacacheTarballs(t, cacheDir)
 
-		// WITHOUT --fail-on-missing-deps flag: should succeed (legacy behavior - warns/logs but doesn't fail)
+		// WITHOUT --fail-on-uncollected-deps flag: should succeed (legacy behavior - warns/logs but doesn't fail)
 		args := []string{"npm", "install", "--cache=" + cacheDir,
 			"--build-name=" + buildName,
 			"--build-number=" + buildNumber}
