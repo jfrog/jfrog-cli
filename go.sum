@@ -57,6 +57,8 @@ github.com/agnivade/levenshtein v1.2.1 h1:EHBY3UOn1gwdy/VbFwgo4cxecRznFk7fKWN1KO
 github.com/agnivade/levenshtein v1.2.1/go.mod h1:QVVI16kDrtSuwcpd0p1+xMC6Z/VfhtCyDIjcwga4/DU=
 github.com/alessio/shellescape v1.4.1 h1:V7yhSDDn8LP4lc4jS8pFkt0zCnzVJlG5JXy9BVKJUX0=
 github.com/alessio/shellescape v1.4.1/go.mod h1:PZAiSCk0LJaZkiCSkPv8qIobYglO3FPpyFjDCtHLS30=
+github.com/andreasvikke/jfrog-cli-core/v2 v2.0.100-0.20260910085001-3ce79a0cc908 h1:Six9gtdxoQxNgf81Opr9FEcYV5OPT7LtbjNXWVXS1CE=
+github.com/andreasvikke/jfrog-cli-core/v2 v2.0.100-0.20260910085001-3ce79a0cc908/go.mod h1:SwV+DNLBnWLxBeNeZpJk+xxAbqJ8ywq1va56up+AGu4=
 github.com/andybalholm/brotli v1.2.2 h1:HzTuoo2ErYQqf5qvcJInB8uvqSVxRttzkFexPWtnceM=
 github.com/andybalholm/brotli v1.2.2/go.mod h1:rzTDkvFWvIrjDXZHkuS16NPggd91W3kUSvPlQ1pLaKY=
 github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be h1:9AeTilPcZAjCFIImctFaOjnTIavg87rW78vTPkQqLI8=
@@ -404,8 +406,6 @@ github.com/jfrog/jfrog-cli-application v1.0.2-0.20260820134442-c8629258ff3a h1:7
 github.com/jfrog/jfrog-cli-application v1.0.2-0.20260820134442-c8629258ff3a/go.mod h1:p8yLtbmCxxQucIbLZKnWu0F+EDtj6NLXbRQCEK/nb6o=
 github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260910080031-983313bcbc6e h1:/zfbJFo/FsvZptWuOxauzdtArdZmgbRfnoSUtOhf3Z8=
 github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260910080031-983313bcbc6e/go.mod h1:sBP/2ovBQ5R2WyJ0shm3JkNNh4IpnVg7pS4sSoJlC1M=
-github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260909093400-32a7208a18bd h1:tfC6CtOpqWoU/1V4ymBL0GnhM2kbq5JTGSaAk9eOybg=
-github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260909093400-32a7208a18bd/go.mod h1:SwV+DNLBnWLxBeNeZpJk+xxAbqJ8ywq1va56up+AGu4=
 github.com/jfrog/jfrog-cli-evidence v0.11.1-0.20260824063609-79b735ec565e h1:+QYbewvK+PZKbfPpxYmy0bewhqMFtJPk/tUbCICjf8U=
 github.com/jfrog/jfrog-cli-evidence v0.11.1-0.20260824063609-79b735ec565e/go.mod h1:I83k7IH/cmMh00LyZOp13jctj8/pPKVHSAlu7GMJgwI=
 github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260618062042-6053ab368cab h1:Zn/qB8LYhSu82YDtbqXwErN1RPHTHe/a3gQY6Ti/OBE=

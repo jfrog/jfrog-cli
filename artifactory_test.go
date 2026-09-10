@@ -1635,6 +1635,32 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	assert.NoError(t, err)
 	readerCloseAndAssert(t, reader)
 
+	// Remove the certificates from CLI security dir before testing custom cert dir location
+	defer clientTestUtils.RemoveAndAssert(t, filepath.Join(certsPath, certificate.KeyFile))
+	defer clientTestUtils.RemoveAndAssert(t, filepath.Join(certsPath, certificate.CertFile))
+
+	// Create a new temp dir for certificates and set the CertsDir env variable
+	tempCertsDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	setEnvCallBack = clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.CertsDir, tempCertsDirPath)
+	defer setEnvCallBack()
+
+	// Check the certificate dir have moved to the new temp dir location
+	certsPath, err = coreutils.GetJfrogCertsDir()
+	assert.NoError(t, err)
+	assert.Equal(t, tempCertsDirPath, certsPath)
+
+	// Copy the server certificates to the custom CLI certificate dir and run again. We expect the command to succeed.
+	err = biutils.CopyFile(certsPath, certificate.KeyFile)
+	assert.NoError(t, err)
+	err = biutils.CopyFile(certsPath, certificate.CertFile)
+	assert.NoError(t, err)
+	searchCmd = generic.NewSearchCommand()
+	searchCmd.SetServerDetails(serverDetails).SetSpec(fileSpec)
+	reader, err = searchCmd.Search()
+	assert.NoError(t, err)
+	readerCloseAndAssert(t, reader)
+
 	serverDetails.ArtifactoryUrl = artAuth.GetUrl()
 	cleanArtifactoryTest()
 }
