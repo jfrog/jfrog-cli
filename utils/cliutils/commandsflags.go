@@ -64,6 +64,7 @@ const (
 	Yarn                   = "yarn"
 	NugetConfig            = "nuget-config"
 	Nuget                  = "nuget"
+	Choco                  = "choco"
 	Dotnet                 = "dotnet"
 	DotnetConfig           = "dotnet-config"
 	Go                     = "go"
@@ -2258,6 +2259,9 @@ var commandFlags = map[string][]string{
 	},
 	Nuget: {
 		BuildName, BuildNumber, module, Project, allowInsecureConnections, serverId, repoResolve, repo, nugetV2,
+	},
+	Choco: {
+		BuildName, BuildNumber, module, Project, serverId, repoResolve, repo,
 	},
 	DotnetConfig: {
 		global, serverIdResolve, repoResolve, nugetV2,
