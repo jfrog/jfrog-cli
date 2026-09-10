@@ -21,9 +21,6 @@ jobs:
           - image: ubuntu:24.04
             name: ubuntu-noble
             dist: noble
-          - image: debian:11
-            name: debian-bullseye
-            dist: bullseye
           - image: debian:12
             name: debian-bookworm
             dist: bookworm
