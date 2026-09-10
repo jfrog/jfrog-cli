@@ -19,10 +19,10 @@ require (
 	github.com/buger/jsonparser v1.3.0
 	github.com/gocarina/gocsv v0.0.0-20260607070740-0735908c6461
 	github.com/jfrog/archiver/v3 v3.6.5
-	github.com/jfrog/build-info-go v1.13.1-0.20260910024709-07236790e531
+	github.com/jfrog/build-info-go v1.13.1-0.20260910033343-40d564cbd202
 	github.com/jfrog/gofrog v1.7.7
 	github.com/jfrog/jfrog-cli-application v1.0.2-0.20260820134442-c8629258ff3a
-	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260910032749-78e4624125f6
+	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260910033353-fa3b9e6c6596
 	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260910032555-f560dade8e04
 	github.com/jfrog/jfrog-cli-evidence v0.11.1-0.20260824063609-79b735ec565e
 	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20260618062042-6053ab368cab
@@ -203,7 +203,6 @@ require (
 	github.com/transparency-dev/formats v0.1.1 // indirect
 	github.com/transparency-dev/merkle v0.0.2 // indirect
 	github.com/ulikunitz/xz v0.5.16 // indirect
-	github.com/urfave/cli/v2 v2.27.7 // indirect
 	github.com/vbauerster/cupwriter v0.0.4 // indirect
 	github.com/vbauerster/mpb/v8 v8.14.0 // indirect
 	github.com/virtuald/go-ordered-json v0.0.0-20170621173500-b18e6e673d74 // indirect
@@ -213,7 +212,6 @@ require (
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
-	github.com/xrash/smetrics v0.0.0-20250705151800-55b8f293f342 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
