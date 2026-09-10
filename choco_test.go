@@ -441,7 +441,6 @@ func TestChocoCommandPropertyRedactsApiKey(t *testing.T) {
 	buildNumber := "1"
 	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 
-	const secret = "super-secret-api-key"
 	sourceURL := serverDetails.ArtifactoryUrl + "api/nuget/" + tests.NugetLocalRepo
 	apiKey := chocoPushApiKey(t)
 	nupkgPath := packChocoPackage(t, id, version)
@@ -627,6 +626,9 @@ func TestChocoInstallRecordsVersionFromInstalledPackage(t *testing.T) {
 
 	nupkgPath := packChocoPackage(t, id, version)
 	require.NoError(t, pushChocoPackage(t, nupkgPath, tests.NugetLocalRepo))
+	// Confirm the fixture really is published at 3.4.5 before asserting what the install recorded,
+	// so a wrong recorded version cannot be blamed on a bad fixture.
+	assertChocoArtifactExists(t, chocoArtifactPath(tests.NugetLocalRepo, id, version))
 
 	sourceName := chocoSourceName(t, tests.NugetLocalRepo)
 	cleanupChocoSource(t, sourceName)
@@ -700,7 +702,11 @@ func TestChocoPassThroughCollectsNoBuildInfo(t *testing.T) {
 		{"feature-list", []string{"choco", "feature", "list"}},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
-			args := append(testCase.args, "--build-name="+buildName, "--build-number="+buildNumber)
+			// Built as a fresh slice rather than appended onto testCase.args, which would be free
+			// to reuse that slice's backing array and leak the build flags into the next case.
+			args := make([]string, 0, len(testCase.args)+2)
+			args = append(args, testCase.args...)
+			args = append(args, "--build-name="+buildName, "--build-number="+buildNumber)
 			// The native exit code is passed through; a query returning non-zero is not this
 			// test's concern. What matters is that nothing was collected.
 			_ = runChoco(t, args...)
