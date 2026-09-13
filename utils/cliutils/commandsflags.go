@@ -384,6 +384,7 @@ const (
 	snapshotsUpdatePolicy = "snapshots-update-policy"
 
 	// Unique gradle-config flags
+	includeSharedBuild  = "include-shared-build"
 	usesPlugin          = "uses-plugin"
 	UseWrapper          = "use-wrapper"
 	deployMavenDesc     = "deploy-maven-desc"
@@ -1431,6 +1432,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  repoDeploy,
 		Usage: "[Optional] Repository for artifacts deployment.` `",
 	},
+	includeSharedBuild: cli.BoolFlag{
+		Name:  includeSharedBuild,
+		Usage: "[Default: false] Set to true to collect buildSrc and included-build modules in build-info.` `",
+	},
 	usesPlugin: cli.BoolFlag{
 		Name:  usesPlugin,
 		Usage: "[Default: false] Set to true if the Gradle Artifactory Plugin is already applied in the build script.` `",
@@ -2205,7 +2210,7 @@ var commandFlags = map[string][]string{
 		BuildName, BuildNumber, deploymentThreads, InsecureTls, Project, serverIdMvn, detailedSummary, xrayScan, XrFormat,
 	},
 	Gradle: {
-		BuildName, BuildNumber, deploymentThreads, Project, serverId, detailedSummary, xrayScan, XrFormat,
+		BuildName, BuildNumber, deploymentThreads, Project, serverId, detailedSummary, xrayScan, XrFormat, includeSharedBuild,
 	},
 	Docker: {
 		BuildName, BuildNumber, module, Project,

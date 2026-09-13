@@ -31,6 +31,7 @@ Common patterns:
   $ jf gradle clean build
   $ jf gradle artifactoryPublish --build-name=my-build --build-number=1
   $ jf gradle build -b path/to/build.gradle
+  $ jf gradle clean artifactoryPublish --include-shared-build
 
 Gotchas:
 - 'jf gradle-config' must be run first; the command fails with a clear error if missing.
