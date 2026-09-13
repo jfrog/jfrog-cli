@@ -249,5 +249,5 @@ require (
 
 // replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260604085947-7c110b77b4b4
 
-replace github.com/jfrog/build-info-go => ../build-info-go
-replace github.com/jfrog/jfrog-cli-artifactory => ../jfrog-cli-artifactory
+// replace github.com/jfrog/build-info-go => ../build-info-go
+// replace github.com/jfrog/jfrog-cli-artifactory => ../jfrog-cli-artifactory
