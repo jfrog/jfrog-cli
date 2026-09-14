@@ -495,6 +495,43 @@ func initNpmFailOnUncollectedDepsProjectTest(t *testing.T) (npmProjectPath strin
 	return
 }
 
+// initNpmFailOnUncollectedBundleProjectTest copies the packed-bundle fixture. The child
+// (bundled-pkg) declares xml as bundleDependencies; the app depends on a tarball produced
+// at runtime by packBundledPkgWithXml — testdata does not check in a .tgz.
+func initNpmFailOnUncollectedBundleProjectTest(t *testing.T) (appPath, bundledPkgPath string) {
+	src := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "npm", "npmfailonuncollectedbundle")
+	appPath = filepath.Join(tests.Out, "npmfailonuncollectedbundle")
+	require.NoError(t, biutils.CopyDir(src, appPath, true, nil))
+	var err error
+	appPath, err = filepath.Abs(appPath)
+	require.NoError(t, err)
+	bundledPkgPath = filepath.Join(appPath, "bundled-pkg")
+	err = createConfigFileForTest([]string{appPath, bundledPkgPath}, tests.NpmRemoteRepo, tests.NpmRepo, t, project.Npm, false)
+	require.NoError(t, err)
+	return
+}
+
+// packBundledPkgWithXml installs xml into bundled-pkg from Artifactory, packs it so xml is
+// nested with _inBundle, and copies the tarball next to the app package.json.
+func packBundledPkgWithXml(t *testing.T, bundledPkgPath, appPath string) {
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	chdir := clientTestUtils.ChangeDirWithCallback(t, wd, bundledPkgPath)
+	defer chdir()
+
+	require.NoError(t, runJfrogCliWithoutAssertion("npm", "install"), "install xml into the package that will be packed")
+
+	cmd := exec.Command("npm", "pack")
+	cmd.Dir = bundledPkgPath
+	out, err := cmd.CombinedOutput()
+	require.NoError(t, err, "npm pack failed: %s", out)
+
+	matches, err := filepath.Glob(filepath.Join(bundledPkgPath, "bundled-pkg-*.tgz"))
+	require.NoError(t, err)
+	require.Len(t, matches, 1, "expected one packed tarball, got %v", matches)
+	require.NoError(t, biutils.CopyFile(appPath, matches[0]))
+}
+
 func initNpmWorkspacesProjectTest(t *testing.T) (npmProjectPath string) {
 	npmProjectPath = filepath.Dir(createNpmProject(t, "npmworkspaces"))
 	err := createConfigFileForTest([]string{npmProjectPath}, tests.NpmRemoteRepo, tests.NpmRepo, t, project.Npm, false)
@@ -1721,15 +1758,10 @@ func TestNpmPublishWithLocalGitVcsProps(t *testing.T) {
 // Real detection coverage:
 //   - "regular" and "optional": TestNpmFailOnUncollectedDepsErrorFormat, using cache corruption
 //     (populate cache -> wipe tarballs -> reinstall) against testdata/npm/npmfailonuncollecteddeps.
-//   - "peer" and "bundle": not reproduced end-to-end here. An unmet peerDependency tends to abort
-//     'npm install' itself via an ERESOLVE conflict before build-info collection ever runs, and
-//     bundleDependencies only affects 'npm pack'/'publish' of this package, not npm ls's reporting
-//     of a normally-installed one - reproducing a genuine case needs either a contrived peer version
-//     conflict or a real third-party package that bundles a sub-dependency. See build-info-go's
-//     TestHandleMissingDeps for handler-level coverage (given an already-known-missing dependency,
-//     does the flag correctly decide to fail or warn) and TestBundledDependenciesList /
-//     TestConflictsDependenciesList for detection-level coverage of InBundle/PeerMissing themselves
-//     (without the flag, and the latter only runs on npm v6).
+//   - "bundle": TestNpmFailOnUncollectedDepsBundle, using a packed local tarball that ships xml
+//     as bundleDependencies so npm ls reports _inBundle without integrity.
+//   - "peer": not reproduced end-to-end here. PeerMissing is the npm v6 ls field; CLI npm CI is
+//     Node 16 / npm 8. See build-info-go TestHandleMissingDeps and TestConflictsDependenciesList.
 func TestNpmFailOnUncollectedDeps(t *testing.T) {
 	initNpmTest(t)
 	defer cleanNpmTest(t)
@@ -2329,6 +2361,49 @@ func TestNpmFailOnUncollectedDepsErrorFormat(t *testing.T) {
 			clientTestUtils.ChangeDirAndAssert(t, wd)
 		})
 	}
+}
+
+// TestNpmFailOnUncollectedDepsBundle reproduces a real bundleDependencies miss: a packed
+// local tarball that ships xml inside it. npm ls reports that nested xml as _inBundle with
+// no integrity, which is the bundle bucket — not a cache wipe (that path is regular/optional).
+func TestNpmFailOnUncollectedDepsBundle(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	_, _, err = buildutils.GetNpmVersionAndExecPath(log.Logger)
+	if err != nil {
+		assert.NoError(t, err, "npm must be available for this test")
+		return
+	}
+
+	buildName := "npm-err-bundle"
+	buildNumber := "1"
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	appPath, bundledPkgPath := initNpmFailOnUncollectedBundleProjectTest(t)
+	packBundledPkgWithXml(t, bundledPkgPath, appPath)
+
+	chdir := clientTestUtils.ChangeDirWithCallback(t, wd, appPath)
+	defer chdir()
+
+	cacheDir, restoreCache := useIsolatedNpmCache(t)
+	defer restoreCache()
+
+	err = runJfrogCliWithoutAssertion("npm", "install", "--cache="+cacheDir,
+		"--build-name="+buildName,
+		"--build-number="+buildNumber,
+		"--fail-on-uncollected-deps=bundle")
+	require.Error(t, err, "packed bundleDependencies with empty integrity should fail collection when the flag targets bundle")
+	errMsg := err.Error()
+	assert.Contains(t, errMsg, "Build-info collection stopped")
+	assert.Contains(t, errMsg, "bundleDependencies")
+	assert.Contains(t, errMsg, "npm ls")
+	assert.Contains(t, errMsg, "integrity")
 }
 
 // TestNpmMissingDepsLegacyBehavior tests backward compatibility: without the flag, missing deps generate debug/warn logs but don't fail.
