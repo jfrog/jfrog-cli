@@ -392,6 +392,8 @@ github.com/jfrog/archiver/v3 v3.6.4 h1:qHAWCLKwo3+ocHNNoWzGZ8ESl8QQk/lR3W09Pt+RO
 github.com/jfrog/archiver/v3 v3.6.4/go.mod h1:5V9l+Fte30Y4qe9dUOAd3yNTf8lmtVNuhKNrvI8PMhg=
 github.com/jfrog/build-info-go v1.13.1-0.20260909113843-5ec87e88dc48 h1:G6kYBtCjUhLPQ1TmkGFVPQmDcwlJoDWzW0uyoxWkj50=
 github.com/jfrog/build-info-go v1.13.1-0.20260909113843-5ec87e88dc48/go.mod h1:CYRUCvLKfyARjoJXLWAxce1qNUxTEtbRKAARkV42vpE=
+github.com/jfrog/build-info-go v1.13.1-0.20260914185814-ea18305fee02 h1:xCcAODDmU8sMLxNhMm6rr4XY7QLhby1L3Jt+UtnNSUQ=
+github.com/jfrog/build-info-go v1.13.1-0.20260914185814-ea18305fee02/go.mod h1:CYRUCvLKfyARjoJXLWAxce1qNUxTEtbRKAARkV42vpE=
 github.com/jfrog/froggit-go v1.23.1 h1:4wmaHeuptxVINbovMaeITzVhi3+VQoc/FFIjF4axzu0=
 github.com/jfrog/froggit-go v1.23.1/go.mod h1:wRDryqyp3oe+eHgME2mpnEQmO8XBECIPagFwj0nHmdI=
 github.com/jfrog/go-mockhttp v0.3.1 h1:/wac8v4GMZx62viZmv4wazB5GNKs+GxawuS1u3maJH8=
@@ -404,6 +406,8 @@ github.com/jfrog/jfrog-cli-application v1.0.2-0.20260820134442-c8629258ff3a h1:7
 github.com/jfrog/jfrog-cli-application v1.0.2-0.20260820134442-c8629258ff3a/go.mod h1:p8yLtbmCxxQucIbLZKnWu0F+EDtj6NLXbRQCEK/nb6o=
 github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260909114008-47356172f0d3 h1:C+GxqwxjFtdR/RGCGSD5eqd/rcerFKrwf6rziuHx+eA=
 github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260909114008-47356172f0d3/go.mod h1:d1u/RKvkGf6XPH6IbYIn4ghBFYFw+H5OlJGOOE11TM4=
+github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260914190020-3d489414b4d3 h1:JgHYuOSxoh19FfdmiC2PpNSTlvvZKkmWOHkAxKiNK7E=
+github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260914190020-3d489414b4d3/go.mod h1:Knv8jOntF4ZHNVAHmNTPzr4+hLQ7MyG9u53weTdT574=
 github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260831061529-c6dd293bccca h1:/Ox4k56Pbiow4qbkNrBOmgcnAHwIBjZOsJmS7dURJng=
 github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260831061529-c6dd293bccca/go.mod h1:vuARjRZopsCqVcZmWzCgw5Pr9QD1FWvwFxijV4bvJJI=
 github.com/jfrog/jfrog-cli-evidence v0.11.1-0.20260824063609-79b735ec565e h1:+QYbewvK+PZKbfPpxYmy0bewhqMFtJPk/tUbCICjf8U=
@@ -659,6 +663,8 @@ github.com/ulikunitz/xz v0.5.16 h1:ld6NyySjx5lowVKwJvMRLnW5nxKX/xnpSiFYZ/Lxur0=
 github.com/ulikunitz/xz v0.5.16/go.mod h1:H9Rt/W6/Qj27PGauhQc6nfCDy7vHpzsOThBSaYDoEhw=
 github.com/urfave/cli v1.22.17 h1:SYzXoiPfQjHBbkYxbew5prZHS1TOLT3ierW8SYLqtVQ=
 github.com/urfave/cli v1.22.17/go.mod h1:b0ht0aqgH/6pBYzzxURyrM4xXNgsoT/n2ZzwQiEhNVo=
+github.com/urfave/cli/v2 v2.27.7 h1:bH59vdhbjLv3LAvIu6gd0usJHgoTTPhCFib8qqOwXYU=
+github.com/urfave/cli/v2 v2.27.7/go.mod h1:CyNAG/xg+iAOg0N4MPGZqVmv2rCoP267496AOXUZjA4=
 github.com/vbauerster/cupwriter v0.0.4 h1:9sBPe0uXWLZuWQU5lqVbhyFlxX6c09asST/YfatFAys=
 github.com/vbauerster/cupwriter v0.0.4/go.mod h1:IFyzS6Xis5dnBH/rdAhrnuzg3c+KkUqEN6yE8lhJlDw=
 github.com/vbauerster/mpb/v8 v8.14.0 h1:55SR80dptMfASxIG/oCEkBXgBhxeSu4GrVsjl16oKmA=
@@ -680,6 +686,8 @@ github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 h1:nIPpBwaJSVYIxUFsDv3M8ofm
 github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8/go.mod h1:HUYIGzjTL3rfEspMxjDjgmT5uz5wzYJKVo23qUhYTos=
 github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e h1:JVG44RsyaB9T2KIHavMF/ppJZNG9ZpyihvCd0w101no=
 github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e/go.mod h1:RbqR21r5mrJuqunuUZ/Dhy/avygyECGrLceyNeo4LiM=
+github.com/xrash/smetrics v0.0.0-20250705151800-55b8f293f342 h1:FnBeRrxr7OU4VvAzt5X7s6266i6cSVkkFPS0TuXWbIg=
+github.com/xrash/smetrics v0.0.0-20250705151800-55b8f293f342/go.mod h1:Ohn+xnUBiLI6FVj/9LpzZWtj1/D6lUovWYBkxHVV3aM=
 github.com/xyproto/randomstring v1.0.5 h1:YtlWPoRdgMu3NZtP45drfy1GKoojuR7hmRcnhZqKjWU=
 github.com/xyproto/randomstring v1.0.5/go.mod h1:rgmS5DeNXLivK7YprL0pY+lTuhNQW3iGxZ18UQApw/E=
 github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 h1:ilQV1hzziu+LLM3zUTJ0trRztfwgjqKnBWNtSRkbmwM=
