@@ -910,6 +910,13 @@ func GradleCmd(c *cli.Context) (err error) {
 		if err != nil {
 			return err
 		}
+		filteredGradleArgs, includeSharedBuild, err := coreutils.ExtractIncludeSharedBuildFromArgs(filteredGradleArgs)
+		if err != nil {
+			return err
+		}
+		if includeSharedBuild {
+			return errorutils.CheckErrorf("--include-shared-build is not supported yet in Gradle FlexPack (native) mode; it is currently only supported with Gradle Classic, which requires a gradle-config file")
+		}
 
 		// Create Gradle command with FlexPack (no config file needed)
 		gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(filteredGradleArgs).SetConfigPath("").SetServerDetails(serverDetails)
