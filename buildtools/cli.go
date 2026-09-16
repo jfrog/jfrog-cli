@@ -910,7 +910,7 @@ func GradleCmd(c *cli.Context) (err error) {
 		if err != nil {
 			return err
 		}
-		filteredGradleArgs, includeSharedBuild, err := coreutils.ExtractIncludeSharedBuildFromArgs(filteredGradleArgs)
+		filteredGradleArgs, includeSharedBuild, err := coreutils.ExtractBoolFlagFromArgs(filteredGradleArgs, "include-shared-build")
 		if err != nil {
 			return err
 		}
@@ -954,7 +954,7 @@ func GradleCmd(c *cli.Context) (err error) {
 	if xrayScan {
 		commandsUtils.ConditionalUploadScanFunc = scan.ConditionalUploadDefaultScanFunc
 	}
-	filteredGradleArgs, includeSharedBuild, err := coreutils.ExtractIncludeSharedBuildFromArgs(filteredGradleArgs)
+	filteredGradleArgs, includeSharedBuild, err := coreutils.ExtractBoolFlagFromArgs(filteredGradleArgs, "include-shared-build")
 	if err != nil {
 		return err
 	}
