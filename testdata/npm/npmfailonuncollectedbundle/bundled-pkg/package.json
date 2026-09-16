@@ -1,0 +1,11 @@
+{
+  "name": "bundled-pkg",
+  "version": "1.0.0",
+  "license": "ISC",
+  "dependencies": {
+    "xml": "1.0.1"
+  },
+  "bundleDependencies": [
+    "xml"
+  ]
+}

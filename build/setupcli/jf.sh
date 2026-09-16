@@ -63,10 +63,58 @@ else
     esac
 fi
 
-URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-${CLI_OS}-${ARCH}/${FILE_NAME}"
+BASE_URL="https://releases.jfrog.io/artifactory/jfrog-cli"
+URL="${BASE_URL}/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-${CLI_OS}-${ARCH}/${FILE_NAME}"
 echo "Downloading from: $URL"
-curl -XGET "$URL" -L -k -g > $FILE_NAME
-chmod +x $FILE_NAME
+curl -XGET "$URL" -L -g -o "$FILE_NAME"
+
+# Verify the download against the SHA256 checksum sidecar published for this
+# binary (JGC-542) before it is ever chmod +x'd or moved onto PATH. The
+# checksum lives at the exact same path as the binary, with .sha256 appended
+# (a per-binary sidecar, not a shared manifest - see JGC-542's corrected design).
+CHECKSUM_URL="${URL}.sha256"
+CHECKSUM_TMP="${FILE_NAME}.sha256.tmp"
+
+echo "Verifying checksum against: $CHECKSUM_URL"
+if ! curl -sS --fail -L -g "$CHECKSUM_URL" -o "$CHECKSUM_TMP"; then
+    echo "ERROR: could not download the checksum from $CHECKSUM_URL" >&2
+    echo "  (downloaded binary: $URL)" >&2
+    echo "Refusing to install an unverified $FILE_NAME binary." >&2
+    rm -f "$FILE_NAME" "$CHECKSUM_TMP"
+    exit 1
+fi
+
+EXPECTED_SHA256=$(awk 'NR==1 { print $1 }' "$CHECKSUM_TMP")
+rm -f "$CHECKSUM_TMP"
+
+if [ -z "$EXPECTED_SHA256" ]; then
+    echo "ERROR: empty or malformed checksum at $CHECKSUM_URL" >&2
+    echo "  (downloaded binary: $URL)" >&2
+    echo "Refusing to install an unverified $FILE_NAME binary." >&2
+    rm -f "$FILE_NAME"
+    exit 1
+fi
+
+if command -v sha256sum >/dev/null 2>&1; then
+    ACTUAL_SHA256=$(sha256sum "$FILE_NAME" | awk '{print $1}')
+elif command -v shasum >/dev/null 2>&1; then
+    ACTUAL_SHA256=$(shasum -a 256 "$FILE_NAME" | awk '{print $1}')
+else
+    echo "ERROR: neither sha256sum nor shasum is available to verify the download." >&2
+    rm -f "$FILE_NAME"
+    exit 1
+fi
+
+if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
+    echo "ERROR: checksum mismatch for $FILE_NAME downloaded from $URL" >&2
+    echo "  expected (from $CHECKSUM_URL): $EXPECTED_SHA256" >&2
+    echo "  actual:                        $ACTUAL_SHA256" >&2
+    rm -f "$FILE_NAME"
+    exit 1
+fi
+
+echo "Checksum verified ($ACTUAL_SHA256)."
+chmod +x "$FILE_NAME"
 
 # Move executable to a destination in path.
 # Order is by destination priority.

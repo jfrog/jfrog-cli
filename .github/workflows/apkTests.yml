@@ -1,49 +1,7 @@
 name: Alpine APK Tests
 on:
   workflow_call:
-    inputs:
-      jfrog_url:
-        description: "External JFrog Platform URL. Leave empty for local Artifactory."
-        type: string
-        required: false
-        default: ""
-      jfrog_admin_token:
-        description: "Admin token for external JFrog Platform."
-        type: string
-        required: false
-        default: ""
-      jfrog_user:
-        description: "Username for external JFrog Platform."
-        type: string
-        required: false
-        default: ""
-      jfrog_password:
-        description: "Password for external JFrog Platform."
-        type: string
-        required: false
-        default: ""
   workflow_dispatch:
-    inputs:
-      jfrog_url:
-        description: "External JFrog Platform URL. Leave empty for local Artifactory."
-        type: string
-        required: false
-        default: ""
-      jfrog_admin_token:
-        description: "Admin token for external JFrog Platform."
-        type: string
-        required: false
-        default: ""
-      jfrog_user:
-        description: "Username for external JFrog Platform."
-        type: string
-        required: false
-        default: ""
-      jfrog_password:
-        description: "Password for external JFrog Platform."
-        type: string
-        required: false
-        default: ""
 
 jobs:
   Apk-Tests:
@@ -80,7 +38,6 @@ jobs:
         uses: jfrog/.github/actions/install-go-with-cache@main
 
       - name: Install local Artifactory
-        if: inputs.jfrog_url == ''
         uses: jfrog/.github/actions/install-local-artifactory@main
         with:
           RTLIC: ${{ secrets.RTLIC }}
@@ -100,23 +57,11 @@ jobs:
       - name: Run Alpine APK tests (alpine:${{ matrix.alpine-version }})
         env:
           ALPINE_VER: ${{ matrix.alpine-version }}
-          JFROG_URL: ${{ inputs.jfrog_url }}
-          JFROG_ADMIN_TOKEN: ${{ inputs.jfrog_admin_token }}
-          JFROG_USER: ${{ inputs.jfrog_user }}
-          JFROG_PASSWORD: ${{ inputs.jfrog_password }}
           MAX_ATTEMPTS: "3"
           RETRY_DELAY: "10"
         run: |
           set +e
           set -uo pipefail
-
-          # Build credential flags: external JPD (url + token) or empty for local Artifactory.
-          creds=""
-          if [ -n "$JFROG_URL" ]; then
-            creds="-jfrog.url=$JFROG_URL -jfrog.adminToken=$JFROG_ADMIN_TOKEN"
-          fi
-          [ -n "$JFROG_USER" ]     && creds="$creds -jfrog.user=$JFROG_USER"
-          [ -n "$JFROG_PASSWORD" ] && creds="$creds -jfrog.password=$JFROG_PASSWORD"
 
           run_regex="TestApk|TestSetupApk"
           fails=""
@@ -130,8 +75,7 @@ jobs:
               ./apk.test \
                 -test.v -test.timeout 0 \
                 -test.run "$run_regex" \
-                -test.alpine \
-                $creds 2>&1 | tee /tmp/apk-out.log
+                -test.alpine 2>&1 | tee /tmp/apk-out.log
             docker_exit=${PIPESTATUS[0]}
 
             # Collect the top-level names of tests that failed this attempt.

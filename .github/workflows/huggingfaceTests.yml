@@ -2,17 +2,6 @@ name: HuggingFace Tests
 on:
   workflow_call:
   workflow_dispatch:
-    inputs:
-      jfrog_url:
-        description: "External JFrog Platform URL. Leave empty for local Artifactory."
-        type: string
-        required: false
-        default: ""
-      jfrog_admin_token:
-        description: "Admin token for external JFrog Platform."
-        type: string
-        required: false
-        default: ""
 
 permissions:
   id-token: write
@@ -90,8 +79,6 @@ jobs:
         uses: jfrog/.github/actions/install-local-artifactory@main
         with:
           RTLIC: ${{ secrets.RTLIC }}
-          JFROG_URL: ${{ inputs.jfrog_url }}
-          JFROG_ADMIN_TOKEN: ${{ inputs.jfrog_admin_token }}
           RT_CONNECTION_TIMEOUT_SECONDS: ${{ env.RT_CONNECTION_TIMEOUT_SECONDS || '1200' }}
 
       - name: Get ID Token and Exchange Token
