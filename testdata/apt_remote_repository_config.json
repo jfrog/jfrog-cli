@@ -3,6 +3,7 @@
   "rclass": "remote",
   "packageType": "debian",
   "url": "http://archive.ubuntu.com/ubuntu",
+  "debianDefaultArchitectures": "amd64",
   "repoLayoutRef": "simple-default",
   "xrayIndex": false
 }
