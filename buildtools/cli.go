@@ -911,6 +911,13 @@ func GradleCmd(c *cli.Context) (err error) {
 		if err != nil {
 			return err
 		}
+		filteredGradleArgs, includeSharedBuild, err := coreutils.ExtractBoolFlagFromArgs(filteredGradleArgs, "include-shared-build")
+		if err != nil {
+			return err
+		}
+		if includeSharedBuild {
+			return errorutils.CheckErrorf("--include-shared-build is not supported yet in Gradle FlexPack (native) mode; it is currently only supported with Gradle Classic, which requires a gradle-config file")
+		}
 
 		// Create Gradle command with FlexPack (no config file needed)
 		gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(filteredGradleArgs).SetConfigPath("").SetServerDetails(serverDetails)
@@ -948,6 +955,10 @@ func GradleCmd(c *cli.Context) (err error) {
 	if xrayScan {
 		commandsUtils.ConditionalUploadScanFunc = scan.ConditionalUploadDefaultScanFunc
 	}
+	filteredGradleArgs, includeSharedBuild, err := coreutils.ExtractBoolFlagFromArgs(filteredGradleArgs, "include-shared-build")
+	if err != nil {
+		return err
+	}
 	filteredGradleArgs, format, err := coreutils.ExtractXrayOutputFormatFromArgs(filteredGradleArgs)
 	if err != nil {
 		return err
@@ -965,7 +976,7 @@ func GradleCmd(c *cli.Context) (err error) {
 		}
 	}
 	printDeploymentView := log.IsStdErrTerminal()
-	gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(filteredGradleArgs).SetConfigPath(configFilePath).SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetXrayScan(xrayScan).SetScanOutputFormat(scanOutputFormat)
+	gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(filteredGradleArgs).SetConfigPath(configFilePath).SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetXrayScan(xrayScan).SetScanOutputFormat(scanOutputFormat).SetIncludeSharedBuild(includeSharedBuild)
 	err = commands.ExecWithPackageManager(gradleCmd, project.Gradle.String())
 	result := gradleCmd.Result()
 	defer cliutils.CleanupResult(result, &err)
