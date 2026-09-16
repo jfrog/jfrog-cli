@@ -384,13 +384,15 @@ const (
 	snapshotsUpdatePolicy = "snapshots-update-policy"
 
 	// Unique gradle-config flags
-	includeSharedBuild  = "include-shared-build"
 	usesPlugin          = "uses-plugin"
 	UseWrapper          = "use-wrapper"
 	deployMavenDesc     = "deploy-maven-desc"
 	deployIvyDesc       = "deploy-ivy-desc"
 	ivyDescPattern      = "ivy-desc-pattern"
 	ivyArtifactsPattern = "ivy-artifacts-pattern"
+
+	// Unique gradle (runtime "jf gradle") flags - not wired into gradle-config
+	includeSharedBuild = "include-shared-build"
 
 	// Build tool flags
 	deploymentThreads = "deployment-threads"
