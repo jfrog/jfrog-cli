@@ -38,6 +38,7 @@ Gotchas:
 - --build-name and --build-number are required together for build-info.
 - Gradle daemon caches can hide config changes; use --no-daemon when debugging.
 - Set JFROG_CLI_RELEASES_REPO to fetch the Gradle extractor through a private repo (air-gapped builds).
+- --include-shared-build requires a gradle-config file (Gradle Classic); it errors out in Gradle FlexPack (native) mode, which has no gradle-config file.
 
 Related: jf gradle-config, jf rt build-publish`
 }
