@@ -29,14 +29,6 @@
                 </td>
             </tr>
             <tr>
-                <td><img src="./images/xray.png" alt="xray"> Xray</td>
-                <td>
-                    <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/xrayTests.yml?query=branch%3Amaster">
-                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/xrayTests.yml/badge.svg?branch=master" alt="">
-                    </a>
-                </td>
-            </tr>
-            <tr>
                 <td><img src="./images/distribution.png" alt="distribution"> Distribution</td>
                 <td>
                     <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/distributionTests.yml?query=branch%3Amaster">
