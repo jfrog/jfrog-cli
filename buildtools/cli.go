@@ -19,6 +19,7 @@ import (
 	conancommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/conan"
 	nixcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nix"
 	nugetcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nuget"
+	psresourcecommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/psresource"
 	rubycommandexec "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/ruby"
 
 	"github.com/BurntSushi/toml"
@@ -93,6 +94,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pnpmconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/poetry"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/poetryconfig"
+	psresourcedocs "github.com/jfrog/jfrog-cli/docs/buildtools/psresource"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/rubycommand"
 	uvcommand "github.com/jfrog/jfrog-cli/docs/buildtools/uvcommand"
 	yarndocs "github.com/jfrog/jfrog-cli/docs/buildtools/yarn"
@@ -272,6 +274,62 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
 			Action:          DotnetCmd,
+		},
+		{
+			Name:            "Install-PSResource",
+			Flags:           cliutils.GetCommandFlags(cliutils.PSResource),
+			Usage:           corecommon.ResolveDescription(psresourcedocs.GetInstallDescription(), psresourcedocs.GetInstallAIDescription()),
+			HelpName:        corecommon.CreateUsage("Install-PSResource", corecommon.ResolveDescription(psresourcedocs.GetInstallDescription(), psresourcedocs.GetInstallAIDescription()), psresourcedocs.InstallUsage),
+			UsageText:       psresourcedocs.GetInstallArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Category:        buildToolsCategory,
+			Action: func(c *cli.Context) error {
+				return securityCLI.WrapCmdWithCurationPostFailureRun(c, psResourceCmd(psresourcecommand.SubCommandInstall), techutils.Nuget, psresourcecommand.SubCommandInstall)
+			},
+		},
+		{
+			Name:            "Save-PSResource",
+			Flags:           cliutils.GetCommandFlags(cliutils.PSResource),
+			Usage:           corecommon.ResolveDescription(psresourcedocs.GetSaveDescription(), psresourcedocs.GetSaveAIDescription()),
+			HelpName:        corecommon.CreateUsage("Save-PSResource", corecommon.ResolveDescription(psresourcedocs.GetSaveDescription(), psresourcedocs.GetSaveAIDescription()), psresourcedocs.SaveUsage),
+			UsageText:       psresourcedocs.GetSaveArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Category:        buildToolsCategory,
+			Action: func(c *cli.Context) error {
+				return securityCLI.WrapCmdWithCurationPostFailureRun(c, psResourceCmd(psresourcecommand.SubCommandSave), techutils.Nuget, psresourcecommand.SubCommandSave)
+			},
+		},
+		{
+			Name:            "Update-PSResource",
+			Flags:           cliutils.GetCommandFlags(cliutils.PSResource),
+			Usage:           corecommon.ResolveDescription(psresourcedocs.GetUpdateDescription(), psresourcedocs.GetUpdateAIDescription()),
+			HelpName:        corecommon.CreateUsage("Update-PSResource", corecommon.ResolveDescription(psresourcedocs.GetUpdateDescription(), psresourcedocs.GetUpdateAIDescription()), psresourcedocs.UpdateUsage),
+			UsageText:       psresourcedocs.GetUpdateArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Category:        buildToolsCategory,
+			Action: func(c *cli.Context) error {
+				return securityCLI.WrapCmdWithCurationPostFailureRun(c, psResourceCmd(psresourcecommand.SubCommandUpdate), techutils.Nuget, psresourcecommand.SubCommandUpdate)
+			},
+		},
+		{
+			Name:            "Publish-PSResource",
+			Flags:           cliutils.GetCommandFlags(cliutils.PSResource),
+			Usage:           corecommon.ResolveDescription(psresourcedocs.GetPublishDescription(), psresourcedocs.GetPublishAIDescription()),
+			HelpName:        corecommon.CreateUsage("Publish-PSResource", corecommon.ResolveDescription(psresourcedocs.GetPublishDescription(), psresourcedocs.GetPublishAIDescription()), psresourcedocs.PublishUsage),
+			UsageText:       psresourcedocs.GetPublishArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Category:        buildToolsCategory,
+			Action: func(c *cli.Context) error {
+				return securityCLI.WrapCmdWithCurationPostFailureRun(c, psResourceCmd(psresourcecommand.SubCommandPublish), techutils.Nuget, psresourcecommand.SubCommandPublish)
+			},
 		},
 		{
 			Name:         "go-config",
@@ -1156,6 +1214,57 @@ func DotnetCmd(c *cli.Context) error {
 	return commands.ExecWithPackageManager(dotnetCmd, project.Dotnet.String())
 }
 
+// psResourceCmd returns the Action for one of the four PSResourceGet top-level commands
+// (Install-PSResource, Save-PSResource, Update-PSResource, Publish-PSResource). Unlike jf choco,
+// which is a single "jf choco <subcommand>" command that parses its subcommand out of
+// c.Args()[0], PSResourceGet exposes its cmdlets directly as top-level jf commands - each
+// registered cli.Command already knows which native cmdlet it is, so cmdletName is fixed per
+// caller (a closure variable) rather than parsed from the arguments. Everything after that is the
+// cmdlet's own native parameters, forwarded through unchanged.
+func psResourceCmd(cmdletName string) func(c *cli.Context) error {
+	return func(c *cli.Context) error {
+		if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), c.Command.Name); show || err != nil {
+			return err
+		}
+		args := cliutils.ExtractCommand(c)
+		args, serverID, err := coreutils.ExtractServerIdFromCommand(args)
+		if err != nil {
+			return fmt.Errorf("extract server ID: %w", err)
+		}
+		filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
+		if err != nil {
+			return err
+		}
+		filteredArgs, repoResolve, err := coreutils.ExtractStringOptionFromArgs(filteredArgs, "repo-resolve")
+		if err != nil {
+			return fmt.Errorf("extract --repo-resolve: %w", err)
+		}
+		filteredArgs, repoDeploy, err := coreutils.ExtractStringOptionFromArgs(filteredArgs, "repo")
+		if err != nil {
+			return fmt.Errorf("extract --repo: %w", err)
+		}
+		workingDirectory, err := filepath.Abs(".")
+		if err != nil {
+			return err
+		}
+		command := psresourcecommand.NewPSResourceFlexPackCommand().
+			SetSubCommand(cmdletName).
+			SetArgs(filteredArgs).
+			SetRepoResolve(repoResolve).
+			SetRepoDeploy(repoDeploy).
+			SetBuildConfiguration(buildConfiguration).
+			SetWorkingDirectory(workingDirectory)
+		serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, false)
+		if err != nil && serverID != "" {
+			return fmt.Errorf("server-id %q not found: %w", serverID, err)
+		}
+		if err == nil {
+			command.SetServerDetails(serverDetails)
+		}
+		return commands.ExecWithPackageManager(command, "psresource")
+	}
+}
+
 func getNugetAndDotnetConfigFields(configFilePath string) (rtDetails *coreConfig.ServerDetails, targetRepo string, useNugetV2 bool, err error) {
 	vConfig, err := project.ReadConfigFile(configFilePath, project.YAML)
 	if err != nil {
@@ -1952,6 +2061,11 @@ func setupCmd(c *cli.Context) (err error) {
 		packageManager, err = selectPackageManagerInteractively()
 		if err != nil {
 			return
+		}
+	}
+	if packageManager == project.PSResource {
+		if err = setup.ValidatePSResourcePlatform(); err != nil {
+			return err
 		}
 	}
 	setupCmd := setup.NewSetupCommand(packageManager)

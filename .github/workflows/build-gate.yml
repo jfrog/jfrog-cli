@@ -137,6 +137,10 @@ jobs:
     needs: gate
     uses: ./.github/workflows/nugetTests.yml
     secrets: inherit
+  psresource:
+    needs: gate
+    uses: ./.github/workflows/psresourceTests.yml
+    secrets: inherit
   oidc:
     needs: gate
     # OIDC suite: caller must grant id-token so the reusable workflow can request it.
@@ -213,6 +217,7 @@ jobs:
       - alpine
       - npm
       - nuget
+      - psresource
       - oidc
       - plugins
       - pnpm

@@ -66,6 +66,7 @@ var (
 	TestGradle                *bool
 	TestMaven                 *bool
 	TestNuget                 *bool
+	TestPSResource            *bool
 	TestPip                   *bool
 	TestPipenv                *bool
 	TestPoetry                *bool
@@ -141,6 +142,7 @@ func init() {
 	TestGradle = flag.Bool("test.gradle", false, "Test Gradle")
 	TestMaven = flag.Bool("test.maven", false, "Test Maven")
 	TestNuget = flag.Bool("test.nuget", false, "Test Nuget")
+	TestPSResource = flag.Bool("test.psresource", false, "Test PSResourceGet (Install-/Save-/Update-/Publish-PSResource)")
 	TestPip = flag.Bool("test.pip", false, "Test Pip")
 	TestPipenv = flag.Bool("test.pipenv", false, "Test Pipenv")
 	TestPoetry = flag.Bool("test.poetry", false, "Test Poetry")
@@ -491,6 +493,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestNpm:                {&NpmRepo, &NpmScopedRepo, &NpmRemoteRepo},
 		TestPnpm:               {&NpmRepo, &NpmScopedRepo, &NpmRemoteRepo},
 		TestNuget:              {&NugetRemoteRepo, &NugetLocalRepo},
+		TestPSResource:         {&NugetRemoteRepo, &NugetLocalRepo},
 		TestPip:                {&PypiLocalRepo, &PypiRemoteRepo},
 		TestPipenv:             {&PipenvRemoteRepo},
 		TestPoetry:             {&PoetryLocalRepo, &PoetryRemoteRepo},
@@ -530,6 +533,7 @@ func GetVirtualRepositories() map[*string]string {
 		TestNpm:          {},
 		TestPnpm:         {},
 		TestNuget:        {&NugetVirtualRepo},
+		TestPSResource:   {&NugetVirtualRepo},
 		TestPip:          {&PypiVirtualRepo},
 		TestPipenv:       {&PipenvVirtualRepo},
 		TestPoetry:       {&PoetryVirtualRepo},
@@ -578,6 +582,7 @@ func GetBuildNames() []string {
 		TestNpm:          {&NpmBuildName, &YarnBuildName},
 		TestPnpm:         {&PnpmBuildName},
 		TestNuget:        {&NuGetBuildName},
+		TestPSResource:   {&PSResourceBuildName},
 		TestPip:          {&PipBuildName},
 		TestPipenv:       {&PipenvBuildName},
 		TestPoetry:       {&PoetryBuildName},
@@ -788,6 +793,7 @@ func AddTimestampToGlobalVars() {
 	YarnBuildName += uniqueSuffix
 	MvnBuildName += uniqueSuffix
 	NuGetBuildName += uniqueSuffix
+	PSResourceBuildName += uniqueSuffix
 	PipBuildName += uniqueSuffix
 	PipenvBuildName += uniqueSuffix
 	PoetryBuildName += uniqueSuffix

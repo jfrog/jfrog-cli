@@ -248,3 +248,9 @@ require (
 //replace github.com/ktrysmt/go-bitbucket => github.com/ktrysmt/go-bitbucket v0.9.80
 
 // replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260604085947-7c110b77b4b4
+
+replace github.com/jfrog/jfrog-cli-artifactory => github.com/bhanurp/jfrog-cli-artifactory v0.1.12-0.20260918093822-3973ddc5cd5a
+
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/bhanurp/jfrog-cli-core/v2 v2.57.7-0.20260918083500-d83d8a45bd7e
+
+replace github.com/jfrog/build-info-go => github.com/bhanurp/build-info-go v1.10.10-0.20260918084802-08a1f22415c3

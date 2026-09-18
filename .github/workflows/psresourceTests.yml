@@ -1,0 +1,66 @@
+name: PSResource Tests
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  PSResource-Tests:
+    name: PSResource tests (${{ matrix.os.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - name: ubuntu
+            version: 24.04
+          - name: windows
+            version: 2022
+          - name: macos
+            version: 14
+    runs-on: ${{ matrix.os.name }}-${{ matrix.os.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
+
+      - name: Setup FastCI
+        uses: jfrog-fastci/fastci@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          fastci_otel_token: ${{ secrets.FASTCI_TOKEN }}
+
+      - name: Setup Go with cache
+        uses: jfrog/.github/actions/install-go-with-cache@main
+
+      # PSResourceGet is cross-platform (PowerShell 7+), unlike Chocolatey which is Windows-only,
+      # so this workflow runs on every OS in the matrix instead of a single Windows job.
+      # windows-2022 ships PowerShell 7 as 'pwsh' already; ubuntu/macos runners need it installed.
+      - name: Install PowerShell 7
+        if: matrix.os.name != 'windows'
+        shell: bash
+        run: |
+          if ! command -v pwsh >/dev/null 2>&1; then
+            if [ "${{ matrix.os.name }}" = "ubuntu" ]; then
+              curl -sSL https://aka.ms/install-powershell.sh | sudo bash
+            else
+              brew install --cask powershell
+            fi
+          fi
+          pwsh -v
+
+      - name: Install Microsoft.PowerShell.PSResourceGet
+        shell: pwsh
+        run: |
+          Install-Module -Name Microsoft.PowerShell.PSResourceGet -Scope CurrentUser -Force -Repository PSGallery
+          Get-Module -ListAvailable -Name Microsoft.PowerShell.PSResourceGet
+
+      - name: Install local Artifactory
+        uses: jfrog/.github/actions/install-local-artifactory@main
+        with:
+          RTLIC: ${{ secrets.RTLIC }}
+          RT_CONNECTION_TIMEOUT_SECONDS: '1200'
+
+      - name: Run PSResource tests
+        run: >-
+          go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.psresource
+          ${{ env.JFROG_TESTS_IS_EXTERNAL == 'true' && format('--jfrog.url={0} --jfrog.adminToken={1}', env.JFROG_TESTS_URL, env.JFROG_TESTS_LOCAL_ACCESS_TOKEN) || '' }}
