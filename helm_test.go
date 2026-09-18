@@ -218,9 +218,14 @@ func TestHelmPackageWithBuildInfo(t *testing.T) {
 	err = helmCmd.Run()
 	require.NoError(t, err, "helm dependency update should succeed")
 
+	chartArchiveDestinationDir := filepath.Join(chartDir, "target")
+	err = os.MkdirAll(chartArchiveDestinationDir, 0o755)
+	require.NoError(t, err, "Unable to create target directory for chart archive")
+
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 	args := []string{
 		"helm", "package", ".",
+		"--destination", chartArchiveDestinationDir,
 		"--build-name=" + buildName,
 		"--build-number=" + buildNumber,
 	}
