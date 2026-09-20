@@ -22,6 +22,7 @@ Common patterns:
 Gotchas:
 - Interactive prompts trigger when required flags are missing.
 - 'jf go' will set GOPROXY based on this config; other go invocations are unaffected.
+- This does not configure the go client itself. It is read only by 'jf go' commands; a plain 'go get' keeps resolving from its own configuration, which this command never touches. To point the client itself at Artifactory for every project on the machine, run 'jf setup go' instead - the two are independent and can even name different repositories.
 
-Related: jf go, jf go-publish`
+Related: jf go, jf go-publish, jf setup go`
 }

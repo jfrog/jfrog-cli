@@ -28,5 +28,10 @@ Gotchas:
 - Credentials are always masked; this command cannot dump real secrets.
 - Returns nothing silently if no servers are configured.
 
-Related: jf c add, jf c edit, jf c use, jf c export`
+Related: jf c add, jf c edit, jf c use, jf c export
+
+QA:
+Q: What's the JFrog CLI command to display the stored configuration for the server with the ID 'my-server'?
+A: jf c show my-server
+`
 }

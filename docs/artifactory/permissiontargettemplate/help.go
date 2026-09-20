@@ -28,5 +28,16 @@ Gotchas:
 - This is an interactive command; does not work in non-TTY environments.
 - The generated file is plain JSON; edit it before passing to ptc/ptu for production use.
 
-Related: jf rt ptc, jf rt ptu, jf rt ptdel`
+Related: jf rt ptc, jf rt ptu, jf rt ptdel
+
+QA:
+Q: Could you guide me through the process of creating a permission target template in Artifactory considering that the template path is 'template1.json'?
+A: jf rt ptt template1.json
+
+Q: Could you elucidate the approach for establishing a permission target template in Artifactory provided the template path is 'template3.json'?
+A: jf rt ptt template3.json
+
+Q: Could you outline the procedure for forming a permission target template in Artifactory with the template path being 'template5.json'?
+A: jf rt ptt template5.json
+`
 }

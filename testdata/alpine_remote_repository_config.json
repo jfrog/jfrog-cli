@@ -1,0 +1,6 @@
+{
+  "key": "${ALPINE_REMOTE_REPO}",
+  "rclass": "remote",
+  "packageType": "alpine",
+  "url": "https://dl-cdn.alpinelinux.org/alpine"
+}

@@ -23,6 +23,7 @@ Common patterns:
 Gotchas:
 - Interactive prompts run when required flags are missing.
 - Workspace projects need the config in the workspace root, not each package.
+- This does not configure the pnpm client itself. It is read only by 'jf pnpm' commands; a plain 'pnpm install' keeps resolving from its own configuration, which this command never touches. To point the client itself at Artifactory for every project on the machine, run 'jf setup pnpm' instead - the two are independent and can even name different repositories.
 
-Related: jf pnpm, jf npm-config`
+Related: jf pnpm, jf npm-config, jf setup pnpm`
 }

@@ -47,16 +47,16 @@ func getReverseProxyHandler(targetUrl string) (*httputil.ReverseProxy, error) {
 		return nil, err
 	}
 	origHost := target.Host
-	d := func(req *http.Request) {
-		req.URL.Host = origHost
-		req.Host = origHost
-		req.URL.Scheme = target.Scheme
+	rewrite := func(pr *httputil.ProxyRequest) {
+		pr.Out.URL.Host = origHost
+		pr.Out.Host = origHost
+		pr.Out.URL.Scheme = target.Scheme
 	}
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 	proxyErrLogger := log.New(os.Stdout, "PROXY-LOGGER", log.Ldate|log.Ltime|log.Lshortfile)
-	p := &httputil.ReverseProxy{Director: d, Transport: tr, ErrorLog: proxyErrLogger}
+	p := &httputil.ReverseProxy{Rewrite: rewrite, Transport: tr, ErrorLog: proxyErrLogger}
 	return p, nil
 }
 

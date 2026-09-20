@@ -26,6 +26,7 @@ Gotchas:
 - Interactive prompts trigger when required flags are missing.
 - --global writes to ~/.jfrog/projects/ and affects all projects on the machine.
 - The generated config is consumed by 'jf gradle' in the same directory; running gradle from elsewhere will not find it.
+- This does not configure the gradle client itself. It is read only by 'jf gradle' commands; a plain 'gradle build' keeps resolving from its own configuration, which this command never touches. To point the client itself at Artifactory for every project on the machine, run 'jf setup gradle' instead - the two are independent and can even name different repositories.
 
-Related: jf gradle, jf mvn-config`
+Related: jf gradle, jf mvn-config, jf setup gradle`
 }

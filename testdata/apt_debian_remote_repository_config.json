@@ -1,0 +1,9 @@
+{
+  "key": "${APT_DEBIAN_REMOTE_REPO}",
+  "rclass": "remote",
+  "packageType": "debian",
+  "url": "http://deb.debian.org/debian",
+  "debianDefaultArchitectures": "arm64,amd64",
+  "repoLayoutRef": "simple-default",
+  "xrayIndex": false
+}

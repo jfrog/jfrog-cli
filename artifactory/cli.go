@@ -1321,6 +1321,8 @@ func transferFilesCmd(c *cli.Context) error {
 	newTransferFilesCmd.SetIncludeReposPatterns(includeReposPatterns)
 	newTransferFilesCmd.SetExcludeReposPatterns(excludeReposPatterns)
 	newTransferFilesCmd.SetIncludeFilesPatterns(getIncludeFilesPatterns(c))
+	newTransferFilesCmd.SetCreatedAfter(c.String(cliutils.CreatedAfter))
+	newTransferFilesCmd.SetDownloadedAfter(c.String(cliutils.DownloadedAfter))
 	newTransferFilesCmd.SetIgnoreState(c.Bool(cliutils.IgnoreState))
 	newTransferFilesCmd.SetProxyKey(c.String(cliutils.ProxyKey))
 	runErr := newTransferFilesCmd.Run()

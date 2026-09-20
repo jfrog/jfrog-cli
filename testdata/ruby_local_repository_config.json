@@ -1,0 +1,5 @@
+{
+  "key": "${RUBY_LOCAL_REPO}",
+  "rclass": "local",
+  "packageType": "gems"
+}

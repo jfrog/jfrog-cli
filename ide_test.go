@@ -15,7 +15,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func initIdeTest(t *testing.T) {
+	if !*tests.TestIde {
+		t.Skip("Skipping IDE test. To run IDE tests add the '-test.ide=true' option.")
+	}
+}
+
 func TestVscodeSetupCommand(t *testing.T) {
+	initIdeTest(t)
 	initArtifactoryTest(t, "")
 	defer cleanArtifactoryTest()
 
@@ -70,6 +77,7 @@ func TestVscodeSetupCommand(t *testing.T) {
 }
 
 func TestVscodeAutoDetection(t *testing.T) {
+	initIdeTest(t)
 	// Skip this test if we're not on a system where we can easily mock VSCode installation
 	if runtime.GOOS == "windows" {
 		t.Skip("Auto-detection test skipped on Windows due to path complexity")
@@ -146,6 +154,7 @@ func TestVscodeAutoDetection(t *testing.T) {
 }
 
 func TestVscodeInvalidRepository(t *testing.T) {
+	initIdeTest(t)
 	initArtifactoryTest(t, "")
 	defer cleanArtifactoryTest()
 
@@ -193,6 +202,7 @@ func TestVscodeInvalidRepository(t *testing.T) {
 }
 
 func TestVscodePermissionHandling(t *testing.T) {
+	initIdeTest(t)
 	if runtime.GOOS == "windows" {
 		t.Skip("Permission test skipped on Windows")
 	}
@@ -233,6 +243,7 @@ func TestVscodePermissionHandling(t *testing.T) {
 }
 
 func TestJetbrainsSetupCommand(t *testing.T) {
+	initIdeTest(t)
 	initArtifactoryTest(t, "")
 	defer cleanArtifactoryTest()
 
@@ -334,6 +345,7 @@ ide.system.path=${user.home}/.local/share/JetBrains/IntelliJIdea2023.3
 }
 
 func TestJetbrainsAutoDetection(t *testing.T) {
+	initIdeTest(t)
 	// Skip this test if we're not on a system where we can easily mock JetBrains installation
 	if runtime.GOOS == "windows" {
 		t.Skip("Auto-detection test skipped on Windows due to path complexity")
@@ -432,6 +444,7 @@ func TestJetbrainsAutoDetection(t *testing.T) {
 }
 
 func TestJetbrainsInvalidRepository(t *testing.T) {
+	initIdeTest(t)
 	initArtifactoryTest(t, "")
 	defer cleanArtifactoryTest()
 
@@ -493,6 +506,7 @@ ide.config.path=${user.home}/.config/JetBrains/IntelliJIdea2023.3
 }
 
 func TestJetbrainsPermissionHandling(t *testing.T) {
+	initIdeTest(t)
 	if runtime.GOOS == "windows" {
 		t.Skip("Permission test skipped on Windows")
 	}
@@ -603,6 +617,9 @@ func execJfrogCli(args ...string) error {
 
 // Benchmark test for VSCode setup performance
 func BenchmarkVscodeSetup(b *testing.B) {
+	if !*tests.TestIde {
+		b.Skip("Skipping IDE benchmark. To run add the '-test.ide=true' option.")
+	}
 	if !*tests.TestArtifactory {
 		b.Skip("Artifactory is not being tested, skipping...")
 	}
@@ -657,6 +674,9 @@ func BenchmarkVscodeSetup(b *testing.B) {
 
 // Benchmark test for JetBrains setup performance
 func BenchmarkJetbrainsSetup(b *testing.B) {
+	if !*tests.TestIde {
+		b.Skip("Skipping IDE benchmark. To run add the '-test.ide=true' option.")
+	}
 	if !*tests.TestArtifactory {
 		b.Skip("Artifactory is not being tested, skipping...")
 	}
@@ -727,6 +747,7 @@ ide.config.path=${user.home}/.config/JetBrains/IntelliJIdea2023.3
 
 // Unit test to verify IDE commands are properly registered
 func TestIDECommandsRegistration(t *testing.T) {
+	initIdeTest(t)
 	// This test verifies that our IDE commands are properly registered in the CLI
 	// without requiring a running Artifactory server
 

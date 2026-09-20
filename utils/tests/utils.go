@@ -71,7 +71,13 @@ var (
 	TestPoetry                *bool
 	TestUv                    *bool
 	TestNix                   *bool
+	TestCargo                 *bool
+	TestAlpine                *bool
+	TestRuby                  *bool
+	TestApt                   *bool
 	TestAgentPlugins          *bool
+	TestAgentSkills           *bool
+	TestApm                   *bool
 	TestConan                 *bool
 	TestHelm                  *bool
 	TestHuggingFace           *bool
@@ -83,6 +89,7 @@ var (
 	TestEvidence              *bool
 	TestApi                   *bool
 	TestGhostFrog             *bool
+	TestIde                   *bool
 	HideUnitTestLog           *bool
 	ciRunId                   *string
 	InstallDataTransferPlugin *bool
@@ -139,7 +146,13 @@ func init() {
 	TestPoetry = flag.Bool("test.poetry", false, "Test Poetry")
 	TestUv = flag.Bool("test.uv", false, "Test UV")
 	TestNix = flag.Bool("test.nix", false, "Test Nix")
+	TestCargo = flag.Bool("test.cargo", false, "Test Cargo")
+	TestAlpine = flag.Bool("test.alpine", false, "Test Alpine APK")
+	TestRuby = flag.Bool("test.ruby", false, "Test Ruby")
+	TestApt = flag.Bool("test.apt", false, "Test apt (Debian/Ubuntu package manager)")
 	TestAgentPlugins = flag.Bool("test.agentPlugins", false, "Test Agent Plugins")
+	TestAgentSkills = flag.Bool("test.agentSkills", false, "Test Agent Skills")
+	TestApm = flag.Bool("test.apm", false, "Test APM (Agent Package Manager)")
 	TestConan = flag.Bool("test.conan", false, "Test Conan")
 	TestHelm = flag.Bool("test.helm", false, "Test Helm")
 	TestHuggingFace = flag.Bool("test.huggingface", false, "Test HuggingFace")
@@ -151,6 +164,7 @@ func init() {
 	TestEvidence = flag.Bool("test.evidence", false, "Test evidence")
 	TestApi = flag.Bool("test.api", false, "Test api command")
 	TestGhostFrog = flag.Bool("test.ghostFrog", false, "Test Ghost Frog package alias")
+	TestIde = flag.Bool("test.ide", false, "Test IDE (VS Code / Cursor / Windsurf / Kiro / JetBrains) setup commands")
 	ContainerRegistry = flag.String("test.containerRegistry", "localhost:8082", "Container registry")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
 	InstallDataTransferPlugin = flag.Bool("test.installDataTransferPlugin", false, "Install data-transfer plugin on the source Artifactory server")
@@ -273,8 +287,66 @@ func DeleteFiles(deleteSpec *spec.SpecFiles, serverDetails *config.ServerDetails
 	return deleteCommand.DeleteFiles(reader)
 }
 
+// SearchFiles searches for files in Artifactory using the provided spec and server details.
+// Returns search results as utils.ResultItem (repo/path/name/properties/checksums) and a count.
+//
+// Deliberately decodes into utils.ResultItem, not artUtils.SearchResult: the latter has no Name
+// field at all and a Props field shaped/tagged for a different JSON payload than what the AQL
+// search reader actually emits, so it silently comes back with an empty filename and empty
+// properties on every record - see ConvertArtifactsSearchDetailsToBuildInfoArtifacts in
+// jfrog-cli-core for the same reader decoded into the same, correct type.
+func SearchFiles(searchSpec *spec.SpecFiles, serverDetails *config.ServerDetails) (searchResults []utils.ResultItem, count int, err error) {
+	servicesManager, err := artUtils.CreateServiceManager(serverDetails, -1, 0, false)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Use the search utilities from jfrog-cli-core
+	readers, _, err := artUtils.SearchFiles(servicesManager, searchSpec)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer func() {
+		for _, r := range readers {
+			ioutils.Close(r, &err)
+		}
+	}()
+
+	// Process search results from readers
+	for _, reader := range readers {
+		for item := new(utils.ResultItem); reader.NextRecord(item) == nil; item = new(utils.ResultItem) {
+			searchResults = append(searchResults, *item)
+		}
+	}
+
+	return searchResults, len(searchResults), nil
+}
+
+// buildInfoIndexRetries and buildInfoIndexBackoff bound the retry in
+// GetBuildInfo below: Artifactory's build-info search index can lag a
+// freshly-published build by a second or two, especially under concurrent
+// CI load (many PM compatibility tests hitting the same instance at once).
+// Total worst-case wait is ~7.5s (0.5+1+2+4), which is negligible next to
+// the seconds a full PM test takes, but eliminates a whole class of
+// "Build info was not found" false failures immediately after a publish.
+const (
+	buildInfoIndexRetries = 4
+	buildInfoIndexBackoff = 500 * time.Millisecond
+)
+
 // This function makes no assertion, caller is responsible to assert as needed.
+//
+// Retries when the build info is genuinely not there yet (found=false,
+// err=nil is Artifactory's 404 signal — see BuildInfoService.GetBuildInfo)
+// to absorb search-index propagation lag right after a publish. Any real
+// error is returned immediately, unretried, exactly as before.
 func GetBuildInfo(serverDetails *config.ServerDetails, buildName, buildNumber string) (pbi *buildinfo.PublishedBuildInfo, found bool, err error) {
+	return GetBuildInfoInProject(serverDetails, buildName, buildNumber, "")
+}
+
+// GetBuildInfoInProject is GetBuildInfo scoped to an Artifactory project key.
+// This function makes no assertion, caller is responsible to assert as needed.
+func GetBuildInfoInProject(serverDetails *config.ServerDetails, buildName, buildNumber, projectKey string) (pbi *buildinfo.PublishedBuildInfo, found bool, err error) {
 	servicesManager, err := artUtils.CreateServiceManager(serverDetails, -1, 0, false)
 	if err != nil {
 		return nil, false, err
@@ -282,7 +354,17 @@ func GetBuildInfo(serverDetails *config.ServerDetails, buildName, buildNumber st
 	params := services.NewBuildInfoParams()
 	params.BuildName = buildName
 	params.BuildNumber = buildNumber
-	return servicesManager.GetBuildInfo(params)
+	params.ProjectKey = projectKey
+
+	wait := buildInfoIndexBackoff
+	for attempt := 0; ; attempt++ {
+		pbi, found, err = servicesManager.GetBuildInfo(params)
+		if err != nil || found || attempt == buildInfoIndexRetries {
+			return pbi, found, err
+		}
+		time.Sleep(wait)
+		wait *= 2
+	}
 }
 
 func GetBuildRuns(serverDetails *config.ServerDetails, buildName string) (pbi *buildinfo.BuildRuns, found bool, err error) {
@@ -310,6 +392,8 @@ var reposConfigMap = map[*string]string{
 	&NpmScopedRepo:                  NpmLocalScopedRespositoryConfig,
 	&NpmRemoteRepo:                  NpmRemoteRepositoryConfig,
 	&NugetRemoteRepo:                NugetRemoteRepositoryConfig,
+	&NugetLocalRepo:                 NugetLocalRepositoryConfig,
+	&NugetVirtualRepo:               NugetVirtualRepositoryConfig,
 	&YarnRemoteRepo:                 YarnRemoteRepositoryConfig,
 	&PypiLocalRepo:                  PypiLocalRepositoryConfig,
 	&PypiRemoteRepo:                 PypiRemoteRepositoryConfig,
@@ -323,9 +407,23 @@ var reposConfigMap = map[*string]string{
 	&UvRemoteRepo:                   UvRemoteRepositoryConfig,
 	&UvVirtualRepo:                  UvVirtualRepositoryConfig,
 	&AgentPluginsLocalRepo:          AgentPluginsLocalRepositoryConfig,
+	&AgentSkillsLocalRepo:           AgentSkillsLocalRepositoryConfig,
+	&AgentPackagesLocalRepo:         AgentPackagesLocalRepositoryConfig,
 	&NixLocalRepo:                   NixLocalRepositoryConfig,
 	&NixRemoteRepo:                  NixRemoteRepositoryConfig,
 	&NixVirtualRepo:                 NixVirtualRepositoryConfig,
+	&CargoLocalRepo:                 CargoLocalRepositoryConfig,
+	&CargoRemoteRepo:                CargoRemoteRepositoryConfig,
+	&AlpineLocalRepo:                AlpineLocalRepositoryConfig,
+	&AlpineRemoteRepo:               AlpineRemoteRepositoryConfig,
+	&AlpineVirtualRepo:              AlpineVirtualRepositoryConfig,
+	&RubyLocalRepo:                  RubyLocalRepositoryConfig,
+	&RubyRemoteRepo:                 RubyRemoteRepositoryConfig,
+	&RubyVirtualRepo:                RubyVirtualRepositoryConfig,
+	&AptLocalRepo:                   AptLocalRepositoryConfig,
+	&AptRemoteRepo:                  AptRemoteRepositoryConfig,
+	&AptDebianRemoteRepo:            AptDebianRemoteRepositoryConfig,
+	&AptVirtualRepo:                 AptVirtualRepositoryConfig,
 	&ConanLocalRepo:                 ConanLocalRepositoryConfig,
 	&ConanRemoteRepo:                ConanRemoteRepositoryConfig,
 	&ConanVirtualRepo:               ConanVirtualRepositoryConfig,
@@ -392,13 +490,19 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestMaven:              {&MvnRepo1, &MvnRepo2, &MvnRemoteRepo},
 		TestNpm:                {&NpmRepo, &NpmScopedRepo, &NpmRemoteRepo},
 		TestPnpm:               {&NpmRepo, &NpmScopedRepo, &NpmRemoteRepo},
-		TestNuget:              {&NugetRemoteRepo},
+		TestNuget:              {&NugetRemoteRepo, &NugetLocalRepo},
 		TestPip:                {&PypiLocalRepo, &PypiRemoteRepo},
 		TestPipenv:             {&PipenvRemoteRepo},
 		TestPoetry:             {&PoetryLocalRepo, &PoetryRemoteRepo},
 		TestUv:                 {&UvLocalRepo, &UvRemoteRepo},
 		TestNix:                {&NixLocalRepo, &NixRemoteRepo},
+		TestCargo:              {&CargoLocalRepo, &CargoRemoteRepo},
+		TestAlpine:             {&AlpineLocalRepo, &AlpineRemoteRepo},
+		TestRuby:               {&RubyLocalRepo, &RubyRemoteRepo},
+		TestApt:                {&AptLocalRepo, &AptRemoteRepo, &AptDebianRemoteRepo},
 		TestAgentPlugins:       {&AgentPluginsLocalRepo},
+		TestAgentSkills:        {&AgentSkillsLocalRepo},
+		TestApm:                {&AgentPackagesLocalRepo},
 		TestConan:              {&ConanLocalRepo, &ConanRemoteRepo},
 		TestHelm:               {&HelmLocalRepo},
 		TestHuggingFace:        {&HuggingFaceLocalRepo},
@@ -425,13 +529,17 @@ func GetVirtualRepositories() map[*string]string {
 		TestMaven:        {},
 		TestNpm:          {},
 		TestPnpm:         {},
-		TestNuget:        {},
+		TestNuget:        {&NugetVirtualRepo},
 		TestPip:          {&PypiVirtualRepo},
 		TestPipenv:       {&PipenvVirtualRepo},
 		TestPoetry:       {&PoetryVirtualRepo},
 		TestUv:           {&UvVirtualRepo},
 		TestNix:          {&NixVirtualRepo},
+		TestAlpine:       {&AlpineVirtualRepo},
+		TestRuby:         {&RubyVirtualRepo},
+		TestApt:          {&AptVirtualRepo},
 		TestAgentPlugins: {},
+		TestAgentSkills:  {},
 		TestConan:        {&ConanVirtualRepo},
 		TestHelm:         {},
 		TestHuggingFace:  {},
@@ -474,8 +582,13 @@ func GetBuildNames() []string {
 		TestPipenv:       {&PipenvBuildName},
 		TestPoetry:       {&PoetryBuildName},
 		TestUv:           {&UvBuildName},
+		TestApt:          {&AptBuildName},
 		TestNix:          {&NixBuildName},
+		TestCargo:        {&CargoBuildName},
+		TestAlpine:       {&AlpineBuildName},
+		TestRuby:         {&RubyBuildName},
 		TestAgentPlugins: {&AgentPluginsBuildName},
+		TestAgentSkills:  {&AgentSkillsBuildName},
 		TestConan:        {&ConanBuildName},
 		TestHelm:         {&HelmBuildName},
 		TestHuggingFace:  {&HuggingFaceBuildName},
@@ -517,6 +630,8 @@ func getSubstitutionMap() map[string]string {
 		"${NPM_REMOTE_REPO}":           NpmRemoteRepo,
 		"${PNPM_BUILD_NAME}":           PnpmBuildName,
 		"${NUGET_REMOTE_REPO}":         NugetRemoteRepo,
+		"${NUGET_LOCAL_REPO}":          NugetLocalRepo,
+		"${NUGET_VIRTUAL_REPO}":        NugetVirtualRepo,
 		"${YARN_REMOTE_REPO}":          YarnRemoteRepo,
 		"${GO_REPO}":                   GoRepo,
 		"${GO_REMOTE_REPO}":            GoRemoteRepo,
@@ -540,9 +655,23 @@ func getSubstitutionMap() map[string]string {
 		"${UV_REMOTE_REPO}":            UvRemoteRepo,
 		"${UV_VIRTUAL_REPO}":           UvVirtualRepo,
 		"${AGENT_PLUGINS_LOCAL_REPO}":  AgentPluginsLocalRepo,
+		"${AGENT_SKILLS_LOCAL_REPO}":   AgentSkillsLocalRepo,
+		"${AGENT_PACKAGES_LOCAL_REPO}": AgentPackagesLocalRepo,
 		"${NIX_LOCAL_REPO}":            NixLocalRepo,
 		"${NIX_REMOTE_REPO}":           NixRemoteRepo,
 		"${NIX_VIRTUAL_REPO}":          NixVirtualRepo,
+		"${CARGO_LOCAL_REPO}":          CargoLocalRepo,
+		"${CARGO_REMOTE_REPO}":         CargoRemoteRepo,
+		"${ALPINE_LOCAL_REPO}":         AlpineLocalRepo,
+		"${ALPINE_REMOTE_REPO}":        AlpineRemoteRepo,
+		"${ALPINE_VIRTUAL_REPO}":       AlpineVirtualRepo,
+		"${RUBY_LOCAL_REPO}":           RubyLocalRepo,
+		"${RUBY_REMOTE_REPO}":          RubyRemoteRepo,
+		"${RUBY_VIRTUAL_REPO}":         RubyVirtualRepo,
+		"${APT_LOCAL_REPO}":            AptLocalRepo,
+		"${APT_REMOTE_REPO}":           AptRemoteRepo,
+		"${APT_DEBIAN_REMOTE_REPO}":    AptDebianRemoteRepo,
+		"${APT_VIRTUAL_REPO}":          AptVirtualRepo,
 		"${CONAN_LOCAL_REPO}":          ConanLocalRepo,
 		"${CONAN_REMOTE_REPO}":         ConanRemoteRepo,
 		"${CONAN_VIRTUAL_REPO}":        ConanVirtualRepo,
@@ -604,6 +733,8 @@ func AddTimestampToGlobalVars() {
 	NpmScopedRepo += uniqueSuffix
 	NpmRemoteRepo += uniqueSuffix
 	NugetRemoteRepo += uniqueSuffix
+	NugetLocalRepo += uniqueSuffix
+	NugetVirtualRepo += uniqueSuffix
 	YarnRemoteRepo += uniqueSuffix
 	PypiLocalRepo += uniqueSuffix
 	PypiRemoteRepo += uniqueSuffix
@@ -617,9 +748,20 @@ func AddTimestampToGlobalVars() {
 	UvRemoteRepo += uniqueSuffix
 	UvVirtualRepo += uniqueSuffix
 	AgentPluginsLocalRepo += uniqueSuffix
+	AgentSkillsLocalRepo += uniqueSuffix
 	NixLocalRepo += uniqueSuffix
 	NixRemoteRepo += uniqueSuffix
 	NixVirtualRepo += uniqueSuffix
+	CargoLocalRepo += uniqueSuffix
+	CargoRemoteRepo += uniqueSuffix
+	AlpineLocalRepo += uniqueSuffix
+	AlpineRemoteRepo += uniqueSuffix
+	AlpineVirtualRepo += uniqueSuffix
+	AptLocalRepo += uniqueSuffix
+	AptRemoteRepo += uniqueSuffix
+	AptDebianRemoteRepo += uniqueSuffix
+	AptVirtualRepo += uniqueSuffix
+	AptBuildName += uniqueSuffix
 	ConanLocalRepo += uniqueSuffix
 	ConanRemoteRepo += uniqueSuffix
 	ConanVirtualRepo += uniqueSuffix
@@ -652,8 +794,11 @@ func AddTimestampToGlobalVars() {
 	PipenvBuildName += uniqueSuffix
 	PoetryBuildName += uniqueSuffix
 	AgentPluginsBuildName += uniqueSuffix
+	AgentSkillsBuildName += uniqueSuffix
 	UvBuildName += uniqueSuffix
 	NixBuildName += uniqueSuffix
+	CargoBuildName += uniqueSuffix
+	AlpineBuildName += uniqueSuffix
 	ConanBuildName += uniqueSuffix
 	HelmBuildName += uniqueSuffix
 	HuggingFaceBuildName += uniqueSuffix

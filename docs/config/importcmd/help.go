@@ -25,5 +25,10 @@ Gotchas:
 - The token contains credentials; treat it like a password and never commit it.
 - The imported server ID inherits from the original; if it collides with an existing one, the import fails.
 
-Related: jf c export, jf c add, jf c show`
+Related: jf c export, jf c add, jf c show
+
+QA:
+Q: What's the JFrog CLI command to import a server configuration from a token?
+A: jf c import <token>
+`
 }

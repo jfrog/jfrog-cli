@@ -1,0 +1,8 @@
+{
+  "key": "${APT_LOCAL_REPO}",
+  "rclass": "local",
+  "packageType": "debian",
+  "repoLayoutRef": "simple-default",
+  "xrayIndex": false,
+  "primaryKeyPairRef": ""
+}

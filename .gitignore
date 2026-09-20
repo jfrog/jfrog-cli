@@ -40,3 +40,4 @@ testdata/**/.gradle
 
 # AI agents
 .cursor
+.claude

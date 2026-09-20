@@ -1,0 +1,96 @@
+# Trimmed excerpt of JFrog's public Platform Global Roles API reference, kept as
+# an OSS test fixture for the jfrog-cli apispec package (JGC-525). Not the full
+# spec — see docs/api-spec/full/ (populated only in JFrog's internal release
+# build).
+openapi: 3.1.0
+info:
+  title: JFrog Platform - Global Roles API
+  description: >
+    Custom global role management APIs for the JFrog Platform.
+
+
+    **Authentication:** Access Tokens as bearer token in authorization header
+    (Authorization: Bearer `<token>`)
+
+
+    **Security:** Unless otherwise specified, all APIs require admin privileges.
+  version: 1.0.0
+  contact:
+    name: JFrog Support
+servers:
+  - url: https://{jfrog_url}
+tags:
+  - name: Global Roles
+    description: >-
+      APIs for creating, editing, deleting, and listing global roles in the
+      JFrog Platform.
+security:
+  - BearerAuth: []
+paths:
+  /access/api/v1/roles:
+    get:
+      tags:
+        - Global Roles
+      summary: Get All Global Roles
+      description: |
+        Get all global roles. The response includes predefined roles and custom
+        global roles.
+
+
+        **Security:** Requires admin or Project Admin privileges.
+      operationId: getAllGlobalRoles
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GlobalRole'
+        '401':
+          description: Bad Credentials - Invalid credentials
+        '403':
+          description: Permission Denied - Insufficient permissions
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: Access Token as bearer token
+  schemas:
+    GlobalRoleType:
+      type: string
+      description: >-
+        Type for roles returned by this API. ADMIN is the Project Admin role;
+        PREDEFINED is other built-in roles (e.g. Viewer); CUSTOM_GLOBAL is a
+        user-defined global role. On PUT, the value must match the role's
+        current type (the server rejects type changes).
+      enum:
+        - ADMIN
+        - PREDEFINED
+        - CUSTOM_GLOBAL
+    GlobalRole:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Role name
+        description:
+          type: string
+          description: Role description
+        type:
+          $ref: '#/components/schemas/GlobalRoleType'
+        environments:
+          type: array
+          items:
+            type: string
+        actions:
+          type: array
+          description: >-
+            Permission actions as enum constant names (e.g. READ_REPOSITORY,
+            MANAGE_MEMBERS).
+          items:
+            type: string
+x-readme:
+  explorer-enabled: false

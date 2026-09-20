@@ -1,0 +1,5 @@
+{
+  "key": "${NUGET_LOCAL_REPO}",
+  "rclass": "local",
+  "packageType": "nuget"
+}

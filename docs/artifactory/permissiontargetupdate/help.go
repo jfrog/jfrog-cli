@@ -33,5 +33,16 @@ Gotchas:
 - The update is a full replacement; missing fields revert to defaults.
 - After updating, verify the result with 'jf api /artifactory/api/v2/security/permissions/<name>'.
 
-Related: jf rt ptt, jf rt ptc, jf rt ptdel`
+Related: jf rt ptt, jf rt ptc, jf rt ptdel
+
+QA:
+Q: Could you guide me through the process of updating a permission target in Artifactory considering that the template path is 'template1.json'?
+A: jf rt ptu template1.json
+
+Q: Could you elucidate the approach for altering a permission target in Artifactory provided the template path is 'template3.json'?
+A: jf rt ptu template3.json
+
+Q: Could you outline the procedure for adjusting a permission target in Artifactory with the template path being 'template5.json'?
+A: jf rt ptu template5.json
+`
 }

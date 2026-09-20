@@ -34,5 +34,10 @@ Gotchas:
 - Only repos and projects are merged; permission targets, users, and other config are NOT.
 - Run during low-traffic windows on the source to avoid mid-export drift.
 
-Related: jf rt transfer-config, jf rt transfer-files`
+Related: jf rt transfer-config, jf rt transfer-files
+
+QA:
+Q: How can I merge the configurations from the source server to the target server in JFrog Artifactory?
+A: jf rt transfer-config-merge source-server target-server
+`
 }

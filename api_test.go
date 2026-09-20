@@ -143,3 +143,18 @@ func TestApiWithInputFile(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "200", strings.TrimSpace(string(stderr)))
 }
+
+// TestApiFlagsAfterPath is the JGC-539 regression test: flags placed after the
+// endpoint path must work exactly like flags placed before it, matching the
+// documented 'jf api --help' examples.
+func TestApiFlagsAfterPath(t *testing.T) {
+	initApiTest(t)
+	payloadFile := tests.CreateTempFile(t, "items.find({})")
+	stdout, stderr, err := tests.GetCmdOutput(t, apiCli, "api", "artifactory/api/search/aql", "--method=POST", "--input="+payloadFile, "--header=X-Jfrog-Test: integration-test")
+	require.NoError(t, err)
+	assert.Equal(t, "200", strings.TrimSpace(string(stderr)))
+	var result map[string]interface{}
+	require.NoError(t, json.Unmarshal(stdout, &result))
+	_, hasResults := result["results"]
+	assert.True(t, hasResults)
+}

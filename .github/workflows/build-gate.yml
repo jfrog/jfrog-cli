@@ -41,6 +41,14 @@ jobs:
     needs: gate
     uses: ./.github/workflows/agentPluginsTests.yml
     secrets: inherit
+  agent-skills:
+    needs: gate
+    uses: ./.github/workflows/agentSkillsTests.yml
+    secrets: inherit
+  agent-apm:
+    needs: gate
+    uses: ./.github/workflows/agentApmTests.yml
+    secrets: inherit
   access:
     needs: gate
     # OIDC suite: caller must grant id-token so the reusable workflow can request it.
@@ -56,6 +64,10 @@ jobs:
   conan:
     needs: gate
     uses: ./.github/workflows/conanTests.yml
+    secrets: inherit
+  cargo:
+    needs: gate
+    uses: ./.github/workflows/cargoTests.yml
     secrets: inherit
   distribution:
     needs: gate
@@ -109,6 +121,14 @@ jobs:
     needs: gate
     uses: ./.github/workflows/nixTests.yml
     secrets: inherit
+  alpine:
+    needs: gate
+    uses: ./.github/workflows/apkTests.yml
+    secrets: inherit
+  apt:
+    needs: gate
+    uses: ./.github/workflows/aptTests.yml
+    secrets: inherit
   npm:
     needs: gate
     uses: ./.github/workflows/npmTests.yml
@@ -145,6 +165,10 @@ jobs:
     needs: gate
     uses: ./.github/workflows/pythonTests.yml
     secrets: inherit
+  ruby:
+    needs: gate
+    uses: ./.github/workflows/rubyTests.yml
+    secrets: inherit
   script:
     needs: gate
     uses: ./.github/workflows/scriptTests.yml
@@ -169,9 +193,12 @@ jobs:
       - gate
       - frogbot
       - agent-plugins
+      - agent-skills
+      - agent-apm
       - access
       - artifactory
       - conan
+      - cargo
       - distribution
       - docker
       - evidence
@@ -183,6 +210,7 @@ jobs:
       - lifecycle
       - maven
       - nix
+      - alpine
       - npm
       - nuget
       - oidc
@@ -191,6 +219,7 @@ jobs:
       - podman
       - poetry
       - python
+      - ruby
       - script
       - transfer
       - uv

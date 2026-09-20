@@ -1,0 +1,6 @@
+{
+  "key": "${CARGO_REMOTE_REPO}",
+  "rclass": "remote",
+  "packageType": "cargo",
+  "url": "https://index.crates.io"
+}

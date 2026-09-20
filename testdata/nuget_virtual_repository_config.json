@@ -1,0 +1,10 @@
+{
+  "key": "${NUGET_VIRTUAL_REPO}",
+  "rclass": "virtual",
+  "packageType": "nuget",
+  "repositories": [
+    "${NUGET_LOCAL_REPO}",
+    "${NUGET_REMOTE_REPO}"
+  ],
+  "defaultDeploymentRepo": "${NUGET_LOCAL_REPO}"
+}

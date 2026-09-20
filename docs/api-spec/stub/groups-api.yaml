@@ -1,0 +1,102 @@
+# Trimmed excerpt of JFrog's public Platform Groups API reference, kept as an
+# OSS test fixture for the jfrog-cli apispec package (JGC-525). Not the full spec —
+# see docs/api-spec/full/ (populated only in JFrog's internal release build).
+openapi: 3.1.0
+info:
+  title: JFrog Platform - Groups API
+  description: >
+    Group management APIs for the JFrog Platform.
+
+
+    **Authentication:** Access Tokens as bearer token in authorization header
+    (Authorization: Bearer <token>)
+
+
+    **Security:** Unless otherwise specified, all APIs require admin privileges.
+
+
+    **Availability:** Artifactory 7.49.3+
+  version: 1.0.0
+  contact:
+    name: JFrog Support
+servers:
+  - url: https://{jfrog_url}
+tags:
+  - name: Groups
+    description: >-
+      APIs for creating, updating, deleting, and managing JFrog Platform groups
+      and group memberships.
+security:
+  - BearerAuth: []
+paths:
+  /access/api/v2/groups/{name}:
+    get:
+      tags:
+        - Groups
+      summary: Get Group Details
+      description: |
+        Returns the group's details based on the group name.
+
+
+        **Security:** Requires admin privileges.
+      operationId: getGroupDetails
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The group name
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupDetails'
+        '400':
+          description: Bad Request - Invalid input
+        '401':
+          description: Bad Credentials - Invalid credentials
+        '403':
+          description: Permission Denied - Insufficient permissions
+        '404':
+          description: Not Found - Group not found
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: Access Token as bearer token
+  schemas:
+    GroupDetails:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The group name
+        description:
+          type: string
+          description: Group description
+        auto_join:
+          type: boolean
+          description: Whether new users auto-join this group
+        admin_privileges:
+          type: boolean
+          description: Whether group has admin privileges
+        realm:
+          type: string
+          description: The authentication realm
+        realm_attributes:
+          type: string
+          description: Realm attributes
+        external_id:
+          type: string
+          description: External ID for SCIM
+        members:
+          type: array
+          items:
+            type: string
+          description: Group members
+x-readme:
+  explorer-enabled: false

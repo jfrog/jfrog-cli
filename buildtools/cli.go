@@ -3,8 +3,7 @@ package buildtools
 import (
 	"errors"
 	"fmt"
-	conancommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/conan"
-	nixcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nix"
+
 	"io/fs"
 	"os"
 	"os/exec"
@@ -12,6 +11,16 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	dotnetutils "github.com/jfrog/build-info-go/build/utils/dotnet"
+	alpinecommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/alpine"
+	aptcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/apt"
+	cargocommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/cargo"
+	aptflex "github.com/jfrog/build-info-go/flexpack/apt"
+	conancommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/conan"
+	nixcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nix"
+	nugetcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nuget"
+	rubycommandexec "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/ruby"
 
 	"github.com/BurntSushi/toml"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/container/strategies"
@@ -53,6 +62,9 @@ import (
 	terraformdocs "github.com/jfrog/jfrog-cli/docs/artifactory/terraform"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/terraformconfig"
 	twinedocs "github.com/jfrog/jfrog-cli/docs/artifactory/twine"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/apkcommand"
+	aptdocs "github.com/jfrog/jfrog-cli/docs/buildtools/apt"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/cargo"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/conan"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/conanconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/docker"
@@ -68,6 +80,7 @@ import (
 	huggingfaceuploaddocs "github.com/jfrog/jfrog-cli/docs/buildtools/huggingfaceupload"
 	mvndoc "github.com/jfrog/jfrog-cli/docs/buildtools/mvn"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/mvnconfig"
+	mvnwdoc "github.com/jfrog/jfrog-cli/docs/buildtools/mvnw"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/nix"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npmcommand"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npmconfig"
@@ -81,19 +94,21 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pnpmconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/poetry"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/poetryconfig"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/rubycommand"
 	uvcommand "github.com/jfrog/jfrog-cli/docs/buildtools/uvcommand"
 	yarndocs "github.com/jfrog/jfrog-cli/docs/buildtools/yarn"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/yarnconfig"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/utils/buildinfo"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
 )
 
 const (
-	buildToolsCategory      = "Package Managers:"
+	buildToolsCategory      = "Package Managers"
 	huggingfaceAPI          = "api/huggingfaceml"
 	HF_ENDPOINT             = "HF_ENDPOINT"
 	HF_TOKEN                = "HF_TOKEN"
@@ -104,12 +119,11 @@ const (
 func GetCommands() []cli.Command {
 	cmds := cliutils.GetSortedCommands(cli.CommandsByName{
 		{
-			// Currently, the setup command is hidden from the help menu, till it will be released as GA.
-			Hidden:       true,
+			Hidden:       false,
 			Name:         "setup",
 			Flags:        cliutils.GetCommandFlags(cliutils.Setup),
-			Usage:        setupdocs.GetDescription(),
-			HelpName:     corecommon.CreateUsage("setup", setupdocs.GetDescription(), setupdocs.Usage),
+			Usage:        corecommon.ResolveDescription(setupdocs.GetDescription(), setupdocs.GetAIDescription()),
+			HelpName:     corecommon.CreateUsage("setup", corecommon.ResolveDescription(setupdocs.GetDescription(), setupdocs.GetAIDescription()), setupdocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			UsageText:    setupdocs.GetArguments(),
 			BashComplete: corecommon.CreateBashCompletionFunc(setup.GetSupportedPackageManagersList()...),
@@ -141,6 +155,21 @@ func GetCommands() []cli.Command {
 			Action: func(c *cli.Context) (err error) {
 				cmdName, _ := getCommandName(c.Args())
 				return securityCLI.WrapCmdWithCurationPostFailureRun(c, MvnCmd, techutils.Maven, cmdName)
+			},
+		},
+		{
+			Name:            "mvnw",
+			Flags:           cliutils.GetCommandFlags(cliutils.Mvn),
+			Usage:           corecommon.ResolveDescription(mvnwdoc.GetDescription(), mvnwdoc.GetAIDescription()),
+			HelpName:        corecommon.CreateUsage("mvnw", corecommon.ResolveDescription(mvnwdoc.GetDescription(), mvnwdoc.GetAIDescription()), mvnwdoc.Usage),
+			UsageText:       mvnwdoc.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(mvnwdoc.EnvVar...),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Category:        buildToolsCategory,
+			Action: func(c *cli.Context) (err error) {
+				cmdName, _ := getCommandName(c.Args())
+				return securityCLI.WrapCmdWithCurationPostFailureRun(c, MvnwCmd, techutils.Maven, cmdName)
 			},
 		},
 		{
@@ -336,7 +365,10 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action:          PipenvCmd,
+			Action: func(c *cli.Context) error {
+				cmdName, _ := getCommandName(c.Args())
+				return securityCLI.WrapCmdWithCurationPostFailureRun(c, PipenvCmd, techutils.Pipenv, cmdName)
+			},
 		},
 		{
 			Name:         "poetry-config",
@@ -376,7 +408,11 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action:          UvCmd,
+			Action: func(c *cli.Context) error {
+				cmdName, _ := getCommandName(c.Args())
+				return securityCLI.WrapCmdWithCurationPostFailureRun(c, UvCmd, techutils.Uv, cmdName)
+			},
+			Hidden: true,
 		},
 		{
 			Name:            "helm",
@@ -418,6 +454,19 @@ func GetCommands() []cli.Command {
 			Action:          ConanCmd,
 		},
 		{
+			Name:            "cargo",
+			Hidden:          true,
+			Flags:           cliutils.GetCommandFlags(cliutils.Cargo),
+			Usage:           corecommon.ResolveDescription(cargo.GetDescription(), cargo.GetAIDescription()),
+			HelpName:        corecommon.CreateUsage("cargo", corecommon.ResolveDescription(cargo.GetDescription(), cargo.GetAIDescription()), cargo.Usage),
+			UsageText:       cargo.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Category:        buildToolsCategory,
+			Action:          CargoCmd,
+		},
+		{
 			Name:            "nix",
 			Hidden:          false,
 			Flags:           cliutils.GetCommandFlags(cliutils.Nix),
@@ -431,6 +480,32 @@ func GetCommands() []cli.Command {
 			Action:          NixCmd,
 		},
 		{
+			Name:            "apt",
+			Aliases:         []string{"apt-get"},
+			Flags:           cliutils.GetCommandFlags(cliutils.Apt),
+			Usage:           corecommon.ResolveDescription(aptdocs.GetDescription(), aptdocs.GetAIDescription()),
+			HelpName:        corecommon.CreateUsage("apt", corecommon.ResolveDescription(aptdocs.GetDescription(), aptdocs.GetAIDescription()), aptdocs.Usage),
+			UsageText:       aptdocs.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Category:        buildToolsCategory,
+			Action:          AptCmd,
+		},
+		{
+			Name:            "apk",
+			Flags:           cliutils.GetCommandFlags(cliutils.Apk),
+			Usage:           corecommon.ResolveDescription(apkcommand.GetDescription(), apkcommand.GetAIDescription()),
+			HelpName:        corecommon.CreateUsage("apk", corecommon.ResolveDescription(apkcommand.GetDescription(), apkcommand.GetAIDescription()), apkcommand.Usage),
+			UsageText:       apkcommand.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete: corecommon.CreateBashCompletionFunc("upload", "u", "add", "upgrade", "update", "fetch",
+				"search", "del", "info", "fix", "audit", "version", "stats"),
+			Category: buildToolsCategory,
+			Action:   ApkCmd,
+		},
+		{
 			Name:         "ruby-config",
 			Flags:        cliutils.GetCommandFlags(cliutils.RubyConfig),
 			Aliases:      []string{"rubyc"},
@@ -442,6 +517,19 @@ func GetCommands() []cli.Command {
 			Action: func(c *cli.Context) error {
 				return cliutils.CreateConfigCmd(c, project.Ruby)
 			},
+		},
+		{
+			Name:            "ruby",
+			Hidden:          false,
+			Flags:           cliutils.GetCommandFlags(cliutils.Ruby),
+			Usage:           corecommon.ResolveDescription(rubycommand.GetDescription(), rubycommand.GetAIDescription()),
+			HelpName:        corecommon.CreateUsage("ruby", corecommon.ResolveDescription(rubycommand.GetDescription(), rubycommand.GetAIDescription()), rubycommand.Usage),
+			UsageText:       rubycommand.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Category:        buildToolsCategory,
+			Action:          RubyCmd,
 		},
 		{
 			Name:         "npm-config",
@@ -664,7 +752,19 @@ func captureUserFlagsForMetrics(c *cli.Context, skipFlagParsing bool) {
 	commands.SetContextFlags(flags)
 }
 
+// MvnCmd runs "jf mvn". In native (FlexPack) mode it always runs "mvn" from PATH.
 func MvnCmd(c *cli.Context) (err error) {
+	return runMvn(c, false)
+}
+
+// MvnwCmd runs "jf mvnw". In native (FlexPack) mode it requires a Maven Wrapper
+// (mvnw/mvnw.cmd) to be present and fails otherwise; in legacy (config-file) mode
+// it behaves exactly like MvnCmd.
+func MvnwCmd(c *cli.Context) (err error) {
+	return runMvn(c, true)
+}
+
+func runMvn(c *cli.Context, preferWrapper bool) (err error) {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
@@ -683,13 +783,25 @@ func MvnCmd(c *cli.Context) (err error) {
 		if err != nil {
 			return err
 		}
-		// Maven does not accept --server-id; use the default configured server for usage reporting.
-		serverDetails, err := coreConfig.GetDefaultServerConf()
+		// Native accepts --server-id (for build-info collection: property tagging, virtual-repo
+		// resolution, repository lookups). Strip it from the goals and resolve the target server,
+		// falling back to the default configured server when not provided.
+		filteredMavenArgs, serverID, err := coreutils.ExtractServerIdFromCommand(filteredMavenArgs)
+		if err != nil {
+			return fmt.Errorf("failed to extract server ID: %w", err)
+		}
+		// GetSpecificConfig with an empty serverID (defaultOrEmpty=true) returns the default server, so
+		// this covers both the --server-id and no-flag cases.
+		serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, true)
 		if err != nil {
 			return err
 		}
-		mvnCmd := mvn.NewMvnCommand().SetConfigPath("").SetGoals(filteredMavenArgs).SetConfiguration(buildConfiguration).SetServerDetails(serverDetails)
+		mvnCmd := mvn.NewMvnCommand().SetConfigPath("").SetGoals(filteredMavenArgs).SetConfiguration(buildConfiguration).SetServerDetails(serverDetails).SetPreferWrapper(preferWrapper)
 		return commands.ExecWithPackageManager(mvnCmd, project.Maven.String())
+	}
+
+	if preferWrapper {
+		log.Warn("jf mvnw's wrapper requirement is not respected in legacy (config-file) mode; falling back to the standard jf mvn behavior, governed by the 'useWrapper' setting in the Maven config.")
 	}
 
 	// If config file is missing and not in native mode, return the standard missing-config error.
@@ -945,9 +1057,20 @@ func NugetCmd(c *cli.Context) error {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	configFilePath, err := getProjectConfigPathOrThrow(project.Nuget, "nuget", "nuget-config")
+	configFilePath, configExists, err := project.GetProjectConfFilePath(project.Nuget)
 	if err != nil {
 		return err
+	}
+
+	// FlexPack bypasses all config file requirements (only when no config exists)
+	if artutils.ShouldRunNative(configFilePath) && !configExists {
+		return runNugetFlexPackCmd(c, dotnetutils.Nuget)
+	}
+
+	if !configExists {
+		if configFilePath, err = getProjectConfigPathOrThrow(project.Nuget, "nuget", "nuget-config"); err != nil {
+			return err
+		}
 	}
 
 	rtDetails, targetRepo, useNugetV2, err := getNugetAndDotnetConfigFields(configFilePath)
@@ -989,10 +1112,20 @@ func DotnetCmd(c *cli.Context) error {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	// Get configuration file path.
-	configFilePath, err := getProjectConfigPathOrThrow(project.Dotnet, "dotnet", "dotnet-config")
+	configFilePath, configExists, err := project.GetProjectConfFilePath(project.Dotnet)
 	if err != nil {
 		return err
+	}
+
+	// FlexPack bypasses all config file requirements (only when no config exists)
+	if artutils.ShouldRunNative(configFilePath) && !configExists {
+		return runNugetFlexPackCmd(c, dotnetutils.DotnetCore)
+	}
+
+	if !configExists {
+		if configFilePath, err = getProjectConfigPathOrThrow(project.Dotnet, "dotnet", "dotnet-config"); err != nil {
+			return err
+		}
 	}
 
 	rtDetails, targetRepo, useNugetV2, err := getNugetAndDotnetConfigFields(configFilePath)
@@ -1801,8 +1934,14 @@ func setupCmd(c *cli.Context) (err error) {
 	if c.NArg() > 1 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
-	var packageManager project.ProjectType
 	packageManagerStr := c.Args().Get(0)
+
+	// Apt requires dist+component and has its own setup path.
+	if packageManagerStr == "apt" {
+		return aptSetupCmd(c)
+	}
+
+	var packageManager project.ProjectType
 	// If the package manager was provided as an argument, validate it.
 	if packageManagerStr != "" {
 		packageManager = project.FromString(packageManagerStr)
@@ -2071,6 +2210,126 @@ func ConanCmd(c *cli.Context) error {
 	return commands.ExecWithPackageManager(conanCommand, project.Conan.String())
 }
 
+// runNugetFlexPackCmd handles NuGet/dotnet commands in FlexPack native mode.
+// No project config file is required; server details come from --server-id or the default profile.
+func runNugetFlexPackCmd(c *cli.Context, toolchainType dotnetutils.ToolchainType) error {
+	// ShowCmdHelpIfNeeded only catches --help when it is the sole argument (e.g. "jf nuget --help").
+	// For subcommand help ("jf nuget push --help", "jf dotnet restore -h") the flag sits after
+	// the subcommand name, so SkipFlagParsing passes the whole slice to us. Intercept it here
+	// before any arg is forwarded to the native tool, which would reject --help with an error.
+	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), c.Command.Name); show || err != nil {
+		return err
+	}
+
+	args := cliutils.ExtractCommand(c)
+
+	args, serverID, err := coreutils.ExtractServerIdFromCommand(args)
+	if err != nil {
+		return fmt.Errorf("extract server ID: %w", err)
+	}
+
+	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
+	if err != nil {
+		return err
+	}
+
+	// Extract --repo-resolve and --repo flags.
+	var repoResolve, repoDeploy string
+	filteredArgs, repoResolve, err = coreutils.ExtractStringOptionFromArgs(filteredArgs, "repo-resolve")
+	if err != nil {
+		return fmt.Errorf("extract --repo-resolve: %w", err)
+	}
+	filteredArgs, repoDeploy, err = coreutils.ExtractStringOptionFromArgs(filteredArgs, "repo")
+	if err != nil {
+		return fmt.Errorf("extract --repo: %w", err)
+	}
+
+	useNugetV2, err := cliutils.ExtractBoolFlagFromArgs(&filteredArgs, "nuget-v2")
+	if err != nil {
+		return err
+	}
+	// --allow-insecure-connections mirrors the legacy nuget/dotnet path: it permits a plain
+	// http:// package source, which NuGet 6.8+ otherwise rejects. It is deliberately NOT
+	// --insecure-tls, which elsewhere in the CLI means "skip TLS certificate verification".
+	allowInsecure, err := cliutils.ExtractBoolFlagFromArgs(&filteredArgs, "allow-insecure-connections")
+	if err != nil {
+		return err
+	}
+	cmdName, nugetArgs := getNugetCommandName(filteredArgs, toolchainType)
+	workingDir, err := filepath.Abs(".")
+	if err != nil {
+		return err
+	}
+
+	nugetCmd := nugetcommand.NewNuGetFlexPackCommand().
+		SetToolchainType(toolchainType).
+		SetSubCommand(cmdName).
+		SetArgs(nugetArgs).
+		SetRepoResolve(repoResolve).
+		SetRepoDeploy(repoDeploy).
+		SetUseNugetV2(useNugetV2).
+		SetAllowInsecureConnections(allowInsecure).
+		SetBuildConfiguration(buildConfiguration).
+		SetWorkingDir(workingDir)
+
+	// Always attempt to load server details from --server-id or the default configured server.
+	// Credential injection into the temp nuget.config happens later in Run() only when needed
+	// (i.e. --repo-resolve/--repo is set and no existing nuget.config credentials take priority).
+	serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, false)
+	if err != nil && serverID != "" {
+		// Only fail hard when a specific --server-id was requested but not found.
+		return fmt.Errorf("server-id %q not found: %w", serverID, err)
+	}
+	if err == nil {
+		nugetCmd.SetServerDetails(serverDetails)
+	}
+
+	return commands.ExecWithPackageManager(nugetCmd, project.Nuget.String())
+}
+
+// getNugetCommandName parses the native NuGet command and handles dotnet's two-token
+// "nuget push" subcommand without changing the argument list for any other command.
+func getNugetCommandName(args []string, toolchainType dotnetutils.ToolchainType) (string, []string) {
+	commandName, commandArgs := getCommandName(args)
+	if toolchainType == dotnetutils.DotnetCore && commandName == "nuget" && len(commandArgs) > 0 && commandArgs[0] == "push" {
+		return "nuget push", commandArgs[1:]
+	}
+	return commandName, commandArgs
+}
+
+func CargoCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+	if c.NArg() < 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	args := cliutils.ExtractCommand(c)
+
+	args, serverID, err := coreutils.ExtractServerIdFromCommand(args)
+	if err != nil {
+		return fmt.Errorf("failed to extract server ID: %w", err)
+	}
+	serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, false)
+	if err != nil {
+		return err
+	}
+
+	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
+	if err != nil {
+		return err
+	}
+
+	cmdName, cargoArgs := getCommandName(filteredArgs)
+
+	cargoCommand := cargocommand.NewCargoCommand().
+		SetCommandName(cmdName).SetArgs(cargoArgs).
+		SetBuildConfiguration(buildConfiguration).SetServerDetails(serverDetails)
+
+	return commands.ExecWithPackageManager(cargoCommand, "cargo")
+}
+
 func NixCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
@@ -2116,6 +2375,400 @@ func NixCmd(c *cli.Context) error {
 	}
 
 	return commands.ExecWithPackageManager(cmd, "nix")
+}
+
+// RubyCmd wraps the native 'gem' and 'bundle' tools with Artifactory auth and
+// build-info support. The first argument selects the native tool (gem/bundle);
+// the remainder is passed through. Only --server-id and the build flags are
+// interpreted by jf (config-less native flow, like 'jf uv').
+func RubyCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+	if c.NArg() < 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	args := cliutils.ExtractCommand(c)
+
+	// First arg selects the native tool: "gem" or "bundle".
+	nativeTool, remainingArgs := getCommandName(args)
+
+	// Extract --server-id before passing args to the native tool.
+	var serverID string
+	var err error
+	remainingArgs, serverID, err = coreutils.ExtractServerIdFromCommand(remainingArgs)
+	if err != nil {
+		return fmt.Errorf("failed to extract server ID: %w", err)
+	}
+
+	// Extract --repo (Artifactory repository name for URL construction).
+	var repo string
+	remainingArgs, repo = extractRubyRepoFromArgs(remainingArgs)
+
+	// Extract build flags (--build-name, --build-number, --module, --project).
+	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(remainingArgs)
+	if err != nil {
+		return err
+	}
+
+	cmd := rubycommandexec.NewRubyCommand().
+		SetNativeTool(nativeTool).
+		SetArgs(filteredArgs).
+		SetServerID(serverID).
+		SetRepo(repo).
+		SetBuildConfiguration(buildConfiguration)
+
+	return commands.ExecWithPackageManager(cmd, project.Ruby.String())
+}
+
+// extractRubyRepoFromArgs extracts and consumes --repo <name> from the args slice.
+func extractRubyRepoFromArgs(args []string) (cleanArgs []string, repo string) {
+	for i := 0; i < len(args); i++ {
+		switch {
+		case args[i] == "--repo" && i+1 < len(args):
+			repo = args[i+1]
+			i++
+		case strings.HasPrefix(args[i], "--repo="):
+			repo = strings.TrimPrefix(args[i], "--repo=")
+		default:
+			cleanArgs = append(cleanArgs, args[i])
+		}
+	}
+	return cleanArgs, repo
+}
+
+// AptCmd runs apt-get/apt-cache commands with on-the-fly JFrog Artifactory authentication.
+//
+// Authentication is injected via a temporary sources.list file (D3 in design doc) unless
+// --skip-login is set, in which case the system's existing sources.list is used.
+func AptCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+	if c.NArg() < 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	args := cliutils.ExtractCommand(c)
+
+	// Extract JFrog-specific flags before passing remaining args to apt-get
+	// (SkipFlagParsing=true means urfave/cli hands them through untouched).
+	var serverID string
+	var err error
+	args, serverID, err = coreutils.ExtractServerIdFromCommand(args)
+	if err != nil {
+		return fmt.Errorf("failed to extract server ID: %w", err)
+	}
+	args, skipLogin, err := coreutils.ExtractSkipLoginFromArgs(args)
+	if err != nil {
+		return err
+	}
+	args, repoName, err := coreutils.ExtractStringOptionFromArgs(args, "repo")
+	if err != nil {
+		return err
+	}
+	args, dist, err := coreutils.ExtractStringOptionFromArgs(args, "dist")
+	if err != nil {
+		return err
+	}
+	args, component, err := coreutils.ExtractStringOptionFromArgs(args, "component")
+	if err != nil {
+		return err
+	}
+	args, trusted, err := coreutils.ExtractBoolFlagFromArgs(args, "trusted")
+	if err != nil {
+		return err
+	}
+	args, fromFile, err := coreutils.ExtractStringOptionFromArgs(args, "from-file")
+	if err != nil {
+		return err
+	}
+	// Expand --from-file: inject package names after the "install" subcommand.
+	if fromFile != "" {
+		pkgs, err := aptflex.ReadPackagesFile(fromFile)
+		if err != nil {
+			return fmt.Errorf("--from-file %s: %w", fromFile, err)
+		}
+		args = injectPackagesAfterInstall(args, pkgs)
+	}
+	// Extract build flags (--build-name, --build-number, --module, --project).
+	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
+	if err != nil {
+		return err
+	}
+
+	// Resolve server details. Fail fast on explicit --server-id; fall through
+	// without auth injection when no default is configured (matches --skip-login UX).
+	var serverDetails *coreConfig.ServerDetails
+	if serverID != "" {
+		serverDetails, err = coreConfig.GetSpecificConfig(serverID, false, false)
+		if err != nil {
+			return fmt.Errorf("could not load server configuration for '%s': %w", serverID, err)
+		}
+	} else {
+		serverDetails, err = coreConfig.GetDefaultServerConf()
+		if err != nil {
+			log.Debug("No default server configuration found — auth injection skipped: " + err.Error())
+		}
+	}
+
+	cmd := aptcommand.NewAptCommand().
+		SetArgs(filteredArgs).
+		SetSkipLogin(skipLogin).
+		SetTrusted(trusted).
+		SetRepoName(repoName).
+		SetDist(dist).
+		SetComponent(component).
+		SetBuildConfiguration(buildConfiguration)
+	if serverDetails != nil {
+		cmd.SetServerDetails(serverDetails)
+	}
+
+	return commands.ExecWithPackageManager(cmd, "apt")
+}
+
+// injectPackagesAfterInstall inserts pkgs into args immediately after the
+// "install" subcommand token. If "install" is not present, pkgs are appended.
+func injectPackagesAfterInstall(args, pkgs []string) []string {
+	for i, a := range args {
+		if a == "install" {
+			result := make([]string, 0, len(args)+len(pkgs))
+			result = append(result, args[:i+1]...)
+			result = append(result, pkgs...)
+			result = append(result, args[i+1:]...)
+			return result
+		}
+	}
+	return append(args, pkgs...)
+}
+
+// aptSetupCmd handles 'jf setup apt' — writes a persistent sources.list entry.
+func aptSetupCmd(c *cli.Context) error {
+	// --remove only needs root (enforced in Run); skip server/repo validation.
+	if c.Bool("remove") {
+		// Pass --repo so removal can be scoped to a single repo's config; empty
+		// means "all repos" (the existing behavior).
+		cmd := aptcommand.NewAptSetupCommand().
+			SetRepoName(c.String("repo")).
+			SetDist(c.String("dist")).
+			SetRemove(true)
+		return commands.ExecWithPackageManager(cmd, "apt")
+	}
+
+	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
+	if err != nil {
+		return err
+	}
+
+	repoName := c.String("repo")
+	if repoName == "" {
+		if !log.IsStdOutTerminal() {
+			return fmt.Errorf("--repo is required (non-interactive mode)")
+		}
+		// Interactive: prompt user to select a virtual debian repository.
+		repoName, err = utils.SelectRepositoryInteractively(
+			artDetails,
+			services.RepositoriesFilterParams{
+				RepoType:    utils.Virtual.String(),
+				PackageType: "debian",
+			},
+			"To configure apt, select a virtual debian repository:")
+		if err != nil {
+			return err
+		}
+		// Let the user confirm or override (handles silent auto-selection of a single match).
+		ioutils.ScanFromConsole("Repository name", &repoName, repoName)
+	} else {
+		// Fail fast on a bad repo name instead of writing an unusable source (matches setupCmd).
+		if err = validateRepoExists(repoName, artDetails); err != nil {
+			return err
+		}
+	}
+
+	// Track whether user is in interactive mode (dist not supplied via flag).
+	interactive := c.String("dist") == "" && log.IsStdOutTerminal()
+
+	dist := c.String("dist")
+	if dist == "" {
+		if !log.IsStdOutTerminal() {
+			return fmt.Errorf("--dist is required (non-interactive mode)")
+		}
+		dist = ioutils.AskString("", "Distribution name (e.g. noble, jammy, bookworm):", false, false)
+	}
+
+	component := c.String("component")
+	importKey := c.Bool("import-key")
+	trusted := c.Bool("trusted")
+
+	// Interactive fallback: prompt for component and GPG mode when dist was not
+	// supplied as a flag (i.e., the user is in an interactive session and hasn't
+	// pre-scripted all flags).
+	if interactive {
+		if component == "" {
+			ioutils.ScanFromConsole("Component (e.g. main, contrib, non-free — leave empty for 'main')", &component, "main")
+		}
+		if !importKey && !trusted {
+			var gpgChoice string
+			ioutils.ScanFromConsole("GPG mode — 'import' (auto-fetch key), 'trusted' (skip GPG, for testing), or leave empty to skip", &gpgChoice, "")
+			switch gpgChoice {
+			case "import":
+				importKey = true
+			case "trusted":
+				trusted = true
+			}
+		}
+	}
+
+	cmd := aptcommand.NewAptSetupCommand().
+		SetServerDetails(artDetails).
+		SetRepoName(repoName).
+		SetDist(dist).
+		SetComponent(component).
+		SetTrusted(trusted).
+		SetImportKey(importKey)
+
+	return commands.ExecWithPackageManager(cmd, "apt")
+}
+
+func ApkCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+	if c.NArg() < 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	args := cliutils.ExtractCommand(c)
+	subcmd, remainingArgs := getCommandName(args)
+	if subcmd == "u" {
+		subcmd = "upload"
+	}
+
+	if subcmd == "help" {
+		return cli.ShowCommandHelp(c, c.Command.Name)
+	}
+	if subcmd == "upload" && apkHelpRequested(remainingArgs) {
+		return cli.ShowCommandHelp(c, c.Command.Name)
+	}
+
+	var (
+		serverID string
+		err      error
+	)
+	remainingArgs, serverID, err = coreutils.ExtractServerIdFromCommand(remainingArgs)
+	if err != nil {
+		return fmt.Errorf("failed to extract --server-id: %w", err)
+	}
+
+	remainingArgs, repoKey, err := coreutils.ExtractStringOptionFromArgs(remainingArgs, "repo")
+	if err != nil {
+		return fmt.Errorf("failed to extract --repo: %w", err)
+	}
+	remainingArgs, alpineVersion, err := coreutils.ExtractStringOptionFromArgs(remainingArgs, "alpine-version")
+	if err != nil {
+		return fmt.Errorf("failed to extract --alpine-version: %w", err)
+	}
+	remainingArgs, username, err := coreutils.ExtractStringOptionFromArgs(remainingArgs, "user")
+	if err != nil {
+		return fmt.Errorf("failed to extract --user: %w", err)
+	}
+	remainingArgs, password, err := coreutils.ExtractStringOptionFromArgs(remainingArgs, "password")
+	if err != nil {
+		return fmt.Errorf("failed to extract --password: %w", err)
+	}
+
+	serverDetails, err := resolveApkServerDetails(serverID)
+	if err != nil {
+		return err
+	}
+
+	if subcmd == "upload" {
+		return apkUploadSubCmd(c, remainingArgs, serverDetails, repoKey, alpineVersion, username, password)
+	}
+
+	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(remainingArgs)
+	if err != nil {
+		return err
+	}
+	cmd := alpinecommand.NewApkCommand(subcmd).
+		SetArgs(filteredArgs).
+		SetBuildConfiguration(buildConfiguration).
+		SetRepo(repoKey).
+		SetAlpineVersion(alpineVersion).
+		SetUsername(username).
+		SetPassword(password)
+	if serverDetails != nil {
+		cmd.SetServerDetails(serverDetails)
+	}
+	return commands.ExecWithPackageManager(cmd, "apk")
+}
+
+func apkHelpRequested(args []string) bool {
+	for _, arg := range args {
+		if arg == "--help" || arg == "-h" {
+			return true
+		}
+	}
+	return false
+}
+
+func resolveApkServerDetails(serverID string) (*coreConfig.ServerDetails, error) {
+	const excludeRefreshableTokens = true
+	if serverID != "" {
+		serverDetails, err := coreConfig.GetSpecificConfig(serverID, false, excludeRefreshableTokens)
+		if err != nil || serverDetails == nil {
+			return nil, errorutils.CheckErrorf("server ID %q not found in configuration. "+
+				"Run 'jf c add' to add it, or omit --server-id to use the default server.", serverID)
+		}
+		return serverDetails, nil
+	}
+	defaultServer, err := coreConfig.GetDefaultServerConf()
+	if err != nil {
+		return nil, err
+	}
+	if defaultServer == nil {
+		log.Warn("No JFrog server is configured — skipping credential injection. Run 'jf c add' to configure one.")
+		return nil, nil
+	}
+	return coreConfig.GetSpecificConfig("", true, excludeRefreshableTokens)
+}
+
+func apkUploadSubCmd(c *cli.Context, args []string, serverDetails *coreConfig.ServerDetails, repoKey, alpineVersion, username, password string) error {
+	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
+	if err != nil {
+		return err
+	}
+
+	filteredArgs, branch, err := coreutils.ExtractStringOptionFromArgs(filteredArgs, "branch")
+	if err != nil {
+		return fmt.Errorf("failed to extract --branch: %w", err)
+	}
+	if branch == "" {
+		branch = "main"
+	}
+	filteredArgs, arch, err := coreutils.ExtractStringOptionFromArgs(filteredArgs, "arch")
+	if err != nil {
+		return fmt.Errorf("failed to extract --arch: %w", err)
+	}
+
+	if len(filteredArgs) != 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+	filePath := filteredArgs[0]
+
+	cmd := alpinecommand.NewApkUploadCommand(filePath).
+		SetBuildConfiguration(buildConfiguration).
+		SetRepo(repoKey).
+		SetAlpineVersion(alpineVersion).
+		SetBranch(branch).
+		SetArch(arch).
+		SetUsername(username).
+		SetPassword(password)
+	if serverDetails != nil {
+		cmd.SetServerDetails(serverDetails)
+	}
+	return commands.ExecWithPackageManager(cmd, "apk")
 }
 
 func pythonCmd(c *cli.Context, projectType project.ProjectType) error {

@@ -26,6 +26,7 @@ Gotchas:
 - Prompts run when required flags are missing; pass --repo-resolve / --repo-deploy to avoid them.
 - --global writes to ~/.jfrog/projects/ and affects all subsequent jf npm runs on the machine.
 - A separate npm-config is needed per project; running 'jf npm' from a directory without one fails.
+- This does not configure the npm client itself. It is read only by 'jf npm' commands; a plain 'npm install' keeps resolving from its own configuration, which this command never touches. To point the client itself at Artifactory for every project on the machine, run 'jf setup npm' instead - the two are independent and can even name different repositories.
 
-Related: jf npm, jf yarn-config, jf pnpm-config`
+Related: jf npm, jf yarn-config, jf pnpm-config, jf setup npm`
 }

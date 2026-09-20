@@ -31,5 +31,10 @@ Gotchas:
 - The plugin requires a Groovy plugins admin restart (or wait for the scheduled reload).
 - This command only targets self-hosted instances; cloud-hosted sources need a different transfer mechanism.
 
-Related: jf rt transfer-files, jf rt transfer-settings`
+Related: jf rt transfer-files, jf rt transfer-settings
+
+QA:
+Q: What's the JFrog CLI command to install the data-transfer user plugin in the primary node of the source instance?
+A: jf rt transfer-plugin-install source-server
+`
 }

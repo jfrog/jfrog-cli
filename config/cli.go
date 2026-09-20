@@ -153,7 +153,8 @@ func addOrEdit(c *cli.Context, operation configOperation) error {
 		SetInteractive(configCommandConfiguration.Interactive).
 		SetEncPassword(configCommandConfiguration.EncPassword).
 		SetUseBasicAuthOnly(configCommandConfiguration.BasicAuthOnly).
-		SetOIDCParams(configCommandConfiguration.OidcParams)
+		SetOIDCParams(configCommandConfiguration.OidcParams).
+		SetLegacy(configCommandConfiguration.Legacy)
 
 	return configCmd.Run()
 }
@@ -360,6 +361,7 @@ func CreateConfigCommandConfiguration(c *cli.Context) (configCommandConfiguratio
 	configCommandConfiguration.EncPassword = c.BoolT(cliutils.EncPassword)
 	configCommandConfiguration.Interactive = cliutils.GetInteractiveValue(c)
 	configCommandConfiguration.BasicAuthOnly = c.Bool(cliutils.BasicAuthOnly)
+	configCommandConfiguration.Legacy = c.Bool(cliutils.Legacy)
 	return
 }
 

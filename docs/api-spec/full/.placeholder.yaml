@@ -1,0 +1,7 @@
+# Placeholder so `-tags full` compiles in an OSS checkout before JFrog's internal
+# release job populates this directory with the real rdme-admin reference bundle.
+# A go:embed glob errors at compile time if it matches zero files, so this
+# dot-prefixed, zero-operation file keeps full/*.yaml satisfied without being
+# picked up by directory-style embeds (which exclude dot-prefixed names).
+openapi: 3.1.0
+paths: {}

@@ -1,0 +1,104 @@
+# Trimmed excerpt of JFrog's public Platform Permissions API reference, kept as an
+# OSS test fixture for the jfrog-cli apispec package (JGC-525). Not the full spec —
+# see docs/api-spec/full/ (populated only in JFrog's internal release build).
+openapi: 3.1.0
+info:
+  title: JFrog Platform - Permissions API
+  description: >
+    Permission management APIs for the JFrog Platform.
+
+
+    **Authentication:** Access Tokens as bearer token in authorization header
+    (Authorization: Bearer <token>)
+
+
+    **Security:** Unless otherwise specified, all APIs require admin privileges.
+
+
+    **Availability:** Artifactory 7.72.0+
+  version: 1.0.0
+  contact:
+    name: JFrog Support
+servers:
+  - url: https://{jfrog_url}
+tags:
+  - name: Permissions
+    description: >-
+      APIs for creating, updating, deleting, and managing JFrog Platform
+      permission targets and resources.
+security:
+  - BearerAuth: []
+paths:
+  /access/api/v2/permissions:
+    get:
+      tags:
+        - Permissions
+      summary: Get Permissions
+      description: >
+        Get the list of all permissions in the system.
+
+
+
+        **Note:** You can use `cursor` and `limit` attributes independently or
+        together to refine the results. Enter a permission name in `cursor` to
+        list permissions starting from that name. Enter an integer in `limit` to
+        define the number of results, between 1 and 99,999 (non-inclusive).
+
+
+
+        **Security:** Requires admin privileges, or a scoped token with
+        `system:permissions:r`.
+
+
+
+        **Availability:** Artifactory 7.72.0+
+      operationId: getPermissions
+      parameters:
+        - name: cursor
+          in: query
+          schema:
+            type: string
+          description: Permission name to start listing from
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 99999
+          description: Number of results (between 1 and 99,999, non-inclusive)
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermissionListResponse'
+        '400':
+          description: Bad Request - Invalid input
+        '401':
+          description: Bad Credentials - Invalid credentials
+        '403':
+          description: Permission Denied - Insufficient permissions
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: Access Token as bearer token
+  schemas:
+    PermissionListResponse:
+      type: object
+      properties:
+        permissions:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              uri:
+                type: string
+        cursor:
+          type: string
+x-readme:
+  explorer-enabled: false

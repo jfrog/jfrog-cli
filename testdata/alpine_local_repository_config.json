@@ -1,0 +1,5 @@
+{
+  "key": "${ALPINE_LOCAL_REPO}",
+  "rclass": "local",
+  "packageType": "alpine"
+}
