@@ -392,7 +392,7 @@ const (
 	ivyArtifactsPattern = "ivy-artifacts-pattern"
 
 	// Unique gradle (runtime "jf gradle") flags - not wired into gradle-config
-	includeSharedBuild = "include-shared-build"
+	includeSharedBuildLogic = "include-shared-build-logic"
 
 	// Build tool flags
 	deploymentThreads = "deployment-threads"
@@ -1434,8 +1434,8 @@ var flagsMap = map[string]cli.Flag{
 		Name:  repoDeploy,
 		Usage: "[Optional] Repository for artifacts deployment.` `",
 	},
-	includeSharedBuild: cli.BoolFlag{
-		Name:  includeSharedBuild,
+	includeSharedBuildLogic: cli.BoolFlag{
+		Name:  includeSharedBuildLogic,
 		Usage: "[Default: false] Set to true to collect buildSrc and included-build modules in build-info.` `",
 	},
 	usesPlugin: cli.BoolFlag{
@@ -2212,7 +2212,7 @@ var commandFlags = map[string][]string{
 		BuildName, BuildNumber, deploymentThreads, InsecureTls, Project, serverIdMvn, detailedSummary, xrayScan, XrFormat,
 	},
 	Gradle: {
-		BuildName, BuildNumber, deploymentThreads, Project, serverId, detailedSummary, xrayScan, XrFormat, includeSharedBuild,
+		BuildName, BuildNumber, deploymentThreads, Project, serverId, detailedSummary, xrayScan, XrFormat, includeSharedBuildLogic,
 	},
 	Docker: {
 		BuildName, BuildNumber, module, Project,

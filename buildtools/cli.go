@@ -910,12 +910,12 @@ func GradleCmd(c *cli.Context) (err error) {
 		if err != nil {
 			return err
 		}
-		filteredGradleArgs, includeSharedBuild, err := coreutils.ExtractBoolFlagFromArgs(filteredGradleArgs, "include-shared-build")
+		filteredGradleArgs, includeSharedBuildLogic, err := coreutils.ExtractBoolFlagFromArgs(filteredGradleArgs, "include-shared-build-logic")
 		if err != nil {
 			return err
 		}
-		if includeSharedBuild {
-			return errorutils.CheckErrorf("--include-shared-build is not supported yet in Gradle FlexPack (native) mode; it is currently only supported with Gradle Classic, which requires a gradle-config file")
+		if includeSharedBuildLogic {
+			return errorutils.CheckErrorf("--include-shared-build-logic is not supported yet in Gradle FlexPack (native) mode; it is currently only supported with Gradle Classic, which requires a gradle-config file")
 		}
 
 		// Create Gradle command with FlexPack (no config file needed)
@@ -954,7 +954,7 @@ func GradleCmd(c *cli.Context) (err error) {
 	if xrayScan {
 		commandsUtils.ConditionalUploadScanFunc = scan.ConditionalUploadDefaultScanFunc
 	}
-	filteredGradleArgs, includeSharedBuild, err := coreutils.ExtractBoolFlagFromArgs(filteredGradleArgs, "include-shared-build")
+	filteredGradleArgs, includeSharedBuildLogic, err := coreutils.ExtractBoolFlagFromArgs(filteredGradleArgs, "include-shared-build-logic")
 	if err != nil {
 		return err
 	}
@@ -975,7 +975,7 @@ func GradleCmd(c *cli.Context) (err error) {
 		}
 	}
 	printDeploymentView := log.IsStdErrTerminal()
-	gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(filteredGradleArgs).SetConfigPath(configFilePath).SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetXrayScan(xrayScan).SetScanOutputFormat(scanOutputFormat).SetIncludeSharedBuild(includeSharedBuild)
+	gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(filteredGradleArgs).SetConfigPath(configFilePath).SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetXrayScan(xrayScan).SetScanOutputFormat(scanOutputFormat).SetIncludeSharedBuildLogic(includeSharedBuildLogic)
 	err = commands.ExecWithPackageManager(gradleCmd, project.Gradle.String())
 	result := gradleCmd.Result()
 	defer cliutils.CleanupResult(result, &err)
