@@ -8,7 +8,7 @@ permissions:
   contents: read
 jobs:
   HuggingFace-Tests:
-    name: HuggingFace tests (${{ matrix.os.name }})
+    name: HuggingFace tests (${{ matrix.os.name }}, huggingface_hub ${{ matrix.hf_version }})
     strategy:
       fail-fast: false
       matrix:
@@ -19,7 +19,15 @@ jobs:
             version: 2022
           - name: macos
             version: 14
+        # 1.19.0: last version before the breaking change and the one this repo's
+        # go.mod dependency on jfrog-cli-artifactory currently supports. 1.20.0/1.29.0:
+        # exercise huggingface_hub's stricter RepoUrl/parse_hf_uri parsing (PR #4324)
+        # against Artifactory's commitUrl. Expected to fail until
+        # jfrog/jfrog-cli-artifactory#548 merges and this repo's go.mod is bumped to
+        # pick it up - see continue-on-error below.
+        hf_version: ['1.19.0', '1.20.0', '1.29.0']
     runs-on: ${{ matrix.os.name }}-${{ matrix.os.version }}
+    continue-on-error: ${{ matrix.hf_version != '1.19.0' }}
     steps:
       - name: Skip macOS - JGC-413
         if: matrix.os.name == 'macos'
@@ -55,10 +63,7 @@ jobs:
       - name: Install HuggingFace Library
         if: matrix.os.name != 'macos'
         run: |
-          # Pin to 1.19.0: huggingface_hub 1.20.0 made RepoUrl parse the commit
-          # response's commitUrl field strictly as an hf:// URI (PR #4324), which
-          # breaks against Artifactory's placeholder commitUrl value.
-          pip install "huggingface_hub==1.19.0"
+          pip install "huggingface_hub==${{ matrix.hf_version }}"
         shell: bash
 
       - name: Debug macOS Environment and Set Timeout
