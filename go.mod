@@ -258,8 +258,8 @@ require (
 // unaudited fork instead of jfrog/*'s own reviewed history. Remove all three (and re-run `go mod
 // tidy`) once the corresponding upstream PRs land and this repo's go.mod can pin real released
 // versions instead.
-replace github.com/jfrog/jfrog-cli-artifactory => github.com/bhanurp/jfrog-cli-artifactory v0.1.12-0.20260921070440-8380ae1d78c2
+replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260921072637-1ead320097cb
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/bhanurp/jfrog-cli-core/v2 v2.57.7-0.20260918083500-d83d8a45bd7e
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260918083500-d83d8a45bd7e
 
-replace github.com/jfrog/build-info-go => github.com/bhanurp/build-info-go v1.10.10-0.20260921070652-aa0b5c7b6789
+replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.13.1-0.20260921070652-aa0b5c7b6789
