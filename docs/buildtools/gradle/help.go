@@ -31,12 +31,14 @@ Common patterns:
   $ jf gradle clean build
   $ jf gradle artifactoryPublish --build-name=my-build --build-number=1
   $ jf gradle build -b path/to/build.gradle
+  $ jf gradle clean artifactoryPublish --include-shared-build-logic
 
 Gotchas:
 - 'jf gradle-config' must be run first; the command fails with a clear error if missing.
 - --build-name and --build-number are required together for build-info.
 - Gradle daemon caches can hide config changes; use --no-daemon when debugging.
 - Set JFROG_CLI_RELEASES_REPO to fetch the Gradle extractor through a private repo (air-gapped builds).
+- --include-shared-build-logic requires a gradle-config file (Gradle Classic); it errors out in Gradle FlexPack (native) mode, which has no gradle-config file.
 
 Related: jf gradle-config, jf rt build-publish`
 }
