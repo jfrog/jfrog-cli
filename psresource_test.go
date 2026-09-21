@@ -4,8 +4,10 @@ import (
 	"os/exec"
 	"testing"
 
+	buildInfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
+	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
@@ -134,7 +136,70 @@ func TestPSResourceInstallCollectsDependencyBuildInfo(t *testing.T) {
 	// (flag parsing, server resolution, FlexPack command construction) got far enough to invoke it.
 	if err != nil {
 		t.Logf("'jf Install-PSResource' returned %v; this is expected without a real registered feed", err)
+		return
 	}
+	// If it did succeed (e.g. against a real registered feed with SomeModule actually resolvable),
+	// the locally-collected build-info must actually contain it - a silently empty or corrupted
+	// build-info must not pass this test just because the command itself returned no error.
+	inttestutils.ValidateGeneratedBuildInfoModule(t, buildName, buildNumber, "", []string{"psresource-project"}, buildInfo.Nuget)
+}
+
+// TestPSResourceSaveCollectsDependencyBuildInfo mirrors TestPSResourceInstallCollectsDependencyBuildInfo
+// for 'jf Save-PSResource'. Without this, only Install-PSResource's SetSubCommand/native-dispatch
+// wiring was ever exercised past the shared '--help' early-return - a wiring bug specific to
+// Save-PSResource (wrong cmdletName captured, wrong flag forwarded) would not have been caught by
+// any test.
+func TestPSResourceSaveCollectsDependencyBuildInfo(t *testing.T) {
+	initPSResourceTest(t)
+	defer cleanTestsHomeEnv()
+
+	buildName := tests.PSResourceBuildName + "-save"
+	buildNumber := "1"
+
+	err := runPSResource(t, "Save-PSResource", "-Name", "SomeModule", "-Repository", tests.NugetVirtualRepo,
+		"--repo-resolve="+tests.NugetVirtualRepo, "--build-name="+buildName, "--build-number="+buildNumber)
+	if err != nil {
+		t.Logf("'jf Save-PSResource' returned %v; this is expected without a real registered feed", err)
+		return
+	}
+	inttestutils.ValidateGeneratedBuildInfoModule(t, buildName, buildNumber, "", []string{"psresource-project"}, buildInfo.Nuget)
+}
+
+// TestPSResourceUpdateCollectsDependencyBuildInfo mirrors TestPSResourceInstallCollectsDependencyBuildInfo
+// for 'jf Update-PSResource'.
+func TestPSResourceUpdateCollectsDependencyBuildInfo(t *testing.T) {
+	initPSResourceTest(t)
+	defer cleanTestsHomeEnv()
+
+	buildName := tests.PSResourceBuildName + "-update"
+	buildNumber := "1"
+
+	err := runPSResource(t, "Update-PSResource", "-Name", "SomeModule", "-Repository", tests.NugetVirtualRepo,
+		"--repo-resolve="+tests.NugetVirtualRepo, "--build-name="+buildName, "--build-number="+buildNumber)
+	if err != nil {
+		t.Logf("'jf Update-PSResource' returned %v; this is expected without a real registered feed", err)
+		return
+	}
+	inttestutils.ValidateGeneratedBuildInfoModule(t, buildName, buildNumber, "", []string{"psresource-project"}, buildInfo.Nuget)
+}
+
+// TestPSResourcePublishCollectsArtifactBuildInfo mirrors TestPSResourceInstallCollectsDependencyBuildInfo
+// for 'jf Publish-PSResource' - the one command in the family that collects artifact (not
+// dependency) build-info.
+func TestPSResourcePublishCollectsArtifactBuildInfo(t *testing.T) {
+	initPSResourceTest(t)
+	defer cleanTestsHomeEnv()
+
+	buildName := tests.PSResourceBuildName + "-publish"
+	buildNumber := "1"
+
+	err := runPSResource(t, "Publish-PSResource", "-Path", t.TempDir(), "-Repository", tests.NugetLocalRepo,
+		"--repo="+tests.NugetLocalRepo, "--build-name="+buildName, "--build-number="+buildNumber)
+	if err != nil {
+		t.Logf("'jf Publish-PSResource' returned %v; this is expected without a real registered feed and module manifest", err)
+		return
+	}
+	inttestutils.ValidateGeneratedBuildInfoModule(t, buildName, buildNumber, "", []string{"psresource-project"}, buildInfo.Nuget)
 }
 
 // TestPSResourcePlatformGateWithoutPwsh asserts that on a machine with no usable pwsh +

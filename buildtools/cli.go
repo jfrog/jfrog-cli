@@ -702,7 +702,19 @@ func psResourceCommandEntries() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
 			Action: func(c *cli.Context) error {
-				return securityCLI.WrapCmdWithCurationPostFailureRun(c, psResourceCmd(name), techutils.Nuget, name)
+				// jfrog-cli-security's post-failure curation audit gates on a fixed, generic
+				// verb allowlist ({install, build, i, add, ci, get, mod}) shared across every
+				// package manager - it never matches this cmdlet's own PascalCase name
+				// ("Install-PSResource" etc.), so passing name here made the audit a silent
+				// no-op for all four commands. Install/Save/Update are install-like resolve
+				// actions (the curation-blockable case this audit exists for), so they pass the
+				// matching "install" verb. Publish-PSResource uploads rather than resolves a
+				// package - curation cannot block it in the way this audit checks for - so it
+				// runs directly, without a cmdName that would never legitimately apply.
+				if name == psresourcecommand.SubCommandPublish {
+					return psResourceCmd(name)(c)
+				}
+				return securityCLI.WrapCmdWithCurationPostFailureRun(c, psResourceCmd(name), techutils.Nuget, "install")
 			},
 		})
 	}

@@ -249,8 +249,17 @@ require (
 
 // replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260604085947-7c110b77b4b4
 
-replace github.com/jfrog/jfrog-cli-artifactory => github.com/bhanurp/jfrog-cli-artifactory v0.1.12-0.20260918093822-3973ddc5cd5a
+// !!! RELEASE-BLOCKING - REMOVE BEFORE MERGING RTECO-2247 !!!
+// The three replace directives below point at a personal fork (github.com/bhanurp/*) instead of
+// the official jfrog org repos. They exist only because this branch's PSResourceGet support spans
+// unmerged changes in jfrog-cli-artifactory, jfrog-cli-core and build-info-go that have no released
+// version yet - without them this repo cannot build against those changes at all. Building or
+// releasing the jf binary with these still in place means shipping code from an individually-owned,
+// unaudited fork instead of jfrog/*'s own reviewed history. Remove all three (and re-run `go mod
+// tidy`) once the corresponding upstream PRs land and this repo's go.mod can pin real released
+// versions instead.
+replace github.com/jfrog/jfrog-cli-artifactory => github.com/bhanurp/jfrog-cli-artifactory v0.1.12-0.20260921070440-8380ae1d78c2
 
 replace github.com/jfrog/jfrog-cli-core/v2 => github.com/bhanurp/jfrog-cli-core/v2 v2.57.7-0.20260918083500-d83d8a45bd7e
 
-replace github.com/jfrog/build-info-go => github.com/bhanurp/build-info-go v1.10.10-0.20260918084802-08a1f22415c3
+replace github.com/jfrog/build-info-go => github.com/bhanurp/build-info-go v1.10.10-0.20260921070652-aa0b5c7b6789
