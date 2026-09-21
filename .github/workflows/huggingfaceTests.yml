@@ -19,15 +19,11 @@ jobs:
             version: 2022
           - name: macos
             version: 14
-        # 1.19.0: last version before the breaking change and the one this repo's
-        # go.mod dependency on jfrog-cli-artifactory currently supports. 1.20.0/1.29.0:
-        # exercise huggingface_hub's stricter RepoUrl/parse_hf_uri parsing (PR #4324)
-        # against Artifactory's commitUrl. Expected to fail until
-        # jfrog/jfrog-cli-artifactory#548 merges and this repo's go.mod is bumped to
-        # pick it up - see continue-on-error below.
+        # 1.20.0/1.29.0 exercise huggingface_hub's stricter RepoUrl/parse_hf_uri
+        # parsing (PR #4324) against Artifactory's commitUrl, fixed in
+        # jfrog/jfrog-cli-artifactory#548 (this repo's go.mod is bumped to include it).
         hf_version: ['1.19.0', '1.20.0', '1.29.0']
     runs-on: ${{ matrix.os.name }}-${{ matrix.os.version }}
-    continue-on-error: ${{ matrix.hf_version != '1.19.0' }}
     steps:
       - name: Skip macOS - JGC-413
         if: matrix.os.name == 'macos'
