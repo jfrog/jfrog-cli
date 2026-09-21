@@ -118,7 +118,7 @@ const (
 )
 
 func GetCommands() []cli.Command {
-	cmds := cliutils.GetSortedCommands(cli.CommandsByName{
+	cmds := cliutils.GetSortedCommands(append(cli.CommandsByName{
 		{
 			Hidden:       false,
 			Name:         "setup",
@@ -274,62 +274,6 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
 			Action:          DotnetCmd,
-		},
-		{
-			Name:            "Install-PSResource",
-			Flags:           cliutils.GetCommandFlags(cliutils.PSResource),
-			Usage:           corecommon.ResolveDescription(psresourcedocs.GetInstallDescription(), psresourcedocs.GetInstallAIDescription()),
-			HelpName:        corecommon.CreateUsage("Install-PSResource", corecommon.ResolveDescription(psresourcedocs.GetInstallDescription(), psresourcedocs.GetInstallAIDescription()), psresourcedocs.InstallUsage),
-			UsageText:       psresourcedocs.GetInstallArguments(),
-			ArgsUsage:       common.CreateEnvVars(),
-			SkipFlagParsing: true,
-			BashComplete:    corecommon.CreateBashCompletionFunc(),
-			Category:        buildToolsCategory,
-			Action: func(c *cli.Context) error {
-				return securityCLI.WrapCmdWithCurationPostFailureRun(c, psResourceCmd(psresourcecommand.SubCommandInstall), techutils.Nuget, psresourcecommand.SubCommandInstall)
-			},
-		},
-		{
-			Name:            "Save-PSResource",
-			Flags:           cliutils.GetCommandFlags(cliutils.PSResource),
-			Usage:           corecommon.ResolveDescription(psresourcedocs.GetSaveDescription(), psresourcedocs.GetSaveAIDescription()),
-			HelpName:        corecommon.CreateUsage("Save-PSResource", corecommon.ResolveDescription(psresourcedocs.GetSaveDescription(), psresourcedocs.GetSaveAIDescription()), psresourcedocs.SaveUsage),
-			UsageText:       psresourcedocs.GetSaveArguments(),
-			ArgsUsage:       common.CreateEnvVars(),
-			SkipFlagParsing: true,
-			BashComplete:    corecommon.CreateBashCompletionFunc(),
-			Category:        buildToolsCategory,
-			Action: func(c *cli.Context) error {
-				return securityCLI.WrapCmdWithCurationPostFailureRun(c, psResourceCmd(psresourcecommand.SubCommandSave), techutils.Nuget, psresourcecommand.SubCommandSave)
-			},
-		},
-		{
-			Name:            "Update-PSResource",
-			Flags:           cliutils.GetCommandFlags(cliutils.PSResource),
-			Usage:           corecommon.ResolveDescription(psresourcedocs.GetUpdateDescription(), psresourcedocs.GetUpdateAIDescription()),
-			HelpName:        corecommon.CreateUsage("Update-PSResource", corecommon.ResolveDescription(psresourcedocs.GetUpdateDescription(), psresourcedocs.GetUpdateAIDescription()), psresourcedocs.UpdateUsage),
-			UsageText:       psresourcedocs.GetUpdateArguments(),
-			ArgsUsage:       common.CreateEnvVars(),
-			SkipFlagParsing: true,
-			BashComplete:    corecommon.CreateBashCompletionFunc(),
-			Category:        buildToolsCategory,
-			Action: func(c *cli.Context) error {
-				return securityCLI.WrapCmdWithCurationPostFailureRun(c, psResourceCmd(psresourcecommand.SubCommandUpdate), techutils.Nuget, psresourcecommand.SubCommandUpdate)
-			},
-		},
-		{
-			Name:            "Publish-PSResource",
-			Flags:           cliutils.GetCommandFlags(cliutils.PSResource),
-			Usage:           corecommon.ResolveDescription(psresourcedocs.GetPublishDescription(), psresourcedocs.GetPublishAIDescription()),
-			HelpName:        corecommon.CreateUsage("Publish-PSResource", corecommon.ResolveDescription(psresourcedocs.GetPublishDescription(), psresourcedocs.GetPublishAIDescription()), psresourcedocs.PublishUsage),
-			UsageText:       psresourcedocs.GetPublishArguments(),
-			ArgsUsage:       common.CreateEnvVars(),
-			SkipFlagParsing: true,
-			BashComplete:    corecommon.CreateBashCompletionFunc(),
-			Category:        buildToolsCategory,
-			Action: func(c *cli.Context) error {
-				return securityCLI.WrapCmdWithCurationPostFailureRun(c, psResourceCmd(psresourcecommand.SubCommandPublish), techutils.Nuget, psresourcecommand.SubCommandPublish)
-			},
 		},
 		{
 			Name:         "go-config",
@@ -728,8 +672,41 @@ func GetCommands() []cli.Command {
 				},
 			},
 		},
-	})
+	}, psResourceCommandEntries()...))
 	return decorateWithFlagCapture(cmds)
+}
+
+// psResourceCommandEntries builds the cli.Command entries for the four top-level PSResourceGet
+// commands (Install-PSResource, Save-PSResource, Update-PSResource, Publish-PSResource) - one per
+// native PowerShell PSResourceGet cmdlet - from a shared table instead of four hand-duplicated
+// cli.Command literals. Final ordering among all commands is unaffected: GetCommands sorts the
+// full command set alphabetically via cliutils.GetSortedCommands regardless of insertion order.
+func psResourceCommandEntries() []cli.Command {
+	names := []string{
+		psresourcecommand.SubCommandInstall,
+		psresourcecommand.SubCommandSave,
+		psresourcecommand.SubCommandUpdate,
+		psresourcecommand.SubCommandPublish,
+	}
+	cmds := make([]cli.Command, 0, len(names))
+	for _, name := range names {
+		description := corecommon.ResolveDescription(psresourcedocs.GetDescription(name), psresourcedocs.GetAIDescription(name))
+		cmds = append(cmds, cli.Command{
+			Name:            name,
+			Flags:           cliutils.GetCommandFlags(cliutils.PSResource),
+			Usage:           description,
+			HelpName:        corecommon.CreateUsage(name, description, psresourcedocs.Usage(name)),
+			UsageText:       psresourcedocs.GetArguments(name),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Category:        buildToolsCategory,
+			Action: func(c *cli.Context) error {
+				return securityCLI.WrapCmdWithCurationPostFailureRun(c, psResourceCmd(name), techutils.Nuget, name)
+			},
+		})
+	}
+	return cmds
 }
 
 func skipFlagParsingForDockerCmd() bool {
