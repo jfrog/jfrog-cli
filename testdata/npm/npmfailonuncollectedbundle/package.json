@@ -1,0 +1,8 @@
+{
+  "name": "npm-fail-on-uncollected-bundle-test",
+  "version": "1.0.0",
+  "license": "ISC",
+  "dependencies": {
+    "bundled-pkg": "file:./bundled-pkg-1.0.0.tgz"
+  }
+}

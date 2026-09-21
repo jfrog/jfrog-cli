@@ -587,6 +587,7 @@ func GetBuildNames() []string {
 		TestPipenv:       {&PipenvBuildName},
 		TestPoetry:       {&PoetryBuildName},
 		TestUv:           {&UvBuildName},
+		TestApt:          {&AptBuildName},
 		TestNix:          {&NixBuildName},
 		TestCargo:        {&CargoBuildName},
 		TestAlpine:       {&AlpineBuildName},
@@ -765,6 +766,7 @@ func AddTimestampToGlobalVars() {
 	AptRemoteRepo += uniqueSuffix
 	AptDebianRemoteRepo += uniqueSuffix
 	AptVirtualRepo += uniqueSuffix
+	AptBuildName += uniqueSuffix
 	ConanLocalRepo += uniqueSuffix
 	ConanRemoteRepo += uniqueSuffix
 	ConanVirtualRepo += uniqueSuffix
