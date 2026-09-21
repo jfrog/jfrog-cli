@@ -19,12 +19,11 @@ import (
 // module installed can be found on PATH. Unlike Chocolatey, PSResourceGet is cross-platform, so
 // the gate here is "is the tool present", never an OS check.
 func psresourcePlatformAvailable() bool {
-	shell := ""
-	if _, err := exec.LookPath("pwsh"); err == nil {
-		shell = "pwsh"
-	} else if _, err := exec.LookPath("powershell.exe"); err == nil {
-		shell = "powershell.exe"
-	} else {
+	shell, err := exec.LookPath("pwsh")
+	if err != nil {
+		shell, err = exec.LookPath("powershell.exe")
+	}
+	if err != nil {
 		return false
 	}
 	checkScript := "if (Get-Module -ListAvailable -Name Microsoft.PowerShell.PSResourceGet) { exit 0 } else { exit 1 }"
