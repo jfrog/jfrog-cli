@@ -17,6 +17,7 @@ import (
 	alpinecommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/alpine"
 	aptcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/apt"
 	cargocommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/cargo"
+	aptflex "github.com/jfrog/build-info-go/flexpack/apt"
 	conancommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/conan"
 	nixcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nix"
 	nugetcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nuget"
@@ -783,8 +784,16 @@ func runMvn(c *cli.Context, preferWrapper bool) (err error) {
 		if err != nil {
 			return err
 		}
-		// Maven does not accept --server-id; use the default configured server for usage reporting.
-		serverDetails, err := coreConfig.GetDefaultServerConf()
+		// Native accepts --server-id (for build-info collection: property tagging, virtual-repo
+		// resolution, repository lookups). Strip it from the goals and resolve the target server,
+		// falling back to the default configured server when not provided.
+		filteredMavenArgs, serverID, err := coreutils.ExtractServerIdFromCommand(filteredMavenArgs)
+		if err != nil {
+			return fmt.Errorf("failed to extract server ID: %w", err)
+		}
+		// GetSpecificConfig with an empty serverID (defaultOrEmpty=true) returns the default server, so
+		// this covers both the --server-id and no-flag cases.
+		serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, true)
 		if err != nil {
 			return err
 		}
@@ -2503,9 +2512,20 @@ func AptCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	// Strip build flags so they aren't passed through to apt-get. Build-info
-	// collection is out of scope for the auth flow.
-	filteredArgs, _, err := build.ExtractBuildDetailsFromArgs(args)
+	args, fromFile, err := coreutils.ExtractStringOptionFromArgs(args, "from-file")
+	if err != nil {
+		return err
+	}
+	// Expand --from-file: inject package names after the "install" subcommand.
+	if fromFile != "" {
+		pkgs, err := aptflex.ReadPackagesFile(fromFile)
+		if err != nil {
+			return fmt.Errorf("--from-file %s: %w", fromFile, err)
+		}
+		args = injectPackagesAfterInstall(args, pkgs)
+	}
+	// Extract build flags (--build-name, --build-number, --module, --project).
+	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
 	if err != nil {
 		return err
 	}
@@ -2531,12 +2551,28 @@ func AptCmd(c *cli.Context) error {
 		SetTrusted(trusted).
 		SetRepoName(repoName).
 		SetDist(dist).
-		SetComponent(component)
+		SetComponent(component).
+		SetBuildConfiguration(buildConfiguration)
 	if serverDetails != nil {
 		cmd.SetServerDetails(serverDetails)
 	}
 
 	return commands.ExecWithPackageManager(cmd, "apt")
+}
+
+// injectPackagesAfterInstall inserts pkgs into args immediately after the
+// "install" subcommand token. If "install" is not present, pkgs are appended.
+func injectPackagesAfterInstall(args, pkgs []string) []string {
+	for i, a := range args {
+		if a == "install" {
+			result := make([]string, 0, len(args)+len(pkgs))
+			result = append(result, args[:i+1]...)
+			result = append(result, pkgs...)
+			result = append(result, args[i+1:]...)
+			return result
+		}
+	}
+	return append(args, pkgs...)
 }
 
 // aptSetupCmd handles 'jf setup apt' — writes a persistent sources.list entry.
