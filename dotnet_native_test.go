@@ -1792,6 +1792,22 @@ func TestDotnetFlexPackBceCapturesEnv(t *testing.T) {
 
 	published := publishAndGetDotnetBuildInfo(t, buildNumber)
 	assert.NotNil(t, published.BuildInfo.Properties, "bce must record an env section")
+
+	// The restore above ran with an injected NuGetPackageSourceCredentials_<source> entry, but
+	// only in the temporary env of the "jf dotnet restore" child process (nativeCmd.Env =
+	// append(os.Environ(), c.credentialEnv) in injectCredentialsViaTempConfig) - jf's own
+	// process env is never touched via os.Setenv. bce runs afterward as an entirely separate
+	// process, so it has no way to observe that credential; this pins that absence rather than
+	// relying on the two commands happening not to share state.
+	_, password := credentialsForTestServer(t)
+	for key, value := range published.BuildInfo.Properties {
+		assert.NotContains(t, strings.ToLower(key), "nugetpackagesourcecredentials",
+			"bce must not record the NuGet credential env var as a build-info property: %s", key)
+		if password != "" {
+			assert.NotContains(t, value, password,
+				"bce must not record the repository password/token in any env property (%s=%s)", key, value)
+		}
+	}
 }
 
 func TestDotnetFlexPackBagCapturesGit(t *testing.T) {

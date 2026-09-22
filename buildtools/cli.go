@@ -1041,8 +1041,9 @@ func extractPnpmOptionsFromArgs(args []string) (serverDetails *coreConfig.Server
 	return serverDetails, cleanArgs, buildConfig, nil
 }
 
-// shouldRunNuGetFlexPack reports whether the FlexPack (native) path should handle a
-// 'jf nuget' / 'jf dotnet' invocation.
+// shouldRunFlexPackNative reports whether the FlexPack (native) path should handle an
+// invocation of a package manager that gates on a per-project config file, such as
+// 'jf nuget' / 'jf dotnet'.
 //
 // JFROG_RUN_NATIVE=true takes precedence over a per-project configuration file. Previously the
 // gate was `ShouldRunNative(configFilePath) && !configExists`, so any leftover
@@ -1054,7 +1055,14 @@ func extractPnpmOptionsFromArgs(args []string) (serverDetails *coreConfig.Server
 //
 // configFilePath is only used for the warning message; pass configExists to say whether one
 // was found. pmName names the package manager for the 'jf <pm>-config' hint.
-func shouldRunNuGetFlexPack(configFilePath string, configExists bool, pmName string) bool {
+//
+// This is deliberately generic - not NuGet/dotnet-specific - so other FlexPack-gated commands
+// can share it instead of duplicating the same three-line check. runMvn (this file) and the
+// Gradle command still use the old `ShouldRunNative(configFilePath) && !configExists` gate
+// directly and therefore still have the exact bug described above; switching them over is
+// tracked separately rather than folded into this dotnet/nuget-scoped change, since it changes
+// Maven's and Gradle's own CLI behaviour and needs their own test coverage.
+func shouldRunFlexPackNative(configFilePath string, configExists bool, pmName string) bool {
 	if !flexpack.IsFlexPackEnabled() {
 		return false
 	}
@@ -1078,7 +1086,7 @@ func NugetCmd(c *cli.Context) error {
 	}
 
 	// FlexPack bypasses all config file requirements. JFROG_RUN_NATIVE wins over a config file.
-	if shouldRunNuGetFlexPack(configFilePath, configExists, "nuget") {
+	if shouldRunFlexPackNative(configFilePath, configExists, "nuget") {
 		return runNugetFlexPackCmd(c, dotnetutils.Nuget)
 	}
 
@@ -1133,7 +1141,7 @@ func DotnetCmd(c *cli.Context) error {
 	}
 
 	// FlexPack bypasses all config file requirements. JFROG_RUN_NATIVE wins over a config file.
-	if shouldRunNuGetFlexPack(configFilePath, configExists, "dotnet") {
+	if shouldRunFlexPackNative(configFilePath, configExists, "dotnet") {
 		return runNugetFlexPackCmd(c, dotnetutils.DotnetCore)
 	}
 
