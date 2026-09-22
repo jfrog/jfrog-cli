@@ -1664,8 +1664,8 @@ func TestNpmBuildPublishWithCIVcsProps(t *testing.T) {
 
 	// Get the published build info to find artifact paths
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
-	assert.NoError(t, err)
-	assert.True(t, found, "Build info was not found")
+	require.NoError(t, err)
+	require.True(t, found, "Build info was not found")
 
 	// Create service manager for getting artifact properties
 	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
