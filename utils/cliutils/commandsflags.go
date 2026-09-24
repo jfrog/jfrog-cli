@@ -2355,6 +2355,7 @@ var commandFlags = map[string][]string{
 	},
 	Apt: {
 		serverId, skipLogin, setupRepo, aptDistribution, aptComponent, aptTrusted,
+		BuildName, BuildNumber, module, Project,
 	},
 	AptSetup: {
 		serverId, setupRepo, aptDistribution, aptComponent, aptTrusted, aptImportKey, aptRemove,
