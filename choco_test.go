@@ -531,17 +531,20 @@ func TestChocoInstallCollectsDependencies(t *testing.T) {
 }
 
 // requireChocoResolutionRepoCollected asserts that --repo-resolve reached the collected
-// dependencies. It reads the partial build-info files straight off disk, and so must run before
-// 'jf rt bp': a dependency's Repository is a client-side field that Artifactory does not store,
+// dependencies. It reads the build info that 'jf choco install' saved to disk, and so must run
+// before 'jf rt bp': a dependency's Repository is a client-side field that Artifactory does not store,
 // the same way entities.Artifact.OriginalDeploymentRepo is documented as internal-only. Asserting
 // it on published build info would only ever test Artifactory's serialization.
 func requireChocoResolutionRepoCollected(t *testing.T, buildName, buildNumber, expectedRepo string) {
 	t.Helper()
-	partials, err := coreBuild.ReadPartialBuildInfoFiles(buildName, buildNumber, "")
+	generatedBuilds, err := coreBuild.GetGeneratedBuildsInfo(buildName, buildNumber, "")
 	require.NoError(t, err)
+	require.NotEmpty(t, generatedBuilds, "'jf choco install' should have saved build info locally")
 	var dependencies []buildInfo.Dependency
-	for _, partial := range partials {
-		dependencies = append(dependencies, partial.Dependencies...)
+	for _, generatedBuild := range generatedBuilds {
+		for _, module := range generatedBuild.Modules {
+			dependencies = append(dependencies, module.Dependencies...)
+		}
 	}
 	require.NotEmpty(t, dependencies, "the installed package must be collected as a dependency")
 	for _, dependency := range dependencies {
