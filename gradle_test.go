@@ -607,6 +607,53 @@ func TestGradleBuildSharedBuildLogicFlexPack(t *testing.T) {
 	cleanGradleTest(t)
 }
 
+// TestGradleBuildSharedBuildLogicBuildLogicClassic is the same check as
+// TestGradleBuildSharedBuildLogicClassic, but the shared convention plugin lives in an
+// included build-logic build instead of buildSrc.
+func TestGradleBuildSharedBuildLogicBuildLogicClassic(t *testing.T) {
+	initGradleTest(t)
+	buildGradlePath := createGradleProject(t, "buildlogicdependency")
+	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.GradleConfig)
+	destPath := filepath.Join(filepath.Dir(buildGradlePath), ".jfrog", "projects")
+	createConfigFile(destPath, configFilePath, t)
+	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
+	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
+
+	buildName := tests.GradleBuildName + "-shared-build-logic-buildlogic-classic"
+	buildNumber := "1"
+
+	runJfrogCli(t, "gradle", "clean", "artifactoryPublish", "--build-name="+buildName, "--build-number="+buildNumber)
+	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	assertSharedConventionDependencyInBuildInfo(t, buildName, buildNumber)
+	cleanGradleTest(t)
+}
+
+// TestGradleBuildSharedBuildLogicBuildLogicFlexPack is the same check as
+// TestGradleBuildSharedBuildLogicFlexPack, but the shared convention plugin lives in an
+// included build-logic build instead of buildSrc.
+func TestGradleBuildSharedBuildLogicBuildLogicFlexPack(t *testing.T) {
+	initGradleTest(t)
+	buildGradlePath := createGradleProject(t, "buildlogicdependency")
+	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
+	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
+
+	buildName := tests.GradleBuildName + "-shared-build-logic-buildlogic-flexpack"
+	buildNumber := "1"
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_RUN_NATIVE", "true")
+	defer setEnvCallBack()
+
+	// See TestGradleBuildSharedBuildLogicFlexPack for why this is needed.
+	assert.NoError(t, os.RemoveAll(".jfrog"))
+
+	err := runJfrogCliWithoutAssertion("gradle", "clean", "build", "--build-name="+buildName, "--build-number="+buildNumber)
+	assert.NoError(t, err)
+	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	assertSharedConventionDependencyInBuildInfo(t, buildName, buildNumber)
+	cleanGradleTest(t)
+}
+
 // assertSharedConventionDependencyInBuildInfo asserts the published build-info has:
 //   - an "api" module (applies the shared java-common-conventions plugin) whose
 //     dependencies include org.slf4j:slf4j-api — a dependency declared only in the
