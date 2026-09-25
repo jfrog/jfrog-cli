@@ -1,0 +1,7 @@
+pluginManagement {
+    includeBuild 'build-logic'
+}
+
+rootProject.name = 'buildlogicdependency'
+include 'api'
+include 'lib'

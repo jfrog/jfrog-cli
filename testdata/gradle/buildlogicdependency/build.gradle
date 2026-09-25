@@ -1,0 +1,3 @@
+// Root build file intentionally left plain. Neither Classic mode (plugin
+// auto-injected via init script) nor FlexPack mode requires any plugin
+// application here.

@@ -1,0 +1,22 @@
+// Intentionally does NOT apply the shared java-common-conventions plugin from
+// buildSrc, so it must not receive org.slf4j:slf4j-api (or anything else the
+// convention plugin declares).
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+}
+
+repositories {
+    mavenCentral()
+}
+
+group = 'com.example'
+version = '1.0.0'
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
+}
