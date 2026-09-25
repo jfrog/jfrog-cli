@@ -655,35 +655,15 @@ func TestChocoInstallRecordsVersionFromInstalledPackage(t *testing.T) {
 // Pass-through, statelessness and the platform gate.
 // ---------------------------------------------------------------------------------------------
 
-// initChocoTestAnyPlatform gates only on the feature flag, for the two scenarios that must be
-// observed where Chocolatey cannot run. It deliberately configures no JFrog server: the OS gate
-// fires before any server interaction, and requiring one here would hide a regression that moved
-// the gate behind server resolution.
-func initChocoTestAnyPlatform(t *testing.T) {
-	t.Helper()
+// TestChocoHelpWorksOnAllPlatforms asserts the gate lives in the command's Run(), not in its
+// registration, so help stays reachable on the machines that cannot run the tool. It deliberately
+// configures no JFrog server: help must not need one. The gate's rejection message is asserted by
+// TestChocoCommandNonWindowsFailsClearly in jfrog-cli-artifactory, which stubs the platform check
+// and so runs on every OS - this suite only ever runs on Windows.
+func TestChocoHelpWorksOnAllPlatforms(t *testing.T) {
 	if !*tests.TestChoco {
 		t.Skip("Skipping Chocolatey test. To run Choco test add the '-test.choco=true' option.")
 	}
-}
-
-// TestChocoNonWindowsGate asserts the command refuses to run off Windows, naming the detected OS
-// instead of surfacing a bare "choco: executable file not found".
-func TestChocoNonWindowsGate(t *testing.T) {
-	initChocoTestAnyPlatform(t)
-	if runtime.GOOS == "windows" {
-		t.Skip("The OS gate only rejects non-Windows hosts; nothing to assert on Windows.")
-	}
-
-	err := runChoco(t, "choco", "install", "some-package")
-	require.Error(t, err, "'jf choco' must refuse to run on a non-Windows host")
-	assert.Contains(t, err.Error(), "Windows only")
-	assert.Containsf(t, err.Error(), runtime.GOOS, "the error must name the detected OS (%s)", runtime.GOOS)
-}
-
-// TestChocoHelpWorksOnAllPlatforms asserts the gate lives in the command's Run(), not in its
-// registration, so help stays reachable on the machines that cannot run the tool.
-func TestChocoHelpWorksOnAllPlatforms(t *testing.T) {
-	initChocoTestAnyPlatform(t)
 	assert.NoError(t, runChoco(t, "choco", "--help"), "'jf choco --help' must work on every OS")
 }
 
