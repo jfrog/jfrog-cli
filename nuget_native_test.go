@@ -243,7 +243,7 @@ func TestNugetFlexPackSkipDuplicateSymbolStillPushes(t *testing.T) {
 	require.NoError(t, runNugetFlexPack(t, args...), ".snupkg push must succeed even though the sibling .nupkg was a duplicate")
 
 	// Verify both files actually landed in the repo.
-	// .nupkg is stored flat at the root; .snupkg is stored as symbolpackage/<id>.<version>.nupkg.
+	// Both land flat at the repository root, each under its own name and extension.
 	client, err := httpclient.ClientBuilder().Build()
 	require.NoError(t, err)
 	nupkgUrl := serverDetails.ArtifactoryUrl + tests.NugetLocalRepo + "/" + id + "." + version + ".nupkg"
@@ -251,7 +251,7 @@ func TestNugetFlexPackSkipDuplicateSymbolStillPushes(t *testing.T) {
 	if assert.NoError(t, detailsErr, "failed to find nupkg in %s", tests.NugetLocalRepo) {
 		assert.Equal(t, http.StatusOK, res.StatusCode)
 	}
-	snupkgUrl := serverDetails.ArtifactoryUrl + tests.NugetLocalRepo + "/symbolpackage/" + id + "." + version + ".nupkg"
+	snupkgUrl := serverDetails.ArtifactoryUrl + tests.NugetLocalRepo + "/" + id + "." + version + ".snupkg"
 	_, res, detailsErr = client.GetRemoteFileDetails(snupkgUrl, artHttpDetails)
 	if assert.NoError(t, detailsErr, "failed to find snupkg in %s", tests.NugetLocalRepo) {
 		assert.Equal(t, http.StatusOK, res.StatusCode)
@@ -851,8 +851,11 @@ func TestNugetFlexPackSiblingSymbolAutoPush(t *testing.T) {
 
 	client, err := httpclient.ClientBuilder().Build()
 	require.NoError(t, err)
-	// Artifactory stores snupkg at symbolpackage/<id>.<version>.nupkg (not flat).
-	_, res, err := client.GetRemoteFileDetails(fmt.Sprintf("%s%s/symbolpackage/%s.%s.nupkg", serverDetails.ArtifactoryUrl, tests.NugetLocalRepo, id, version), artHttpDetails)
+	// Artifactory stores a pushed .snupkg flat at the repository root under its own name. The
+	// V3 /symbols endpoint both clients reach through a FlexPack-declared source neither renames
+	// nor relocates it; symbolpackage/<id>.<version>.nupkg is the V2 /symbolpackage endpoint's
+	// layout, which nothing here pushes to.
+	_, res, err := client.GetRemoteFileDetails(fmt.Sprintf("%s%s/%s.%s.snupkg", serverDetails.ArtifactoryUrl, tests.NugetLocalRepo, id, version), artHttpDetails)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, res.StatusCode, "sibling .snupkg should have been auto-pushed by nuget.exe alongside the .nupkg")
 }
@@ -899,8 +902,11 @@ func TestNugetFlexPackNoSymbolsFlag(t *testing.T) {
 	require.NoError(t, err)
 	// GetRemoteFileDetails returns a non-nil error on a 404, so "must not exist" is confirmed by
 	// an error here, not by a mismatched status code.
-	// Artifactory stores snupkg at symbolpackage/<id>.<version>.nupkg (not flat).
-	_, res, err := client.GetRemoteFileDetails(fmt.Sprintf("%s%s/symbolpackage/%s.%s.nupkg", serverDetails.ArtifactoryUrl, tests.NugetLocalRepo, id, version), artHttpDetails)
+	// Artifactory stores a pushed .snupkg flat at the repository root under its own name. The
+	// V3 /symbols endpoint both clients reach through a FlexPack-declared source neither renames
+	// nor relocates it; symbolpackage/<id>.<version>.nupkg is the V2 /symbolpackage endpoint's
+	// layout, which nothing here pushes to.
+	_, res, err := client.GetRemoteFileDetails(fmt.Sprintf("%s%s/%s.%s.snupkg", serverDetails.ArtifactoryUrl, tests.NugetLocalRepo, id, version), artHttpDetails)
 	if err == nil {
 		assert.NotEqual(t, http.StatusOK, res.StatusCode, "-NoSymbols must suppress the symbol upload even though a sibling .snupkg exists")
 	}
@@ -964,8 +970,12 @@ func TestNugetFlexPackStampSymbolExactPath(t *testing.T) {
 		require.NoError(t, pushNupkgFlexPack(t, path, tests.NugetLocalRepo, "--build-name="+buildName, "--build-number="+buildNumber))
 	}
 
-	// Artifactory stores snupkg at symbolpackage/<id>.<version>.nupkg — stamp must target that exact path.
-	props := getFlexPackItemProps(t, tests.NugetLocalRepo+"/symbolpackage/"+id+"."+version+".nupkg")
+	// Artifactory stores a pushed .snupkg flat at the repository root under its own name. The
+	// V3 /symbols endpoint both clients reach through a FlexPack-declared source neither renames
+	// nor relocates it; symbolpackage/<id>.<version>.nupkg is the V2 /symbolpackage endpoint's
+	// layout, which nothing here pushes to.
+	// Stamping must target that exact path.
+	props := getFlexPackItemProps(t, tests.NugetLocalRepo+"/"+id+"."+version+".snupkg")
 	assert.Contains(t, props, "build.name", ".snupkg must be stamped like its sibling .nupkg")
 }
 
@@ -1307,7 +1317,7 @@ func TestNugetFlexPackPushBuildInfoAndProperties(t *testing.T) {
 
 	client, err := httpclient.ClientBuilder().Build()
 	require.NoError(t, err)
-	// Use artifact.Path (not artifact.Name) — for snupkg, Path is "symbolpackage/<id>.<version>.nupkg"
+	// Use artifact.Path (not artifact.Name): Path is the repository-relative storage path
 	// while Name remains the original filename (e.g., "PushCorePkg.1.0.0.snupkg").
 	for name, artifact := range map[string]buildInfo.Artifact{"nupkg": nupkgArtifact, "snupkg": snupkgArtifact} {
 		fileUrl := serverDetails.ArtifactoryUrl + tests.NugetLocalRepo + "/" + artifact.Path
@@ -1509,7 +1519,11 @@ func TestNugetFlexPackBagGitCapture(t *testing.T) {
 	// 'bag' inspects the current working directory's git repository - run it from the repo
 	// checkout root (this test binary's own working tree) rather than a throwaway temp dir.
 	defer clientTestUtils.ChangeDirWithCallback(t, wd, wd)()
-	bagErr := artifactoryCli.Exec("bag", buildName, buildNumber)
+	// WithoutCredentials: 'bag' is a local command, and the credential flags this runner appends
+	// land after the positional args, where Go's flag parser has already stopped - so they are
+	// counted as arguments ("Wrong number of arguments (4)"), which previously made this test
+	// skip while blaming a missing git repository.
+	bagErr := artifactoryCli.WithoutCredentials().Exec("bag", buildName, buildNumber)
 	if bagErr != nil {
 		t.Skipf("'jf rt bag' failed, likely because this checkout isn't a git repository: %v", bagErr)
 	}
@@ -1723,8 +1737,11 @@ func TestNugetFlexPackSymbolChecksumStored(t *testing.T) {
 
 	client, err := httpclient.ClientBuilder().Build()
 	require.NoError(t, err)
-	// Artifactory stores snupkg at symbolpackage/<id>.<version>.nupkg (not flat).
-	details, _, err := client.GetRemoteFileDetails(fmt.Sprintf("%s%s/symbolpackage/%s.%s.nupkg", serverDetails.ArtifactoryUrl, tests.NugetLocalRepo, id, version), artHttpDetails)
+	// Artifactory stores a pushed .snupkg flat at the repository root under its own name. The
+	// V3 /symbols endpoint both clients reach through a FlexPack-declared source neither renames
+	// nor relocates it; symbolpackage/<id>.<version>.nupkg is the V2 /symbolpackage endpoint's
+	// layout, which nothing here pushes to.
+	details, _, err := client.GetRemoteFileDetails(fmt.Sprintf("%s%s/%s.%s.snupkg", serverDetails.ArtifactoryUrl, tests.NugetLocalRepo, id, version), artHttpDetails)
 	require.NoError(t, err)
 	assert.NotEmpty(t, details.Checksum.Sha256, ".snupkg must have sha256 stored in Artifactory")
 }
@@ -2025,8 +2042,11 @@ func TestNugetFlexPackSymbolRoundTrip(t *testing.T) {
 
 	client, err := httpclient.ClientBuilder().Build()
 	require.NoError(t, err)
-	// Artifactory stores snupkg at symbolpackage/<id>.<version>.nupkg (not flat).
-	_, res, err := client.GetRemoteFileDetails(fmt.Sprintf("%s%s/symbolpackage/%s.%s.nupkg", serverDetails.ArtifactoryUrl, tests.NugetLocalRepo, id, version), artHttpDetails)
+	// Artifactory stores a pushed .snupkg flat at the repository root under its own name. The
+	// V3 /symbols endpoint both clients reach through a FlexPack-declared source neither renames
+	// nor relocates it; symbolpackage/<id>.<version>.nupkg is the V2 /symbolpackage endpoint's
+	// layout, which nothing here pushes to.
+	_, res, err := client.GetRemoteFileDetails(fmt.Sprintf("%s%s/%s.%s.snupkg", serverDetails.ArtifactoryUrl, tests.NugetLocalRepo, id, version), artHttpDetails)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, res.StatusCode, "the symbol package must be fetchable from the same repo it was pushed to")
 }
@@ -2074,13 +2094,13 @@ func TestNugetFlexPackBuildPromote(t *testing.T) {
 
 	client, err := httpclient.ClientBuilder().Build()
 	require.NoError(t, err)
-	// .nupkg is stored flat; .snupkg is stored as symbolpackage/<id>.<version>.nupkg.
+	// Both land flat at the repository root, each under its own name and extension.
 	nupkgPromoteUrl := fmt.Sprintf("%s%s/%s.%s.nupkg", serverDetails.ArtifactoryUrl, stagingRepo, id, version)
 	_, res, detailsErr := client.GetRemoteFileDetails(nupkgPromoteUrl, artHttpDetails)
 	if assert.NoError(t, detailsErr) {
 		assert.Equal(t, http.StatusOK, res.StatusCode, "nupkg must have been promoted to %s", stagingRepo)
 	}
-	snupkgPromoteUrl := fmt.Sprintf("%s%s/symbolpackage/%s.%s.nupkg", serverDetails.ArtifactoryUrl, stagingRepo, id, version)
+	snupkgPromoteUrl := fmt.Sprintf("%s%s/%s.%s.snupkg", serverDetails.ArtifactoryUrl, stagingRepo, id, version)
 	_, res, detailsErr = client.GetRemoteFileDetails(snupkgPromoteUrl, artHttpDetails)
 	if assert.NoError(t, detailsErr) {
 		assert.Equal(t, http.StatusOK, res.StatusCode, "snupkg must have been promoted to %s", stagingRepo)
@@ -2516,7 +2536,8 @@ func TestNugetFlexPackAzureDevOpsVcsDetection(t *testing.T) {
 	bagErr := func() error {
 		cb := clientTestUtils.ChangeDirWithCallback(t, wd, wd)
 		defer cb()
-		return artifactoryCli.Exec("bag", buildName, buildNumber)
+		// WithoutCredentials - see the sibling 'bag' call above.
+		return artifactoryCli.WithoutCredentials().Exec("bag", buildName, buildNumber)
 	}()
 	if bagErr != nil {
 		t.Skipf("'jf rt bag' failed, likely because this checkout isn't a git repository: %v", bagErr)
@@ -2542,10 +2563,20 @@ func TestNugetFlexPackArtifactoryUnreachableNoFallback(t *testing.T) {
 		"--url=https://unreachable.invalid.jfrog.test/", "--access-token=bogus", "--enc-password=false"))
 	defer func() { _ = jfrogCli.Exec("rm", unreachableServerId, "--quiet") }()
 
-	projectPath := createNugetProject(t, "reference")
+	projectPath, err := filepath.Abs(createNugetProject(t, "reference"))
+	require.NoError(t, err)
 	wd, err := os.Getwd()
 	require.NoError(t, err)
 	defer clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)()
+
+	// Point NUGET_PACKAGES at an empty per-test folder. Earlier tests in this binary restore the
+	// same fixture, so its packages are already in the shared global folder - NuGet then satisfies
+	// the restore entirely from cache and reports success without a single network call, which
+	// masks the unreachable host this test exists to catch. NuGet rejects a relative value here,
+	// hence the Abs above.
+	restorePackagesEnv := clientTestUtils.SetEnvWithCallbackAndAssert(t, "NUGET_PACKAGES",
+		filepath.Join(t.TempDir(), "packages"))
+	defer restorePackagesEnv()
 
 	err = restoreFlexPack(t, tests.NugetRemoteRepo, "reference.sln", "--server-id="+unreachableServerId)
 	assert.Error(t, err, "restore against an unreachable Artifactory must fail clearly, not silently succeed via nuget.org")

@@ -13,6 +13,8 @@ import (
 	"strings"
 
 	dotnetutils "github.com/jfrog/build-info-go/build/utils/dotnet"
+	"github.com/jfrog/build-info-go/flexpack"
+	aptflex "github.com/jfrog/build-info-go/flexpack/apt"
 	alpinecommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/alpine"
 	aptcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/apt"
 	cargocommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/cargo"
@@ -799,8 +801,16 @@ func runMvn(c *cli.Context, preferWrapper bool) (err error) {
 		if err != nil {
 			return err
 		}
-		// Maven does not accept --server-id; use the default configured server for usage reporting.
-		serverDetails, err := coreConfig.GetDefaultServerConf()
+		// Native accepts --server-id (for build-info collection: property tagging, virtual-repo
+		// resolution, repository lookups). Strip it from the goals and resolve the target server,
+		// falling back to the default configured server when not provided.
+		filteredMavenArgs, serverID, err := coreutils.ExtractServerIdFromCommand(filteredMavenArgs)
+		if err != nil {
+			return fmt.Errorf("failed to extract server ID: %w", err)
+		}
+		// GetSpecificConfig with an empty serverID (defaultOrEmpty=true) returns the default server, so
+		// this covers both the --server-id and no-flag cases.
+		serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, true)
 		if err != nil {
 			return err
 		}
@@ -1057,6 +1067,37 @@ func extractPnpmOptionsFromArgs(args []string) (serverDetails *coreConfig.Server
 	return serverDetails, cleanArgs, buildConfig, nil
 }
 
+// shouldRunFlexPackNative reports whether the FlexPack (native) path should handle an
+// invocation of a package manager that gates on a per-project config file, such as
+// 'jf nuget' / 'jf dotnet'.
+//
+// JFROG_RUN_NATIVE=true takes precedence over a per-project configuration file. Previously the
+// gate was `ShouldRunNative(configFilePath) && !configExists`, so any leftover
+// .jfrog/projects/{nuget,dotnet}.yaml silently forced the legacy path even with the
+// environment variable set. That was invisible to the user, and because the legacy path does
+// not recognise the native-only flags it forwarded them to MSBuild, surfacing as an opaque
+// "MSBUILD : error MSB1001: Unknown switch --repo-resolve". The config file is now reported
+// and ignored instead.
+//
+// configFilePath is only used for the warning message; pass configExists to say whether one
+// was found. pmName names the package manager for the 'jf <pm>-config' hint.
+//
+// This is deliberately generic - not NuGet/dotnet-specific - so other FlexPack-gated commands
+// can share it instead of duplicating the same three-line check. runMvn (this file) and the
+// Gradle command still use the old `ShouldRunNative(configFilePath) && !configExists` gate
+// directly and therefore still have the exact bug described above; switching them over is
+// tracked separately rather than folded into this dotnet/nuget-scoped change, since it changes
+// Maven's and Gradle's own CLI behaviour and needs their own test coverage.
+func shouldRunFlexPackNative(configFilePath string, configExists bool, pmName string) bool {
+	if !flexpack.IsFlexPackEnabled() {
+		return false
+	}
+	if configExists {
+		log.Warn(fmt.Sprintf("JFROG_RUN_NATIVE=true, so the %s configuration at %q is being ignored and the command runs in native (FlexPack) mode. Unset JFROG_RUN_NATIVE to use the legacy 'jf %s-config' path.", pmName, configFilePath, pmName))
+	}
+	return true
+}
+
 func NugetCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
@@ -1070,8 +1111,8 @@ func NugetCmd(c *cli.Context) error {
 		return err
 	}
 
-	// FlexPack bypasses all config file requirements (only when no config exists)
-	if artutils.ShouldRunNative(configFilePath) && !configExists {
+	// FlexPack bypasses all config file requirements. JFROG_RUN_NATIVE wins over a config file.
+	if shouldRunFlexPackNative(configFilePath, configExists, "nuget") {
 		return runNugetFlexPackCmd(c, dotnetutils.Nuget)
 	}
 
@@ -1171,8 +1212,8 @@ func DotnetCmd(c *cli.Context) error {
 		return err
 	}
 
-	// FlexPack bypasses all config file requirements (only when no config exists)
-	if artutils.ShouldRunNative(configFilePath) && !configExists {
+	// FlexPack bypasses all config file requirements. JFROG_RUN_NATIVE wins over a config file.
+	if shouldRunFlexPackNative(configFilePath, configExists, "dotnet") {
 		return runNugetFlexPackCmd(c, dotnetutils.DotnetCore)
 	}
 
@@ -2539,9 +2580,20 @@ func AptCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	// Strip build flags so they aren't passed through to apt-get. Build-info
-	// collection is out of scope for the auth flow.
-	filteredArgs, _, err := build.ExtractBuildDetailsFromArgs(args)
+	args, fromFile, err := coreutils.ExtractStringOptionFromArgs(args, "from-file")
+	if err != nil {
+		return err
+	}
+	// Expand --from-file: inject package names after the "install" subcommand.
+	if fromFile != "" {
+		pkgs, err := aptflex.ReadPackagesFile(fromFile)
+		if err != nil {
+			return fmt.Errorf("--from-file %s: %w", fromFile, err)
+		}
+		args = injectPackagesAfterInstall(args, pkgs)
+	}
+	// Extract build flags (--build-name, --build-number, --module, --project).
+	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
 	if err != nil {
 		return err
 	}
@@ -2567,12 +2619,28 @@ func AptCmd(c *cli.Context) error {
 		SetTrusted(trusted).
 		SetRepoName(repoName).
 		SetDist(dist).
-		SetComponent(component)
+		SetComponent(component).
+		SetBuildConfiguration(buildConfiguration)
 	if serverDetails != nil {
 		cmd.SetServerDetails(serverDetails)
 	}
 
 	return commands.ExecWithPackageManager(cmd, "apt")
+}
+
+// injectPackagesAfterInstall inserts pkgs into args immediately after the
+// "install" subcommand token. If "install" is not present, pkgs are appended.
+func injectPackagesAfterInstall(args, pkgs []string) []string {
+	for i, a := range args {
+		if a == "install" {
+			result := make([]string, 0, len(args)+len(pkgs))
+			result = append(result, args[:i+1]...)
+			result = append(result, pkgs...)
+			result = append(result, args[i+1:]...)
+			return result
+		}
+	}
+	return append(args, pkgs...)
 }
 
 // aptSetupCmd handles 'jf setup apt' — writes a persistent sources.list entry.

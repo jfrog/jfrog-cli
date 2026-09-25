@@ -3,6 +3,7 @@
   "rclass": "virtual",
   "packageType": "debian",
   "repositories": ["${APT_LOCAL_REPO}", "${APT_REMOTE_REPO}", "${APT_DEBIAN_REMOTE_REPO}"],
+  "debianDefaultArchitectures": "arm64,amd64",
   "repoLayoutRef": "simple-default",
   "defaultDeploymentRepo": "${APT_LOCAL_REPO}"
 }
