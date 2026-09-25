@@ -13,6 +13,7 @@ import (
 	"time"
 
 	buildInfo "github.com/jfrog/build-info-go/entities"
+	coreBuild "github.com/jfrog/jfrog-cli-core/v2/common/build"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/inttestutils"
@@ -514,6 +515,9 @@ func TestChocoInstallCollectsDependencies(t *testing.T) {
 
 	cleanupChocoInstalledPackage(t, id)
 	requireChocoInstall(t, id, version, sourceName, buildName, buildNumber)
+	// Asserted before the publish below, and against the locally collected build info: Artifactory
+	// does not persist per-dependency repository fields, so the value is gone after a round trip.
+	requireChocoResolutionRepoCollected(t, buildName, buildNumber, tests.NugetLocalRepo)
 
 	installBuildInfo := getPublishedChocoBuildInfo(t, buildName, buildNumber)
 	require.Len(t, installBuildInfo.Modules, 1)
@@ -523,9 +527,27 @@ func TestChocoInstallCollectsDependencies(t *testing.T) {
 	dependency := module.Dependencies[0]
 	assert.Equal(t, id+":"+version, dependency.Id)
 	assert.Equal(t, "nupkg", dependency.Type)
-	assert.Equal(t, tests.NugetLocalRepo, dependency.Repository,
-		"--repo-resolve should be recorded as the resolution repository")
 	assert.Contains(t, getChocoCommandProperty(t, module), "install")
+}
+
+// requireChocoResolutionRepoCollected asserts that --repo-resolve reached the collected
+// dependencies. It reads the partial build-info files straight off disk, and so must run before
+// 'jf rt bp': a dependency's Repository is a client-side field that Artifactory does not store,
+// the same way entities.Artifact.OriginalDeploymentRepo is documented as internal-only. Asserting
+// it on published build info would only ever test Artifactory's serialization.
+func requireChocoResolutionRepoCollected(t *testing.T, buildName, buildNumber, expectedRepo string) {
+	t.Helper()
+	partials, err := coreBuild.ReadPartialBuildInfoFiles(buildName, buildNumber, "")
+	require.NoError(t, err)
+	var dependencies []buildInfo.Dependency
+	for _, partial := range partials {
+		dependencies = append(dependencies, partial.Dependencies...)
+	}
+	require.NotEmpty(t, dependencies, "the installed package must be collected as a dependency")
+	for _, dependency := range dependencies {
+		assert.Equal(t, expectedRepo, dependency.Repository,
+			"--repo-resolve should be recorded as the resolution repository of %s", dependency.Id)
+	}
 }
 
 // requireChocoInstall runs 'jf choco install' with a short retry, because a freshly pushed
