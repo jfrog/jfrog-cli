@@ -13,10 +13,12 @@ import (
 	"strings"
 
 	dotnetutils "github.com/jfrog/build-info-go/build/utils/dotnet"
+	"github.com/jfrog/build-info-go/flexpack"
+	aptflex "github.com/jfrog/build-info-go/flexpack/apt"
 	alpinecommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/alpine"
 	aptcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/apt"
 	cargocommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/cargo"
-	aptflex "github.com/jfrog/build-info-go/flexpack/apt"
+	chococommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/choco"
 	conancommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/conan"
 	nixcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nix"
 	nugetcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nuget"
@@ -66,6 +68,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/buildtools/apkcommand"
 	aptdocs "github.com/jfrog/jfrog-cli/docs/buildtools/apt"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/cargo"
+	chocodocs "github.com/jfrog/jfrog-cli/docs/buildtools/choco"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/conan"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/conanconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/docker"
@@ -250,6 +253,21 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
 			Action:          NugetCmd,
+		},
+		{
+			Name:            "choco",
+			Flags:           cliutils.GetCommandFlags(cliutils.Choco),
+			Usage:           corecommon.ResolveDescription(chocodocs.GetDescription(), chocodocs.GetAIDescription()),
+			HelpName:        corecommon.CreateUsage("choco", corecommon.ResolveDescription(chocodocs.GetDescription(), chocodocs.GetAIDescription()), chocodocs.Usage),
+			UsageText:       chocodocs.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Category:        buildToolsCategory,
+			Action: func(c *cli.Context) error {
+				cmdName, _ := getCommandName(c.Args())
+				return securityCLI.WrapCmdWithCurationPostFailureRun(c, ChocoCmd, techutils.Nuget, cmdName)
+			},
 		},
 		{
 			Name:         "dotnet-config",
@@ -1096,6 +1114,37 @@ func extractPnpmOptionsFromArgs(args []string) (serverDetails *coreConfig.Server
 	return serverDetails, cleanArgs, buildConfig, nil
 }
 
+// shouldRunFlexPackNative reports whether the FlexPack (native) path should handle an
+// invocation of a package manager that gates on a per-project config file, such as
+// 'jf nuget' / 'jf dotnet'.
+//
+// JFROG_RUN_NATIVE=true takes precedence over a per-project configuration file. Previously the
+// gate was `ShouldRunNative(configFilePath) && !configExists`, so any leftover
+// .jfrog/projects/{nuget,dotnet}.yaml silently forced the legacy path even with the
+// environment variable set. That was invisible to the user, and because the legacy path does
+// not recognise the native-only flags it forwarded them to MSBuild, surfacing as an opaque
+// "MSBUILD : error MSB1001: Unknown switch --repo-resolve". The config file is now reported
+// and ignored instead.
+//
+// configFilePath is only used for the warning message; pass configExists to say whether one
+// was found. pmName names the package manager for the 'jf <pm>-config' hint.
+//
+// This is deliberately generic - not NuGet/dotnet-specific - so other FlexPack-gated commands
+// can share it instead of duplicating the same three-line check. runMvn (this file) and the
+// Gradle command still use the old `ShouldRunNative(configFilePath) && !configExists` gate
+// directly and therefore still have the exact bug described above; switching them over is
+// tracked separately rather than folded into this dotnet/nuget-scoped change, since it changes
+// Maven's and Gradle's own CLI behaviour and needs their own test coverage.
+func shouldRunFlexPackNative(configFilePath string, configExists bool, pmName string) bool {
+	if !flexpack.IsFlexPackEnabled() {
+		return false
+	}
+	if configExists {
+		log.Warn(fmt.Sprintf("JFROG_RUN_NATIVE=true, so the %s configuration at %q is being ignored and the command runs in native (FlexPack) mode. Unset JFROG_RUN_NATIVE to use the legacy 'jf %s-config' path.", pmName, configFilePath, pmName))
+	}
+	return true
+}
+
 func NugetCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
@@ -1109,8 +1158,8 @@ func NugetCmd(c *cli.Context) error {
 		return err
 	}
 
-	// FlexPack bypasses all config file requirements (only when no config exists)
-	if artutils.ShouldRunNative(configFilePath) && !configExists {
+	// FlexPack bypasses all config file requirements. JFROG_RUN_NATIVE wins over a config file.
+	if shouldRunFlexPackNative(configFilePath, configExists, "nuget") {
 		return runNugetFlexPackCmd(c, dotnetutils.Nuget)
 	}
 
@@ -1150,6 +1199,52 @@ func NugetCmd(c *cli.Context) error {
 	return commands.ExecWithPackageManager(nugetCmd, project.Nuget.String())
 }
 
+func ChocoCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), c.Command.Name); show || err != nil {
+		return err
+	}
+	if c.NArg() < 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+	args := cliutils.ExtractCommand(c)
+	args, serverID, err := coreutils.ExtractServerIdFromCommand(args)
+	if err != nil {
+		return fmt.Errorf("extract server ID: %w", err)
+	}
+	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
+	if err != nil {
+		return err
+	}
+	filteredArgs, repoResolve, err := coreutils.ExtractStringOptionFromArgs(filteredArgs, "repo-resolve")
+	if err != nil {
+		return fmt.Errorf("extract --repo-resolve: %w", err)
+	}
+	filteredArgs, repoDeploy, err := coreutils.ExtractStringOptionFromArgs(filteredArgs, "repo")
+	if err != nil {
+		return fmt.Errorf("extract --repo: %w", err)
+	}
+	commandName, commandArgs := getCommandName(filteredArgs)
+	workingDirectory, err := filepath.Abs(".")
+	if err != nil {
+		return err
+	}
+	command := chococommand.NewChocoFlexPackCommand().
+		SetSubCommand(commandName).
+		SetArgs(commandArgs).
+		SetRepoResolve(repoResolve).
+		SetRepoDeploy(repoDeploy).
+		SetBuildConfiguration(buildConfiguration).
+		SetWorkingDirectory(workingDirectory)
+	serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, false)
+	if err != nil && serverID != "" {
+		return fmt.Errorf("server-id %q not found: %w", serverID, err)
+	}
+	if err == nil {
+		command.SetServerDetails(serverDetails)
+	}
+	return commands.ExecWithPackageManager(command, "choco")
+}
+
 func DotnetCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
@@ -1164,8 +1259,8 @@ func DotnetCmd(c *cli.Context) error {
 		return err
 	}
 
-	// FlexPack bypasses all config file requirements (only when no config exists)
-	if artutils.ShouldRunNative(configFilePath) && !configExists {
+	// FlexPack bypasses all config file requirements. JFROG_RUN_NATIVE wins over a config file.
+	if shouldRunFlexPackNative(configFilePath, configExists, "dotnet") {
 		return runNugetFlexPackCmd(c, dotnetutils.DotnetCore)
 	}
 
@@ -2055,6 +2150,11 @@ func setupCmd(c *cli.Context) (err error) {
 	}
 	if packageManager == project.PSResource {
 		if err = setup.ValidatePSResourcePlatform(); err != nil {
+			return err
+		}
+	}
+	if packageManager == project.Choco {
+		if err = setup.ValidateChocoPlatform(); err != nil {
 			return err
 		}
 	}

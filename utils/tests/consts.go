@@ -293,6 +293,7 @@ var (
 	PnpmBuildName               = "cli-pnpm-build"
 	YarnBuildName               = "cli-yarn-build"
 	NuGetBuildName              = "cli-nuget-build"
+	ChocoBuildName              = "cli-choco-build"
 	PSResourceBuildName         = "cli-psresource-build"
 	PipBuildName                = "cli-pip-build"
 	PipenvBuildName             = "cli-pipenv-build"

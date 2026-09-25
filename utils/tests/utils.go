@@ -66,6 +66,7 @@ var (
 	TestGradle                *bool
 	TestMaven                 *bool
 	TestNuget                 *bool
+	TestChoco                 *bool
 	TestPSResource            *bool
 	TestPip                   *bool
 	TestPipenv                *bool
@@ -142,6 +143,7 @@ func init() {
 	TestGradle = flag.Bool("test.gradle", false, "Test Gradle")
 	TestMaven = flag.Bool("test.maven", false, "Test Maven")
 	TestNuget = flag.Bool("test.nuget", false, "Test Nuget")
+	TestChoco = flag.Bool("test.choco", false, "Test Chocolatey")
 	TestPSResource = flag.Bool("test.psresource", false, "Test PSResourceGet (Install-/Save-/Update-/Publish-PSResource)")
 	TestPip = flag.Bool("test.pip", false, "Test Pip")
 	TestPipenv = flag.Bool("test.pipenv", false, "Test Pipenv")
@@ -493,6 +495,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestNpm:                {&NpmRepo, &NpmScopedRepo, &NpmRemoteRepo},
 		TestPnpm:               {&NpmRepo, &NpmScopedRepo, &NpmRemoteRepo},
 		TestNuget:              {&NugetRemoteRepo, &NugetLocalRepo},
+		TestChoco:              {&NugetRemoteRepo, &NugetLocalRepo},
 		TestPSResource:         {&NugetRemoteRepo, &NugetLocalRepo},
 		TestPip:                {&PypiLocalRepo, &PypiRemoteRepo},
 		TestPipenv:             {&PipenvRemoteRepo},
@@ -533,6 +536,7 @@ func GetVirtualRepositories() map[*string]string {
 		TestNpm:          {},
 		TestPnpm:         {},
 		TestNuget:        {&NugetVirtualRepo},
+		TestChoco:        {&NugetVirtualRepo},
 		TestPSResource:   {&NugetVirtualRepo},
 		TestPip:          {&PypiVirtualRepo},
 		TestPipenv:       {&PipenvVirtualRepo},
@@ -582,6 +586,7 @@ func GetBuildNames() []string {
 		TestNpm:          {&NpmBuildName, &YarnBuildName},
 		TestPnpm:         {&PnpmBuildName},
 		TestNuget:        {&NuGetBuildName},
+		TestChoco:        {&ChocoBuildName},
 		TestPSResource:   {&PSResourceBuildName},
 		TestPip:          {&PipBuildName},
 		TestPipenv:       {&PipenvBuildName},
@@ -795,6 +800,7 @@ func AddTimestampToGlobalVars() {
 	YarnBuildName += uniqueSuffix
 	MvnBuildName += uniqueSuffix
 	NuGetBuildName += uniqueSuffix
+	ChocoBuildName += uniqueSuffix
 	PSResourceBuildName += uniqueSuffix
 	PipBuildName += uniqueSuffix
 	PipenvBuildName += uniqueSuffix
