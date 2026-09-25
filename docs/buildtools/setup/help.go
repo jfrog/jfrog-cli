@@ -34,6 +34,7 @@ Not the same command as jf npm-config / jf mvn-config / jf pip-config, which loo
 Prerequisites:
 - A configured server (jf c add or jf login), or pass --url/--user/--password/--access-token directly.
 - The Artifactory repository name for the package manager (a virtual repo where supported).
+- For Chocolatey, select a NuGet virtual, local, or remote repository when prompted. Setup creates a named native source ('jfrt-<hostname>-<repo>') for each repository, so use -s to choose a configured resolve or publish endpoint.
 
 Common patterns:
   $ jf setup npm
@@ -49,6 +50,7 @@ Gotchas:
 - pnpm and npm can end up on different repositories without any warning. pnpm reads its own configuration first and ~/.npmrc only as a fallback, so a machine with no pnpm setup follows "jf setup npm", but once "jf setup pnpm" has run, a later "jf setup npm --repo b" moves npm alone and pnpm keeps resolving from the repository it was given. If both are in use, run "jf setup" for both.
 - maven and gradle do not need their client installed: their setup writes settings.xml and a Gradle init script directly, so it works on a machine that only has ./mvnw or ./gradlew. Every other package manager's setup runs its client. helm additionally needs 3.8.0 or newer, because its login targets an OCI registry.
 - docker/podman authenticate directly against the registry and skip the repository prompt entirely (no --repo needed); helm still goes through repository selection like the other package managers even though its login step doesn't end up using the repo name.
+- Chocolatey runs on Windows only and updates machine-wide chocolatey.config, so use an elevated shell. Re-running 'jf setup choco' for one repository refreshes only that repository's 'jfrt-<hostname>-<repo>' source; it preserves other Chocolatey sources.
 
 Related: jf npm-config, jf go-config, jf pip-config, jf c add`
 }
