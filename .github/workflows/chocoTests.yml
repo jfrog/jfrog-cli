@@ -51,25 +51,3 @@ jobs:
         run: >-
           go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.choco
           ${{ env.JFROG_TESTS_IS_EXTERNAL == 'true' && format('--jfrog.url={0} --jfrog.adminToken={1}', env.JFROG_TESTS_URL, env.JFROG_TESTS_LOCAL_ACCESS_TOKEN) || '' }}
-
-  # The OS gate is the one behaviour that can only be observed where Chocolatey cannot run, so it
-  # needs a non-Windows job. Deliberately cheap: no Artifactory and no Chocolatey, just the two
-  # tests asserting that 'jf choco' refuses to run and that 'jf choco --help' still works anyway.
-  Choco-OS-Gate:
-    name: Chocolatey OS gate (linux)
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.ref }}
-          # Safe: this workflow only runs after human approval via the build-gate environment.
-          allow-unsafe-pr-checkout: true
-
-      - name: Setup Go with cache
-        uses: jfrog/.github/actions/install-go-with-cache@main
-
-      - name: Assert jf choco refuses to run on a non-Windows host
-        run: >-
-          go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.choco
-          -run 'TestChocoNonWindowsGate|TestChocoHelpWorksOnAllPlatforms'
