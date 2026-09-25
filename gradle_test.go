@@ -607,9 +607,13 @@ func TestGradleBuildSharedBuildLogicFlexPack(t *testing.T) {
 	cleanGradleTest(t)
 }
 
-// assertSharedConventionDependencyInBuildInfo asserts the published build-info has an
-// "api" module whose dependencies include org.slf4j:slf4j-api — a dependency declared
-// only in the shared buildSrc convention plugin, never in api's own build.gradle.
+// assertSharedConventionDependencyInBuildInfo asserts the published build-info has:
+//   - an "api" module (applies the shared java-common-conventions plugin) whose
+//     dependencies include org.slf4j:slf4j-api — a dependency declared only in the
+//     shared buildSrc convention plugin, never in api's own build.gradle.
+//   - a "lib" module (does NOT apply the shared convention plugin) whose dependencies
+//     do NOT include org.slf4j:slf4j-api, proving the shared dependency only reaches
+//     subprojects that actually apply the convention plugin.
 func assertSharedConventionDependencyInBuildInfo(t *testing.T, buildName, buildNumber string) {
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
 	if err != nil {
@@ -621,24 +625,36 @@ func assertSharedConventionDependencyInBuildInfo(t *testing.T, buildName, buildN
 		return
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
-	var apiModule *buildinfo.Module
-	for i := range buildInfo.Modules {
-		if strings.Contains(buildInfo.Modules[i].Id, "api") {
-			apiModule = &buildInfo.Modules[i]
-			break
+
+	apiModule := findModuleByIdSubstring(buildInfo.Modules, "com.example:api")
+	if assert.NotNil(t, apiModule, "api module missing from build-info") {
+		assert.True(t, moduleHasDependency(apiModule, "org.slf4j:slf4j-api"),
+			"shared dependency (org.slf4j:slf4j-api, declared only in the shared convention plugin) missing from api module's dependencies")
+	}
+
+	libModule := findModuleByIdSubstring(buildInfo.Modules, "com.example:lib")
+	if assert.NotNil(t, libModule, "lib module missing from build-info") {
+		assert.False(t, moduleHasDependency(libModule, "org.slf4j:slf4j-api"),
+			"lib does not apply the shared convention plugin, so org.slf4j:slf4j-api must not appear in its dependencies")
+	}
+}
+
+func findModuleByIdSubstring(modules []buildinfo.Module, idSubstring string) *buildinfo.Module {
+	for i := range modules {
+		if strings.Contains(modules[i].Id, idSubstring) {
+			return &modules[i]
 		}
 	}
-	if !assert.NotNil(t, apiModule, "api module missing from build-info") {
-		return
-	}
-	hasSharedDep := false
-	for _, dep := range apiModule.Dependencies {
-		if strings.HasPrefix(dep.Id, "org.slf4j:slf4j-api") {
-			hasSharedDep = true
-			break
+	return nil
+}
+
+func moduleHasDependency(module *buildinfo.Module, depIdPrefix string) bool {
+	for _, dep := range module.Dependencies {
+		if strings.HasPrefix(dep.Id, depIdPrefix) {
+			return true
 		}
 	}
-	assert.True(t, hasSharedDep, "shared dependency (org.slf4j:slf4j-api, declared only in the shared convention plugin) missing from api module's dependencies")
+	return false
 }
 
 func createGradleProject(t *testing.T, projectName string) string {

@@ -1,2 +1,3 @@
 rootProject.name = 'buildsrcdependency'
 include 'api'
+include 'lib'
