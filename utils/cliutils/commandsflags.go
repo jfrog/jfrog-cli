@@ -67,6 +67,7 @@ const (
 	Choco                  = "choco"
 	Dotnet                 = "dotnet"
 	DotnetConfig           = "dotnet-config"
+	PSResource             = "psresource"
 	Go                     = "go"
 	GoConfig               = "go-config"
 	GoPublish              = "go-publish"
@@ -2273,6 +2274,9 @@ var commandFlags = map[string][]string{
 	},
 	Dotnet: {
 		BuildName, BuildNumber, module, Project, allowInsecureConnections, serverId, repoResolve, repo, nugetV2,
+	},
+	PSResource: {
+		BuildName, BuildNumber, module, Project, serverId, repoResolve, repo,
 	},
 	GoConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,

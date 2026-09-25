@@ -67,6 +67,7 @@ var (
 	TestMaven                 *bool
 	TestNuget                 *bool
 	TestChoco                 *bool
+	TestPSResource            *bool
 	TestPip                   *bool
 	TestPipenv                *bool
 	TestPoetry                *bool
@@ -143,6 +144,7 @@ func init() {
 	TestMaven = flag.Bool("test.maven", false, "Test Maven")
 	TestNuget = flag.Bool("test.nuget", false, "Test Nuget")
 	TestChoco = flag.Bool("test.choco", false, "Test Chocolatey")
+	TestPSResource = flag.Bool("test.psresource", false, "Test PSResourceGet (Install-/Save-/Update-/Publish-PSResource)")
 	TestPip = flag.Bool("test.pip", false, "Test Pip")
 	TestPipenv = flag.Bool("test.pipenv", false, "Test Pipenv")
 	TestPoetry = flag.Bool("test.poetry", false, "Test Poetry")
@@ -494,6 +496,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestPnpm:               {&NpmRepo, &NpmScopedRepo, &NpmRemoteRepo},
 		TestNuget:              {&NugetRemoteRepo, &NugetLocalRepo},
 		TestChoco:              {&NugetRemoteRepo, &NugetLocalRepo},
+		TestPSResource:         {&NugetRemoteRepo, &NugetLocalRepo},
 		TestPip:                {&PypiLocalRepo, &PypiRemoteRepo},
 		TestPipenv:             {&PipenvRemoteRepo},
 		TestPoetry:             {&PoetryLocalRepo, &PoetryRemoteRepo},
@@ -534,6 +537,7 @@ func GetVirtualRepositories() map[*string]string {
 		TestPnpm:         {},
 		TestNuget:        {&NugetVirtualRepo},
 		TestChoco:        {&NugetVirtualRepo},
+		TestPSResource:   {&NugetVirtualRepo},
 		TestPip:          {&PypiVirtualRepo},
 		TestPipenv:       {&PipenvVirtualRepo},
 		TestPoetry:       {&PoetryVirtualRepo},
@@ -583,6 +587,7 @@ func GetBuildNames() []string {
 		TestPnpm:         {&PnpmBuildName},
 		TestNuget:        {&NuGetBuildName},
 		TestChoco:        {&ChocoBuildName},
+		TestPSResource:   {&PSResourceBuildName},
 		TestPip:          {&PipBuildName},
 		TestPipenv:       {&PipenvBuildName},
 		TestPoetry:       {&PoetryBuildName},
@@ -796,6 +801,7 @@ func AddTimestampToGlobalVars() {
 	MvnBuildName += uniqueSuffix
 	NuGetBuildName += uniqueSuffix
 	ChocoBuildName += uniqueSuffix
+	PSResourceBuildName += uniqueSuffix
 	PipBuildName += uniqueSuffix
 	PipenvBuildName += uniqueSuffix
 	PoetryBuildName += uniqueSuffix

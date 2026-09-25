@@ -294,6 +294,7 @@ var (
 	YarnBuildName               = "cli-yarn-build"
 	NuGetBuildName              = "cli-nuget-build"
 	ChocoBuildName              = "cli-choco-build"
+	PSResourceBuildName         = "cli-psresource-build"
 	PipBuildName                = "cli-pip-build"
 	PipenvBuildName             = "cli-pipenv-build"
 	PoetryBuildName             = "cli-poetry-build"
