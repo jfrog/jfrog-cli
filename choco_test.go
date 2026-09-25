@@ -460,12 +460,18 @@ func TestChocoCommandPropertyRedactsApiKey(t *testing.T) {
 
 // chocoPushApiKey builds the composite '<user>:<token>' key that Artifactory NuGet endpoints
 // expect for authenticated pushes.
+//
+// The user has to be derived from the access token rather than read off serverDetails: authenticate
+// sets User only for the user/password form and leaves it empty whenever a token was supplied, which
+// is how CI runs. Chocolatey rejects the resulting ":<token>" as invalid credentials and falls back
+// to an interactive prompt, which has no console attached in CI and crashes the process with
+// 0xe0434352 instead of reporting an authentication failure.
 func chocoPushApiKey(t *testing.T) string {
 	t.Helper()
-	if serverDetails.AccessToken != "" {
-		return serverDetails.User + ":" + serverDetails.AccessToken
-	}
-	return serverDetails.User + ":" + serverDetails.Password
+	user, password := credentialsForTestServer(t)
+	require.NotEmpty(t, password, "the test harness must be configured with a password or an access token")
+	require.NotEmpty(t, user, "could not determine a username for the Chocolatey API key; the configured access token carries no subject to derive one from")
+	return user + ":" + password
 }
 
 // TestSetupChocoConfiguresSource covers the 'jf setup choco' happy path: the machine-wide
