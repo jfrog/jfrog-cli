@@ -50,8 +50,8 @@ func assertSetupStatusNotConfigured(t *testing.T, packageManager string, extraAr
 // assertSetupStatusAfterSetup checks the configuration `jf setup` just wrote: it is configured
 // for the test server with the expected repository, and reads as another host's configuration
 // when status is asked about a different server.
-func assertSetupStatusAfterSetup(t *testing.T, packageManager, expectedRepoKey string, extraArgs ...string) {
-	assertSetupStatus(t, packageManager, setup.StateConfigured, expectedRepoKey, extraArgs...)
+func assertSetupStatusAfterSetup(t *testing.T, packageManager, expectedRepoKey string) {
+	assertSetupStatus(t, packageManager, setup.StateConfigured, expectedRepoKey)
 	assertSetupStatus(t, packageManager, setup.StateOtherHost, "", "--url="+otherHostArtifactoryUrl)
 }
 
