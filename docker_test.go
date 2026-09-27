@@ -1674,6 +1674,7 @@ func TestSetupDockerCommand(t *testing.T) {
 		t.Skip("Skipping setup docker test: no JFrog credentials available.")
 	}
 
+	assertSetupStatusNotConfigured(t, "docker", "--url="+artifactoryUrl)
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 	require.NoError(t, jfrogCli.Exec(
 		"setup", "docker",
@@ -1682,6 +1683,7 @@ func TestSetupDockerCommand(t *testing.T) {
 		credFlag,
 		"--repo="+tests.DockerVirtualRepo,
 	))
+	assertContainerSetupStatusAfterSetup(t, "docker", "--url="+artifactoryUrl)
 
 	// Derive the expected registry host the same way the fix does: take the
 	// host component of the Artifactory URL.

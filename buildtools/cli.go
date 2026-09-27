@@ -1,6 +1,7 @@
 package buildtools
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -2129,6 +2130,14 @@ func setupCmd(c *cli.Context) (err error) {
 	}
 	packageManagerStr := c.Args().Get(0)
 
+	// Checked before the apt branch, so `jf setup apt --status` reports instead of configuring.
+	if c.Bool(cliutils.Status) {
+		return setupStatusCmd(c, packageManagerStr)
+	}
+	if c.Bool("deep") || c.IsSet(cliutils.Format) {
+		return cliutils.PrintHelpAndReturnError("--deep and --format can only be used together with --status.", c)
+	}
+
 	// Apt requires dist+component and has its own setup path.
 	if packageManagerStr == "apt" {
 		return aptSetupCmd(c)
@@ -2172,6 +2181,95 @@ func setupCmd(c *cli.Context) (err error) {
 	}
 	setupCmd.SetServerDetails(artDetails).SetRepoName(repoName).SetProjectKey(cliutils.GetProject(c))
 	return commands.ExecWithPackageManager(setupCmd, packageManager.String())
+}
+
+// setupStatusCmd runs `jf setup <pm> --status`. It never prompts, and without --deep it
+// does not contact the JFrog server.
+func setupStatusCmd(c *cli.Context, packageManagerStr string) error {
+	statusFormat, err := commonCliUtils.GetOutputFormat(c, outputFormat.Table)
+	if err != nil {
+		return err
+	}
+	usageError := func(message string) error {
+		if statusFormat != outputFormat.Json {
+			return cliutils.PrintHelpAndReturnError(message, c)
+		}
+		err := errors.New(message)
+		printSetupStatusJSONError(packageManagerStr, err)
+		return err
+	}
+	if packageManagerStr == "" {
+		return usageError("--status requires a package manager argument, for example 'jf setup npm --status'.")
+	}
+	if c.Bool("remove") {
+		return usageError("--status cannot be combined with --remove.")
+	}
+	packageManager := project.FromString(packageManagerStr)
+	if !setup.IsSupportedPackageManager(packageManager) {
+		return usageError(fmt.Sprintf("The package manager %s is not supported", packageManagerStr))
+	}
+	if err = runSetupStatus(c, packageManager, statusFormat); err != nil && statusFormat == outputFormat.Json {
+		printSetupStatusJSONError(packageManager.String(), err)
+	}
+	return err
+}
+
+func runSetupStatus(c *cli.Context, packageManager project.ProjectType, statusFormat outputFormat.OutputFormat) error {
+	serverDetails, err := setupStatusServerDetails(c)
+	if err != nil {
+		return err
+	}
+	statusCmd := setup.NewSetupStatusCommand(packageManager).
+		SetServerDetails(serverDetails).
+		SetDeep(c.Bool("deep")).
+		SetFormat(statusFormat)
+	return commands.ExecWithPackageManager(statusCmd, packageManager.String())
+}
+
+// printSetupStatusJSONError writes the error to stdout as JSON so `--format json` callers can
+// always parse stdout. The error is still returned, so stderr and the exit code are unchanged.
+func printSetupStatusJSONError(packageManager string, err error) {
+	encoded, marshalErr := json.MarshalIndent(struct {
+		SchemaVersion  int    `json:"schemaVersion"`
+		PackageManager string `json:"packageManager"`
+		Error          string `json:"error"`
+	}{setup.StatusSchemaVersion, packageManager, err.Error()}, "", "  ")
+	if marshalErr != nil {
+		return
+	}
+	log.Output(string(encoded))
+}
+
+// setupStatusServerDetails resolves the server from --url, else --server-id or the default
+// server, reading the config file only. CreateArtifactoryDetailsByFlags is avoided on
+// purpose: through CreateServerDetailsWithConfigOffer it can prompt to configure a server
+// and create access tokens, and status must do neither.
+func setupStatusServerDetails(c *cli.Context) (*coreConfig.ServerDetails, error) {
+	var serverDetails *coreConfig.ServerDetails
+	if c.String("url") != "" {
+		details, err := cliutils.CreateServerDetailsFromFlags(c)
+		if err != nil {
+			return nil, err
+		}
+		details.ArtifactoryUrl, details.Url = details.Url, ""
+		serverDetails = details
+	} else {
+		serverID := c.String("server-id")
+		if serverID == "" {
+			serverID = os.Getenv(coreutils.ServerID)
+		}
+		// Refreshable tokens are kept: status never uses the server's credentials, and
+		// excluding them dereferences the missing default server instead of reporting it.
+		details, err := coreConfig.GetSpecificConfig(serverID, true, false)
+		if err != nil {
+			return nil, err
+		}
+		serverDetails = details
+	}
+	if serverDetails == nil || serverDetails.ArtifactoryUrl == "" {
+		return nil, errors.New("no JFrog Artifactory URL specified, either via the --url flag or as part of the server configuration")
+	}
+	return serverDetails, nil
 }
 
 // validateRepoExists checks if the specified repository exists in Artifactory.

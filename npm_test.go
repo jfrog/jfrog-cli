@@ -1597,6 +1597,8 @@ func assertNpmPublishResultFiles(t *testing.T, npmpCmd *npm.NpmPublishCommand) (
 
 func TestSetupNpmCommand(t *testing.T) {
 	initNpmTest(t)
+	// Isolate the npm user config so the test never touches the developer's ~/.npmrc.
+	t.Setenv("NPM_CONFIG_USERCONFIG", filepath.Join(t.TempDir(), ".npmrc"))
 	// Validate that the module does not exist in the cache before running the test.
 	client, err := httpclient.ClientBuilder().Build()
 	assert.NoError(t, err)
@@ -1604,8 +1606,10 @@ func TestSetupNpmCommand(t *testing.T) {
 	_, _, err = client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
 	assert.ErrorContains(t, err, "404")
 
+	assertSetupStatusNotConfigured(t, "npm")
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	require.NoError(t, execGo(jfrogCli, "setup", "npm", "--repo="+tests.NpmRemoteRepo))
+	assertSetupStatusAfterSetup(t, "npm", tests.NpmRemoteRepo)
 
 	// Run 'npm install' to resolve the module from Artifactory and force it to be downloaded from Artifactory.
 	output, err := exec.Command("npm", "install", "chalk-animation@2.0.3", "--cache", t.TempDir(), "--prefix", t.TempDir()).Output()

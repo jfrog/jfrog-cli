@@ -675,8 +675,10 @@ func TestSetupPipCommand(t *testing.T) {
 	_, _, err = client.GetRemoteFileDetails(packageCacheUrl, artHttpDetails)
 	assert.ErrorContains(t, err, "404")
 
+	assertSetupStatusNotConfigured(t, "pip")
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	require.NoError(t, execGo(jfrogCli, "setup", "pip", "--repo="+tests.PypiRemoteRepo))
+	assertSetupStatusAfterSetup(t, "pip", tests.PypiRemoteRepo)
 
 	// Run 'pip install' to resolve the package from Artifactory and force it to be cached.
 	output, err := exec.Command("pip", "install", "--target", t.TempDir(), "--no-cache-dir", "pefile==2024.8.26").CombinedOutput()

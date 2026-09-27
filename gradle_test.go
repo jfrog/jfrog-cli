@@ -242,8 +242,10 @@ func TestSetupGradleCommand(t *testing.T) {
 	_, _, err = client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
 	assert.ErrorContains(t, err, "404")
 
+	assertSetupStatusNotConfigured(t, "gradle")
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	assert.NoError(t, execGo(jfrogCli, "setup", "gradle", "--repo="+tests.GradleRemoteRepo))
+	assertSetupStatusAfterSetup(t, "gradle", tests.GradleRemoteRepo)
 
 	// Run `gradle clean` to resolve the artifact from Artifactory and force it to be downloaded.
 	output, err := exec.Command("gradle",

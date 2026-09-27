@@ -405,6 +405,11 @@ const (
 	aptImportKey    = "import-key"
 	aptRemove       = "remove"
 
+	// Setup status flags
+	setupStatus = "setup-status"
+	setupDeep   = "deep"
+	setupFormat = "setup-format"
+
 	// Unique docker promote flags
 	dockerPromotePrefix = "docker-promote-"
 	targetDockerImage   = "target-docker-image"
@@ -1486,6 +1491,20 @@ var flagsMap = map[string]cli.Flag{
 		Name:  aptRemove,
 		Usage: "[apt only] [Default: false] Remove all JFrog-managed apt source and pinning files. Combine with --dist to limit to a specific distribution.` `",
 	},
+	setupStatus: cli.BoolFlag{
+		Name: Status,
+		Usage: "[Optional] [Default: false] Report, without changing anything, whether the package manager's user-level configuration points at the server. " +
+			"It does not contact the JFrog server unless --deep is added, which also checks that the configured repository is reachable with the credentials stored in the package manager's configuration.` `",
+	},
+	setupDeep: cli.BoolFlag{
+		Name:   setupDeep,
+		Usage:  "[Default: false] [--status only] Also check that the configured repository is reachable with the credentials stored in the package manager's configuration.` `",
+		Hidden: true,
+	},
+	setupFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] [--status only] " + components.GetFormatFlagDescription([]format.OutputFormat{format.Table, format.Json}) + "` `",
+	},
 	npmDetailedSummary: cli.BoolFlag{
 		Name:  detailedSummary,
 		Usage: "[Default: false] Set to true to include a list of the affected files in the command summary.` `",
@@ -2521,7 +2540,7 @@ var commandFlags = map[string][]string{
 	},
 	Setup: {
 		serverId, url, user, password, accessToken, sshPassphrase, sshKeyPath, ClientCertPath, ClientCertKeyPath, Project, setupRepo,
-		aptDistribution, aptComponent, aptTrusted, aptImportKey, aptRemove,
+		aptDistribution, aptComponent, aptTrusted, aptImportKey, aptRemove, setupStatus, setupDeep, setupFormat,
 	},
 	Login: {
 		serverId, configDisableRefreshAccessToken, Legacy,

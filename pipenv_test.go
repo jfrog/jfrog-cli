@@ -166,8 +166,10 @@ func TestSetupPipenvCommand(t *testing.T) {
 	// Set PIP_NO_CACHE_DIR to 'off' to force resolving the package from Artifactory.
 	unset := clientTestUtils.SetEnvWithCallbackAndAssert(t, "PIP_NO_CACHE_DIR", "1")
 	defer unset()
+	assertSetupStatusNotConfigured(t, "pipenv")
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 	require.NoError(t, execGo(jfrogCli, "setup", "pipenv", "--repo="+tests.PipenvRemoteRepo))
+	assertSetupStatusAfterSetup(t, "pipenv", tests.PipenvRemoteRepo)
 
 	// Verify pip.conf was created correctly and extract the index URL for pipenv
 	pipConfPath := filepath.Join(tempDir, "pip.conf")

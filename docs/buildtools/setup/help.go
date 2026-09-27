@@ -10,7 +10,8 @@ var Usage = []string{"setup [command options]",
 
 func GetDescription() string {
 	return "An interactive command to configure your local package manager (e.g., npm, pip) itself to work with JFrog Artifactory, so its own commands resolve through it. " +
-		"By default, settings persist in your user-level package manager configuration until you change them, and apply to every project you build as this user."
+		"By default, settings persist in your user-level package manager configuration until you change them, and apply to every project you build as this user. " +
+		"With --status, it reports, without changing anything, whether that configuration points at the server."
 }
 
 func GetArguments() string {
@@ -41,6 +42,21 @@ Common patterns:
   $ jf setup npm
   $ jf setup go --repo=go-remote
   $ jf setup docker --server-id=my-server
+  $ jf setup npm --status --format json
+  $ jf setup maven --status --server-id=my-server --deep
+
+Checking the current configuration (--status):
+- Read-only and never interactive: no repository prompt, no "configure a server?" offer, no token creation, and no request to the JFrog server unless --deep is set (pnpm, nuget, dotnet, go and helm are asked where they keep their configuration, with their toolchain and Corepack downloads disabled). It reads the user-level configuration that jf setup writes for that package manager, one package manager per call.
+- Supported for npm, pnpm, pip, pipenv, uv, go, maven, gradle, nuget, dotnet, docker, podman and helm. Every other package manager jf setup supports reports the state "unsupported".
+- The server is resolved from --url, --server-id or the default server, using only the stored URL.
+- "state" is one of: "configured" (the configured URL is under the server's Artifactory URL), "other-host" (the setting holds a value that is neither the public default nor this server), "not-configured" (unset, or the public default such as registry.npmjs.org), or "unsupported". docker, podman and helm never report "other-host", because logins to several registries are normal.
+- "repoKey" is the repository the configuration points at, when it can be derived (not for docker, podman or helm). Compare it yourself; "configured" says nothing about which repository.
+- "credentials" is "present", "absent", "not-applicable" or "unknown" (the package manager keeps them in a store status cannot read, as uv does). It is reported separately from "state", because anonymous setup is legitimate.
+- "binaryFound" is false when the client is not on PATH. pnpm, nuget and dotnet are then reported as "not-configured", because only the client can locate their configuration.
+- "overriddenBy" lists project files or environment variables that win over the user-level configuration in the current directory (for example a project .npmrc, NPM_CONFIG_REGISTRY, PIP_INDEX_URL, an active virtualenv's pip.conf, a project uv.toml or GOPROXY). It is a best-effort hint, not a full resolution of the package manager's settings.
+- --deep, only when the state is "configured" and "repoKey" is known, sends one request to <artifactory-url>/api/repositories/<repoKey> with the credentials stored in the package manager's own configuration (never the server's), with a 5 second timeout and without following redirects. That is its only request: no usage report is sent and no token is refreshed. It adds "deep": {"repoReachable": true|false, "authOk": "true"|"false"|"unknown", "error": "..."}; "error" is set only when the check did not succeed, and says why (for example a timeout, rejected credentials or an unknown repository).
+- The exit code is 0 for every state; it is non-zero only when the command fails, for example when a configuration file cannot be parsed. With --format json, errors are printed to stdout as JSON too: {"schemaVersion":1,"packageManager":"npm","error":"..."}. The JSON carries "schemaVersion": 1, and fields are only ever added. URLs and tokens are never printed.
+- Example: {"schemaVersion":1,"packageManager":"npm","state":"configured","host":"acme.jfrog.io","repoKey":"npm-virtual","location":"/home/me/.npmrc","credentials":"present","binaryFound":true}
 
 Gotchas:
 - Without --repo, the command prompts for repository selection, so it is interactive by default; pass --repo for non-interactive/CI use.
