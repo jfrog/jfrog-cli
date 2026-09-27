@@ -1,27 +1,28 @@
 name: PSResource Tests
+
 on:
   workflow_call:
   workflow_dispatch:
 
 jobs:
   PSResource-Tests:
-    name: PSResource tests (${{ matrix.os.name }})
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - name: ubuntu
-            version: 24.04
-          - name: windows
-            version: 2022
-          - name: macos
-            version: 14
-    runs-on: ${{ matrix.os.name }}-${{ matrix.os.version }}
+    name: PSResource tests (windows)
+    # PSResourceGet itself is cross-platform (it ships with PowerShell 7+, which GitHub's ubuntu
+    # and macos runners also carry), so this suite could in principle run on a matrix. It is
+    # deliberately pinned to Windows only, matching the Chocolatey suite: PowerShell is the native
+    # shell there, so Windows is both the primary platform for these cmdlets and the configuration
+    # most likely to break. Running a single job also keeps one 'Install local Artifactory' step
+    # per suite instead of three, which is where the non-Windows jobs of other suites have been
+    # failing. If cross-platform coverage is wanted later, add ubuntu/macos back as a matrix here -
+    # nothing in the command implementation is Windows-specific.
+    runs-on: windows-2022
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
+          # Safe: this workflow only runs after human approval via the build-gate environment.
+          allow-unsafe-pr-checkout: true
 
       - name: Setup FastCI
         uses: jfrog-fastci/fastci@v1
@@ -32,10 +33,9 @@ jobs:
       - name: Setup Go with cache
         uses: jfrog/.github/actions/install-go-with-cache@main
 
-      # PSResourceGet is cross-platform (PowerShell 7+), unlike Chocolatey which is Windows-only,
-      # so this workflow runs on every OS in the matrix instead of a single Windows job.
-      # GitHub-hosted runners (ubuntu-latest, macos-latest, windows-latest) already ship
-      # PowerShell 7 as 'pwsh' out of the box, so we just verify it's available.
+      # GitHub-hosted windows runners ship PowerShell 7 as 'pwsh', so this only verifies it is
+      # present rather than installing it - failing here gives a clearer signal than letting every
+      # psresource test fail later on a missing interpreter.
       - name: Verify PowerShell is installed
         run: pwsh -v
 
@@ -49,7 +49,7 @@ jobs:
         uses: jfrog/.github/actions/install-local-artifactory@main
         with:
           RTLIC: ${{ secrets.RTLIC }}
-          RT_CONNECTION_TIMEOUT_SECONDS: '1200'
+          RT_CONNECTION_TIMEOUT_SECONDS: ${{ env.RT_CONNECTION_TIMEOUT_SECONDS || '1200' }}
 
       - name: Run PSResource tests
         run: >-
