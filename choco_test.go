@@ -13,10 +13,12 @@ import (
 	"time"
 
 	buildInfo "github.com/jfrog/build-info-go/entities"
+	buildUtils "github.com/jfrog/jfrog-cli-core/v2/common/build"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
+	"github.com/jfrog/jfrog-client-go/auth"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
@@ -180,6 +182,18 @@ func getPublishedChocoBuildInfo(t *testing.T, buildName, buildNumber string) bui
 	require.NoError(t, err)
 	require.True(t, found, "build info %s/%s should have been published", buildName, buildNumber)
 	return publishedBuildInfo.BuildInfo
+}
+
+// readLocalChocoBuildInfo assembles the build-info 'jf choco' collected on disk, without going
+// through Artifactory. A publish is destructive - it clears the local state for that
+// build-name/number - so this must be called before getPublishedChocoBuildInfo for the same build.
+func readLocalChocoBuildInfo(t *testing.T, buildName, buildNumber string) *buildInfo.BuildInfo {
+	t.Helper()
+	chocoBuild, err := buildUtils.CreateBuildInfoService().GetOrCreateBuildWithProject(buildName, buildNumber, "")
+	require.NoError(t, err)
+	collected, err := chocoBuild.ToBuildInfo()
+	require.NoError(t, err)
+	return collected
 }
 
 // getChocoCommandProperty reads the recorded Chocolatey command line out of a module. Module
@@ -458,14 +472,32 @@ func TestChocoCommandPropertyRedactsApiKey(t *testing.T) {
 	assert.NotContains(t, recordedCommand, apiKey, "the real credential must never be recorded")
 }
 
-// chocoPushApiKey builds the composite '<user>:<token>' key that Artifactory NuGet endpoints
+// chocoPushApiKey builds the composite '<user>:<secret>' key that Artifactory NuGet endpoints
 // expect for authenticated pushes.
+//
+// The username half must never be empty. Chocolatey rejects a bare ':<secret>' pair with
+// "Invalid credentials specified" and then falls back to prompting for a username on stdin, which
+// aborts with System.InvalidOperationException on a CI runner that has no console. authenticate()
+// sets either User+Password or AccessToken - never both - so whenever the suite runs against an
+// access token (the default against a local Artifactory) User is empty and the username has to be
+// recovered from the token's own JWT subject, the way jf's own dotnetcommand.go does.
 func chocoPushApiKey(t *testing.T) string {
 	t.Helper()
+	secret := serverDetails.Password
 	if serverDetails.AccessToken != "" {
-		return serverDetails.User + ":" + serverDetails.AccessToken
+		secret = serverDetails.AccessToken
 	}
-	return serverDetails.User + ":" + serverDetails.Password
+	user := serverDetails.User
+	if user == "" && serverDetails.AccessToken != "" {
+		user = auth.ExtractUsernameFromAccessToken(serverDetails.AccessToken)
+	}
+	if user == "" {
+		// API keys and reference tokens carry no subject to extract from; fall back to the
+		// configured test username rather than emitting ':<secret>'.
+		user = *tests.JfrogUser
+	}
+	require.NotEmpty(t, user, "a non-empty username is required: Chocolatey prompts interactively for ':<secret>'")
+	return user + ":" + secret
 }
 
 // TestSetupChocoConfiguresSource covers the 'jf setup choco' happy path: the machine-wide
@@ -509,6 +541,16 @@ func TestChocoInstallCollectsDependencies(t *testing.T) {
 	cleanupChocoInstalledPackage(t, id)
 	requireChocoInstall(t, id, version, sourceName, buildName, buildNumber)
 
+	// 'repository' is asserted against the locally collected build-info, before publishing: it is a
+	// build-info-go field that Artifactory's own build-info schema has no place for on a dependency,
+	// so it always comes back empty from a publish/fetch round trip. Reading it locally is what
+	// actually covers jf's side of the contract - that --repo-resolve reaches the collector.
+	localBuildInfo := readLocalChocoBuildInfo(t, buildName, buildNumber)
+	require.Len(t, localBuildInfo.Modules, 1)
+	require.NotEmpty(t, localBuildInfo.Modules[0].Dependencies)
+	assert.Equal(t, tests.NugetLocalRepo, localBuildInfo.Modules[0].Dependencies[0].Repository,
+		"--repo-resolve should be recorded as the resolution repository")
+
 	installBuildInfo := getPublishedChocoBuildInfo(t, buildName, buildNumber)
 	require.Len(t, installBuildInfo.Modules, 1)
 	module := installBuildInfo.Modules[0]
@@ -517,8 +559,6 @@ func TestChocoInstallCollectsDependencies(t *testing.T) {
 	dependency := module.Dependencies[0]
 	assert.Equal(t, id+":"+version, dependency.Id)
 	assert.Equal(t, "nupkg", dependency.Type)
-	assert.Equal(t, tests.NugetLocalRepo, dependency.Repository,
-		"--repo-resolve should be recorded as the resolution repository")
 	assert.Contains(t, getChocoCommandProperty(t, module), "install")
 }
 

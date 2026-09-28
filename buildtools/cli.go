@@ -22,6 +22,7 @@ import (
 	conancommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/conan"
 	nixcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nix"
 	nugetcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nuget"
+	psresourcecommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/psresource"
 	rubycommandexec "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/ruby"
 
 	"github.com/BurntSushi/toml"
@@ -97,6 +98,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pnpmconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/poetry"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/poetryconfig"
+	psresourcedocs "github.com/jfrog/jfrog-cli/docs/buildtools/psresource"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/rubycommand"
 	uvcommand "github.com/jfrog/jfrog-cli/docs/buildtools/uvcommand"
 	yarndocs "github.com/jfrog/jfrog-cli/docs/buildtools/yarn"
@@ -120,7 +122,7 @@ const (
 )
 
 func GetCommands() []cli.Command {
-	cmds := cliutils.GetSortedCommands(cli.CommandsByName{
+	cmds := cliutils.GetSortedCommands(append(cli.CommandsByName{
 		{
 			Hidden:       false,
 			Name:         "setup",
@@ -689,8 +691,53 @@ func GetCommands() []cli.Command {
 				},
 			},
 		},
-	})
+	}, psResourceCommandEntries()...))
 	return decorateWithFlagCapture(cmds)
+}
+
+// psResourceCommandEntries builds the cli.Command entries for the four top-level PSResourceGet
+// commands (Install-PSResource, Save-PSResource, Update-PSResource, Publish-PSResource) - one per
+// native PowerShell PSResourceGet cmdlet - from a shared table instead of four hand-duplicated
+// cli.Command literals. Final ordering among all commands is unaffected: GetCommands sorts the
+// full command set alphabetically via cliutils.GetSortedCommands regardless of insertion order.
+func psResourceCommandEntries() []cli.Command {
+	names := []string{
+		psresourcecommand.SubCommandInstall,
+		psresourcecommand.SubCommandSave,
+		psresourcecommand.SubCommandUpdate,
+		psresourcecommand.SubCommandPublish,
+	}
+	cmds := make([]cli.Command, 0, len(names))
+	for _, name := range names {
+		description := corecommon.ResolveDescription(psresourcedocs.GetDescription(name), psresourcedocs.GetAIDescription(name))
+		cmds = append(cmds, cli.Command{
+			Name:            name,
+			Flags:           cliutils.GetCommandFlags(cliutils.PSResource),
+			Usage:           description,
+			HelpName:        corecommon.CreateUsage(name, description, psresourcedocs.Usage(name)),
+			UsageText:       psresourcedocs.GetArguments(name),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Category:        buildToolsCategory,
+			Action: func(c *cli.Context) error {
+				// jfrog-cli-security's post-failure curation audit gates on a fixed, generic
+				// verb allowlist ({install, build, i, add, ci, get, mod}) shared across every
+				// package manager - it never matches this cmdlet's own PascalCase name
+				// ("Install-PSResource" etc.), so passing name here made the audit a silent
+				// no-op for all four commands. Install/Save/Update are install-like resolve
+				// actions (the curation-blockable case this audit exists for), so they pass the
+				// matching "install" verb. Publish-PSResource uploads rather than resolves a
+				// package - curation cannot block it in the way this audit checks for - so it
+				// runs directly, without a cmdName that would never legitimately apply.
+				if name == psresourcecommand.SubCommandPublish {
+					return psResourceCmd(name)(c)
+				}
+				return securityCLI.WrapCmdWithCurationPostFailureRun(c, psResourceCmd(name), techutils.Nuget, "install")
+			},
+		})
+	}
+	return cmds
 }
 
 func skipFlagParsingForDockerCmd() bool {
@@ -1250,6 +1297,57 @@ func DotnetCmd(c *cli.Context) error {
 		dotnetCmd.SetArgAndFlags(filteredDotnetArgs[1:])
 	}
 	return commands.ExecWithPackageManager(dotnetCmd, project.Dotnet.String())
+}
+
+// psResourceCmd returns the Action for one of the four PSResourceGet top-level commands
+// (Install-PSResource, Save-PSResource, Update-PSResource, Publish-PSResource). Unlike jf choco,
+// which is a single "jf choco <subcommand>" command that parses its subcommand out of
+// c.Args()[0], PSResourceGet exposes its cmdlets directly as top-level jf commands - each
+// registered cli.Command already knows which native cmdlet it is, so cmdletName is fixed per
+// caller (a closure variable) rather than parsed from the arguments. Everything after that is the
+// cmdlet's own native parameters, forwarded through unchanged.
+func psResourceCmd(cmdletName string) func(c *cli.Context) error {
+	return func(c *cli.Context) error {
+		if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), c.Command.Name); show || err != nil {
+			return err
+		}
+		args := cliutils.ExtractCommand(c)
+		args, serverID, err := coreutils.ExtractServerIdFromCommand(args)
+		if err != nil {
+			return fmt.Errorf("extract server ID: %w", err)
+		}
+		filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
+		if err != nil {
+			return err
+		}
+		filteredArgs, repoResolve, err := coreutils.ExtractStringOptionFromArgs(filteredArgs, "repo-resolve")
+		if err != nil {
+			return fmt.Errorf("extract --repo-resolve: %w", err)
+		}
+		filteredArgs, repoDeploy, err := coreutils.ExtractStringOptionFromArgs(filteredArgs, "repo")
+		if err != nil {
+			return fmt.Errorf("extract --repo: %w", err)
+		}
+		workingDirectory, err := filepath.Abs(".")
+		if err != nil {
+			return err
+		}
+		command := psresourcecommand.NewPSResourceFlexPackCommand().
+			SetSubCommand(cmdletName).
+			SetArgs(filteredArgs).
+			SetRepoResolve(repoResolve).
+			SetRepoDeploy(repoDeploy).
+			SetBuildConfiguration(buildConfiguration).
+			SetWorkingDirectory(workingDirectory)
+		serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, false)
+		if err != nil && serverID != "" {
+			return fmt.Errorf("server-id %q not found: %w", serverID, err)
+		}
+		if err == nil {
+			command.SetServerDetails(serverDetails)
+		}
+		return commands.ExecWithPackageManager(command, "psresource")
+	}
 }
 
 func getNugetAndDotnetConfigFields(configFilePath string) (rtDetails *coreConfig.ServerDetails, targetRepo string, useNugetV2 bool, err error) {
@@ -2048,6 +2146,11 @@ func setupCmd(c *cli.Context) (err error) {
 		packageManager, err = selectPackageManagerInteractively()
 		if err != nil {
 			return
+		}
+	}
+	if packageManager == project.PSResource {
+		if err = setup.ValidatePSResourcePlatform(); err != nil {
+			return err
 		}
 	}
 	if packageManager == project.Choco {

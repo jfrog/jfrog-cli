@@ -35,6 +35,7 @@ Prerequisites:
 - A configured server (jf c add or jf login), or pass --url/--user/--password/--access-token directly.
 - The Artifactory repository name for the package manager (a virtual repo where supported).
 - For Chocolatey, select a NuGet virtual, local, or remote repository when prompted. Setup creates a named native source ('jfrt-<hostname>-<repo>') for each repository, so use -s to choose a configured resolve or publish endpoint.
+- For psresource (PowerShell PSResourceGet), PowerShell 7+ (pwsh) with the Microsoft.PowerShell.PSResourceGet module installed.
 
 Common patterns:
   $ jf setup npm
@@ -51,6 +52,7 @@ Gotchas:
 - maven and gradle do not need their client installed: their setup writes settings.xml and a Gradle init script directly, so it works on a machine that only has ./mvnw or ./gradlew. Every other package manager's setup runs its client. helm additionally needs 3.8.0 or newer, because its login targets an OCI registry.
 - docker/podman authenticate directly against the registry and skip the repository prompt entirely (no --repo needed); helm still goes through repository selection like the other package managers even though its login step doesn't end up using the repo name.
 - Chocolatey runs on Windows only and updates machine-wide chocolatey.config, so use an elevated shell. Re-running 'jf setup choco' for one repository refreshes only that repository's 'jfrt-<hostname>-<repo>' source; it preserves other Chocolatey sources.
+- For psresource, registration is user-profile scoped (PSResourceRepository.xml), not machine-wide, so re-running as a different user repeats setup. The four PSResourceGet cmdlets themselves are run directly as 'jf Install-PSResource' / 'jf Save-PSResource' / 'jf Update-PSResource' / 'jf Publish-PSResource' - there is no 'jf psresource' command.
 
 Related: jf npm-config, jf go-config, jf pip-config, jf c add`
 }
