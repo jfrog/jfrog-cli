@@ -255,4 +255,4 @@ require (
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.13.1-0.20260915053625-0924f0a616bd
 
-replace github.com/jfrog/jfrog-cli-artifactory => github.com/sankerr/jfrog-cli-artifactory v0.0.0-20260928050937-dc09e52ca69c
+replace github.com/jfrog/jfrog-cli-artifactory => github.com/sankerr/jfrog-cli-artifactory v0.0.0-20260928075253-dd66e3bbfbcb
