@@ -46,7 +46,7 @@ Common patterns:
   $ jf setup maven --status --server-id=my-server --deep
 
 Checking the current configuration (--status):
-- Read-only and never interactive: no repository prompt, no "configure a server?" offer, no token creation, and no request to the JFrog server unless --deep is set (pnpm, nuget, dotnet, go and helm are asked where they keep their configuration, with their toolchain and Corepack downloads disabled). It reads the user-level configuration that jf setup writes for that package manager, one package manager per call.
+- Read-only and never interactive: no repository prompt, no "configure a server?" offer, no token creation, and no request to the JFrog server unless --deep is set (pnpm, nuget, dotnet, go and helm are asked where they keep their configuration, with their toolchain and Corepack downloads disabled, and a credential helper named in a docker, podman or helm auth file is asked which registries it holds a login for). It reads the user-level configuration that jf setup writes for that package manager, one package manager per call.
 - Supported for npm, pnpm, pip, pipenv, uv, go, maven, gradle, nuget, dotnet, docker, podman and helm. Every other package manager jf setup supports reports the state "unsupported".
 - The server is resolved from --url, --server-id or the default server, using only the stored URL.
 - "state" is one of: "configured" (the configured URL is under the server's Artifactory URL), "other-host" (the setting holds a value that is neither the public default nor this server), "not-configured" (unset, or the public default such as registry.npmjs.org), or "unsupported". docker, podman and helm never report "other-host", because logins to several registries are normal.
