@@ -2134,8 +2134,8 @@ func setupCmd(c *cli.Context) (err error) {
 	if c.Bool(cliutils.Status) {
 		return setupStatusCmd(c, packageManagerStr)
 	}
-	if c.Bool("deep") || c.IsSet(cliutils.Format) {
-		return cliutils.PrintHelpAndReturnError("--deep and --format can only be used together with --status.", c)
+	if c.Bool(cliutils.Verify) || c.IsSet(cliutils.Format) {
+		return cliutils.PrintHelpAndReturnError("--verify and --format can only be used together with --status.", c)
 	}
 
 	// Apt requires dist+component and has its own setup path.
@@ -2183,7 +2183,7 @@ func setupCmd(c *cli.Context) (err error) {
 	return commands.ExecWithPackageManager(setupCmd, packageManager.String())
 }
 
-// setupStatusCmd runs `jf setup <pm> --status`. It never prompts, and without --deep it
+// setupStatusCmd runs `jf setup <pm> --status`. It never prompts, and without --verify it
 // does not contact the JFrog server.
 func setupStatusCmd(c *cli.Context, packageManagerStr string) error {
 	statusFormat, err := commonCliUtils.GetOutputFormat(c, outputFormat.Table)
@@ -2221,7 +2221,7 @@ func runSetupStatus(c *cli.Context, packageManager project.ProjectType, statusFo
 	}
 	statusCmd := setup.NewSetupStatusCommand(packageManager).
 		SetServerDetails(serverDetails).
-		SetDeep(c.Bool("deep")).
+		SetVerify(c.Bool(cliutils.Verify)).
 		SetFormat(statusFormat)
 	return commands.ExecWithPackageManager(statusCmd, packageManager.String())
 }

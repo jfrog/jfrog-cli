@@ -1,16 +1,24 @@
 package buildtools
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
+	"io"
 	"os"
+	"strings"
 	"testing"
 
 	dotnetutils "github.com/jfrog/build-info-go/build/utils/dotnet"
 	containerutils "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/ocicontainer"
 	psresourcecommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/psresource"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/setup"
 	"github.com/jfrog/jfrog-cli-core/v2/plugins/components"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	securityCLI "github.com/jfrog/jfrog-cli-security/cli"
 	securityDocs "github.com/jfrog/jfrog-cli-security/cli/docs"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli"
@@ -437,4 +445,81 @@ func TestPSResourceCommandEntriesRegistersAllFour(t *testing.T) {
 		psresourcecommand.SubCommandUpdate,
 		psresourcecommand.SubCommandPublish,
 	}, names)
+}
+
+// runSetupCommand runs the setup action in-process, with no JFrog config and an empty home,
+// and returns what it printed to stdout.
+func runSetupCommand(t *testing.T, args ...string) (string, error) {
+	t.Helper()
+	home := t.TempDir()
+	for _, env := range []string{"HOME", "USERPROFILE", "XDG_CONFIG_HOME", coreutils.HomeDir} {
+		t.Setenv(env, home)
+	}
+	for _, env := range []string{"NPM_CONFIG_USERCONFIG", "npm_config_userconfig", "NPM_CONFIG_REGISTRY", "npm_config_registry"} {
+		t.Setenv(env, "")
+	}
+	t.Chdir(t.TempDir())
+
+	var stdout bytes.Buffer
+	logger := log.NewLogger(log.INFO, io.Discard)
+	logger.SetOutputWriter(&stdout)
+	log.SetLogger(logger)
+	t.Cleanup(func() { log.SetLogger(log.NewLogger(log.INFO, nil)) })
+
+	app := cli.NewApp()
+	app.Writer, app.ErrWriter = io.Discard, io.Discard
+	app.Commands = []cli.Command{{Name: "setup", Flags: cliutils.GetCommandFlags(cliutils.Setup), Action: setupCmd}}
+	err := app.Run(append([]string{"jf", "setup"}, args...))
+	return stdout.String(), err
+}
+
+func TestSetupStatus_JSONErrorEnvelope(t *testing.T) {
+	tests := []struct {
+		name           string
+		args           []string
+		packageManager string
+		message        string
+	}{
+		{"no package manager", []string{"--status", "--format", "json"}, "", "--status requires a package manager argument"},
+		{"with --remove", []string{"npm", "--status", "--remove", "--format", "json"}, "npm", "--status cannot be combined with --remove."},
+		{"unknown package manager", []string{"not-a-pm", "--status", "--format", "json"}, "not-a-pm", "The package manager not-a-pm is not supported"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			stdout, err := runSetupCommand(t, test.args...)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), test.message)
+			var envelope map[string]any
+			require.NoError(t, json.Unmarshal([]byte(stdout), &envelope), "stdout must be one JSON object: %q", stdout)
+			assert.Equal(t, map[string]any{"schemaVersion": float64(setup.StatusSchemaVersion), "packageManager": test.packageManager, "error": err.Error()}, envelope)
+		})
+	}
+}
+
+func TestSetupStatus_UnsupportedIsNotAnError(t *testing.T) {
+	stdout, err := runSetupCommand(t, "yarn", "--status", "--url=https://example.com/artifactory/", "--format", "json")
+	require.NoError(t, err)
+	var status setup.PackageManagerStatus
+	require.NoError(t, json.Unmarshal([]byte(stdout), &status))
+	assert.Equal(t, setup.StateUnsupported, status.State)
+	assert.Equal(t, "yarn", status.PackageManager)
+}
+
+func TestSetupStatus_VerifyIsAccepted(t *testing.T) {
+	stdout, err := runSetupCommand(t, "npm", "--status", "--url=https://example.com/artifactory/", "--format", "json", "--verify")
+	require.NoError(t, err)
+	var status setup.PackageManagerStatus
+	require.NoError(t, json.Unmarshal([]byte(stdout), &status))
+	assert.Equal(t, setup.StateNotConfigured, status.State)
+	assert.Equal(t, &setup.VerifyStatus{AuthOk: setup.ProbeUnknown, Error: "not verified: the configuration does not point at this server"}, status.Verify)
+}
+
+func TestSetupStatus_FlagsRequireStatus(t *testing.T) {
+	for _, args := range [][]string{{"npm", "--format", "json"}, {"npm", "--verify"}} {
+		t.Run(strings.Join(args, " "), func(t *testing.T) {
+			stdout, err := runSetupCommand(t, args...)
+			assert.EqualError(t, err, "--verify and --format can only be used together with --status.")
+			assert.Empty(t, stdout)
+		})
+	}
 }

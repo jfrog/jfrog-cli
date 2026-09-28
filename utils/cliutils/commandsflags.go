@@ -407,7 +407,8 @@ const (
 
 	// Setup status flags
 	setupStatus = "setup-status"
-	setupDeep   = "deep"
+	Verify      = "verify"
+	setupVerify = "setup-verify"
 	setupFormat = "setup-format"
 
 	// Unique docker promote flags
@@ -1494,12 +1495,13 @@ var flagsMap = map[string]cli.Flag{
 	setupStatus: cli.BoolFlag{
 		Name: Status,
 		Usage: "[Optional] [Default: false] Report, without changing anything, whether the package manager's user-level configuration points at the server. " +
-			"It does not contact the JFrog server unless --deep is added, which also checks that the configured repository is reachable with the credentials stored in the package manager's configuration.` `",
+			"It reads local configuration only (it may run the package manager's client or a credential helper to find it) and does not contact the JFrog server unless --verify is added.` `",
 	},
-	setupDeep: cli.BoolFlag{
-		Name:   setupDeep,
-		Usage:  "[Default: false] [--status only] Also check that the configured repository is reachable with the credentials stored in the package manager's configuration.` `",
-		Hidden: true,
+	setupVerify: cli.BoolFlag{
+		Name: Verify,
+		Usage: "[Default: false] [--status only] Also send one GET request to <artifactory-url>/api/repositories/<repoKey>, with the credentials stored in the package manager's configuration, " +
+			"a 5 second timeout and no redirects, and report the result under \"verify\". It runs only when the state is \"configured\" and the repository key is known; " +
+			"otherwise \"verify\" says why nothing was checked (docker, podman and helm log in to a registry, so they are never checked). The exit code is still 0.` `",
 	},
 	setupFormat: cli.StringFlag{
 		Name:  Format,
@@ -2540,7 +2542,7 @@ var commandFlags = map[string][]string{
 	},
 	Setup: {
 		serverId, url, user, password, accessToken, sshPassphrase, sshKeyPath, ClientCertPath, ClientCertKeyPath, Project, setupRepo,
-		aptDistribution, aptComponent, aptTrusted, aptImportKey, aptRemove, setupStatus, setupDeep, setupFormat,
+		aptDistribution, aptComponent, aptTrusted, aptImportKey, aptRemove, setupStatus, setupVerify, setupFormat,
 	},
 	Login: {
 		serverId, configDisableRefreshAccessToken, Legacy,

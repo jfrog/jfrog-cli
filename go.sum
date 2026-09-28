@@ -402,8 +402,6 @@ github.com/jfrog/jfrog-apps-config v1.0.1 h1:mtv6k7g8A8BVhlHGlSveapqf4mJfonwvXYL
 github.com/jfrog/jfrog-apps-config v1.0.1/go.mod h1:8AIIr1oY9JuH5dylz2S6f8Ym2MaadPLR6noCBO4C22w=
 github.com/jfrog/jfrog-cli-application v1.0.2-0.20260820134442-c8629258ff3a h1:7GhcPfi+k9oOAJdCsKWjymnqH0e7DQZ1soVhbneYnGY=
 github.com/jfrog/jfrog-cli-application v1.0.2-0.20260820134442-c8629258ff3a/go.mod h1:p8yLtbmCxxQucIbLZKnWu0F+EDtj6NLXbRQCEK/nb6o=
-github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260927054148-8c77089833c9 h1:s6Sh8JWKVUD8mF3zuoeVuv5O0V0SXQJGWWk3J8JLaWo=
-github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260927054148-8c77089833c9/go.mod h1:VaMX/0GKExKszogM+G62260Krx15l4EV/MQ0ftgbBW0=
 github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260925084932-b47892ded3a0 h1:SNXwdC0MIjNC2dCf8lNaZvMNpy6CLWdsZllcIhC/atQ=
 github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20260925084932-b47892ded3a0/go.mod h1:SwV+DNLBnWLxBeNeZpJk+xxAbqJ8ywq1va56up+AGu4=
 github.com/jfrog/jfrog-cli-evidence v0.11.1-0.20260824063609-79b735ec565e h1:+QYbewvK+PZKbfPpxYmy0bewhqMFtJPk/tUbCICjf8U=
@@ -565,8 +563,8 @@ github.com/ryanuber/go-glob v1.0.0 h1:iQh3xXAumdQ+4Ufa5b25cRpC5TYKlno6hsv6Cb3pkB
 github.com/ryanuber/go-glob v1.0.0/go.mod h1:807d1WSdnB0XRJzKNil9Om6lcp/3a0v4qIHxIXzX/Yc=
 github.com/sagikazarmark/locafero v0.12.0 h1:/NQhBAkUb4+fH1jivKHWusDYFjMOOKU88eegjfxfHb4=
 github.com/sagikazarmark/locafero v0.12.0/go.mod h1:sZh36u/YSZ918v0Io+U9ogLYQJ9tLLBmM4eneO6WwsI=
-github.com/sankerr/jfrog-cli-artifactory v0.0.0-20260928075253-dd66e3bbfbcb h1:SiuO9AIvlwXJqEnhkaiXYnpi8FO7gKSv/Ffk1xZAW2M=
-github.com/sankerr/jfrog-cli-artifactory v0.0.0-20260928075253-dd66e3bbfbcb/go.mod h1:VaMX/0GKExKszogM+G62260Krx15l4EV/MQ0ftgbBW0=
+github.com/sankerr/jfrog-cli-artifactory v0.0.0-20260928085615-90cd16035287 h1:Iy68IncrWnI4VAqg1rQ65KXUWfgQmhhl7sLjuAJezN4=
+github.com/sankerr/jfrog-cli-artifactory v0.0.0-20260928085615-90cd16035287/go.mod h1:VaMX/0GKExKszogM+G62260Krx15l4EV/MQ0ftgbBW0=
 github.com/sassoftware/relic v7.2.1+incompatible h1:Pwyh1F3I0r4clFJXkSI8bOyJINGqpgjJU3DYAZeI05A=
 github.com/sassoftware/relic v7.2.1+incompatible/go.mod h1:CWfAxv73/iLZ17rbyhIEq3K9hs5w6FpNMdUT//qR+zk=
 github.com/sassoftware/relic/v7 v7.6.2 h1:rS44Lbv9G9eXsukknS4mSjIAuuX+lMq/FnStgmZlUv4=
