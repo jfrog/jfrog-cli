@@ -475,7 +475,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "cargo",
-			Hidden:          true,
+			Hidden:          false,
 			Flags:           cliutils.GetCommandFlags(cliutils.Cargo),
 			Usage:           corecommon.ResolveDescription(cargo.GetDescription(), cargo.GetAIDescription()),
 			HelpName:        corecommon.CreateUsage("cargo", corecommon.ResolveDescription(cargo.GetDescription(), cargo.GetAIDescription()), cargo.Usage),
