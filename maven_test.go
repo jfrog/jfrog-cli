@@ -1157,6 +1157,7 @@ func TestSetupMavenCommand(t *testing.T) {
 
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 	require.NoError(t, execGo(jfrogCli, "setup", "maven", "--repo="+tests.MvnRemoteRepo))
+	assertSetupStatusAfterSetup(t, "maven", tests.MvnRemoteRepo)
 
 	// Remove the artifact from the .m2 cache to force artifactory resolve.
 	assert.NoError(t, os.RemoveAll(filepath.Join(homeDir, ".m2", "repository", "commons-collections", "commons-collections")))

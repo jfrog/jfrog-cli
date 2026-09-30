@@ -396,6 +396,8 @@ func TestSetupGoCommand(t *testing.T) {
 	chdir := clientTestUtils.ChangeDirWithCallback(t, wd, t.TempDir())
 	defer chdir()
 	assert.NoError(t, exec.Command("go", "mod", "init", "test-proj").Run())
+	// Isolate the Go env file so the test never touches the developer's GOPROXY.
+	t.Setenv("GOENV", filepath.Join(t.TempDir(), "env"))
 
 	// Validate that the module does not exist in the cache before running the test.
 	client, err := httpclient.ClientBuilder().Build()
@@ -404,10 +406,12 @@ func TestSetupGoCommand(t *testing.T) {
 	_, _, err = client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
 	assert.ErrorContains(t, err, "404")
 
+	assertSetupStatusNotConfigured(t, "go")
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	// Please notice that we configure the Go virtual repository (that points to the remote repository),
 	// because go doesn't support resolving directly from remote repertoires. (https://jfrog.com/help/r/jfrog-artifactory-documentation/set-up-remote-go-repositories)
 	require.NoError(t, execGo(jfrogCli, "setup", "go", "--repo="+tests.GoVirtualRepo))
+	assertSetupStatusAfterSetup(t, "go", tests.GoVirtualRepo)
 
 	err = exec.Command("go", "get", "github.com/shirou/gopsutil/v4@v4.24.12").Run()
 	assert.NoError(t, err)

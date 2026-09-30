@@ -405,6 +405,12 @@ const (
 	aptImportKey    = "import-key"
 	aptRemove       = "remove"
 
+	// Setup status flags
+	setupStatus = "setup-status"
+	Verify      = "verify"
+	setupVerify = "setup-verify"
+	setupFormat = "setup-format"
+
 	// Unique docker promote flags
 	dockerPromotePrefix = "docker-promote-"
 	targetDockerImage   = "target-docker-image"
@@ -1486,6 +1492,21 @@ var flagsMap = map[string]cli.Flag{
 		Name:  aptRemove,
 		Usage: "[apt only] [Default: false] Remove all JFrog-managed apt source and pinning files. Combine with --dist to limit to a specific distribution.` `",
 	},
+	setupStatus: cli.BoolFlag{
+		Name: Status,
+		Usage: "[Optional] [Default: false] Report, without changing anything, whether the package manager's user-level configuration points at the server. " +
+			"It reads local configuration only (it may run the package manager's client or a credential helper to find it) and does not contact the JFrog server unless --verify is added.` `",
+	},
+	setupVerify: cli.BoolFlag{
+		Name: Verify,
+		Usage: "[Default: false] [--status only] Also send one GET request to <artifactory-url>/api/repositories/<repoKey>, with the credentials stored in the package manager's configuration, " +
+			"a 5 second timeout and no redirects, and report the result under \"verify\". It runs only when the state is \"configured\" and the repository key is known; " +
+			"otherwise \"verify\" says why nothing was checked (docker, podman and helm log in to a registry, so they are never checked). The exit code is still 0.` `",
+	},
+	setupFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] [--status only] " + components.GetFormatFlagDescription([]format.OutputFormat{format.Table, format.Json}) + "` `",
+	},
 	npmDetailedSummary: cli.BoolFlag{
 		Name:  detailedSummary,
 		Usage: "[Default: false] Set to true to include a list of the affected files in the command summary.` `",
@@ -2521,7 +2542,7 @@ var commandFlags = map[string][]string{
 	},
 	Setup: {
 		serverId, url, user, password, accessToken, sshPassphrase, sshKeyPath, ClientCertPath, ClientCertKeyPath, Project, setupRepo,
-		aptDistribution, aptComponent, aptTrusted, aptImportKey, aptRemove,
+		aptDistribution, aptComponent, aptTrusted, aptImportKey, aptRemove, setupStatus, setupVerify, setupFormat,
 	},
 	Login: {
 		serverId, configDisableRefreshAccessToken, Legacy,
