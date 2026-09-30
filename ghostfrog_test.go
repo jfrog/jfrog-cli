@@ -468,10 +468,11 @@ func TestGhostFrogHighFanOutStress(t *testing.T) {
 // E2E-030: setup-jfrog-cli native integration
 func TestGhostFrogSetupJFrogCLINativeIntegration(t *testing.T) {
 	homeDir := initGhostFrogTest(t)
-	installAliases(t, "npm,mvn,go,pip")
+	tools := []string{"npm", "mvn", "go", "pip", "helm"}
+	installAliases(t, strings.Join(tools, ","))
 
 	binDir := aliasBinDir(homeDir)
-	for _, tool := range []string{"npm", "mvn", "go", "pip"} {
+	for _, tool := range tools {
 		_, err := os.Stat(aliasToolPath(homeDir, tool))
 		require.NoError(t, err, "alias for %s should exist", tool)
 	}
@@ -484,7 +485,7 @@ func TestGhostFrogSetupJFrogCLINativeIntegration(t *testing.T) {
 	// Verify alias dir is populated
 	entries, err := os.ReadDir(binDir)
 	require.NoError(t, err)
-	assert.GreaterOrEqual(t, len(entries), 4, "should have at least 4 alias entries")
+	assert.GreaterOrEqual(t, len(entries), len(tools), fmt.Sprintf("should have at least %d alias entries", len(tools)))
 }
 
 // E2E-031: Auto build-info publish (requires Artifactory)
