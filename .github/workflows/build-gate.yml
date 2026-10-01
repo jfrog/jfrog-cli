@@ -61,6 +61,10 @@ jobs:
     needs: gate
     uses: ./.github/workflows/artifactoryTests.yml
     secrets: inherit
+  choco:
+    needs: gate
+    uses: ./.github/workflows/chocoTests.yml
+    secrets: inherit
   conan:
     needs: gate
     uses: ./.github/workflows/conanTests.yml
@@ -136,6 +140,10 @@ jobs:
   nuget:
     needs: gate
     uses: ./.github/workflows/nugetTests.yml
+    secrets: inherit
+  psresource:
+    needs: gate
+    uses: ./.github/workflows/psresourceTests.yml
     secrets: inherit
   oidc:
     needs: gate
@@ -213,6 +221,7 @@ jobs:
       - alpine
       - npm
       - nuget
+      - psresource
       - oidc
       - plugins
       - pnpm
