@@ -260,7 +260,7 @@ func TestAptSetup_ImportKey(t *testing.T) {
 	require.NoError(t, err, "apt-get install %s from Artifactory failed: %s", pkg, out)
 	artURL := strings.TrimSuffix(*tests.JfrogUrl+tests.ArtifactoryEndpoint, "/")
 	assertPersistentInstallFromArtifactory(t, pkg, artURL)
-	
+
 }
 
 // TestAptInstall_PersistentConfigVirtualRemote mirrors the manual repro end to
