@@ -74,11 +74,21 @@ func AccessTokenCreateCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	return printTokenResponse(resBytes, outputFormat, os.Stdout)
+	return printTokenResponse(resBytes, outputFormat, os.Stdout, username)
 }
 
 // printTokenResponse writes the token response in the requested format to w.
-func printTokenResponse(data []byte, outputFormat coreformat.OutputFormat, w io.Writer) error {
+func printTokenResponse(data []byte, outputFormat coreformat.OutputFormat, w io.Writer, username string) error {
+	// Add username to atc output
+	var jsonData map[string]any
+	if err := json.Unmarshal(data, &jsonData); err != nil {
+		return err
+	}
+	jsonData["username"] = username
+	data, err := json.Marshal(jsonData)
+	if err != nil {
+		return err
+	}
 	switch outputFormat {
 	case coreformat.Json:
 		log.Output(clientUtils.IndentJson(data))
@@ -102,7 +112,7 @@ func printTokenTable(data []byte, w io.Writer) error {
 	orderedKeys := []string{
 		"access_token", "token_id", "expires_in", "scope",
 		"token_type", "refreshable", "refresh_token", "reference_token",
-		"grant_type", "audience",
+		"grant_type", "audience", "username",
 	}
 
 	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
