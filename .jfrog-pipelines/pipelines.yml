@@ -1,11 +1,4 @@
 resources:
-  - name: jfrog_cli
-    type: GitRepo
-    configuration:
-      path: jfrog/jfrog-cli
-      gitProvider: jfrog_cli_gh
-      branches:
-        include: master
   - name: cli_coreapps_env_details
     type: PropertyBag
     configuration:
@@ -62,7 +55,7 @@ pipelines:
             allowCustom: true
           JFROG_CLI_GITHUB_REF:
             default: "master"
-            description: "Git ref to checkout in jfrog/jfrog-cli (branch, tag, or SHA)."
+            description: "Git ref passed to Actions as jfrog_cli_ref. A branch name such as master is resolved to the current tip when the workflow is dispatched."
             allowCustom: true
           GITHUB_DISPATCH_TOKEN:
             default: "${int_github_dispatch_token}"
@@ -273,7 +266,6 @@ pipelines:
             - name: docker_jfrog_io_reader
             - name: jfrog_cli_gh
           inputResources:
-            - name: jfrog_cli
             - name: jfrog_oauth_token
           inputSteps:
             - name: setup_environment
@@ -298,16 +290,13 @@ pipelines:
 
               OAUTH_TOKEN="${res_jfrog_oauth_token_token}"
               JFROG_URL="${res_jfrog_oauth_token_url}"
-              CLI_REF="${JFROG_CLI_GITHUB_REF:-${res_jfrog_cli_commitSha}}"
+              CLI_REF="${JFROG_CLI_GITHUB_REF:-master}"
 
               if [[ -z "${OAUTH_TOKEN}" || "${OAUTH_TOKEN}" == "null" ]]; then
                 fail_jf_cli_tests "OAuth token not found on jfrog_oauth_token resource"
               fi
               if [[ -z "${JFROG_URL}" ]]; then
                 fail_jf_cli_tests "Platform URL not found on jfrog_oauth_token resource"
-              fi
-              if [[ -z "${CLI_REF}" ]]; then
-                fail_jf_cli_tests "No CLI ref available; set JFROG_CLI_GITHUB_REF or ensure jfrog_cli resource exposes commit SHA"
               fi
 
               GH_API_URL="${GITHUB_API_URL:-https://github.jfrog.info/api/v3}"
