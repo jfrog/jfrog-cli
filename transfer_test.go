@@ -105,7 +105,7 @@ func TestTransferTwoRepos(t *testing.T) {
 	// Execute transfer-files
 	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("transfer-files", inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.RtRepo1+";"+tests.RtRepo2))
 
-	// Verify again that that files are exist the source Artifactory
+	// Verify again that the files exist in the source Artifactory
 	inttestutils.VerifyExistInArtifactory(tests.GetTransferExpectedRepo1(), repo1Spec, serverDetails, t)
 	inttestutils.VerifyExistInArtifactory(tests.GetTransferExpectedRepo2(), repo2Spec, serverDetails, t)
 
@@ -124,7 +124,7 @@ func TestTransferExcludeRepo(t *testing.T) {
 	// Execute transfer-files
 	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("transfer-files", inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.RtRepo1+";"+tests.RtRepo2, "--exclude-repos="+tests.RtRepo2))
 
-	// Verify again that that files are exist the source Artifactory
+	// Verify again that the files exist in the source Artifactory
 	inttestutils.VerifyExistInArtifactory(tests.GetTransferExpectedRepo1(), repo1Spec, serverDetails, t)
 	inttestutils.VerifyExistInArtifactory(tests.GetTransferExpectedRepo2(), repo2Spec, serverDetails, t)
 

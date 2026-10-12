@@ -68,7 +68,7 @@ func getPluginsSignatures() ([]*components.PluginSignature, error) {
 }
 
 func logSkippablePluginsError(msg, pluginName string, err error) {
-	log.Error(fmt.Sprintf("%s%s: '%s'. Skiping...", pluginsErrorPrefix, msg, pluginName))
+	log.Error(fmt.Sprintf("%s%s: '%s'. Skipping...", pluginsErrorPrefix, msg, pluginName))
 	if err != nil {
 		log.Error("Error was: " + err.Error())
 	}

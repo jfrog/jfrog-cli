@@ -673,7 +673,7 @@ func shouldCheckLatestCliVersion() (shouldCheck bool, err error) {
 	timeNow := time.Now().UnixMilli()
 	if latestVersionCheckTime != nil &&
 		(timeNow-*latestVersionCheckTime) < LatestCliVersionCheckInterval.Milliseconds() {
-		// Timestamp file exists and updated less than 6 hours ago, therefor no need to check version again
+		// Timestamp file exists and updated less than 6 hours ago, therefore no need to check version again
 		return
 	}
 	if err = setCliLatestVersionCheckTime(timeNow); err != nil {
