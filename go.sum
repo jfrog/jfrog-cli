@@ -410,10 +410,10 @@ github.com/jfrog/jfrog-cli-evidence v0.11.1-0.20260824063609-79b735ec565e h1:+QY
 github.com/jfrog/jfrog-cli-evidence v0.11.1-0.20260824063609-79b735ec565e/go.mod h1:I83k7IH/cmMh00LyZOp13jctj8/pPKVHSAlu7GMJgwI=
 github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20261001090422-65bfb63e9be7 h1:qRAO4OPVFFcd1PBIvFKy9QCMz2UB5DeWSNZP/N+roIs=
 github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20261001090422-65bfb63e9be7/go.mod h1:aepFLIsqYJy1rFGkpY5CYwMRNViwjHtJcUaNzrWCCUo=
-github.com/jfrog/jfrog-cli-security v1.39.1 h1:d3roHyrgoq/n7Lq34hdrDFCwON9UNoD9jahTEwkovNI=
-github.com/jfrog/jfrog-cli-security v1.39.1/go.mod h1:8iL3tzf0l0wJLGdn4At1RSt/I0+CgbK7hj16xH2Ssio=
-github.com/jfrog/jfrog-client-go v1.55.1-0.20261005090941-0646d7b50f9a h1:KXO+LsENOD75ZCVvZEf7/1B4z7zgsornGa6924fALzg=
-github.com/jfrog/jfrog-client-go v1.55.1-0.20261005090941-0646d7b50f9a/go.mod h1:7B7eMRKuMhZ0rOdMItbJVpWjRUe1L//J3Jq+PgjiNxI=
+github.com/jfrog/jfrog-cli-security v1.40.0 h1:LMh7Co4adI7FLl5/KtPOFlhDM8VoGp5NNVrIfAFq3Fs=
+github.com/jfrog/jfrog-cli-security v1.40.0/go.mod h1:nYinJnDQ67hn1bNjytWpOasgkcT3E4N3gtJoeDVAYM0=
+github.com/jfrog/jfrog-client-go v1.55.1-0.20261013073510-6053434e9301 h1:CJWhxJdhMNhMCUAIJEpid8AQqzWl7uMLXWymBrDSCb0=
+github.com/jfrog/jfrog-client-go v1.55.1-0.20261013073510-6053434e9301/go.mod h1:7B7eMRKuMhZ0rOdMItbJVpWjRUe1L//J3Jq+PgjiNxI=
 github.com/jhump/protoreflect v1.17.0 h1:qOEr613fac2lOuTgWN4tPAtLL7fUSbuJL5X5XumQh94=
 github.com/jhump/protoreflect v1.17.0/go.mod h1:h9+vUUL38jiBzck8ck+6G/aeMX8Z4QUY/NiJPwPNi+8=
 github.com/jszwec/csvutil v1.10.0 h1:upMDUxhQKqZ5ZDCs/wy+8Kib8rZR8I8lOR34yJkdqhI=
