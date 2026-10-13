@@ -2394,6 +2394,9 @@ func TestNugetFlexPackBuildScanAfterPromotion(t *testing.T) {
 func TestNugetFlexPackReleaseBundleFromNugetBuild(t *testing.T) {
 	initNugetTest(t)
 	defer cleanTestsHomeEnv()
+	// 'rbc --source-type-builds' requires a minimum Artifactory version; skip (as the lifecycle
+	// suite does) on servers that don't meet it, including snapshot builds whose version can't be compared.
+	validateArtifactoryVersion(t, minMultiSourcesArtifactoryVersion)
 
 	buildName := tests.NuGetBuildName + "-flexpack-rb"
 	buildNumber := "1"
