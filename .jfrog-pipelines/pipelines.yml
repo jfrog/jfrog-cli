@@ -74,7 +74,7 @@ pipelines:
             description: "Artifactory deployment sizing profile."
             allowCustom: true
           MAX_RUN_RETRIES:
-            default: "2"
+            default: "5"
             description: "Per-workflow run-level retry budget. When a dispatched workflow run finishes with a non-success conclusion, the pipeline calls GitHub's rerun-failed-jobs API up to this many times before declaring it failed. Set 0 to disable run-level retry."
             allowCustom: true
           MAX_WAIT_SECONDS:
@@ -306,7 +306,7 @@ pipelines:
               GH_ACTIONS_RUNNER="${GHE_ACTIONS_RUNNER:-artifactory-dind-amd-scale-set}"
 
               # Run-level retry knobs (see the readOnly env vars above).
-              MAX_RUN_RETRIES_RESOLVED="${MAX_RUN_RETRIES:-2}"
+              MAX_RUN_RETRIES_RESOLVED="${MAX_RUN_RETRIES:-5}"
               MAX_WAIT_RESOLVED="${MAX_WAIT_SECONDS:-14400}"
 
               GITHUB_TOKEN_RESOLVED="${GITHUB_DISPATCH_TOKEN:-}"
