@@ -12,14 +12,7 @@ jobs:
         os: [ubuntu, windows, macos]
     runs-on: ${{ matrix.os }}-latest
     steps:
-      - name: Skip Windows and macOS - RTDEV-102884
-        if: matrix.os != 'ubuntu'
-        run: |
-          echo "::warning::RTDEV-102884 - Skip evidence tests on ${{ matrix.os }} until subject-not-found failures are fixed"
-          exit 0
-
       - name: Checkout code
-        if: matrix.os == 'ubuntu'
         uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
@@ -27,7 +20,6 @@ jobs:
           allow-unsafe-pr-checkout: true
 
       - name: Setup FastCI
-        if: matrix.os == 'ubuntu'
         uses: jfrog-fastci/fastci@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -35,11 +27,9 @@ jobs:
 
           
       - name: Setup Go with cache
-        if: matrix.os == 'ubuntu'
         uses: jfrog/.github/actions/install-go-with-cache@main
 
       - name: Setup JFrog CLI
-        if: matrix.os == 'ubuntu'
         uses: jfrog/setup-jfrog-cli@v5
         with:
           version: latest
@@ -48,5 +38,28 @@ jobs:
           JF_ACCESS_TOKEN: ${{ secrets.EPLUS_ADMIN_TOKEN }}
 
       - name: Run Evidence tests
-        if: matrix.os == 'ubuntu'
-        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.evidence --jfrog.url=${{ secrets.EPLUS_PLATFORM_URL }} --jfrog.adminToken=${{ secrets.EPLUS_ADMIN_TOKEN }} --jfrog.evidenceToken=${{ secrets.EVIDENCE_USER_TOKEN }} --jfrog.projectKey=${{ secrets.EVIDENCE_PROJECT_KEY }} --jfrog.projectToken=${{ secrets.EVIDENCE_PROJECT_TOKEN }} --ci.runId=${{ runner.os }}-evidence
+        shell: bash
+        run: |
+          # RTDEV-102884: skip only the subtests that failed. Ubuntu passed the suite.
+          skip=""
+          case "${{ runner.os }}" in
+            Windows)
+              skip='TestEvidence/CreateEvidence/For(Artifact|Package|BuildWithProject|Build)$'
+              ;;
+            macOS)
+              skip='TestEvidence/(CreateEvidence/(For(Artifact|Package|ReleaseBundle|ApplicationVersion|EntityWithProject|Entity|ApplicationEntity|BuildWithProject|Build)|With(Markdown|SubjectSha256|Attachment))|VerifyEvidence/(For(ArtifactWith(PublicKey|Project|UseArtifactoryKeys)|Artifact|ReleaseBundle|Package|Entity|BuildWithProject|Build)|With(JsonFormat|Attachment))|GetEvidence/(For(ArtifactWith(Format|IncludePredicate|OutputFile|ArtifactsLimit|Project)|Artifact|ReleaseBundle|Entity)|WithAttachment))$'
+              ;;
+          esac
+          args=()
+          if [[ -n "$skip" ]]; then
+            echo "::warning::RTDEV-102884 - Skipping evidence subtests that failed on ${{ runner.os }}"
+            args+=(-skip "$skip")
+          fi
+          go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.evidence \
+            --jfrog.url=${{ secrets.EPLUS_PLATFORM_URL }} \
+            --jfrog.adminToken=${{ secrets.EPLUS_ADMIN_TOKEN }} \
+            --jfrog.evidenceToken=${{ secrets.EVIDENCE_USER_TOKEN }} \
+            --jfrog.projectKey=${{ secrets.EVIDENCE_PROJECT_KEY }} \
+            --jfrog.projectToken=${{ secrets.EVIDENCE_PROJECT_TOKEN }} \
+            --ci.runId=${{ runner.os }}-evidence \
+            "${args[@]}"
