@@ -43,22 +43,17 @@ func TestMain(m *testing.M) {
 	os.Exit(result)
 }
 
-// knownCITestSkip lists subtests that fail in Build Gate. Matched with -test.skip.
-// RTDEV-102884 evidence subject-not-found. RTECO-2724 agent-skills publish/install.
+// knownCITestSkip lists evidence subtests that fail in Build Gate. Matched with
+// -test.skip because those tests live in jfrog-cli-evidence, not this repo.
+// RTDEV-102884: evidence upload reports the subject is not found.
 func knownCITestSkip() string {
 	switch runtime.GOOS {
 	case "linux":
-		return strings.Join([]string{
-			`TestEvidence/CreateEvidence/ForArtifact$`,
-			`TestAgentSkillsRoundTripDeleteThenInstall$`,
-		}, "|")
+		return `TestEvidence/CreateEvidence/ForArtifact$`
 	case "darwin":
 		return `TestEvidence/(CreateEvidence|VerifyEvidence)/`
 	case "windows":
-		return strings.Join([]string{
-			`TestEvidence/(CreateEvidence|VerifyEvidence|GetEvidence)/`,
-			`TestAgentSkillsPublishVersionResolution/quiet-missing-version-next-minor$`,
-		}, "|")
+		return `TestEvidence/(CreateEvidence|VerifyEvidence|GetEvidence)/`
 	default:
 		return ""
 	}
