@@ -38,28 +38,4 @@ jobs:
           JF_ACCESS_TOKEN: ${{ secrets.EPLUS_ADMIN_TOKEN }}
 
       - name: Run Evidence tests
-        shell: bash
-        run: |
-          # RTDEV-102884: skip only the subtests that failed. Ubuntu passed the suite.
-          skip=""
-          case "${{ runner.os }}" in
-            Windows)
-              skip='TestEvidence/CreateEvidence/For(Artifact|Package|BuildWithProject|Build)$'
-              ;;
-            macOS)
-              skip='TestEvidence/(CreateEvidence/(For(Artifact|Package|ReleaseBundle|ApplicationVersion|EntityWithProject|Entity|ApplicationEntity|BuildWithProject|Build)|With(Markdown|SubjectSha256|Attachment))|VerifyEvidence/(For(ArtifactWith(PublicKey|Project|UseArtifactoryKeys)|Artifact|ReleaseBundle|Package|Entity|BuildWithProject|Build)|With(JsonFormat|Attachment))|GetEvidence/(For(ArtifactWith(Format|IncludePredicate|OutputFile|ArtifactsLimit|Project)|Artifact|ReleaseBundle|Entity)|WithAttachment))$'
-              ;;
-          esac
-          args=()
-          if [[ -n "$skip" ]]; then
-            echo "::warning::RTDEV-102884 - Skipping evidence subtests that failed on ${{ runner.os }}"
-            args+=(-skip "$skip")
-          fi
-          go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.evidence \
-            --jfrog.url=${{ secrets.EPLUS_PLATFORM_URL }} \
-            --jfrog.adminToken=${{ secrets.EPLUS_ADMIN_TOKEN }} \
-            --jfrog.evidenceToken=${{ secrets.EVIDENCE_USER_TOKEN }} \
-            --jfrog.projectKey=${{ secrets.EVIDENCE_PROJECT_KEY }} \
-            --jfrog.projectToken=${{ secrets.EVIDENCE_PROJECT_TOKEN }} \
-            --ci.runId=${{ runner.os }}-evidence \
-            "${args[@]}"
+        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.evidence --jfrog.url=${{ secrets.EPLUS_PLATFORM_URL }} --jfrog.adminToken=${{ secrets.EPLUS_ADMIN_TOKEN }} --jfrog.evidenceToken=${{ secrets.EVIDENCE_USER_TOKEN }} --jfrog.projectKey=${{ secrets.EVIDENCE_PROJECT_KEY }} --jfrog.projectToken=${{ secrets.EVIDENCE_PROJECT_TOKEN }} --ci.runId=${{ runner.os }}-evidence
