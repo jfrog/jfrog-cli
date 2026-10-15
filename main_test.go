@@ -50,9 +50,7 @@ func knownCITestSkip() string {
 	switch runtime.GOOS {
 	case "linux":
 		return `TestEvidence/CreateEvidence/ForArtifact$`
-	case "darwin":
-		return `TestEvidence/(CreateEvidence|VerifyEvidence)/`
-	case "windows":
+	case "darwin", "windows":
 		return `TestEvidence/(CreateEvidence|VerifyEvidence|GetEvidence)/`
 	default:
 		return ""
