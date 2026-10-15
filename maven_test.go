@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -1141,6 +1142,9 @@ func beforeRunMaven(t *testing.T, createProjectFunction func(*testing.T) string,
 }
 
 func TestSetupMavenCommand(t *testing.T) {
+	if runtime.GOOS == "linux" {
+		t.Skip("RTECO-2725: Maven remote returned 502 for velocity-1.5.pom")
+	}
 	homeDir, err := os.UserHomeDir()
 	assert.NoError(t, err)
 	restoreFunc := prepareMavenSetupTest(t, homeDir)
