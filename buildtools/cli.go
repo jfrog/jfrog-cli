@@ -13,12 +13,16 @@ import (
 	"strings"
 
 	dotnetutils "github.com/jfrog/build-info-go/build/utils/dotnet"
+	"github.com/jfrog/build-info-go/flexpack"
+	aptflex "github.com/jfrog/build-info-go/flexpack/apt"
 	alpinecommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/alpine"
 	aptcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/apt"
 	cargocommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/cargo"
+	chococommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/choco"
 	conancommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/conan"
 	nixcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nix"
 	nugetcommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/nuget"
+	psresourcecommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/psresource"
 	rubycommandexec "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/ruby"
 
 	"github.com/BurntSushi/toml"
@@ -64,6 +68,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/buildtools/apkcommand"
 	aptdocs "github.com/jfrog/jfrog-cli/docs/buildtools/apt"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/cargo"
+	chocodocs "github.com/jfrog/jfrog-cli/docs/buildtools/choco"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/conan"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/conanconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/docker"
@@ -93,6 +98,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pnpmconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/poetry"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/poetryconfig"
+	psresourcedocs "github.com/jfrog/jfrog-cli/docs/buildtools/psresource"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/rubycommand"
 	uvcommand "github.com/jfrog/jfrog-cli/docs/buildtools/uvcommand"
 	yarndocs "github.com/jfrog/jfrog-cli/docs/buildtools/yarn"
@@ -116,7 +122,7 @@ const (
 )
 
 func GetCommands() []cli.Command {
-	cmds := cliutils.GetSortedCommands(cli.CommandsByName{
+	cmds := cliutils.GetSortedCommands(append(cli.CommandsByName{
 		{
 			Hidden:       false,
 			Name:         "setup",
@@ -247,6 +253,21 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
 			Action:          NugetCmd,
+		},
+		{
+			Name:            "choco",
+			Flags:           cliutils.GetCommandFlags(cliutils.Choco),
+			Usage:           corecommon.ResolveDescription(chocodocs.GetDescription(), chocodocs.GetAIDescription()),
+			HelpName:        corecommon.CreateUsage("choco", corecommon.ResolveDescription(chocodocs.GetDescription(), chocodocs.GetAIDescription()), chocodocs.Usage),
+			UsageText:       chocodocs.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Category:        buildToolsCategory,
+			Action: func(c *cli.Context) error {
+				cmdName, _ := getCommandName(c.Args())
+				return securityCLI.WrapCmdWithCurationPostFailureRun(c, ChocoCmd, techutils.Nuget, cmdName)
+			},
 		},
 		{
 			Name:         "dotnet-config",
@@ -454,7 +475,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "cargo",
-			Hidden:          true,
+			Hidden:          false,
 			Flags:           cliutils.GetCommandFlags(cliutils.Cargo),
 			Usage:           corecommon.ResolveDescription(cargo.GetDescription(), cargo.GetAIDescription()),
 			HelpName:        corecommon.CreateUsage("cargo", corecommon.ResolveDescription(cargo.GetDescription(), cargo.GetAIDescription()), cargo.Usage),
@@ -670,8 +691,53 @@ func GetCommands() []cli.Command {
 				},
 			},
 		},
-	})
+	}, psResourceCommandEntries()...))
 	return decorateWithFlagCapture(cmds)
+}
+
+// psResourceCommandEntries builds the cli.Command entries for the four top-level PSResourceGet
+// commands (Install-PSResource, Save-PSResource, Update-PSResource, Publish-PSResource) - one per
+// native PowerShell PSResourceGet cmdlet - from a shared table instead of four hand-duplicated
+// cli.Command literals. Final ordering among all commands is unaffected: GetCommands sorts the
+// full command set alphabetically via cliutils.GetSortedCommands regardless of insertion order.
+func psResourceCommandEntries() []cli.Command {
+	names := []string{
+		psresourcecommand.SubCommandInstall,
+		psresourcecommand.SubCommandSave,
+		psresourcecommand.SubCommandUpdate,
+		psresourcecommand.SubCommandPublish,
+	}
+	cmds := make([]cli.Command, 0, len(names))
+	for _, name := range names {
+		description := corecommon.ResolveDescription(psresourcedocs.GetDescription(name), psresourcedocs.GetAIDescription(name))
+		cmds = append(cmds, cli.Command{
+			Name:            name,
+			Flags:           cliutils.GetCommandFlags(cliutils.PSResource),
+			Usage:           description,
+			HelpName:        corecommon.CreateUsage(name, description, psresourcedocs.Usage(name)),
+			UsageText:       psresourcedocs.GetArguments(name),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Category:        buildToolsCategory,
+			Action: func(c *cli.Context) error {
+				// jfrog-cli-security's post-failure curation audit gates on a fixed, generic
+				// verb allowlist ({install, build, i, add, ci, get, mod}) shared across every
+				// package manager - it never matches this cmdlet's own PascalCase name
+				// ("Install-PSResource" etc.), so passing name here made the audit a silent
+				// no-op for all four commands. Install/Save/Update are install-like resolve
+				// actions (the curation-blockable case this audit exists for), so they pass the
+				// matching "install" verb. Publish-PSResource uploads rather than resolves a
+				// package - curation cannot block it in the way this audit checks for - so it
+				// runs directly, without a cmdName that would never legitimately apply.
+				if name == psresourcecommand.SubCommandPublish {
+					return psResourceCmd(name)(c)
+				}
+				return securityCLI.WrapCmdWithCurationPostFailureRun(c, psResourceCmd(name), techutils.Nuget, "install")
+			},
+		})
+	}
+	return cmds
 }
 
 func skipFlagParsingForDockerCmd() bool {
@@ -1048,6 +1114,37 @@ func extractPnpmOptionsFromArgs(args []string) (serverDetails *coreConfig.Server
 	return serverDetails, cleanArgs, buildConfig, nil
 }
 
+// shouldRunFlexPackNative reports whether the FlexPack (native) path should handle an
+// invocation of a package manager that gates on a per-project config file, such as
+// 'jf nuget' / 'jf dotnet'.
+//
+// JFROG_RUN_NATIVE=true takes precedence over a per-project configuration file. Previously the
+// gate was `ShouldRunNative(configFilePath) && !configExists`, so any leftover
+// .jfrog/projects/{nuget,dotnet}.yaml silently forced the legacy path even with the
+// environment variable set. That was invisible to the user, and because the legacy path does
+// not recognise the native-only flags it forwarded them to MSBuild, surfacing as an opaque
+// "MSBUILD : error MSB1001: Unknown switch --repo-resolve". The config file is now reported
+// and ignored instead.
+//
+// configFilePath is only used for the warning message; pass configExists to say whether one
+// was found. pmName names the package manager for the 'jf <pm>-config' hint.
+//
+// This is deliberately generic - not NuGet/dotnet-specific - so other FlexPack-gated commands
+// can share it instead of duplicating the same three-line check. runMvn (this file) and the
+// Gradle command still use the old `ShouldRunNative(configFilePath) && !configExists` gate
+// directly and therefore still have the exact bug described above; switching them over is
+// tracked separately rather than folded into this dotnet/nuget-scoped change, since it changes
+// Maven's and Gradle's own CLI behaviour and needs their own test coverage.
+func shouldRunFlexPackNative(configFilePath string, configExists bool, pmName string) bool {
+	if !flexpack.IsFlexPackEnabled() {
+		return false
+	}
+	if configExists {
+		log.Warn(fmt.Sprintf("JFROG_RUN_NATIVE=true, so the %s configuration at %q is being ignored and the command runs in native (FlexPack) mode. Unset JFROG_RUN_NATIVE to use the legacy 'jf %s-config' path.", pmName, configFilePath, pmName))
+	}
+	return true
+}
+
 func NugetCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
@@ -1061,8 +1158,8 @@ func NugetCmd(c *cli.Context) error {
 		return err
 	}
 
-	// FlexPack bypasses all config file requirements (only when no config exists)
-	if artutils.ShouldRunNative(configFilePath) && !configExists {
+	// FlexPack bypasses all config file requirements. JFROG_RUN_NATIVE wins over a config file.
+	if shouldRunFlexPackNative(configFilePath, configExists, "nuget") {
 		return runNugetFlexPackCmd(c, dotnetutils.Nuget)
 	}
 
@@ -1102,6 +1199,52 @@ func NugetCmd(c *cli.Context) error {
 	return commands.ExecWithPackageManager(nugetCmd, project.Nuget.String())
 }
 
+func ChocoCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), c.Command.Name); show || err != nil {
+		return err
+	}
+	if c.NArg() < 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+	args := cliutils.ExtractCommand(c)
+	args, serverID, err := coreutils.ExtractServerIdFromCommand(args)
+	if err != nil {
+		return fmt.Errorf("extract server ID: %w", err)
+	}
+	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
+	if err != nil {
+		return err
+	}
+	filteredArgs, repoResolve, err := coreutils.ExtractStringOptionFromArgs(filteredArgs, "repo-resolve")
+	if err != nil {
+		return fmt.Errorf("extract --repo-resolve: %w", err)
+	}
+	filteredArgs, repoDeploy, err := coreutils.ExtractStringOptionFromArgs(filteredArgs, "repo")
+	if err != nil {
+		return fmt.Errorf("extract --repo: %w", err)
+	}
+	commandName, commandArgs := getCommandName(filteredArgs)
+	workingDirectory, err := filepath.Abs(".")
+	if err != nil {
+		return err
+	}
+	command := chococommand.NewChocoFlexPackCommand().
+		SetSubCommand(commandName).
+		SetArgs(commandArgs).
+		SetRepoResolve(repoResolve).
+		SetRepoDeploy(repoDeploy).
+		SetBuildConfiguration(buildConfiguration).
+		SetWorkingDirectory(workingDirectory)
+	serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, false)
+	if err != nil && serverID != "" {
+		return fmt.Errorf("server-id %q not found: %w", serverID, err)
+	}
+	if err == nil {
+		command.SetServerDetails(serverDetails)
+	}
+	return commands.ExecWithPackageManager(command, "choco")
+}
+
 func DotnetCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
@@ -1116,8 +1259,8 @@ func DotnetCmd(c *cli.Context) error {
 		return err
 	}
 
-	// FlexPack bypasses all config file requirements (only when no config exists)
-	if artutils.ShouldRunNative(configFilePath) && !configExists {
+	// FlexPack bypasses all config file requirements. JFROG_RUN_NATIVE wins over a config file.
+	if shouldRunFlexPackNative(configFilePath, configExists, "dotnet") {
 		return runNugetFlexPackCmd(c, dotnetutils.DotnetCore)
 	}
 
@@ -1154,6 +1297,57 @@ func DotnetCmd(c *cli.Context) error {
 		dotnetCmd.SetArgAndFlags(filteredDotnetArgs[1:])
 	}
 	return commands.ExecWithPackageManager(dotnetCmd, project.Dotnet.String())
+}
+
+// psResourceCmd returns the Action for one of the four PSResourceGet top-level commands
+// (Install-PSResource, Save-PSResource, Update-PSResource, Publish-PSResource). Unlike jf choco,
+// which is a single "jf choco <subcommand>" command that parses its subcommand out of
+// c.Args()[0], PSResourceGet exposes its cmdlets directly as top-level jf commands - each
+// registered cli.Command already knows which native cmdlet it is, so cmdletName is fixed per
+// caller (a closure variable) rather than parsed from the arguments. Everything after that is the
+// cmdlet's own native parameters, forwarded through unchanged.
+func psResourceCmd(cmdletName string) func(c *cli.Context) error {
+	return func(c *cli.Context) error {
+		if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), c.Command.Name); show || err != nil {
+			return err
+		}
+		args := cliutils.ExtractCommand(c)
+		args, serverID, err := coreutils.ExtractServerIdFromCommand(args)
+		if err != nil {
+			return fmt.Errorf("extract server ID: %w", err)
+		}
+		filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
+		if err != nil {
+			return err
+		}
+		filteredArgs, repoResolve, err := coreutils.ExtractStringOptionFromArgs(filteredArgs, "repo-resolve")
+		if err != nil {
+			return fmt.Errorf("extract --repo-resolve: %w", err)
+		}
+		filteredArgs, repoDeploy, err := coreutils.ExtractStringOptionFromArgs(filteredArgs, "repo")
+		if err != nil {
+			return fmt.Errorf("extract --repo: %w", err)
+		}
+		workingDirectory, err := filepath.Abs(".")
+		if err != nil {
+			return err
+		}
+		command := psresourcecommand.NewPSResourceFlexPackCommand().
+			SetSubCommand(cmdletName).
+			SetArgs(filteredArgs).
+			SetRepoResolve(repoResolve).
+			SetRepoDeploy(repoDeploy).
+			SetBuildConfiguration(buildConfiguration).
+			SetWorkingDirectory(workingDirectory)
+		serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, false)
+		if err != nil && serverID != "" {
+			return fmt.Errorf("server-id %q not found: %w", serverID, err)
+		}
+		if err == nil {
+			command.SetServerDetails(serverDetails)
+		}
+		return commands.ExecWithPackageManager(command, "psresource")
+	}
 }
 
 func getNugetAndDotnetConfigFields(configFilePath string) (rtDetails *coreConfig.ServerDetails, targetRepo string, useNugetV2 bool, err error) {
@@ -1954,6 +2148,16 @@ func setupCmd(c *cli.Context) (err error) {
 			return
 		}
 	}
+	if packageManager == project.PSResource {
+		if err = setup.ValidatePSResourcePlatform(); err != nil {
+			return err
+		}
+	}
+	if packageManager == project.Choco {
+		if err = setup.ValidateChocoPlatform(); err != nil {
+			return err
+		}
+	}
 	setupCmd := setup.NewSetupCommand(packageManager)
 	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
@@ -2479,9 +2683,20 @@ func AptCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	// Strip build flags so they aren't passed through to apt-get. Build-info
-	// collection is out of scope for the auth flow.
-	filteredArgs, _, err := build.ExtractBuildDetailsFromArgs(args)
+	args, fromFile, err := coreutils.ExtractStringOptionFromArgs(args, "from-file")
+	if err != nil {
+		return err
+	}
+	// Expand --from-file: inject package names after the "install" subcommand.
+	if fromFile != "" {
+		pkgs, err := aptflex.ReadPackagesFile(fromFile)
+		if err != nil {
+			return fmt.Errorf("--from-file %s: %w", fromFile, err)
+		}
+		args = injectPackagesAfterInstall(args, pkgs)
+	}
+	// Extract build flags (--build-name, --build-number, --module, --project).
+	filteredArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
 	if err != nil {
 		return err
 	}
@@ -2507,12 +2722,28 @@ func AptCmd(c *cli.Context) error {
 		SetTrusted(trusted).
 		SetRepoName(repoName).
 		SetDist(dist).
-		SetComponent(component)
+		SetComponent(component).
+		SetBuildConfiguration(buildConfiguration)
 	if serverDetails != nil {
 		cmd.SetServerDetails(serverDetails)
 	}
 
 	return commands.ExecWithPackageManager(cmd, "apt")
+}
+
+// injectPackagesAfterInstall inserts pkgs into args immediately after the
+// "install" subcommand token. If "install" is not present, pkgs are appended.
+func injectPackagesAfterInstall(args, pkgs []string) []string {
+	for i, a := range args {
+		if a == "install" {
+			result := make([]string, 0, len(args)+len(pkgs))
+			result = append(result, args[:i+1]...)
+			result = append(result, pkgs...)
+			result = append(result, args[i+1:]...)
+			return result
+		}
+	}
+	return append(args, pkgs...)
 }
 
 // aptSetupCmd handles 'jf setup apt' — writes a persistent sources.list entry.

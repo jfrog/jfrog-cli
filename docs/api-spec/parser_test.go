@@ -126,6 +126,21 @@ func TestRequireFullBundle_Stub(t *testing.T) {
 	assert.Contains(t, err.Error(), "install-cli.jfrog.io")
 }
 
+func TestFindOperation(t *testing.T) {
+	op, ok := FindOperation("get", "/access/api/v2/users")
+	require.True(t, ok, "case-insensitive method match should find getUserList")
+	assert.Equal(t, "getUserList", op.OperationId)
+
+	_, ok = FindOperation("DELETE", "/access/api/v2/users")
+	assert.False(t, ok, "wrong method for an existing path should not match")
+
+	_, ok = FindOperation("GET", "/access/api/v2/user")
+	assert.False(t, ok, "a path that's a prefix/substring of a real one should not match")
+
+	_, ok = FindOperation("GET", "/not/a/real/path")
+	assert.False(t, ok)
+}
+
 func TestIsSpecFile(t *testing.T) {
 	tests := []struct {
 		name string

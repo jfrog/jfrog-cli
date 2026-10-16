@@ -64,8 +64,10 @@ const (
 	Yarn                   = "yarn"
 	NugetConfig            = "nuget-config"
 	Nuget                  = "nuget"
+	Choco                  = "choco"
 	Dotnet                 = "dotnet"
 	DotnetConfig           = "dotnet-config"
+	PSResource             = "psresource"
 	Go                     = "go"
 	GoConfig               = "go-config"
 	GoPublish              = "go-publish"
@@ -2264,11 +2266,17 @@ var commandFlags = map[string][]string{
 	Nuget: {
 		BuildName, BuildNumber, module, Project, allowInsecureConnections, serverId, repoResolve, repo, nugetV2,
 	},
+	Choco: {
+		BuildName, BuildNumber, module, Project, serverId, repoResolve, repo,
+	},
 	DotnetConfig: {
 		global, serverIdResolve, repoResolve, nugetV2,
 	},
 	Dotnet: {
 		BuildName, BuildNumber, module, Project, allowInsecureConnections, serverId, repoResolve, repo, nugetV2,
+	},
+	PSResource: {
+		BuildName, BuildNumber, module, Project, serverId, repoResolve, repo,
 	},
 	GoConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
@@ -2355,6 +2363,7 @@ var commandFlags = map[string][]string{
 	},
 	Apt: {
 		serverId, skipLogin, setupRepo, aptDistribution, aptComponent, aptTrusted,
+		BuildName, BuildNumber, module, Project,
 	},
 	AptSetup: {
 		serverId, setupRepo, aptDistribution, aptComponent, aptTrusted, aptImportKey, aptRemove,

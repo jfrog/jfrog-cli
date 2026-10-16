@@ -1524,7 +1524,7 @@ func TestUvPublishWithLocalGitVcsProps(t *testing.T) {
 	require.NoError(t, runUvCmd(t, projectPath, "build"))
 	require.NoError(t, runUvCmd(t, projectPath, "publish",
 		"--build-name="+buildName, "--build-number="+buildNumber))
-	require.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+	require.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber, "--dot-git-path", projectPath))
 
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
 	require.NoError(t, err)

@@ -20,15 +20,21 @@ When to use:
 
 Prerequisites:
 - A local nuget binary on PATH.
-- 'jf nuget-config' run once in the project directory.
 - A configured server.
+- Either JFROG_RUN_NATIVE=true (native/FlexPack mode, no per-project config needed), or
+  'jf nuget-config' run once in the project directory (legacy mode).
 
 Common patterns:
   $ jf nuget restore MyApp.sln
   $ jf nuget restore --build-name=my-app --build-number=2
+  $ export JFROG_RUN_NATIVE=true
+  $ jf nuget restore MyApp.sln --repo-resolve my-nuget-virtual --server-id my-server
 
 Gotchas:
-- 'jf nuget-config' must be run first.
+- 'jf nuget-config' is optional when JFROG_RUN_NATIVE=true. In that mode a per-project
+  .jfrog/projects/nuget.yaml is ignored (a warning is printed) and the native path is used.
+- Without JFROG_RUN_NATIVE=true, 'jf nuget-config' must be run first, and the native-only
+  flags --repo-resolve / --server-id are not supported.
 - For .NET Core/SDK projects, prefer 'jf dotnet' instead.
 - The nuget binary on Linux/macOS often comes from Mono and behaves differently than on Windows.
 

@@ -495,6 +495,11 @@ func TestApkAdd_DepChecksums(t *testing.T) {
 	buildName := tests.AlpineBuildName + "-dep-checksums"
 	buildNumber := "1"
 
+	// curl may already be installed by an earlier test in this suite (e.g. TestApkAdd_BasicBuildInfo),
+	// which would make the "apk add curl" below a no-op that downloads nothing — leaving the
+	// dependencies with no local .apk archive to compute checksums from. Force a real download.
+	_ = exec.Command("apk", "del", "curl").Run()
+
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	err := jfrogCli.Exec("apk", "add", "curl",
 		"--build-name="+buildName, "--build-number="+buildNumber,

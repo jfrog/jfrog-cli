@@ -7,7 +7,9 @@ import (
 
 	dotnetutils "github.com/jfrog/build-info-go/build/utils/dotnet"
 	containerutils "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/ocicontainer"
+	psresourcecommand "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/psresource"
 	"github.com/jfrog/jfrog-cli-core/v2/plugins/components"
+	securityCLI "github.com/jfrog/jfrog-cli-security/cli"
 	securityDocs "github.com/jfrog/jfrog-cli-security/cli/docs"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -398,4 +400,41 @@ func TestResolveContainerManagerType(t *testing.T) {
 			assert.Equal(t, tc.want, resolveContainerManagerType())
 		})
 	}
+}
+
+// TestPSResourceCurationCmdNameMatchesAllowlist guards against a real bug: the curation
+// post-failure audit is gated behind jfrog-cli-security's own fixed, generic verb allowlist
+// ({install, build, i, add, ci, get, mod}), not this cmdlet's own PascalCase name - passing
+// "Install-PSResource" (etc.) as cmdName made the audit a silent no-op for every PSResource
+// command, since none of those names is ever in that allowlist.
+func TestPSResourceCurationCmdNameMatchesAllowlist(t *testing.T) {
+	assert.True(t, securityCLI.IsSupportedCommandForCurationInspect("install"),
+		"the verb this fix actually passes must be one jfrog-cli-security recognizes")
+
+	for _, rawCmdletName := range []string{
+		psresourcecommand.SubCommandInstall,
+		psresourcecommand.SubCommandSave,
+		psresourcecommand.SubCommandUpdate,
+		psresourcecommand.SubCommandPublish,
+	} {
+		assert.False(t, securityCLI.IsSupportedCommandForCurationInspect(rawCmdletName),
+			"%q must never be in the allowlist - this is exactly why passing it directly was the bug", rawCmdletName)
+	}
+}
+
+// TestPSResourceCommandEntriesRegistersAllFour is a structural sanity check on the table-driven
+// registration itself: all four expected command names must be present, with the exact native
+// cmdlet casing (case-sensitive, matching how PowerShell itself writes them).
+func TestPSResourceCommandEntriesRegistersAllFour(t *testing.T) {
+	entries := psResourceCommandEntries()
+	names := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		names = append(names, entry.Name)
+	}
+	assert.ElementsMatch(t, []string{
+		psresourcecommand.SubCommandInstall,
+		psresourcecommand.SubCommandSave,
+		psresourcecommand.SubCommandUpdate,
+		psresourcecommand.SubCommandPublish,
+	}, names)
 }
