@@ -160,6 +160,62 @@ def update_dependencies(go_home: Optional[str] = None):
     run_command(["make", "update-all"], check=True, env=go_env, capture_output=False)
 
 
+def sync_docker_go_images():
+    """Align Docker builder images with the Go version in go.mod.
+
+    make update-all can raise the go directive via go mod tidy while the
+    slim/full Dockerfiles stay on an older golang: tag. Release image builds
+    then fail under GOTOOLCHAIN=local.
+    """
+    print("\n=== Syncing Docker Go base images with go.mod ===")
+
+    go_version = None
+    with open("go.mod", "r", encoding="utf-8") as go_mod:
+        for line in go_mod:
+            match = re.match(r"^go\s+(\d+\.\d+(?:\.\d+)?)\s*$", line)
+            if match:
+                go_version = match.group(1)
+                break
+
+    if not go_version:
+        print("Error: Could not parse Go version from go.mod")
+        sys.exit(1)
+
+    print(f"go.mod Go version: {go_version}")
+
+    dockerfiles = [
+        "build/docker/slim/Dockerfile",
+        "build/docker/full/Dockerfile",
+    ]
+    pattern = re.compile(r"(jfrog-docker/golang:)(\d+\.\d+(?:\.\d+)?)")
+    changed = False
+
+    for path in dockerfiles:
+        with open(path, "r", encoding="utf-8") as dockerfile:
+            content = dockerfile.read()
+
+        if not pattern.search(content):
+            print(f"Error: No jfrog-docker/golang: tag found in {path}")
+            sys.exit(1)
+
+        updated, count = pattern.subn(rf"\g<1>{go_version}", content)
+        if count == 0:
+            print(f"Error: Failed to update golang tag in {path}")
+            sys.exit(1)
+
+        if updated == content:
+            print(f"Already aligned: {path}")
+            continue
+
+        with open(path, "w", encoding="utf-8") as dockerfile:
+            dockerfile.write(updated)
+        print(f"Updated {path} -> golang:{go_version}")
+        changed = True
+
+    if not changed:
+        print("Docker Go base images already match go.mod")
+
+
 def check_binary(go_home: Optional[str] = None):
     """Build and check the binary version."""
     print("\n=== Checking binary ===")
@@ -447,6 +503,7 @@ def main():
             "create-and-checkout-branch",
             "bump-version",
             "update-dependencies",
+            "sync-docker-go-images",
             "check-binary",
             "commit-and-push",
             "create-pull-request",
@@ -502,6 +559,7 @@ def main():
         "create-and-checkout-branch",
         "bump-version",
         "update-dependencies",
+        "sync-docker-go-images",
         "check-binary",
         "commit-and-push",
         "create-pull-request",
@@ -550,6 +608,7 @@ def main():
                         "create-and-checkout-branch": f"  - Create branch: bump-ver-from-{current_version}-to-{next_version}",
                         "bump-version": f"  - Bump version to: {next_version}",
                         "update-dependencies": f"  - Update dependencies",
+                        "sync-docker-go-images": f"  - Sync Docker golang images with go.mod",
                         "check-binary": f"  - Build and check binary",
                         "commit-and-push": f"  - Commit and push changes",
                         "create-pull-request": f"  - Create pull request",
@@ -580,26 +639,30 @@ def main():
         # Step 5: Update dependencies
         if should_run_step("update-dependencies"):
             update_dependencies(args.go_home)
+
+        # Step 6: Keep Docker builder images on the same Go version as go.mod
+        if should_run_step("sync-docker-go-images"):
+            sync_docker_go_images()
         
-        # Step 6: Check binary
+        # Step 7: Check binary
         if should_run_step("check-binary"):
             check_binary(args.go_home)
         
-        # Step 7: Commit and push
+        # Step 8: Commit and push
         if should_run_step("commit-and-push"):
             if not branch_name:
                 returncode, git_branch, _ = run_command(["git", "rev-parse", "--abbrev-ref", "HEAD"], check=False)
                 branch_name = git_branch if git_branch else "unknown"
             commit_and_push(branch_name, next_version, gh_token)
         
-        # Step 8: Create pull request
+        # Step 9: Create pull request
         if should_run_step("create-pull-request"):
             if not branch_name:
                 returncode, git_branch, _ = run_command(["git", "rev-parse", "--abbrev-ref", "HEAD"], check=False)
                 branch_name = git_branch if git_branch else "unknown"
             pr_number = create_pull_request(next_version, branch_name, ref, gh_token)
         
-        # Step 9: Get PR number (if not already obtained)
+        # Step 10: Get PR number (if not already obtained)
         if should_run_step("get-pr-number"):
             if pr_number == 0:
                 if not branch_name:
@@ -607,7 +670,7 @@ def main():
                     branch_name = git_branch if git_branch else "unknown"
                 pr_number = get_pr_number(branch_name, gh_token)
         
-        # Step 10: Annotate workflow
+        # Step 11: Annotate workflow
         if should_run_step("annotate-workflow"):
             if pr_number == 0:
                 if not branch_name:
@@ -617,7 +680,7 @@ def main():
             repo = get_repo_name()
             annotate_workflow(pr_number, next_version, repo)
         
-        # Step 11: Skip from release notes
+        # Step 12: Skip from release notes
         if should_run_step("skip-from-release-notes"):
             if pr_number == 0:
                 if not branch_name:
