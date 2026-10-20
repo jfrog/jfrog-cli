@@ -15,10 +15,11 @@ Helper script that locally mirrors the GitHub Actions **Prepare Release** workfl
 3) Create branch `bump-ver-from-<current>-to-<next>` from `--ref` (default `master`)
 4) Run `build/bump-version.sh <next>` with `BUMP_VERSION_SKIP_GIT=true`
 5) Run `make update-all`
-6) Build/check binary via `./build/build.sh` and `./jf --version`
-7) Commit and push the branch
-8) Open a PR titled `Bump version to <next>`
-9) Annotate workflow and add the `ignore for release` label
+6) Sync slim/full Docker `golang:` builder tags with the Go version in `go.mod`
+7) Build/check binary via `./build/build.sh` and `./jf --version`
+8) Commit and push the branch
+9) Open a PR titled `Bump version to <next>`
+10) Annotate workflow and add the `ignore for release` label
 
 ## Usage
 Run from the repo root (the script checks for `go.mod` with module `github.com/jfrog/jfrog-cli`):
