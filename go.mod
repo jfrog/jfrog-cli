@@ -16,7 +16,7 @@ replace (
 require (
 	github.com/BurntSushi/toml v1.6.0
 	github.com/agnivade/levenshtein v1.2.1
-	github.com/buger/jsonparser v1.3.0
+	github.com/buger/jsonparser v1.6.1
 	github.com/gocarina/gocsv v0.0.0-20260607070740-0735908c6461
 	github.com/jfrog/archiver/v3 v3.6.5
 	github.com/jfrog/build-info-go v1.13.1-0.20260925090031-f9d40441f262
@@ -29,7 +29,7 @@ require (
 	github.com/jfrog/jfrog-cli-security v1.41.0
 	github.com/jfrog/jfrog-client-go v1.55.1-0.20261014133608-3b4b900d8174
 	github.com/jszwec/csvutil v1.10.0
-	github.com/moby/moby/api v1.55.0
+	github.com/moby/moby/api v1.56.1
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.12.1
 	github.com/testcontainers/testcontainers-go v0.43.0
