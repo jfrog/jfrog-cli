@@ -1,0 +1,67 @@
+# Place in: jfrog/jfrog-cli  ->  .github/workflows/notify-downstream.yml
+name: Notify downstream repos of new CLI release
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "CLI version to announce (X.Y.Z, no leading v)"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    if: github.event_name == 'workflow_dispatch' || (!github.event.release.prerelease && !github.event.release.draft)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve version
+        id: v
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+          INPUT: ${{ inputs.version }}
+        run: |
+          VERSION="${INPUT:-${TAG#v}}"
+          if ! [[ "$VERSION" =~ ^2\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Not a stable v2 release ($VERSION), skipping."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Wait until binaries are downloadable
+        if: steps.v.outputs.skip != 'true'
+        env:
+          VERSION: ${{ steps.v.outputs.version }}
+        run: |
+          BASE="https://releases.jfrog.io/artifactory/jfrog-cli/v2-jf/$VERSION"
+          for url in "$BASE/jfrog-cli-linux-amd64/jf" "$BASE/jfrog-cli-windows-amd64/jf.exe" "$BASE/jfrog-cli-mac-386/jf"; do
+            for i in $(seq 1 30); do
+              code=$(curl -s -o /dev/null -w '%{http_code}' -I -L "$url")
+              [ "$code" = "200" ] && break
+              echo "[$i/30] $url -> $code, retrying in 60s"; sleep 60
+            done
+            [ "$code" = "200" ] || { echo "::error::$url never became available"; exit 1; }
+          done
+
+      - name: Create app token
+        if: steps.v.outputs.skip != 'true'
+        id: app
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.CLI_BUMP_APP_ID }}
+          private-key: ${{ secrets.CLI_BUMP_APP_PRIVATE_KEY }}
+          owner: jfrog
+          repositories: setup-jfrog-cli,jfrog-azure-devops-extension
+
+      - name: Dispatch to downstream repos
+        if: steps.v.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          VERSION: ${{ steps.v.outputs.version }}
+        run: |
+          for repo in jfrog/setup-jfrog-cli jfrog/jfrog-azure-devops-extension; do
+            gh api "repos/$repo/dispatches" -f event_type=cli-released -f "client_payload[version]=$VERSION"
+          done
