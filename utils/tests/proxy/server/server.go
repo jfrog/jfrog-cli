@@ -2,6 +2,7 @@ package server
 
 import (
 	"crypto/tls"
+	"fmt"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
 	"github.com/jfrog/jfrog-client-go/utils"
@@ -114,7 +115,7 @@ func httpProxyHandler(w http.ResponseWriter, r *http.Request) {
 			clilog.Error(err)
 		}
 		if err := resp.Body.Close(); err != nil {
-			clilog.Error("Can't close response body %v", err)
+			clilog.Error(fmt.Sprintf("Can't close response body %v", err))
 		}
 	}
 }

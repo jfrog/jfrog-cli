@@ -1321,7 +1321,7 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 	defer deleteReleaseBundle(t, lcManager, rbName, versionD)
 	assertStatusCompleted(t, lcManager, rbName, versionD, "")
 
-	log.Info("Created four versions for release bundle '%s' for search testing.", rbName)
+	log.Info(fmt.Sprintf("Created four versions for release bundle '%s' for search testing.", rbName))
 	time.Sleep(3 * time.Second)
 
 	testCases := []struct {
@@ -1458,7 +1458,7 @@ func TestReleaseBundlesSearchVersions(t *testing.T) {
 	defer deleteReleaseBundleWithProject(t, lcManager, projectRbName, projectVersionB, tests.ProjectKey2)
 	assertStatusCompletedWithProject(t, lcManager, projectRbName, projectVersionB, "", tests.ProjectKey2)
 
-	log.Info("Created two versions for release bundle '%s' with project for search testing.", projectRbName)
+	log.Info(fmt.Sprintf("Created two versions for release bundle '%s' with project for search testing.", projectRbName))
 	time.Sleep(3 * time.Second)
 
 	// Add project test case to existing testCases

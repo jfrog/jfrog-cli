@@ -174,13 +174,13 @@ func setupInsecureBuildxBuilder(t *testing.T, builderName string) func() {
 	inspectCmd := exec.Command("docker", "buildx", "inspect", builderName)
 	output, err = inspectCmd.CombinedOutput()
 	require.NoError(t, err, "Failed to inspect buildx builder: %s", string(output))
-	log.Info("Builder inspect output: %s", string(output))
+	log.Info(fmt.Sprintf("Builder inspect output: %s", string(output)))
 
 	// Set BUILDX_BUILDER env var to force 'docker build' to use our builder
 	oldBuilder := os.Getenv("BUILDX_BUILDER")
 	require.NoError(t, os.Setenv("BUILDX_BUILDER", builderName))
 
-	log.Info("Created buildx builder '%s' with insecure registry config for '%s'", builderName, registryHost)
+	log.Info(fmt.Sprintf("Created buildx builder '%s' with insecure registry config for '%s'", builderName, registryHost))
 
 	// Return cleanup function
 	return func() {
