@@ -43,59 +43,58 @@ import (
 )
 
 var (
-	JfrogUrl                  *string
-	JfrogUser                 *string
-	JfrogPassword             *string
-	JfrogSshKeyPath           *string
-	JfrogSshPassphrase        *string
-	JfrogAccessToken          *string
-	JfrogTargetUrl            *string
-	JfrogTargetAccessToken    *string
-	JfrogHome                 *string
-	TestArtifactoryProject    *bool
-	TestArtifactory           *bool
-	TestArtifactoryProxy      *bool
-	TestDistribution          *bool
-	TestDocker                *bool
-	TestPodman                *bool
-	TestDockerScan            *bool
-	ContainerRegistry         *string
-	TestGo                    *bool
-	TestNpm                   *bool
-	TestPnpm                  *bool
-	TestGradle                *bool
-	TestMaven                 *bool
-	TestNuget                 *bool
-	TestChoco                 *bool
-	TestPSResource            *bool
-	TestPip                   *bool
-	TestPipenv                *bool
-	TestPoetry                *bool
-	TestUv                    *bool
-	TestNix                   *bool
-	TestCargo                 *bool
-	TestAlpine                *bool
-	TestRuby                  *bool
-	TestApt                   *bool
-	TestAgentPlugins          *bool
-	TestAgentSkills           *bool
-	TestApm                   *bool
-	TestConan                 *bool
-	TestHelm                  *bool
-	TestHuggingFace           *bool
-	TestPlugins               *bool
-	TestXray                  *bool
-	TestAccess                *bool
-	TestTransfer              *bool
-	TestLifecycle             *bool
-	TestEvidence              *bool
-	TestApi                   *bool
-	TestGhostFrog             *bool
-	TestIde                   *bool
-	HideUnitTestLog           *bool
-	ciRunId                   *string
-	InstallDataTransferPlugin *bool
-	timestampAdded            bool
+	JfrogUrl               *string
+	JfrogUser              *string
+	JfrogPassword          *string
+	JfrogSshKeyPath        *string
+	JfrogSshPassphrase     *string
+	JfrogAccessToken       *string
+	JfrogTargetUrl         *string
+	JfrogTargetAccessToken *string
+	JfrogHome              *string
+	TestArtifactoryProject *bool
+	TestArtifactory        *bool
+	TestArtifactoryProxy   *bool
+	TestDistribution       *bool
+	TestDocker             *bool
+	TestPodman             *bool
+	TestDockerScan         *bool
+	ContainerRegistry      *string
+	TestGo                 *bool
+	TestNpm                *bool
+	TestPnpm               *bool
+	TestGradle             *bool
+	TestMaven              *bool
+	TestNuget              *bool
+	TestChoco              *bool
+	TestPSResource         *bool
+	TestPip                *bool
+	TestPipenv             *bool
+	TestPoetry             *bool
+	TestUv                 *bool
+	TestNix                *bool
+	TestCargo              *bool
+	TestAlpine             *bool
+	TestRuby               *bool
+	TestApt                *bool
+	TestAgentPlugins       *bool
+	TestAgentSkills        *bool
+	TestApm                *bool
+	TestConan              *bool
+	TestHelm               *bool
+	TestHuggingFace        *bool
+	TestPlugins            *bool
+	TestXray               *bool
+	TestAccess             *bool
+	TestTransfer           *bool
+	TestLifecycle          *bool
+	TestEvidence           *bool
+	TestApi                *bool
+	TestGhostFrog          *bool
+	TestIde                *bool
+	HideUnitTestLog        *bool
+	ciRunId                *string
+	timestampAdded         bool
 )
 
 // nonProjectKeyCharsRegex matches any character that isn't allowed in an Artifactory
@@ -171,8 +170,9 @@ func init() {
 	TestIde = flag.Bool("test.ide", false, "Test IDE (VS Code / Cursor / Windsurf / Kiro / JetBrains) setup commands")
 	ContainerRegistry = flag.String("test.containerRegistry", "localhost:8082", "Container registry")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
-	InstallDataTransferPlugin = flag.Bool("test.installDataTransferPlugin", false, "Install data-transfer plugin on the source Artifactory server")
 	ciRunId = flag.String("ci.runId", "", "A unique identifier used as a suffix to create repositories and builds in the tests")
+	// Deprecated: ignored, kept so existing pipelines don't fail on an unknown flag.
+	_ = flag.Bool("test.installDataTransferPlugin", false, "[DEPRECATED] Ignored")
 }
 
 func CleanFileSystem() {

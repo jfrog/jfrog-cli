@@ -15,8 +15,6 @@ import (
 
 	"github.com/jfrog/jfrog-cli/utils/accesstoken"
 
-	"github.com/jfrog/gofrog/version"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferinstall"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/transferplugininstall"
 
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/generic"
@@ -557,6 +555,7 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       dataTransferPluginInstallCmd,
 			Category:     transferCategory,
+			Hidden:       true,
 		},
 	})
 }
@@ -1245,38 +1244,10 @@ func buildTransferConfigMergeResult(csvPath string, originalErr error) transferC
 	}
 }
 
-func dataTransferPluginInstallCmd(c *cli.Context) error {
-	// Get the Artifactory serverID from the argument or use default if not exists
-	serverID := ""
-	if c.NArg() > 1 {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
-	} else if c.NArg() == 1 {
-		serverID = c.Args()[0]
-	}
-	serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, true)
-	if err != nil {
-		return err
-	}
-	installCmd := transferinstall.NewInstallDataTransferCommand(serverDetails)
-	// Optional flags
-	versionToInstall := c.String(cliutils.Version)
-	if versionToInstall != "" {
-		installCmd.SetInstallVersion(version.NewVersion(versionToInstall))
-	}
-	sourceFilesPath := c.String(cliutils.InstallPluginSrcDir)
-	if sourceFilesPath != "" {
-		installCmd.SetLocalPluginFiles(sourceFilesPath)
-	}
-
-	if versionToInstall != "" && sourceFilesPath != "" {
-		return cliutils.PrintHelpAndReturnError("Only version or dir is allowed, not both.", c)
-	}
-
-	homePath := c.String(cliutils.InstallPluginHomeDir)
-	if homePath != "" {
-		installCmd.SetJFrogHomePath(homePath)
-	}
-	return commands.Exec(installCmd)
+func dataTransferPluginInstallCmd(_ *cli.Context) error {
+	log.Warn("The 'transfer-plugin-install' command is deprecated and no longer installs the data-transfer user plugin. " +
+		"'jf rt transfer-files' does not require the plugin on the source Artifactory. This command will be removed in a future release.")
+	return nil
 }
 
 func transferFilesCmd(c *cli.Context) error {

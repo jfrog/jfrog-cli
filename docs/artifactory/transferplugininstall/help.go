@@ -3,38 +3,27 @@ package transferplugininstall
 var Usage = []string{"rt transfer-plugin-install <server-id> [command options]"}
 
 func GetDescription() string {
-	return "Download and install the data-transfer user plugin on the primary node of Artifactory, which is running on this local machine."
+	return "[DEPRECATED] This command no longer installs the data-transfer user plugin and only prints a deprecation warning. 'jf rt transfer-files' does not require the plugin."
 }
 
 func GetArguments() string {
 	return `	server-id
-		The ID of the source server, on which the plugin should be installed.`
+		Ignored.`
 }
 
 func GetAIDescription() string {
-	return `Download the data-transfer Artifactory user plugin and install it on the primary node of the source Artifactory. Required as a one-time prep before 'jf rt transfer-files'. The plugin handles the actual byte streaming on the server side.
+	return `[DEPRECATED] Informational command only. It no longer downloads or installs the data-transfer Artifactory user plugin; it only prints a deprecation warning and exits successfully. 'jf rt transfer-files' does not require the plugin on the source server. The command will be removed in a future release.
 
 When to use:
-- One-time setup on the source server before starting a self-hosted-to-cloud migration.
-
-Prerequisites:
-- Must be run on the same host as the source Artifactory's primary node (or with filesystem access to its etc/artifactory/plugins/ directory).
-- Admin privileges on the source server.
-- The source server ID is configured locally.
-
-Common patterns:
-  $ jf rt transfer-plugin-install source-prod
-  $ jf rt transfer-plugin-install source-prod --dir=/opt/jfrog/artifactory/var/etc/artifactory/plugins
+- Do not use. Run 'jf rt transfer-files' directly.
 
 Gotchas:
-- Must run as the user that owns the Artifactory installation; otherwise the file write fails.
-- The plugin requires a Groovy plugins admin restart (or wait for the scheduled reload).
-- This command only targets self-hosted instances; cloud-hosted sources need a different transfer mechanism.
+- All arguments and flags (--version, --dir, --home-dir) are accepted but ignored.
 
 Related: jf rt transfer-files, jf rt transfer-settings
 
 QA:
-Q: What's the JFrog CLI command to install the data-transfer user plugin in the primary node of the source instance?
-A: jf rt transfer-plugin-install source-server
+Q: Do I need to install the data-transfer user plugin before running 'jf rt transfer-files'?
+A: No. The plugin is no longer required, and 'jf rt transfer-plugin-install' is deprecated and does nothing.
 `
 }
