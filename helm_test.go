@@ -1090,12 +1090,18 @@ func TestHelmPushWithMultiLevelSubpath(t *testing.T) {
 }
 
 func runHelmSubpathPushTest(t *testing.T, subpath, buildName, chartName, chartVersion string) {
-	buildInfo := pushHelmChartAndGetBuildInfo(t, subpath, buildName, chartName, chartVersion, true)
+	buildInfo := pushHelmChartAndGetBuildInfo(t, subpath, buildName, chartName, chartVersion, skipOnRegistryFlake)
 
 	validateHelmBuildInfo(t, buildInfo, buildName, true, false)
 	assertOCIArtifactsUnderSubpath(t, buildInfo,
 		subpath+"/"+chartName+"/"+chartVersion)
 }
+
+// Values of the tolerateRegistryFlakes argument of pushHelmChartAndGetBuildInfo.
+const (
+	skipOnRegistryFlake = true
+	failOnAnyPushError  = false
+)
 
 // pushHelmChartAndGetBuildInfo packages a test chart, pushes it with 'jf helm push' and returns the published build info.
 // With tolerateRegistryFlakes, push errors that look like an unavailable OCI registry skip the test instead of failing it.
@@ -1162,7 +1168,7 @@ func TestHelmPushWithSemVerBuildMetadata(t *testing.T) {
 			buildName := tests.HelmBuildName + "-push-" + testCase.chartName
 			inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 			defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
-			buildInfo := pushHelmChartAndGetBuildInfo(t, testCase.subpath, buildName, testCase.chartName, testCase.chartVersion, false)
+			buildInfo := pushHelmChartAndGetBuildInfo(t, testCase.subpath, buildName, testCase.chartName, testCase.chartVersion, failOnAnyPushError)
 
 			validateHelmBuildInfo(t, buildInfo, buildName, true, false)
 			module := buildInfo.Modules[0]
