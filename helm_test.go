@@ -1103,8 +1103,7 @@ func pushHelmChartAndGetBuildInfo(t *testing.T, subpath, buildName, chartName, c
 	const buildNumber = "1"
 
 	chartFile, chartDir, restoreCwd := packageHelmChartForPush(t, chartName, chartVersion)
-	// Deferred calls run last-in first-out: restore the working directory before removing the chart directory,
-	// since Windows cannot remove the current working directory.
+	// Restore the working directory before removing the chart directory: Windows cannot remove the current directory.
 	defer func() {
 		if err := os.RemoveAll(chartDir); err != nil {
 			t.Logf("Warning: Failed to remove test chart directory %s: %v", chartDir, err)
@@ -1116,9 +1115,7 @@ func pushHelmChartAndGetBuildInfo(t *testing.T, subpath, buildName, chartName, c
 	if !isRepoExist(tests.HelmLocalRepo) {
 		t.Skipf("Repository %s does not exist. Skipping test.", tests.HelmLocalRepo)
 	}
-	if !loginHelmRegistryOrSkip(t, registryHost) {
-		t.SkipNow()
-	}
+	loginHelmRegistryOrSkip(t, registryHost)
 
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 	pushArgs := []string{
@@ -1142,9 +1139,10 @@ func pushHelmChartAndGetBuildInfo(t *testing.T, subpath, buildName, chartName, c
 }
 
 // TestHelmPushWithSemVerBuildMetadata verifies that 'jf helm push' collects build info for a chart version with
-// SemVer build metadata (RTECO-2742). Helm stores such a version under the OCI tag with '+' replaced by '_',
+// SemVer build metadata. Helm stores such a version under the OCI tag with '+' replaced by '_',
 // so the pushed artifacts must be found in the '_' folder, while the module id keeps the real version.
-// Push errors are never skipped here: the regression surfaces as a push command failure.
+// A failed push is never skipped here, so the regression cannot pass as a skipped test.
+// The usual skips for a missing repository or an unusable registry login still apply.
 func TestHelmPushWithSemVerBuildMetadata(t *testing.T) {
 	initHelmTest(t)
 	defer cleanHelmTest(t)
@@ -1159,9 +1157,11 @@ func TestHelmPushWithSemVerBuildMetadata(t *testing.T) {
 		{"no subpath", "", "semver-meta-chart", "1.2.3+abc1234", "semver-meta-chart/1.2.3_abc1234"},
 		{"with subpath", "org/team-delta", "semver-meta-sub-chart", "103.287.0+0b2041e", "org/team-delta/semver-meta-sub-chart/103.287.0_0b2041e"},
 	}
-	for i, testCase := range testCases {
+	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			buildName := fmt.Sprintf("%s-push-semver-meta-%d", tests.HelmBuildName, i)
+			buildName := tests.HelmBuildName + "-push-" + testCase.chartName
+			inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+			defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 			buildInfo := pushHelmChartAndGetBuildInfo(t, testCase.subpath, buildName, testCase.chartName, testCase.chartVersion, false)
 
 			validateHelmBuildInfo(t, buildInfo, buildName, true, false)
@@ -1175,8 +1175,9 @@ func TestHelmPushWithSemVerBuildMetadata(t *testing.T) {
 			require.NoError(t, err)
 			props, err := serviceManager.GetItemProps(tests.HelmLocalRepo + "/" + testCase.expectedFolder + "/manifest.json")
 			require.NoError(t, err)
-			require.NotNil(t, props, "manifest.json should exist under the '_' tag folder")
+			require.NotNil(t, props, "manifest.json under the '_' tag folder has no properties")
 			assert.Contains(t, props.Properties["build.name"], buildName)
+			assert.Contains(t, props.Properties["build.number"], "1")
 		})
 	}
 }
@@ -1203,20 +1204,18 @@ func TestHelmPushModuleCoexistenceAfterExistingModule(t *testing.T) {
 	), "rt build-add-dependencies should seed the build with a non-helm module")
 
 	chartFile, chartDir, restoreCwd := packageHelmChartForPush(t, chartName, chartVersion)
-	defer restoreCwd()
 	defer func() {
 		if err := os.RemoveAll(chartDir); err != nil {
 			t.Logf("Warning: Failed to remove test chart directory %s: %v", chartDir, err)
 		}
 	}()
+	defer restoreCwd()
 
 	registryHost, registryURL := helmSubpathRegistryURL(t, "")
 	if !isRepoExist(tests.HelmLocalRepo) {
 		t.Skipf("Repository %s does not exist. Skipping test.", tests.HelmLocalRepo)
 	}
-	if !loginHelmRegistryOrSkip(t, registryHost) {
-		return
-	}
+	loginHelmRegistryOrSkip(t, registryHost)
 
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 	pushArgs := []string{
@@ -1293,14 +1292,13 @@ func helmSubpathRegistryURL(t *testing.T, subpath string) (registryHost, registr
 	return registryHost, registryURL
 }
 
-func loginHelmRegistryOrSkip(t *testing.T, registryHost string) bool {
+func loginHelmRegistryOrSkip(t *testing.T, registryHost string) {
 	err := loginHelmRegistry(t, registryHost)
 	if err == nil {
-		return true
+		return
 	}
 	maybeSkipHelmLoginFlake(t, err)
 	require.NoError(t, err, "helm registry login should succeed")
-	return false
 }
 
 func maybeSkipHelmLoginFlake(t *testing.T, err error) {
