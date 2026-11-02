@@ -1090,22 +1090,34 @@ func TestHelmPushWithMultiLevelSubpath(t *testing.T) {
 }
 
 func runHelmSubpathPushTest(t *testing.T, subpath, buildName, chartName, chartVersion string) {
+	buildInfo := pushHelmChartAndGetBuildInfo(t, subpath, buildName, chartName, chartVersion, true)
+
+	validateHelmBuildInfo(t, buildInfo, buildName, true, false)
+	assertOCIArtifactsUnderSubpath(t, buildInfo,
+		subpath+"/"+chartName+"/"+chartVersion)
+}
+
+// pushHelmChartAndGetBuildInfo packages a test chart, pushes it with 'jf helm push' and returns the published build info.
+// With tolerateRegistryFlakes, push errors that look like an unavailable OCI registry skip the test instead of failing it.
+func pushHelmChartAndGetBuildInfo(t *testing.T, subpath, buildName, chartName, chartVersion string, tolerateRegistryFlakes bool) buildinfo.BuildInfo {
 	const buildNumber = "1"
 
 	chartFile, chartDir, restoreCwd := packageHelmChartForPush(t, chartName, chartVersion)
-	defer restoreCwd()
+	// Deferred calls run last-in first-out: restore the working directory before removing the chart directory,
+	// since Windows cannot remove the current working directory.
 	defer func() {
 		if err := os.RemoveAll(chartDir); err != nil {
 			t.Logf("Warning: Failed to remove test chart directory %s: %v", chartDir, err)
 		}
 	}()
+	defer restoreCwd()
 
 	registryHost, registryURL := helmSubpathRegistryURL(t, subpath)
 	if !isRepoExist(tests.HelmLocalRepo) {
 		t.Skipf("Repository %s does not exist. Skipping test.", tests.HelmLocalRepo)
 	}
 	if !loginHelmRegistryOrSkip(t, registryHost) {
-		return
+		t.SkipNow()
 	}
 
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
@@ -1115,8 +1127,10 @@ func runHelmSubpathPushTest(t *testing.T, subpath, buildName, chartName, chartVe
 		"--build-number=" + buildNumber,
 	}
 	if err := jfrogCli.Exec(pushArgs...); err != nil {
-		maybeSkipHelmPushFlake(t, err)
-		require.NoError(t, err, "helm push to subpath %q should succeed", subpath)
+		if tolerateRegistryFlakes {
+			maybeSkipHelmPushFlake(t, err)
+		}
+		require.NoError(t, err, "helm push of chart %s:%s to %q should succeed", chartName, chartVersion, subpath)
 	}
 
 	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
@@ -1124,10 +1138,47 @@ func runHelmSubpathPushTest(t *testing.T, subpath, buildName, chartName, chartVe
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
 	require.NoError(t, err, "Failed to get build info")
 	require.True(t, found, "build info should be found")
+	return publishedBuildInfo.BuildInfo
+}
 
-	validateHelmBuildInfo(t, publishedBuildInfo.BuildInfo, buildName, true, false)
-	assertOCIArtifactsUnderSubpath(t, publishedBuildInfo.BuildInfo,
-		subpath+"/"+chartName+"/"+chartVersion)
+// TestHelmPushWithSemVerBuildMetadata verifies that 'jf helm push' collects build info for a chart version with
+// SemVer build metadata (RTECO-2742). Helm stores such a version under the OCI tag with '+' replaced by '_',
+// so the pushed artifacts must be found in the '_' folder, while the module id keeps the real version.
+// Push errors are never skipped here: the regression surfaces as a push command failure.
+func TestHelmPushWithSemVerBuildMetadata(t *testing.T) {
+	initHelmTest(t)
+	defer cleanHelmTest(t)
+
+	testCases := []struct {
+		name           string
+		subpath        string
+		chartName      string
+		chartVersion   string
+		expectedFolder string
+	}{
+		{"no subpath", "", "semver-meta-chart", "1.2.3+abc1234", "semver-meta-chart/1.2.3_abc1234"},
+		{"with subpath", "org/team-delta", "semver-meta-sub-chart", "103.287.0+0b2041e", "org/team-delta/semver-meta-sub-chart/103.287.0_0b2041e"},
+	}
+	for i, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			buildName := fmt.Sprintf("%s-push-semver-meta-%d", tests.HelmBuildName, i)
+			buildInfo := pushHelmChartAndGetBuildInfo(t, testCase.subpath, buildName, testCase.chartName, testCase.chartVersion, false)
+
+			validateHelmBuildInfo(t, buildInfo, buildName, true, false)
+			module := buildInfo.Modules[0]
+			assert.Equal(t, testCase.chartName+":"+testCase.chartVersion, module.Id, "module id must keep the original chart version")
+			require.NotEmpty(t, module.Artifacts, "helm module must contain the pushed OCI artifacts")
+			assertOCIArtifactsUnderSubpath(t, buildInfo, testCase.expectedFolder)
+
+			// The build properties are set on the same folder, so they must be found on its manifest.
+			serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
+			require.NoError(t, err)
+			props, err := serviceManager.GetItemProps(tests.HelmLocalRepo + "/" + testCase.expectedFolder + "/manifest.json")
+			require.NoError(t, err)
+			require.NotNil(t, props, "manifest.json should exist under the '_' tag folder")
+			assert.Contains(t, props.Properties["build.name"], buildName)
+		})
+	}
 }
 
 func TestHelmPushModuleCoexistenceAfterExistingModule(t *testing.T) {
