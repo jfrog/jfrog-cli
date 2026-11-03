@@ -24,10 +24,10 @@ require (
 	github.com/jfrog/jfrog-cli-application v1.0.2-0.20260917110731-d7783acedd8c
 	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20261103060251-30c80a7deec4
 	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20261102064148-e4c77ed13cc6
-	github.com/jfrog/jfrog-cli-evidence v0.11.1-0.20261026075204-fdf3635939c5
+	github.com/jfrog/jfrog-cli-evidence v0.11.1-0.20261102090321-5b0bce39abfe
 	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20261030162302-b4948e3a2cb1
 	github.com/jfrog/jfrog-cli-security v1.41.2
-	github.com/jfrog/jfrog-client-go v1.55.1-0.20261029150622-a2075f5e551a
+	github.com/jfrog/jfrog-client-go v1.55.1-0.20261102081622-45c51cfca4f7
 	github.com/jszwec/csvutil v1.10.0
 	github.com/moby/moby/api v1.55.0
 	github.com/spf13/viper v1.21.0
