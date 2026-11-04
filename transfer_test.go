@@ -65,13 +65,6 @@ func initTransferTest(t *testing.T) func() {
 		t.Skip("Skipping transfer test. To run transfer test add the '-test.transfer=true' option.")
 	}
 	oldHomeDir, newHomeDir := prepareHomeDir(t)
-	if *tests.InstallDataTransferPlugin {
-		if *tests.JfrogHome != "" {
-			coreutils.ExitOnErr(artifactoryCli.WithoutCredentials().Exec("transfer-plugin-install", inttestutils.SourceServerId, "--home-dir="+*tests.JfrogHome))
-		} else {
-			coreutils.ExitOnErr(artifactoryCli.WithoutCredentials().Exec("transfer-plugin-install", inttestutils.SourceServerId))
-		}
-	}
 
 	// Delete the target server if exist
 	targetConfig, err := commands.GetConfig(inttestutils.TargetServerId, false)
@@ -83,9 +76,6 @@ func initTransferTest(t *testing.T) func() {
 	err = coretests.NewJfrogCli(execMain, "jfrog config", "--access-token="+*tests.JfrogTargetAccessToken).Exec("add", inttestutils.TargetServerId, "--interactive=false", "--url="+*tests.JfrogTargetUrl)
 	assert.NoError(t, err)
 
-	if *tests.InstallDataTransferPlugin {
-		assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("curl", "-XPOST", "/api/plugins/reload"))
-	}
 	return func() {
 		cleanArtifactory()
 		inttestutils.CleanTargetRepos(targetArtifactoryCli)

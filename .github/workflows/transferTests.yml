@@ -68,7 +68,7 @@ jobs:
       - name: Run transfer tests
         if: matrix.os.name != 'macos'
         run: >-
-          go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.transfer --test.installDataTransferPlugin
+          go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.transfer
           --jfrog.url=${{ env.JFROG_TESTS_URL || 'http://127.0.0.1:8082' }}
           --jfrog.adminToken=${{ env.JFROG_TESTS_LOCAL_ACCESS_TOKEN }}
           --jfrog.targetUrl=${{ secrets.PLATFORM_URL }}
@@ -121,7 +121,7 @@ jobs:
 
       - name: Run transfer tests
         run: >-
-          go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.transfer --test.installDataTransferPlugin
+          go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.transfer
           --jfrog.targetUrl=${{ secrets.PLATFORM_URL }}
           --jfrog.targetAdminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }}
           --jfrog.home=${{ runner.temp }}
