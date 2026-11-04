@@ -24,7 +24,6 @@ When to use:
 Prerequisites:
 - Both source and target server IDs configured with admin tokens.
 - 'jf rt transfer-config' (or transfer-config-merge) already run so repos exist on the target.
-- 'jf rt transfer-plugin-install' installed on the source server's primary node.
 - 'jf rt transfer-settings' tuned for throughput.
 
 Common patterns:
@@ -33,12 +32,12 @@ Common patterns:
   $ jf rt transfer-files source-prod target-cloud --status   # check progress
 
 Gotchas:
-- Requires the data-transfer plugin on the source (install via 'jf rt transfer-plugin-install').
+- Does not require the data-transfer user plugin on the source; 'jf rt transfer-plugin-install' is deprecated.
 - Long-running; expect hours-to-days for large stores. Run inside a long-lived session (nohup, tmux, screen).
 - Throughput is governed by 'jf rt transfer-settings'; defaults are conservative.
 - Idempotent on file content but not on repo property changes; re-running after a target-side delete causes redelivery.
 
-Related: jf rt transfer-config, jf rt transfer-settings, jf rt transfer-plugin-install
+Related: jf rt transfer-config, jf rt transfer-settings
 
 QA:
 Q: What's the JFrog CLI command to transfer the configuration from my artifactory to the target artifactory?
