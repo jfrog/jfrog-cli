@@ -237,7 +237,7 @@ require (
 	helm.sh/helm/v3 v3.21.3 // indirect
 	k8s.io/client-go v0.36.3 // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
-	oras.land/oras-go/v2 v2.6.2 // indirect
+	oras.land/oras-go/v2 v2.7.0 // indirect
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
 
@@ -249,6 +249,6 @@ require (
 
 //replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.54.2-0.20251007084958-5eeaa42c31a6
 
-// replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20260915053918-504d300ea1dc
+replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20261105065450-9d24d2675567
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.13.1-0.20260915053625-0924f0a616bd
