@@ -78,6 +78,12 @@ func TestDotnetResolve(t *testing.T) {
 	uniqueDotnetTests := []testDescriptor{
 		{"dotnetargswithspaces", "multireference", []string{dotnetUtils.DotnetCore.String(), "restore", "src/multireference.proj1/", "--packages", "./packages dir with spaces"}, []string{"proj1"}, []int{5}},
 		{"multireferencesingleprojectdir", "multireference", []string{dotnetUtils.DotnetCore.String(), "restore", "src/multireference.proj1/"}, []string{"proj1"}, []int{5}},
+		// The module ID must be the project's NuGet PackageId (<PackageId>, then <AssemblyName>),
+		// not the project file's base name ("jftest"), so it matches the .nupkg 'dotnet pack' produces.
+		{"assemblynamerestore", "assemblyname", []string{dotnetUtils.DotnetCore.String(), "restore", "jftest.csproj"}, []string{"JohnsonControls.jftest"}, []int{1}},
+		{"assemblynamebuild", "assemblyname", []string{dotnetUtils.DotnetCore.String(), "build", "jftest.csproj"}, []string{"JohnsonControls.jftest"}, []int{1}},
+		{"packageidbuild", "packageid", []string{dotnetUtils.DotnetCore.String(), "build", "jftest.csproj"}, []string{"JohnsonControls.jftest.Package"}, []int{1}},
+		{"assemblynamewithmodulechange", "assemblyname", []string{dotnetUtils.DotnetCore.String(), "build", "jftest.csproj", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{1}},
 	}
 	testNativeNugetDotnetResolve(t, uniqueDotnetTests, tests.DotnetBuildName, project.Dotnet)
 }
