@@ -123,7 +123,7 @@ maintainers:
     - github-username2
 # Optional:
 relativePath: build-info-analyzer
-# You may set either branch or tag, but noth both
+# You may set either branch or tag, but not both
 branch: my-release-branch
 tag: my-release-tag
 ```
