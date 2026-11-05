@@ -7,7 +7,6 @@ buildscript {
     }
 }
 apply plugin: 'groovy'
-apply plugin: 'idea'
 apply plugin: 'com.jfrog.artifactory'
 apply plugin: 'maven-publish'
 
