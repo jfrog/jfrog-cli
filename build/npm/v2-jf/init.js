@@ -1,5 +1,3 @@
-validateNpmVersion();
-
 const {get} = require("https");
 const {request} = require("http");
 const {URL} = require("url");
@@ -10,7 +8,10 @@ const filePath = "bin/" + fileName;
 const version = packageJson.version;
 const pkgName = "jfrog-cli-" + getArchitecture();
 
-downloadCli();
+if (require.main === module) {
+    validateNpmVersion();
+    downloadCli();
+}
 
 function validateNpmVersion() {
     if (!isValidNpmVersion()) {
@@ -40,6 +41,7 @@ function downloadWithProxy(myUrl) {
                 },
                 function (res) {
                     if (res.statusCode === 301 || res.statusCode === 302) {
+                        res.resume();
                         downloadWithProxy(res.headers.location);
                     } else if (res.statusCode === 200) {
                         writeToFile(res);
@@ -59,8 +61,9 @@ function downloadWithProxy(myUrl) {
 }
 
 function download(url) {
-    get(url, function (res) {
+    get(new URL(url), {agent: false}, function (res) {
         if (res.statusCode === 301 || res.statusCode === 302) {
+            res.resume();
             download(res.headers.location);
         } else if (res.statusCode === 200) {
             writeToFile(res);
@@ -103,19 +106,24 @@ function isValidNpmVersion() {
 
 function writeToFile(response) {
     const file = createWriteStream(filePath);
-    response
-        .on("data", function (chunk) {
-            file.write(chunk);
-        })
-        .on("end", function () {
-            file.end();
-            if (!process.platform.startsWith("win")) {
-                chmodSync(filePath, '755');
+    response.on("error", function (err) {
+        console.error(err);
+    });
+    file.on("error", function (err) {
+        console.error(err);
+    });
+    file.on("finish", function () {
+        file.close(function (err) {
+            if (err) {
+                console.error(err);
+                return;
             }
-        })
-        .on("error", function (err) {
-            console.error(err);
+            if (!process.platform.startsWith("win")) {
+                chmodSync(filePath, "755");
+            }
         });
+    });
+    response.pipe(file);
 }
 
 function getArchitecture() {
