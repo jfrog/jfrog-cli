@@ -20,7 +20,7 @@ When to use:
 - Debugging authentication failures caused by an expired, revoked or foreign token.
 
 Prerequisites:
-- A server configured with jf config add or jf login. Its credentials are not used.
+- A server configured with jf config add or jf login. Its credentials are never used to verify the token, and its tokens are never refreshed.
 
 Common patterns:
   $ jf atv "$TOKEN"                                        # verify a token passed as an argument

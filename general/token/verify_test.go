@@ -65,26 +65,26 @@ func TestReadTokenInput(t *testing.T) {
 	tokenFile := filepath.Join(dir, "token.txt")
 	require.NoError(t, os.WriteFile(tokenFile, []byte("x\n"), 0o600))
 
-	raw, err := readTokenInput("a.b.c", "", untouchedReader{t}, failTerminal)
+	raw, err := readTokenInput([]string{"a.b.c"}, "", false, untouchedReader{t}, failTerminal)
 	require.NoError(t, err)
 	assert.Equal(t, "a.b.c", raw)
 
-	raw, err = readTokenInput("", tokenFile, untouchedReader{t}, failTerminal)
+	raw, err = readTokenInput(nil, tokenFile, true, untouchedReader{t}, failTerminal)
 	require.NoError(t, err)
 	assert.Equal(t, "x\n", raw)
 
-	_, err = readTokenInput("a.b.c", tokenFile, untouchedReader{t}, failTerminal)
+	_, err = readTokenInput([]string{"a.b.c"}, tokenFile, true, untouchedReader{t}, failTerminal)
 	assert.EqualError(t, err, "provide the token either as an argument or with --token-file, not both")
 
-	_, err = readTokenInput("", "missing.txt", untouchedReader{t}, failTerminal)
+	_, err = readTokenInput(nil, "missing.txt", true, untouchedReader{t}, failTerminal)
 	assert.ErrorContains(t, err, "failed to read token file 'missing.txt'")
 
-	raw, err = readTokenInput("", "", strings.NewReader("a.b.c\n"), nil)
+	raw, err = readTokenInput(nil, "", false, strings.NewReader("a.b.c\n"), nil)
 	require.NoError(t, err)
 	assert.Equal(t, "a.b.c\n", raw)
 
 	var gotPrompt string
-	raw, err = readTokenInput("", "", untouchedReader{t}, func(prompt string) (string, error) {
+	raw, err = readTokenInput(nil, "", false, untouchedReader{t}, func(prompt string) (string, error) {
 		gotPrompt = prompt
 		return "a.b.c", nil
 	})
@@ -92,8 +92,15 @@ func TestReadTokenInput(t *testing.T) {
 	assert.Equal(t, "a.b.c", raw)
 	assert.Equal(t, stdinPrompt, gotPrompt)
 
-	_, err = readTokenInput("", "", strings.NewReader(strings.Repeat("x", 64*1024+1)), nil)
+	_, err = readTokenInput(nil, "", false, strings.NewReader(strings.Repeat("x", 64*1024+1)), nil)
 	assert.EqualError(t, err, "the token input is larger than 64 KiB")
+
+	for _, args := range [][]string{{""}, {"   "}} {
+		_, err = readTokenInput(args, "", false, untouchedReader{t}, failTerminal)
+		assert.EqualError(t, err, "no token provided: the token argument is empty")
+	}
+	_, err = readTokenInput(nil, "", true, untouchedReader{t}, failTerminal)
+	assert.EqualError(t, err, "no token provided: the --token-file path is empty")
 }
 
 func TestVerifyServerDetails(t *testing.T) {
@@ -168,6 +175,20 @@ func TestPrintVerifyResult_Table_Invalid(t *testing.T) {
 	require.NoError(t, printVerifyResult(sampleVerifyResult(false), coreformat.Table, &buf))
 	assert.Contains(t, buf.String(), "sub")
 	assert.NotContains(t, buf.String(), "TYPE")
+}
+
+func TestPrintVerifyResult_Table_EscapesControlCharacters(t *testing.T) {
+	result := sampleVerifyResult(false)
+	result.Payload["sub"] = "alice\n\nTYPE\nAdmin Token\n\x1b[8m"
+	result.Payload["x\x1b]0;title\x07"] = "rtl\u202etxt"
+	var buf bytes.Buffer
+	require.NoError(t, printVerifyResult(result, coreformat.Table, &buf))
+	out := buf.String()
+	assert.NotContains(t, out, "\x1b")
+	assert.NotContains(t, out, "\x07")
+	assert.NotContains(t, out, "\u202e")
+	assert.NotContains(t, out, "\nAdmin Token")
+	assert.Contains(t, out, `alice\n\nTYPE\nAdmin Token\n\x1b[8m`)
 }
 
 func TestPrintVerifyResult_JSON(t *testing.T) {

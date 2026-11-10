@@ -11,6 +11,7 @@ import (
 	"strings"
 	"text/tabwriter"
 	"time"
+	"unicode"
 
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
@@ -51,7 +52,7 @@ func AccessTokenVerifyCmd(c *cli.Context) error {
 	if term.IsTerminal(int(os.Stdin.Fd())) {
 		readTerminal = readHiddenLine
 	}
-	raw, err := readTokenInput(c.Args().Get(0), c.String(cliutils.TokenFile), os.Stdin, readTerminal)
+	raw, err := readTokenInput(c.Args(), c.String(cliutils.TokenFile), c.IsSet(cliutils.TokenFile), os.Stdin, readTerminal)
 	if err != nil {
 		return err
 	}
@@ -73,13 +74,17 @@ func verifyServerDetails(serverIdFlag string) (*coreConfig.ServerDetails, error)
 	return commands.GetConfig(serverId, true)
 }
 
-func readTokenInput(arg, tokenFile string, stdin io.Reader, readTerminal func(prompt string) (string, error)) (string, error) {
+func readTokenInput(args []string, tokenFile string, tokenFileSet bool, stdin io.Reader, readTerminal func(prompt string) (string, error)) (string, error) {
 	switch {
-	case arg != "" && tokenFile != "":
+	case len(args) > 0 && tokenFileSet:
 		return "", errorutils.CheckErrorf("provide the token either as an argument or with --token-file, not both")
-	case arg != "":
-		return arg, nil
-	case tokenFile != "":
+	case len(args) > 0 && strings.TrimSpace(args[0]) == "":
+		return "", errorutils.CheckErrorf("no token provided: the token argument is empty")
+	case len(args) > 0:
+		return args[0], nil
+	case tokenFileSet && strings.TrimSpace(tokenFile) == "":
+		return "", errorutils.CheckErrorf("no token provided: the --token-file path is empty")
+	case tokenFileSet:
 		file, err := os.Open(tokenFile)
 		if err != nil {
 			return "", errorutils.CheckErrorf("failed to read token file '%s': %s", tokenFile, err.Error())
@@ -198,7 +203,7 @@ func printVerifyTable(result *generic.AccessTokenVerifyResult, w io.Writer) erro
 	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
 	_, _ = fmt.Fprintln(tw, "FIELD\tVALUE")
 	for _, row := range payloadRows(result.Payload) {
-		_, _ = fmt.Fprintf(tw, "%s\t%s\n", row[0], row[1])
+		_, _ = fmt.Fprintf(tw, "%s\t%s\n", escapeControlCharacters(row[0]), escapeControlCharacters(row[1]))
 	}
 	if err := tw.Flush(); err != nil {
 		return errorutils.CheckError(err)
@@ -239,6 +244,20 @@ func payloadRows(payload map[string]interface{}) [][2]string {
 		}
 	}
 	return rows
+}
+
+// The payload is printed even when verification fails, so its text is untrusted and must not reach the terminal raw.
+func escapeControlCharacters(s string) string {
+	var b strings.Builder
+	for _, r := range s {
+		if unicode.IsControl(r) || unicode.Is(unicode.Cf, r) {
+			quoted := strconv.QuoteRune(r)
+			b.WriteString(quoted[1 : len(quoted)-1])
+			continue
+		}
+		b.WriteRune(r)
+	}
+	return b.String()
 }
 
 func formatEpoch(value interface{}) string {
