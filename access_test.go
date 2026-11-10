@@ -369,11 +369,15 @@ func TestAccessTokenVerify(t *testing.T) {
 	defer cleanTestsHomeEnv()
 	atvCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 
-	mint := func(t *testing.T, args ...string) (auth.CreateTokenResponseData, string) {
+	mintWithoutCleanup := func(t *testing.T, args ...string) (auth.CreateTokenResponseData, string) {
 		var created auth.CreateTokenResponseData
 		output, err := runAtcWithCloudFallback(t, append([]string{"atc"}, args...)...)
 		require.NoError(t, err)
 		require.NoError(t, json.Unmarshal([]byte(output), &created))
+		return created, output
+	}
+	mint := func(t *testing.T, args ...string) (auth.CreateTokenResponseData, string) {
+		created, output := mintWithoutCleanup(t, args...)
 		t.Cleanup(func() { revokeToken(t, created.TokenId) })
 		return created, output
 	}
@@ -443,7 +447,7 @@ func TestAccessTokenVerify(t *testing.T) {
 		assert.ErrorContains(t, err, "reference token")
 	})
 	t.Run("revoked token", func(t *testing.T) {
-		created, _ := mint(t)
+		created, _ := mintWithoutCleanup(t)
 		revokeToken(t, created.TokenId)
 		_, err := verify(t, created.AccessToken, created.AccessToken)
 		assert.ErrorContains(t, err, "token rejected by Access server: status 40")
