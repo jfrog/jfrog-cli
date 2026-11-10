@@ -383,6 +383,19 @@ func testConditionalUpload(t *testing.T, execFunc func() error, searchSpec strin
 	inttestutils.VerifyExistInArtifactory(expectedDeployed, searchSpec, serverDetails, t)
 }
 
+func TestAccessTokenVerifyRegistered(t *testing.T) {
+	cmds, err := getCommands()
+	require.NoError(t, err)
+	for _, cmd := range cmds {
+		if cmd.Name == "access-token-verify" {
+			assert.Equal(t, []string{"atv"}, cmd.Aliases)
+			assert.NotNil(t, cmd.Action)
+			return
+		}
+	}
+	t.Fatal("access-token-verify command is not registered")
+}
+
 func TestSearchSimilarCmds(t *testing.T) {
 	cmds, err := getCommands()
 	assert.NoError(t, err)

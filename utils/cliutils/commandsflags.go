@@ -141,7 +141,9 @@ const (
 
 	// Access Token Create commands keys
 	AccessTokenCreate = "access-token-create"
+	AccessTokenVerify = "access-token-verify"
 	ExchangeOidcToken = "exchange-oidc-token"
+	TokenFile         = "token-file"
 	Api               = "api"
 	ApiDocsSearch     = "api-docs-search"
 	ApiDocsDescribe   = "api-docs-describe"
@@ -543,6 +545,7 @@ const (
 	// the description to the formats that command actually supports.
 	configShowFormat             = "config-show-format"
 	accessTokenCreateFormat      = "access-token-create-format"
+	accessTokenVerifyFormat      = "access-token-verify-format"
 	exchangeOidcTokenFormat      = "exchange-oidc-token-format"
 	licenseAcquireFormat         = "license-acquire-format"
 	licenseDeployFormat          = "license-deploy-format"
@@ -711,6 +714,14 @@ var flagsMap = map[string]cli.Flag{
 	accessTokenCreateFormat: cli.StringFlag{
 		Name:  Format,
 		Usage: "[Optional] " + components.GetFormatFlagDescription([]format.OutputFormat{format.Json, format.Table}) + "` `",
+	},
+	accessTokenVerifyFormat: cli.StringFlag{
+		Name:  Format,
+		Usage: "[Optional] " + components.GetFormatFlagDescription([]format.OutputFormat{format.Table, format.Json}) + "` `",
+	},
+	TokenFile: cli.StringFlag{
+		Name:  TokenFile,
+		Usage: "[Optional] Path to a file that holds the token to verify, or the JSON output of jf atc. If neither this nor the argument is set, the token is read from stdin.` `",
 	},
 	exchangeOidcTokenFormat: cli.StringFlag{
 		Name:  Format,
@@ -2432,6 +2443,9 @@ var commandFlags = map[string][]string{
 		platformUrl, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath, ClientCertKeyPath,
 		atcProject, atcGrantAdmin, atcGroups, atcScope, atcExpiry,
 		atcRefreshable, atcDescription, atcAudience, atcReference, accessTokenCreateFormat,
+	},
+	AccessTokenVerify: {
+		serverId, TokenFile, accessTokenVerifyFormat,
 	},
 	ExchangeOidcToken: {
 		url, OidcTokenID, OidcAudience, OidcProviderName, OidcProviderType, ApplicationKey, Project, repository, exchangeOidcTokenFormat,
