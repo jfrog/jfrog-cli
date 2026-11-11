@@ -18,7 +18,7 @@ jobs:
           - name: windows
             version: 2022
           - name: macos
-            version: 14
+            version: latest
         # 1.20.0/1.29.0 exercise huggingface_hub's stricter RepoUrl/parse_hf_uri
         # parsing (PR #4324) against Artifactory's commitUrl, fixed in
         # jfrog/jfrog-cli-artifactory#548 (this repo's go.mod is bumped to include it).
