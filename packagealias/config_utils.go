@@ -31,6 +31,34 @@ var defaultPassTools = map[string]struct{}{
 	"bundle": {},
 }
 
+// helmBuildInfoSubcommands lists the helm subcommands jf helm collects build info for.
+// Other helm subcommands always run natively, so commands like 'helm registry' keep their own behavior.
+var helmBuildInfoSubcommands = map[string]struct{}{
+	"package":    {},
+	"push":       {},
+	"dependency": {},
+}
+
+// helmGlobalFlagsWithValue lists helm global flags whose value can follow as a separate argument.
+var helmGlobalFlagsWithValue = map[string]struct{}{
+	"-n":                     {},
+	"--namespace":            {},
+	"--kube-context":         {},
+	"--kubeconfig":           {},
+	"--kube-apiserver":       {},
+	"--kube-as-user":         {},
+	"--kube-as-group":        {},
+	"--kube-ca-file":         {},
+	"--kube-token":           {},
+	"--kube-tls-server-name": {},
+	"--registry-config":      {},
+	"--repository-cache":     {},
+	"--repository-config":    {},
+	"--content-cache":        {},
+	"--burst-limit":          {},
+	"--qps":                  {},
+}
+
 func newDefaultConfig() *Config {
 	return &Config{
 		Enabled:         true,
@@ -267,6 +295,20 @@ func getGoSubcommandPolicyKeys(args []string) []string {
 	return keys
 }
 
+// getHelmSubcommand returns the first argument that is neither a flag nor the value of a global flag.
+func getHelmSubcommand(args []string) string {
+	for index := 0; index < len(args); index++ {
+		arg := args[index]
+		if !strings.HasPrefix(arg, "-") {
+			return strings.ToLower(arg)
+		}
+		if _, takesValue := helmGlobalFlagsWithValue[arg]; takesValue {
+			index++
+		}
+	}
+	return ""
+}
+
 func getModeForTool(config *Config, tool string, args []string) AliasMode {
 	config = normalizeConfig(config)
 	if tool == "go" {
@@ -288,6 +330,12 @@ func getModeForTool(config *Config, tool string, args []string) AliasMode {
 			}
 		}
 		return ModeJF
+	}
+
+	if tool == "helm" {
+		if _, collectsBuildInfo := helmBuildInfoSubcommands[getHelmSubcommand(args)]; !collectsBuildInfo {
+			return ModePass
+		}
 	}
 
 	mode, found := config.ToolModes[tool]
