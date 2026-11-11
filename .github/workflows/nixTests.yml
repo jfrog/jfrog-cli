@@ -13,7 +13,7 @@ jobs:
           - name: ubuntu
             version: 24.04
           - name: macos
-            version: 14
+            version: 15
           # Windows omitted: Nix does not have first-class Windows support.
     runs-on: ${{ matrix.os.name }}-${{ matrix.os.version }}
     steps:
