@@ -1,7 +1,7 @@
 [
   { "suite": "artifactory", "node": true },
   { "suite": "artifactoryProject", "node": true },
-  { "suite": "access", "node": true, "skip_tests": "TestRefreshableAccessTokens|TestAccessTokenCreate" },
+  { "suite": "access", "node": true, "skip_tests": "TestRefreshableAccessTokens|TestAccessTokenCreate|TestAccessTokenVerify" },
   { "suite": "npm", "node": true, "npm_auth": true },
   { "suite": "pnpm", "node": true, "pnpm": true },
   { "suite": "maven", "java": "17", "maven": true },

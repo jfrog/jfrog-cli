@@ -1,14 +1,20 @@
 package main
 
 import (
+	"crypto"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/v2/general/token"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
@@ -23,6 +29,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -344,6 +351,151 @@ func TestAccessTokenCreate(t *testing.T) {
 				"--url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint+" --access-token="+token.AccessToken).Exec("ping"))
 		})
 	}
+}
+
+type atvOutput struct {
+	Valid   bool                   `json:"valid"`
+	Error   string                 `json:"error"`
+	Payload map[string]interface{} `json:"payload"`
+	Types   []string               `json:"types"`
+}
+
+func TestAccessTokenVerify(t *testing.T) {
+	initAccessTest(t)
+	if *tests.JfrogAccessToken == "" {
+		t.Skip("access token verify tests mint tokens with an admin access token, but a token is not provided. Skipping...")
+	}
+	createJfrogHomeConfig(t, true)
+	defer cleanTestsHomeEnv()
+	atvCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+
+	mintWithoutCleanup := func(t *testing.T, args ...string) (auth.CreateTokenResponseData, string) {
+		var created auth.CreateTokenResponseData
+		output, err := runAtcWithCloudFallback(t, append([]string{"atc"}, args...)...)
+		require.NoError(t, err)
+		require.NoError(t, json.Unmarshal([]byte(output), &created))
+		return created, output
+	}
+	mint := func(t *testing.T, args ...string) (auth.CreateTokenResponseData, string) {
+		created, output := mintWithoutCleanup(t, args...)
+		t.Cleanup(func() { revokeToken(t, created.TokenId) })
+		return created, output
+	}
+	writeFile := func(t *testing.T, content string) string {
+		path := filepath.Join(t.TempDir(), "token.txt")
+		require.NoError(t, os.WriteFile(path, []byte(content), 0o600))
+		return path
+	}
+	verify := func(t *testing.T, secret string, args ...string) (atvOutput, error) {
+		output, err := atvCli.RunCliCmdWithOutputs(t, append([]string{"atv", "--format=json"}, args...)...)
+		assert.NotContains(t, output, secret)
+		if err != nil {
+			assert.NotContains(t, err.Error(), secret)
+		}
+		var result atvOutput
+		if strings.TrimSpace(output) != "" {
+			assert.NoError(t, json.Unmarshal([]byte(output), &result))
+		}
+		return result, err
+	}
+	assertValid := func(t *testing.T, result atvOutput, err error, types ...string) {
+		require.NoError(t, err)
+		assert.True(t, result.Valid)
+		assert.Equal(t, types, result.Types)
+	}
+
+	t.Run("identity token as argument", func(t *testing.T) {
+		created, _ := mint(t)
+		result, err := verify(t, created.AccessToken, created.AccessToken)
+		assertValid(t, result, err, "Identity Token")
+	})
+	t.Run("token file with the bare token", func(t *testing.T) {
+		created, _ := mint(t)
+		result, err := verify(t, created.AccessToken, "--token-file="+writeFile(t, created.AccessToken+"\n"))
+		assertValid(t, result, err, "Identity Token")
+	})
+	t.Run("token file with jf atc JSON output", func(t *testing.T) {
+		created, output := mint(t)
+		result, err := verify(t, created.AccessToken, "--token-file="+writeFile(t, output))
+		assertValid(t, result, err, "Identity Token")
+	})
+	t.Run("admin token", func(t *testing.T) {
+		created, _ := mint(t, "--grant-admin")
+		result, err := verify(t, created.AccessToken, created.AccessToken)
+		assertValid(t, result, err, "Admin Token")
+	})
+	t.Run("scoped token", func(t *testing.T) {
+		created, _ := mint(t, "--scope=system:metrics:r")
+		result, err := verify(t, created.AccessToken, created.AccessToken)
+		assertValid(t, result, err, "Scoped Token")
+	})
+	t.Run("groups token", func(t *testing.T) {
+		created, _ := mint(t, "--groups=group1,group2")
+		result, err := verify(t, created.AccessToken, created.AccessToken)
+		assertValid(t, result, err, "Applied Permissions Groups Token")
+	})
+	t.Run("token without expiry", func(t *testing.T) {
+		created, _ := mint(t, auth.ExtractUsernameFromAccessToken(*tests.JfrogAccessToken), "--expiry=0")
+		result, err := verify(t, created.AccessToken, created.AccessToken)
+		assertValid(t, result, err, "Identity Token")
+		assert.NotContains(t, result.Payload, "exp")
+	})
+	t.Run("reference token", func(t *testing.T) {
+		created, _ := mint(t, "--reference")
+		require.NotEmpty(t, created.ReferenceToken)
+		_, err := verify(t, created.ReferenceToken, created.ReferenceToken)
+		assert.ErrorContains(t, err, "reference token")
+	})
+	t.Run("revoked token", func(t *testing.T) {
+		created, _ := mintWithoutCleanup(t)
+		revokeToken(t, created.TokenId)
+		_, err := verify(t, created.AccessToken, created.AccessToken)
+		assert.ErrorContains(t, err, "token rejected by Access server: status 40")
+	})
+	t.Run("tampered signature", func(t *testing.T) {
+		created, _ := mint(t)
+		i := len(created.AccessToken) - 10
+		tampered := created.AccessToken[:i] + flipBase64Char(created.AccessToken[i]) + created.AccessToken[i+1:]
+		_, err := verify(t, tampered, tampered)
+		assert.ErrorContains(t, err, "invalid signature")
+	})
+	t.Run("locally signed token", func(t *testing.T) {
+		forged := signLocalToken(t)
+		_, err := verify(t, forged, forged)
+		assert.ErrorContains(t, err, "invalid signature")
+	})
+	t.Run("unknown server id", func(t *testing.T) {
+		created, _ := mint(t)
+		_, err := verify(t, created.AccessToken, created.AccessToken, "--server-id=nope")
+		assert.ErrorContains(t, err, "nope")
+	})
+}
+
+func flipBase64Char(c byte) string {
+	if c == 'A' {
+		return "B"
+	}
+	return "A"
+}
+
+func signLocalToken(t *testing.T) string {
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
+	encode := func(v interface{}) string {
+		data, err := json.Marshal(v)
+		require.NoError(t, err)
+		return base64.RawURLEncoding.EncodeToString(data)
+	}
+	now := time.Now().Unix()
+	signingInput := encode(map[string]string{"alg": "RS256", "typ": "JWT", "ver": "2", "kid": "forged"}) + "." +
+		encode(map[string]interface{}{
+			"jti": "forged", "sub": "jfac@01h/users/admin", "aud": "*@*", "scp": "applied-permissions/admin",
+			"iss": "jfac@01h", "iat": now - 60, "exp": now + 3600,
+		})
+	digest := sha256.Sum256([]byte(signingInput))
+	signature, err := rsa.SignPKCS1v15(rand.Reader, key, crypto.SHA256, digest[:])
+	require.NoError(t, err)
+	return signingInput + "." + base64.RawURLEncoding.EncodeToString(signature)
 }
 
 func runAtcWithCloudFallback(t *testing.T, args ...string) (string, error) {

@@ -37,6 +37,7 @@ import (
 	oidcDocs "github.com/jfrog/jfrog-cli/docs/general/oidc"
 	summaryDocs "github.com/jfrog/jfrog-cli/docs/general/summary"
 	tokenDocs "github.com/jfrog/jfrog-cli/docs/general/token"
+	tokenVerifyDocs "github.com/jfrog/jfrog-cli/docs/general/tokenverify"
 	"github.com/jfrog/jfrog-cli/general/api"
 	"github.com/jfrog/jfrog-cli/general/login"
 	"github.com/jfrog/jfrog-cli/general/summary"
@@ -383,6 +384,18 @@ func getCommands() ([]cli.Command, error) {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     otherCategory,
 			Action:       token.AccessTokenCreateCmd,
+		},
+		{
+			Name:         "access-token-verify",
+			Aliases:      []string{"atv"},
+			Flags:        cliutils.GetCommandFlags(cliutils.AccessTokenVerify),
+			Usage:        corecommon.ResolveDescription(tokenVerifyDocs.GetDescription(), tokenVerifyDocs.GetAIDescription()),
+			HelpName:     corecommon.CreateUsage("atv", corecommon.ResolveDescription(tokenVerifyDocs.GetDescription(), tokenVerifyDocs.GetAIDescription()), tokenVerifyDocs.Usage),
+			UsageText:    tokenVerifyDocs.GetArguments(),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Category:     otherCategory,
+			Action:       token.AccessTokenVerifyCmd,
 		},
 		{
 			Name:         "api",
