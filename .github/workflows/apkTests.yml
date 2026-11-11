@@ -43,8 +43,8 @@ jobs:
           RTLIC: ${{ secrets.RTLIC }}
           RT_CONNECTION_TIMEOUT_SECONDS: '1200'
 
-      # Step 1: Compile the test binary on the host runner using Go 1.26+.
-      # Alpine's packaged Go does not yet reach 1.26, so we cross-compile a
+      # Step 1: Compile the test binary on the host runner using Go 1.27+.
+      # Alpine's packaged Go does not yet reach 1.27, so we cross-compile a
       # static Linux/amd64 binary here and run it inside the Alpine container.
       - name: Build test binary
         run: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go test -c -o apk.test .
