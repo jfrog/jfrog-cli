@@ -1157,8 +1157,114 @@ func TestGhostFrogSymlinkTargetCorrectness(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
+// Section 15.10 - Helm Alias (E2E-070 to E2E-073)
+// ---------------------------------------------------------------------------
+
+// E2E-070: helm package through the alias runs jf helm and collects build info
+func TestGhostFrogHelmAliasPackageCollectsBuildInfo(t *testing.T) {
+	homeDir := initGhostFrogHelmTest(t)
+	chartDir := createGhostFrogHelmChart(t)
+	destination := t.TempDir()
+
+	out, err := runAliasedHelm(t, homeDir, nil,
+		"package", chartDir, "-d", destination,
+		"--build-name=ghostfrog-helm-package", "--build-number=1")
+
+	require.NoError(t, err, "aliased helm package should succeed: %s", out)
+	assert.Contains(t, out, "Transforming 'helm' to 'jf helm'",
+		"helm package should be routed through jf helm")
+	assert.FileExists(t, filepath.Join(destination, "ghostfrog-chart-0.1.0.tgz"),
+		"chart archive should be written to the --destination directory")
+	assert.Contains(t, out, "Build info saved locally",
+		"build info should be collected for the aliased helm package command")
+}
+
+// E2E-071: global flags before the subcommand reach native helm unchanged
+func TestGhostFrogHelmAliasGlobalFlagBeforeSubcommand(t *testing.T) {
+	homeDir := initGhostFrogHelmTest(t)
+	chartDir := createGhostFrogHelmChart(t)
+
+	out, err := runAliasedHelm(t, homeDir, nil,
+		"--namespace", "ghostfrog-ns", "template", "ghostfrog-release", chartDir)
+
+	require.NoError(t, err, "aliased helm with a global flag before the subcommand should succeed: %s", out)
+	assert.Contains(t, out, "namespace: ghostfrog-ns",
+		"--namespace placed before the subcommand should be passed to helm template")
+}
+
+// E2E-072: helm registry logout through the alias logs out instead of logging in
+func TestGhostFrogHelmAliasRegistryLogoutIsNotLogin(t *testing.T) {
+	homeDir := initGhostFrogHelmTest(t)
+
+	out, _ := runAliasedHelm(t, homeDir, nil, "registry", "logout", "ghostfrog.invalid")
+
+	assert.NotContains(t, out, "Performing helm registry login",
+		"helm registry logout must not be replaced by a login with the configured JFrog credentials")
+}
+
+// E2E-073: HELM_REPOSITORY_CACHE set in the environment is preserved through the alias
+func TestGhostFrogHelmAliasPreservesRepositoryCacheEnv(t *testing.T) {
+	homeDir := initGhostFrogHelmTest(t)
+	cacheDir := t.TempDir()
+
+	out, err := runAliasedHelm(t, homeDir, []string{"HELM_REPOSITORY_CACHE=" + cacheDir}, "env")
+
+	require.NoError(t, err, "aliased helm env should succeed: %s", out)
+	assert.Contains(t, out, cacheDir,
+		"HELM_REPOSITORY_CACHE from the environment should be used by helm")
+}
+
+// ---------------------------------------------------------------------------
 // Test helpers
 // ---------------------------------------------------------------------------
+
+// initGhostFrogHelmTest installs the helm alias and configures an offline default server,
+// which jf helm requires even for commands that never contact Artifactory.
+func initGhostFrogHelmTest(t *testing.T) string {
+	t.Helper()
+	homeDir := initGhostFrogTest(t)
+	if _, err := exec.LookPath("helm"); err != nil {
+		t.Skip("helm not found in PATH, skipping Ghost Frog helm test")
+	}
+	installAliases(t, "helm")
+	out, err := runJfCommand(t, "config", "add", "ghostfrog-helm",
+		"--url=http://127.0.0.1:1", "--user=ghostfrog", "--password=ghostfrog",
+		"--enc-password=false", "--interactive=false")
+	require.NoError(t, err, "config add failed: %s", out)
+	return homeDir
+}
+
+func runAliasedHelm(t *testing.T, homeDir string, extraEnv []string, args ...string) (string, error) {
+	t.Helper()
+	binDir := aliasBinDir(homeDir)
+	cmd := exec.Command(aliasToolPath(homeDir, "helm"), args...)
+	cmd.Env = append(os.Environ(),
+		"PATH="+binDir+string(os.PathListSeparator)+os.Getenv("PATH"),
+		"JFROG_CLI_LOG_LEVEL=DEBUG",
+	)
+	cmd.Env = append(cmd.Env, extraEnv...)
+	out, err := cmd.CombinedOutput()
+	return string(out), err
+}
+
+// createGhostFrogHelmChart writes a dependency-free chart whose template renders the release namespace.
+func createGhostFrogHelmChart(t *testing.T) string {
+	t.Helper()
+	chartDir := filepath.Join(t.TempDir(), "ghostfrog-chart")
+	require.NoError(t, os.MkdirAll(filepath.Join(chartDir, "templates"), 0755))
+	files := map[string]string{
+		"Chart.yaml": "apiVersion: v2\nname: ghostfrog-chart\nversion: 0.1.0\n",
+		// Helm FlexPack requires a Chart.lock even when the chart has no dependencies.
+		"Chart.lock":  "dependencies: []\n",
+		"values.yaml": "replicaCount: 1\n",
+		filepath.Join("templates", "configmap.yaml"): "apiVersion: v1\nkind: ConfigMap\nmetadata:\n" +
+			"  name: {{ .Release.Name }}\n  namespace: {{ .Release.Namespace }}\n",
+	}
+	for name, content := range files {
+		require.NoError(t, os.WriteFile(filepath.Join(chartDir, name), []byte(content), 0644))
+	}
+	return chartDir
+}
 
 func timeAfter(t *testing.T, seconds int) <-chan struct{} {
 	t.Helper()
