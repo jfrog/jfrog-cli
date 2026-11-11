@@ -19,14 +19,14 @@ require (
 	github.com/buger/jsonparser v1.3.0
 	github.com/gocarina/gocsv v0.0.0-20260607070740-0735908c6461
 	github.com/jfrog/archiver/v3 v3.6.5
-	github.com/jfrog/build-info-go v1.13.1-0.20261028123549-f0cd26bfc2de
+	github.com/jfrog/build-info-go v1.13.1-0.20261104104131-29db5a20af18
 	github.com/jfrog/gofrog v1.7.7
 	github.com/jfrog/jfrog-cli-application v1.0.2-0.20260917110731-d7783acedd8c
 	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20261111060712-4b23175bf2f5
-	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20261104085101-89d932ea6d45
+	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20261110101257-1f307dd84e3f
 	github.com/jfrog/jfrog-cli-evidence v0.11.1-0.20261102090321-5b0bce39abfe
-	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20261030162302-b4948e3a2cb1
-	github.com/jfrog/jfrog-cli-security v1.41.2
+	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20261104164219-1e5e778e49e0
+	github.com/jfrog/jfrog-cli-security v1.41.3
 	github.com/jfrog/jfrog-client-go v1.55.1-0.20261102081622-45c51cfca4f7
 	github.com/jszwec/csvutil v1.10.0
 	github.com/moby/moby/api v1.55.0
