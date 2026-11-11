@@ -252,6 +252,85 @@ func TestConanCreateUpload(t *testing.T) {
 	assert.GreaterOrEqual(t, len(buildInfoModules[0].Artifacts), 1, "Expected at least 1 artifact after upload")
 }
 
+// TestConanCreateUploadWithUserChannel tests 'jf conan create' + 'jf conan upload' for a reference
+// that contains @user/channel. Artifactory stores such packages under
+// {user}/{name}/{version}/{channel}/..., and the uploaded recipe and package files must be
+// collected as build info artifacts.
+func TestConanCreateUploadWithUserChannel(t *testing.T) {
+	initConanTest(t)
+	buildName := tests.ConanBuildName + "-user-channel"
+	buildNumber := "1"
+	conanUser := "cliuser"
+	conanChannel := "clichannel"
+	packageRef := "cli-test-package/1.0.0@" + conanUser + "/" + conanChannel
+	expectedPathPrefix := conanUser + "/cli-test-package/1.0.0/" + conanChannel + "/"
+
+	projectPath := createConanProject(t, "conan-create-upload-user-channel-test")
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+
+	configureConanRemote(t)
+	defer cleanupConanRemote()
+	// Remove the user/channel package from the local Conan cache so it does not leak into other tests.
+	defer func() {
+		_ = exec.Command("conan", "remove", packageRef, "-c").Run()
+	}()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+
+	createArgs := []string{
+		"conan", "create", ".",
+		"--user=" + conanUser,
+		"--channel=" + conanChannel,
+		"--build=missing",
+		"--build-name=" + buildName,
+		"--build-number=" + buildNumber,
+	}
+	require.NoError(t, jfrogCli.Exec(createArgs...))
+
+	uploadArgs := []string{
+		"conan", "upload", packageRef,
+		"-r", tests.ConanLocalRepo,
+		"--confirm",
+		"--build-name=" + buildName,
+		"--build-number=" + buildNumber,
+	}
+	require.NoError(t, jfrogCli.Exec(uploadArgs...))
+
+	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	require.NoError(t, err)
+	require.True(t, found, "build info was expected to be found")
+
+	// 'conan create' and 'conan upload' may record separate modules for a @user/channel reference,
+	// so collect artifacts across all modules.
+	buildInfoModules := publishedBuildInfo.BuildInfo.Modules
+	require.NotEmpty(t, buildInfoModules, "Expected at least 1 module")
+	var artifacts []buildinfo.Artifact
+	for _, module := range buildInfoModules {
+		artifacts = append(artifacts, module.Artifacts...)
+	}
+	require.NotEmpty(t, artifacts, "Expected Conan artifacts to be collected for a @user/channel reference")
+
+	var hasRecipeArtifact, hasPackageArtifact bool
+	for _, artifact := range artifacts {
+		assert.True(t, strings.HasPrefix(artifact.Path, expectedPathPrefix),
+			"Artifact path %q should start with %q", artifact.Path, expectedPathPrefix)
+		if strings.Contains(artifact.Path, "/export/") {
+			hasRecipeArtifact = true
+		}
+		if strings.Contains(artifact.Path, "/package/") {
+			hasPackageArtifact = true
+		}
+	}
+	assert.True(t, hasRecipeArtifact, "Expected recipe (export) artifacts in build info")
+	assert.True(t, hasPackageArtifact, "Expected binary package artifacts in build info")
+}
+
 // TestConanAutoLogin tests that auto-login works for Artifactory remotes.
 func TestConanAutoLogin(t *testing.T) {
 	initConanTest(t)
