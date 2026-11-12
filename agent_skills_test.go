@@ -257,6 +257,37 @@ func waitForSkillIndexedInRepo(t *testing.T, repo, slug, version string) {
 	}))
 }
 
+// waitForSkillDeindexed polls the Skills versions API until slug@version is no longer
+// listed. The poll is bounded by skillsIndexBudget, so it never retries indefinitely.
+func waitForSkillDeindexed(t *testing.T, slug, version string) {
+	t.Helper()
+	description := fmt.Sprintf("wait for Skills API to drop %s@%s in %s", slug, version, tests.AgentSkillsLocalRepo)
+	require.NoError(t, retryWithBackoffSkills(t, description, func() error {
+		// Disable HTTP-level retries: retryWithBackoffSkills already retries with exponential backoff.
+		sm, err := artUtils.CreateServiceManager(serverDetails, 0, 0, false)
+		if err != nil {
+			return err
+		}
+		// Read the versions list, which is the index the install path uses, across all pages.
+		cursor := ""
+		for {
+			versions, next, err := sm.ListSkillVersions(tests.AgentSkillsLocalRepo, slug, 0, cursor)
+			if err != nil {
+				return err
+			}
+			for _, v := range versions {
+				if v.Version == version {
+					return fmt.Errorf("Skills API still lists %s@%s in %s", slug, version, tests.AgentSkillsLocalRepo)
+				}
+			}
+			if next == "" {
+				return nil
+			}
+			cursor = next
+		}
+	}))
+}
+
 // publishTestSkill publishes a fixture skill, asserts storage presence, and waits for Skills API indexing.
 func publishTestSkill(t *testing.T, slug, version string) {
 	t.Helper()
@@ -2038,6 +2069,7 @@ func TestAgentSkillsRoundTripDeleteThenInstall(t *testing.T) {
 		"--version=1.0.0",
 	))
 	assertSkillAbsent(t, slug, "1.0.0")
+	waitForSkillDeindexed(t, slug, "1.0.0")
 	assertSkillExists(t, slug, "2.0.0")
 
 	err := runAgentSkillsCmd(t,
