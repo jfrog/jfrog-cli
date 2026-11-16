@@ -218,9 +218,14 @@ func TestHelmPackageWithBuildInfo(t *testing.T) {
 	err = helmCmd.Run()
 	require.NoError(t, err, "helm dependency update should succeed")
 
+	chartArchiveDestinationDir := filepath.Join(chartDir, "target")
+	err = os.MkdirAll(chartArchiveDestinationDir, 0o755)
+	require.NoError(t, err, "Unable to create target directory for chart archive")
+
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 	args := []string{
 		"helm", "package", ".",
+		"--destination", chartArchiveDestinationDir,
 		"--build-name=" + buildName,
 		"--build-number=" + buildNumber,
 	}
@@ -234,6 +239,51 @@ func TestHelmPackageWithBuildInfo(t *testing.T) {
 	require.True(t, found, "build info should be found")
 
 	validateHelmBuildInfo(t, publishedBuildInfo.BuildInfo, buildName, false, true)
+}
+
+func TestHelmPackageMultipleChartsWithBuildInfo(t *testing.T) {
+	initHelmTest(t)
+	defer cleanHelmTest(t)
+
+	buildName := tests.HelmBuildName + "-package-multi"
+	buildNumber := "1"
+
+	var chartDirs []string
+	for _, name := range []string{"test-chart-a", "test-chart-b"} {
+		chartDir := createTestHelmChartWithDependencies(t, name, "0.1.0")
+		defer func() {
+			if err := os.RemoveAll(filepath.Dir(chartDir)); err != nil {
+				t.Logf("Warning: Failed to remove test chart directory %s: %v", chartDir, err)
+			}
+		}()
+		helmCmd := exec.Command("helm", "dependency", "update")
+		helmCmd.Dir = chartDir
+		require.NoError(t, helmCmd.Run(), "helm dependency update should succeed for %s", name)
+		chartDirs = append(chartDirs, chartDir)
+	}
+
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+	args := append([]string{"helm", "package"}, chartDirs...)
+	args = append(args,
+		"-d", t.TempDir(),
+		"--build-name="+buildName,
+		"--build-number="+buildNumber,
+	)
+	require.NoError(t, jfrogCli.Exec(args...), "helm package should succeed")
+
+	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	require.NoError(t, err, "Failed to get build info")
+	require.True(t, found, "build info should be found")
+
+	validateHelmBuildInfo(t, publishedBuildInfo.BuildInfo, buildName, false, true)
+	moduleIds := make([]string, 0, len(publishedBuildInfo.BuildInfo.Modules))
+	for _, module := range publishedBuildInfo.BuildInfo.Modules {
+		moduleIds = append(moduleIds, module.Id)
+	}
+	assert.ElementsMatch(t, []string{"test-chart-a:0.1.0", "test-chart-b:0.1.0"}, moduleIds,
+		"build info should have one module per packaged chart")
 }
 
 func TestHelmDependencyUpdateWithBuildInfo(t *testing.T) {
