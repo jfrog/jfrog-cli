@@ -60,6 +60,49 @@ func TestGetModeForToolUsesMostSpecificGoPolicy(t *testing.T) {
 	require.Equal(t, ModeJF, mode)
 }
 
+func TestGetHelmSubcommand(t *testing.T) {
+	tests := []struct {
+		args     []string
+		expected string
+	}{
+		{[]string{"package", "./chart", "-d", "out"}, "package"},
+		{[]string{"-n", "prod", "upgrade", "release", "./chart"}, "upgrade"},
+		{[]string{"--kube-context", "ctx", "--debug", "push", "chart.tgz", "oci://repo"}, "push"},
+		{[]string{"--namespace=prod", "template", "release", "./chart"}, "template"},
+		{[]string{"--debug"}, ""},
+		{nil, ""},
+	}
+	for _, test := range tests {
+		require.Equal(t, test.expected, getHelmSubcommand(test.args), "args: %v", test.args)
+	}
+}
+
+func TestGetModeForToolRoutesOnlyHelmBuildInfoCommandsToJf(t *testing.T) {
+	config := &Config{}
+	for _, args := range [][]string{
+		{"package", "./chart"},
+		{"push", "chart.tgz", "oci://repo"},
+		{"dependency", "update"},
+		{"-n", "prod", "package", "./chart"},
+	} {
+		require.Equal(t, ModeJF, getModeForTool(config, "helm", args), "args: %v", args)
+	}
+	for _, args := range [][]string{
+		{"registry", "login", "ghcr.io"},
+		{"registry", "logout", "ghcr.io"},
+		{"-n", "prod", "template", "release", "./chart"},
+		{"env"},
+		{"version"},
+		{},
+	} {
+		require.Equal(t, ModePass, getModeForTool(config, "helm", args), "args: %v", args)
+	}
+
+	config.ToolModes = map[string]AliasMode{"helm": ModePass}
+	require.Equal(t, ModePass, getModeForTool(config, "helm", []string{"package", "./chart"}),
+		"a configured pass mode should still apply to build-info commands")
+}
+
 func TestGetModeForToolFallsBackForInvalidModes(t *testing.T) {
 	config := &Config{
 		ToolModes: map[string]AliasMode{
