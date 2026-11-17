@@ -111,6 +111,10 @@ func testNativeNugetDotnetResolve(t *testing.T, uniqueTests []testDescriptor, bu
 			return
 		}
 		t.Run(test.name, func(t *testing.T) {
+			// Build numbers here come from the list index, so they can match a number another test
+			// left local build-info for under the same build name (for example, dotnet FlexPack tests
+			// that do not publish). Remove it first so this case validates only its own modules.
+			assert.NoError(t, coreBuild.RemoveBuildDir(buildName, strconv.Itoa(buildNumber), ""))
 			testNugetCmd(t, projectPath, buildName, strconv.Itoa(buildNumber), test.expectedModules, test.args, test.expectedDependencies)
 		})
 	}
