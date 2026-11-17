@@ -80,6 +80,9 @@ jobs:
 
       - name: Run Go-Sec scanner
         uses: jfrog/.github/actions/gosec-scanner@main
+        with:
+          # The action's default (v2.26.1) can't load Go 1.27 packages: "package ... without types".
+          gosec-version: v2.30.0
 
   ShellCheck:
     name: Shellcheck
