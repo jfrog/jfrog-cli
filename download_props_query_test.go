@@ -178,14 +178,15 @@ func TestDownloadWithPropsFilterAndSymlink(t *testing.T) {
 	defer cleanArtifactoryTest()
 	uploadSymlinkTree(t)
 
-	out := tests.Out + string(filepath.Separator)
-	queries, err := execAndCaptureAql("dl", tests.RtRepo1+"/"+symlinkTreePath+"/", out, "--flat", "--props=team=ecosystem")
+	// tests.Out also holds the CLI home directory in CI, so download to a subdirectory.
+	outDir := filepath.Join(tests.Out, "props")
+	queries, err := execAndCaptureAql("dl", tests.RtRepo1+"/"+symlinkTreePath+"/", outDir+string(filepath.Separator), "--flat", "--props=team=ecosystem")
 	require.NoError(t, err)
 	require.Len(t, queries, 2)
 	assert.Contains(t, queries[0], `"@team"`, "the props filter stays in the search criteria")
 	assert.NotContains(t, queries[0], includePropsAql)
 
-	entries, err := os.ReadDir(tests.Out)
+	entries, err := os.ReadDir(outDir)
 	require.NoError(t, err)
 	require.Len(t, entries, 1)
 	assert.Equal(t, "notes.txt", entries[0].Name())
@@ -217,10 +218,10 @@ func TestDownloadNoMatchesWithSeparatePropsQuery(t *testing.T) {
 	initArtifactoryTest(t, "")
 	defer cleanArtifactoryTest()
 
-	out := tests.Out + string(filepath.Separator)
-	queries, err := execAndCaptureAql("dl", tests.RtRepo1+"/does/not/exist/", out, "--flat")
+	outDir := filepath.Join(tests.Out, "none")
+	queries, err := execAndCaptureAql("dl", tests.RtRepo1+"/does/not/exist/", outDir+string(filepath.Separator), "--flat")
 	require.NoError(t, err)
 	require.NotEmpty(t, queries)
 	assert.NotContains(t, queries[0], includePropsAql)
-	assert.NoDirExists(t, tests.Out)
+	assert.NoDirExists(t, outDir)
 }
