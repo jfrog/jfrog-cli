@@ -834,3 +834,67 @@ func TestGradleFlexPackPublishWithLocalGitVcsProps(t *testing.T) {
 
 	cleanGradleTest(t)
 }
+
+// runGradleHelp runs a Gradle task that needs no repository, so only the choice of the extractor version is tested.
+func runGradleHelp(t *testing.T) error {
+	buildGradlePath := createGradleProject(t, "gradleproject")
+	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.GradleConfig)
+	destPath := filepath.Join(filepath.Dir(buildGradlePath), ".jfrog", "projects")
+	createConfigFile(destPath, configFilePath, t)
+	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
+	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
+	// Windows compatibility
+	buildGradlePath = strings.ReplaceAll(buildGradlePath, `\`, "/")
+	return runJfrogCliWithoutAssertion("gradle", "help", "-b"+buildGradlePath)
+}
+
+// Without a variable, the CLI looks up the versions. The major line depends on the Gradle version: 5 from Gradle 6.8.1, and 4 before.
+func TestGradleExtractorVersionNewest(t *testing.T) {
+	initGradleTest(t)
+	defer cleanGradleTest(t)
+	dependenciesDir := isolateExtractorDownloads(t)
+
+	require.NoError(t, runGradleHelp(t))
+	versions := extractorVersionsOnDisk(t, dependenciesDir, "gradle", gradleExtractorArtifact)
+	require.Len(t, versions, 1)
+	assert.Contains(t, []string{"4", "5"}, strings.SplitN(versions[0], ".", 2)[0])
+	assert.FileExists(t, savedExtractorVersionsFile(dependenciesDir, gradleExtractorArtifact))
+}
+
+// With the switch off, the CLI uses the bundled version and does not look up the versions.
+func TestGradleExtractorAutoVersionOff(t *testing.T) {
+	initGradleTest(t)
+	defer cleanGradleTest(t)
+	dependenciesDir := isolateExtractorDownloads(t)
+	t.Setenv(coreutils.ExtractorAutoVersionEnv, "false")
+
+	require.NoError(t, runGradleHelp(t))
+	assert.Len(t, extractorVersionsOnDisk(t, dependenciesDir, "gradle", gradleExtractorArtifact), 1)
+	assert.NoFileExists(t, savedExtractorVersionsFile(dependenciesDir, gradleExtractorArtifact))
+}
+
+// A value of the switch that is not true or false fails the command and names the variable. Nothing is downloaded.
+func TestGradleExtractorAutoVersionInvalid(t *testing.T) {
+	initGradleTest(t)
+	defer cleanGradleTest(t)
+	dependenciesDir := isolateExtractorDownloads(t)
+	t.Setenv(coreutils.ExtractorAutoVersionEnv, "no")
+
+	err := runGradleHelp(t)
+	require.Error(t, err)
+	assert.ErrorContains(t, err, coreutils.ExtractorAutoVersionEnv)
+	assert.Empty(t, extractorVersionsOnDisk(t, dependenciesDir, "gradle", gradleExtractorArtifact))
+}
+
+// A value that is not a version fails the command and names the variable. Nothing is downloaded.
+func TestGradleExtractorVersionInvalidPin(t *testing.T) {
+	initGradleTest(t)
+	defer cleanGradleTest(t)
+	dependenciesDir := isolateExtractorDownloads(t)
+	t.Setenv(coreutils.GradleExtractorVersionEnv, "latest")
+
+	err := runGradleHelp(t)
+	require.Error(t, err)
+	assert.ErrorContains(t, err, coreutils.GradleExtractorVersionEnv)
+	assert.Empty(t, extractorVersionsOnDisk(t, dependenciesDir, "gradle", gradleExtractorArtifact))
+}
