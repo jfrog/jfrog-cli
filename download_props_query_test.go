@@ -30,7 +30,7 @@ const (
 )
 
 // Runs the command with a DEBUG logger and returns the AQL queries it sent, in order.
-func execAndCaptureAql(t *testing.T, args ...string) ([]string, error) {
+func execAndCaptureAql(args ...string) ([]string, error) {
 	previousLog := log.Logger
 	defer log.SetLogger(previousLog)
 	buffer := &bytes.Buffer{}
@@ -86,7 +86,7 @@ func TestDownloadMainAqlDoesNotIncludeProperties(t *testing.T) {
 	pattern := tests.RtRepo1 + "/" + symlinkTreePath + "/"
 
 	flatOut := filepath.Join(tests.Out, "flat") + string(filepath.Separator)
-	flatQueries, err := execAndCaptureAql(t, "dl", pattern, flatOut, "--flat")
+	flatQueries, err := execAndCaptureAql("dl", pattern, flatOut, "--flat")
 	require.NoError(t, err)
 	require.Len(t, flatQueries, 2, "expected the main query and the symlink properties query")
 	assert.NotContains(t, flatQueries[0], includePropsAql, "the main query must not include the item properties")
@@ -96,7 +96,7 @@ func TestDownloadMainAqlDoesNotIncludeProperties(t *testing.T) {
 
 	// --flat only changes where files are written locally, not the queries.
 	treeOut := filepath.Join(tests.Out, "tree") + string(filepath.Separator)
-	treeQueries, err := execAndCaptureAql(t, "dl", pattern, treeOut)
+	treeQueries, err := execAndCaptureAql("dl", pattern, treeOut)
 	require.NoError(t, err)
 	assert.Equal(t, flatQueries, treeQueries)
 	assert.FileExists(t, filepath.Join(treeOut, symlinkTreePath, "archive", "key3.pem"))
@@ -113,7 +113,7 @@ func TestDownloadValidateSymlinksWithSeparatePropsQuery(t *testing.T) {
 	pattern := tests.RtRepo1 + "/" + symlinkTreePath + "/link"
 
 	validOut := filepath.Join(tests.Out, "valid") + string(filepath.Separator)
-	queries, err := execAndCaptureAql(t, "dl", pattern, validOut, "--flat", "--validate-symlinks")
+	queries, err := execAndCaptureAql("dl", pattern, validOut, "--flat", "--validate-symlinks")
 	require.NoError(t, err)
 	require.Len(t, queries, 2)
 	assert.NotContains(t, queries[0], includePropsAql)
@@ -143,14 +143,14 @@ func TestDownloadByBuildKeepsPropertiesInMainAql(t *testing.T) {
 
 	// Build search: not changed by RTECO-1596, the symlinks are still restored.
 	buildOut := filepath.Join(tests.Out, "build") + string(filepath.Separator)
-	_, err := execAndCaptureAql(t, "dl", pattern, buildOut, "--flat", build)
+	_, err := execAndCaptureAql("dl", pattern, buildOut, "--flat", build)
 	require.NoError(t, err)
 	assertFlatSymlinkTreeDownloaded(t, buildOut, linkTarget)
 
 	// A pattern with a build and a props filter is searched by pattern and then filtered by build. The build filter
 	// reads the build properties of the results, so the main query keeps the properties and no symlink query is sent.
 	filteredOut := filepath.Join(tests.Out, "filtered") + string(filepath.Separator)
-	queries, err := execAndCaptureAql(t, "dl", pattern, filteredOut, "--flat", build, "--exclude-props=team=ecosystem")
+	queries, err := execAndCaptureAql("dl", pattern, filteredOut, "--flat", build, "--exclude-props=team=ecosystem")
 	require.NoError(t, err)
 	assert.True(t, containsQuery(queries, includePropsAql), "expected a query that includes the item properties: %v", queries)
 	assert.False(t, containsQuery(queries, symlinkPropsAql), "expected no symlink properties query: %v", queries)
@@ -179,7 +179,7 @@ func TestDownloadWithPropsFilterAndSymlink(t *testing.T) {
 	uploadSymlinkTree(t)
 
 	out := tests.Out + string(filepath.Separator)
-	queries, err := execAndCaptureAql(t, "dl", tests.RtRepo1+"/"+symlinkTreePath+"/", out, "--flat", "--props=team=ecosystem")
+	queries, err := execAndCaptureAql("dl", tests.RtRepo1+"/"+symlinkTreePath+"/", out, "--flat", "--props=team=ecosystem")
 	require.NoError(t, err)
 	require.Len(t, queries, 2)
 	assert.Contains(t, queries[0], `"@team"`, "the props filter stays in the search criteria")
@@ -205,7 +205,7 @@ func TestDownloadSpecWithSymlink(t *testing.T) {
 	spec := `{"files":[{"pattern":"` + tests.RtRepo1 + "/" + symlinkTreePath + `/*","target":"` + filepath.ToSlash(out) + `/","flat":"true"}]}`
 	require.NoError(t, os.WriteFile(specFile, []byte(spec), 0644))
 
-	queries, err := execAndCaptureAql(t, "dl", "--spec="+specFile)
+	queries, err := execAndCaptureAql("dl", "--spec="+specFile)
 	require.NoError(t, err)
 	require.Len(t, queries, 2)
 	assert.NotContains(t, queries[0], includePropsAql)
@@ -218,7 +218,7 @@ func TestDownloadNoMatchesWithSeparatePropsQuery(t *testing.T) {
 	defer cleanArtifactoryTest()
 
 	out := tests.Out + string(filepath.Separator)
-	queries, err := execAndCaptureAql(t, "dl", tests.RtRepo1+"/does/not/exist/", out, "--flat")
+	queries, err := execAndCaptureAql("dl", tests.RtRepo1+"/does/not/exist/", out, "--flat")
 	require.NoError(t, err)
 	require.NotEmpty(t, queries)
 	assert.NotContains(t, queries[0], includePropsAql)
