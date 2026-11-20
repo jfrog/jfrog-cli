@@ -189,7 +189,7 @@ go test -v github.com/jfrog/jfrog-cli -test.gradle [flags]
 ##### Requirements
 
 - Make sure the `RTLIC` environment variable is configured with a valid license.
-- You can start an Artifactory container by running the `startArtifactory.sh` script located in the `testdata/docker/artifactory` directory. Before running the tests, wait for Artifactory to finish booting up in the container.
+- You can start an Artifactory container by running the `start.sh` script located in the `testdata/docker/artifactory` directory. Before running the tests, wait for Artifactory to finish booting up in the container.
 
 | Flag                      | Description                         |
 | ------------------------- | ----------------------------------- |
@@ -279,7 +279,6 @@ The Transfer tests execute `transfer-files` commands between a local Artifactory
 | `-jfrog.targetUrl`                 | JFrog target platform URL.                                                                                                       |
 | `-jfrog.targetAdminToken`          | JFrog target platform admin token.                                                                                               |
 | `-jfrog.jfrogHome`                 | The JFrog home directory of the local Artifactory installation.                                                                  |
-| `-jfrog.installDataTransferPlugin` | Set this flag to `true` if you want the test to automatically install the data-transfer plugin in the source Artifactory server. |
 
 To run Transfer tests, execute the following command:
 

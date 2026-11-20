@@ -222,6 +222,28 @@ func newTransferFilesFormatContext(formatVal string) *cli.Context {
 	return cli.NewContext(app, fs, nil)
 }
 
+func TestTransferPluginInstallIsHiddenAndDeprecated(t *testing.T) {
+	var found bool
+	for _, cmd := range GetCommands() {
+		if cmd.Name != "transfer-plugin-install" {
+			continue
+		}
+		found = true
+		assert.True(t, cmd.Hidden)
+		assert.Contains(t, cmd.Usage, "[DEPRECATED]")
+	}
+	assert.True(t, found, "transfer-plugin-install command should remain registered to inform users that the plugin is no longer required")
+}
+
+func TestTransferPluginInstallOnlyWarns(t *testing.T) {
+	// A non-existent server ID and conflicting flags would fail if the command still attempted an installation.
+	set := flag.NewFlagSet("transfer-plugin-install", flag.ContinueOnError)
+	set.String(cliutils.Version, "", "")
+	set.String(cliutils.InstallPluginSrcDir, "", "")
+	require.NoError(t, set.Parse([]string{"--version=1.0.0", "--dir=/non/existent", "no-such-server-id", "extra-arg"}))
+	assert.NoError(t, dataTransferPluginInstallCmd(cli.NewContext(nil, set, nil)))
+}
+
 // ---------------------------------------------------------------------------
 // GetOutputFormat (transfer-files) tests
 // ---------------------------------------------------------------------------
