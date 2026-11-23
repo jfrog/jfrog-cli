@@ -1,0 +1,67 @@
+# Ported from .jfrog-pipelines/pipelines.yml (JFrog Pipelines is EOL)
+#
+# The actual logic lives in .github/scripts/e2e-dispatch.sh, which is also
+# runnable locally — export the same env vars this workflow sets and run it
+# directly from a checkout of jfrog/jfrog-cli.
+name: E2E Dispatch
+on:
+  workflow_dispatch:
+    inputs:
+      rt_version:
+        description: "Artifactory version for the ephemeral environment"
+        required: false
+      skip_env_setup:
+        description: "Skip ephemeral environment provisioning (use an existing artifactory_url)"
+        required: false
+        default: "false"
+      artifactory_url:
+        description: "Artifactory URL to use for tests when skip_env_setup is true"
+        required: false
+      github_workflows_ref:
+        description: "Branch or tag in the workflows repo to dispatch from"
+        required: false
+        default: "master"
+      jfrog_cli_github_ref:
+        description: "Git ref of jfrog/jfrog-cli to pass to the dispatched workflows (defaults to this run's commit)"
+        required: false
+      max_run_retries:
+        description: "Per-workflow rerun-failed-jobs budget"
+        required: false
+        default: "2"
+      max_wait_seconds:
+        description: "Total seconds to wait for all dispatched runs to complete"
+        required: false
+        default: "14400"
+
+jobs:
+  e2e-dispatch:
+    runs-on: ubuntu-latest
+    env:
+      RT_VERSION: ${{ github.event.inputs.rt_version }}
+      SKIP_ENV_SETUP: ${{ github.event.inputs.skip_env_setup }}
+      ARTIFACTORY_URL: ${{ github.event.inputs.artifactory_url }}
+      GITHUB_API_URL: "https://github.jfrog.info/api/v3"
+      GITHUB_WORKFLOWS_REPO: "JFROG/jfrog-cli-workflows"
+      GITHUB_WORKFLOWS_REF: ${{ github.event.inputs.github_workflows_ref }}
+      JFROG_CLI_GITHUB_REPO: jfrog/jfrog-cli
+      JFROG_CLI_GITHUB_REF: ${{ github.event.inputs.jfrog_cli_github_ref || github.sha }}
+      GHE_ACTIONS_RUNNER: "artifactory-dind-amd-scale-set"
+      LOGS_TO_KIBANA: "true"
+      DEPLOYMENT_SIZING: "common"
+      MAX_RUN_RETRIES: ${{ github.event.inputs.max_run_retries }}
+      MAX_WAIT_SECONDS: ${{ github.event.inputs.max_wait_seconds }}
+      MASTER_KEY: ${{ secrets.JFROG_CLI_TESTS_MASTER_KEY }}
+      JFROG_ADMIN_USERNAME: ${{ secrets.JFROG_CLI_TESTS_USERNAME }}
+      JFROG_ADMIN_PASSWORD: ${{ secrets.JFROG_CLI_TESTS_PASSWORD }}
+      JFROG_ADMIN_TOKEN: ${{ secrets.JFROG_CLI_TESTS_TOKEN }}
+      GITHUB_DISPATCH_TOKEN: ${{ secrets.GITHUB_DISPATCH_TOKEN }}
+      JFROG_CLI_GH_TOKEN: ${{ secrets.JFROG_CLI_GH_TOKEN }}
+      JENKINS_URL: ${{ secrets.JENKINS_ENTPLUS_RT_URL }}
+      JENKINS_USER: ${{ secrets.JENKINS_ENTPLUS_RT_USER }}
+      JENKINS_TOKEN: ${{ secrets.JENKINS_ENTPLUS_RT_TOKEN }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run e2e dispatch
+        run: .github/scripts/e2e-dispatch.sh
