@@ -1,5 +1,4 @@
 apply plugin: 'groovy'
-apply plugin: 'idea'
 
 repositories {
     mavenCentral()
