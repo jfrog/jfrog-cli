@@ -70,6 +70,9 @@ func TestNugetResolve(t *testing.T) {
 		{"multipackagesconfigwithslnPath", "multipackagesconfig", []string{dotnetUtils.Nuget.String(), "restore", "./multipackagesconfig.sln"}, []string{"proj1", "proj2", "proj3"}, []int{4, 3, 2}},
 		{"multipackagesconfigsingleprojectdir", "multipackagesconfig", []string{dotnetUtils.Nuget.String(), "restore", "./proj2/", "-SolutionDirectory", "."}, []string{"proj2"}, []int{3}},
 		{"multipackagesconfigsingleprojectconfig", "multipackagesconfig", []string{dotnetUtils.Nuget.String(), "restore", "./proj1/packages.config", "-SolutionDirectory", "."}, []string{"proj1"}, []int{4}},
+		// packages.config project whose <AssemblyName> differs from the project file name: the
+		// module ID must be the AssemblyName, not "packagesconfig".
+		{"packagesconfigassemblyname", "packagesconfigassemblyname", []string{dotnetUtils.Nuget.String(), "restore"}, []string{"JohnsonControls.packagesconfig"}, []int{6}},
 	}
 	testNativeNugetDotnetResolve(t, uniqueNugetTests, tests.NuGetBuildName, project.Nuget)
 }
@@ -84,6 +87,9 @@ func TestDotnetResolve(t *testing.T) {
 		{"assemblynamebuild", "assemblyname", []string{dotnetUtils.DotnetCore.String(), "build", "jftest.csproj"}, []string{"JohnsonControls.jftest"}, []int{1}},
 		{"packageidbuild", "packageid", []string{dotnetUtils.DotnetCore.String(), "build", "jftest.csproj"}, []string{"JohnsonControls.jftest.Package"}, []int{1}},
 		{"assemblynamewithmodulechange", "assemblyname", []string{dotnetUtils.DotnetCore.String(), "build", "jftest.csproj", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{1}},
+		// <AssemblyName>$(MSBuildProjectName).Core</AssemblyName> is not evaluated, so the module ID
+		// falls back to the file name instead of a literal "$(...)" value.
+		{"msbuildpropertyassemblyname", "msbuildproperty", []string{dotnetUtils.DotnetCore.String(), "restore", "jftest.csproj"}, []string{"jftest"}, []int{1}},
 	}
 	testNativeNugetDotnetResolve(t, uniqueDotnetTests, tests.DotnetBuildName, project.Dotnet)
 }
@@ -119,6 +125,51 @@ func testNativeNugetDotnetResolve(t *testing.T, uniqueTests []testDescriptor, bu
 		})
 	}
 	cleanTestsHomeEnv()
+}
+
+// TestDotnetResolveMultiProjectAssemblyNames restores a solution whose projects set different
+// AssemblyNames (alpha -> Company.Alpha) and share one (beta and gamma -> Company.Shared). Each
+// project's module ID is its own AssemblyName; the two projects that share one produce the same
+// module ID, which build-publish merges into a single module.
+func TestDotnetResolveMultiProjectAssemblyNames(t *testing.T) {
+	initNugetTest(t)
+	clearNuGetHTTPCache(t)
+	defer cleanTestsHomeEnv()
+	projectPath := createNugetProject(t, "multiassemblyname")
+	require.NoError(t, createConfigFileForTest([]string{projectPath}, tests.NugetRemoteRepo, "", t, project.Dotnet, false))
+
+	buildName, buildNumber := tests.DotnetBuildName, "2330"
+	require.NoError(t, coreBuild.RemoveBuildDir(buildName, buildNumber, ""))
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+
+	args := []string{dotnetUtils.DotnetCore.String(), "restore", "multiassemblyname.sln", "--build-name=" + buildName, "--build-number=" + buildNumber}
+	allowInsecureConnectionForTests(&args)
+	require.NoError(t, runNuGet(t, args...))
+	inttestutils.ValidateGeneratedBuildInfoModule(t, buildName, buildNumber, "", []string{"Company.Alpha", "Company.Shared"}, buildInfo.Nuget)
+
+	require.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	published, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	require.NoError(t, err)
+	require.True(t, found, "build info was expected to be found")
+
+	modules := map[string]buildInfo.Module{}
+	for _, module := range published.BuildInfo.Modules {
+		assert.NotContains(t, module.Id, "$(")
+		modules[module.Id] = module
+	}
+	assert.Len(t, modules, 2, "expected one module per distinct AssemblyName, got %v", published.BuildInfo.Modules)
+	for _, moduleID := range []string{"Company.Alpha", "Company.Shared"} {
+		module, ok := modules[moduleID]
+		if !assert.True(t, ok, "module %s is missing", moduleID) {
+			continue
+		}
+		assert.Len(t, module.Dependencies, 1, "module %s", moduleID)
+		assertNugetDependencies(t, module, moduleID)
+	}
 }
 
 func createNugetProject(t *testing.T, projectName string) string {
