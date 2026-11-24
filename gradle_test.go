@@ -229,6 +229,44 @@ func TestGradleBuildWithServerIDWithUsesPlugin(t *testing.T) {
 	cleanGradleTest(t)
 }
 
+// RTECO-2747: "publishArtifacts = false" must skip the artifact deployment, while the build info
+// is still collected with its module. The counterpart with "publishArtifacts = true" is TestGradleBuildWithServerIDWithUsesPlugin.
+// The project needs an Artifactory Gradle plugin version that includes the RTECO-2747 fix.
+func TestGradleBuildWithServerIDWithUsesPluginPublishArtifactsFalse(t *testing.T) {
+	initGradleTest(t)
+	buildGradlePath := createGradleProject(t, "projectwithplugin-nodeploy")
+	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.GradleServerIDUsesPluginConfig)
+	destPath := filepath.Join(filepath.Dir(buildGradlePath), ".jfrog", "projects")
+	createConfigFile(destPath, configFilePath, t)
+	err := os.Rename(filepath.Join(destPath, tests.GradleServerIDUsesPluginConfig), filepath.Join(destPath, "gradle.yaml"))
+	assert.NoError(t, err)
+	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
+	buildName := tests.GradleBuildName
+	buildNumber := "1"
+	runJfrogCli(t, "gradle", "clean", "artifactoryPublish", "-b"+buildGradlePath, "--build-name="+buildName, "--build-number="+buildNumber)
+	changeWD(t, oldHomeDir)
+
+	// Nothing is deployed
+	assert.Empty(t, inttestutils.SearchPathsByPattern(tests.GradleRepo+"/*", serverDetails, t), "Artifacts were deployed although publishArtifacts = false")
+
+	// The build info is collected and published with the module
+	inttestutils.ValidateGeneratedBuildInfoModule(t, buildName, buildNumber, "", []string{gradleModuleId}, buildinfo.Gradle)
+	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	if assert.NotEmpty(t, publishedBuildInfo.BuildInfo.Modules, "build info was expected to have modules") {
+		assert.Equal(t, gradleModuleId, publishedBuildInfo.BuildInfo.Modules[0].Id)
+	}
+	cleanGradleTest(t)
+}
+
 func TestSetupGradleCommand(t *testing.T) {
 	restoreFunc := prepareGradleSetupTest(t)
 	defer restoreFunc()
