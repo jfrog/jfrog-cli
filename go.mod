@@ -19,14 +19,14 @@ require (
 	github.com/buger/jsonparser v1.3.0
 	github.com/gocarina/gocsv v0.0.0-20260607070740-0735908c6461
 	github.com/jfrog/archiver/v3 v3.6.5
-	github.com/jfrog/build-info-go v1.13.1-0.20261116054244-516777636d12
+	github.com/jfrog/build-info-go v1.13.1-0.20261123081207-c02cd6e0efe3
 	github.com/jfrog/gofrog v1.7.7
 	github.com/jfrog/jfrog-cli-application v1.0.2-0.20260917110731-d7783acedd8c
-	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20261114093607-b0e387f3b7c5
-	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20261110101257-1f307dd84e3f
+	github.com/jfrog/jfrog-cli-artifactory v0.8.1-0.20261123121052-aa01da19712d
+	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20261123081300-20b7e1881072
 	github.com/jfrog/jfrog-cli-evidence v0.11.1-0.20261102090321-5b0bce39abfe
-	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20261104164219-1e5e778e49e0
-	github.com/jfrog/jfrog-cli-security v1.41.3
+	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20261123085525-855e89d2464b
+	github.com/jfrog/jfrog-cli-security v1.41.4
 	github.com/jfrog/jfrog-client-go v1.55.1-0.20261102081622-45c51cfca4f7
 	github.com/jszwec/csvutil v1.10.0
 	github.com/moby/moby/api v1.55.0
@@ -134,7 +134,7 @@ require (
 	github.com/in-toto/in-toto-golang v0.11.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jedib0t/go-pretty/v6 v6.8.3 // indirect
-	github.com/jfrog/froggit-go v1.24.0 // indirect
+	github.com/jfrog/froggit-go v1.24.1 // indirect
 	github.com/jfrog/go-mockhttp v0.3.1 // indirect
 	github.com/jfrog/jfrog-apps-config v1.0.1 // indirect
 	github.com/kevinburke/ssh_config v1.6.0 // indirect
