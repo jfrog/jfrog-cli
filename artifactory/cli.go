@@ -879,20 +879,26 @@ func userCreateCmd(c *cli.Context) error {
 	}
 
 	usersCreateCmd := usersmanagement.NewUsersCreateCommand()
-	userDetails := services.User{}
-	userDetails.Name = c.Args().Get(0)
-	userDetails.Password = c.Args().Get(1)
-	userDetails.Email = c.Args().Get(2)
-
-	user := []services.User{userDetails}
+	user := []services.User{newUserDetails(c)}
 	usersGroups := parseUsersGroupsFlag(c)
-	if c.String(cliutils.Admin) != "" {
-		admin := c.Bool(cliutils.Admin)
-		userDetails.Admin = &admin
-	}
 	// Run command.
 	usersCreateCmd.SetServerDetails(rtDetails).SetUsers(user).SetUsersGroups(usersGroups).SetReplaceIfExists(c.Bool(cliutils.Replace))
 	return commands.Exec(usersCreateCmd)
+}
+
+// newUserDetails builds the user from the 'jf rt user-create' arguments and flags.
+// Admin stays nil when --admin is not set, so the server default applies.
+func newUserDetails(c *cli.Context) services.User {
+	userDetails := services.User{
+		Name:     c.Args().Get(0),
+		Password: c.Args().Get(1),
+		Email:    c.Args().Get(2),
+	}
+	if c.IsSet(cliutils.Admin) {
+		admin := c.Bool(cliutils.Admin)
+		userDetails.Admin = &admin
+	}
+	return userDetails
 }
 
 func usersCreateCmd(c *cli.Context) error {

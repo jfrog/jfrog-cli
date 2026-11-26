@@ -713,3 +713,33 @@ func TestUsersCreate_InvalidFormat_ReturnsError(t *testing.T) {
 	require.Error(t, gotErr)
 	assert.Contains(t, gotErr.Error(), "only the following output formats are supported")
 }
+
+func TestNewUserDetailsAdminFlag(t *testing.T) {
+	tests := []struct {
+		name     string
+		adminArg string // empty means the flag is not passed
+		expected *bool
+	}{
+		{"flag not set keeps server default", "", nil},
+		{"--admin makes an administrator", "true", boolPtr(true)},
+		{"--admin=false is sent explicitly", "false", boolPtr(false)},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			set := flag.NewFlagSet("user-create", flag.ContinueOnError)
+			set.Bool(cliutils.Admin, false, "")
+			args := []string{"user1", "Passw0rd!", "user1@example.com"}
+			if test.adminArg != "" {
+				args = append([]string{"--" + cliutils.Admin + "=" + test.adminArg}, args...)
+			}
+			require.NoError(t, set.Parse(args))
+			user := newUserDetails(cli.NewContext(cli.NewApp(), set, nil))
+			assert.Equal(t, "user1", user.Name)
+			assert.Equal(t, "Passw0rd!", user.Password)
+			assert.Equal(t, "user1@example.com", user.Email)
+			assert.Equal(t, test.expected, user.Admin)
+		})
+	}
+}
+
+func boolPtr(value bool) *bool { return &value }
