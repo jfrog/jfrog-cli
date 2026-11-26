@@ -123,7 +123,7 @@ func TestDownloadValidateSymlinksWithSeparatePropsQuery(t *testing.T) {
 	pattern := tests.RtRepo1 + "/" + symlinkTreePath + "/link"
 
 	// Only the link is downloaded, so its target is created locally first.
-	validOut := createDirWithFile(t, "valid", "key1.pem", "key1")
+	validOut := createDirWithSymlinkTarget(t, "valid", "key1")
 	queries, err := execAndCaptureAqlInDir(t, validOut, "dl", pattern, validOut+string(filepath.Separator), "--flat", "--validate-symlinks")
 	require.NoError(t, err)
 	require.Len(t, queries, 2)
@@ -131,7 +131,7 @@ func TestDownloadValidateSymlinksWithSeparatePropsQuery(t *testing.T) {
 	validateSymLink(filepath.Join(validOut, "link"), filepath.Join(validOut, "key1.pem"), t)
 
 	// symlink.destsha1 still reaches the CLI: a changed target fails the validation.
-	changedOut := createDirWithFile(t, "changed", "key1.pem", "changed")
+	changedOut := createDirWithSymlinkTarget(t, "changed", "changed")
 	_, err = execAndCaptureAqlInDir(t, changedOut, "dl", pattern, changedOut+string(filepath.Separator), "--flat", "--validate-symlinks")
 	assert.Error(t, err)
 }
@@ -147,7 +147,7 @@ func TestDownloadValidateSymlinksWithLimit(t *testing.T) {
 	uploadSymlinkTree(t)
 	pattern := tests.RtRepo1 + "/" + symlinkTreePath + "/link"
 
-	validOut := createDirWithFile(t, "limit-valid", "key1.pem", "key1")
+	validOut := createDirWithSymlinkTarget(t, "limit-valid", "key1")
 	queries, err := execAndCaptureAqlInDir(t, validOut, "dl", pattern, validOut+string(filepath.Separator), "--flat", "--validate-symlinks", "--limit=1")
 	require.NoError(t, err)
 	require.Len(t, queries, 2)
@@ -158,17 +158,17 @@ func TestDownloadValidateSymlinksWithLimit(t *testing.T) {
 	validateSymLink(filepath.Join(validOut, "link"), filepath.Join(validOut, "key1.pem"), t)
 
 	// symlink.destsha1 reaches the CLI: a changed target fails the validation.
-	changedOut := createDirWithFile(t, "limit-changed", "key1.pem", "changed")
+	changedOut := createDirWithSymlinkTarget(t, "limit-changed", "changed")
 	_, err = execAndCaptureAqlInDir(t, changedOut, "dl", pattern, changedOut+string(filepath.Separator), "--flat", "--validate-symlinks", "--limit=1")
 	assert.Error(t, err)
 }
 
-// Creates tests.Out/<dir> with one file and returns the directory's absolute path.
-func createDirWithFile(t *testing.T, dir, fileName, content string) string {
+// Creates tests.Out/<dir> with key1.pem, the symlink target, and returns the directory's absolute path.
+func createDirWithSymlinkTarget(t *testing.T, dir, content string) string {
 	absDir, err := filepath.Abs(filepath.Join(tests.Out, dir))
 	require.NoError(t, err)
 	require.NoError(t, os.MkdirAll(absDir, 0755))
-	require.NoError(t, os.WriteFile(filepath.Join(absDir, fileName), []byte(content), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(absDir, "key1.pem"), []byte(content), 0644))
 	return absDir
 }
 
