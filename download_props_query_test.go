@@ -136,6 +136,33 @@ func TestDownloadValidateSymlinksWithSeparatePropsQuery(t *testing.T) {
 	assert.Error(t, err)
 }
 
+// With --limit the properties were already fetched by a separate query, filtered by symlink.dest only, so
+// symlink.destsha1 could be missing. RTECO-1596 asks for both keys, so --validate-symlinks also works with --limit.
+func TestDownloadValidateSymlinksWithLimit(t *testing.T) {
+	if coreutils.IsWindows() {
+		t.Skip("Running on windows, skipping...")
+	}
+	initArtifactoryTest(t, "")
+	defer cleanArtifactoryTest()
+	uploadSymlinkTree(t)
+	pattern := tests.RtRepo1 + "/" + symlinkTreePath + "/link"
+
+	validOut := createDirWithFile(t, "limit-valid", "key1.pem", "key1")
+	queries, err := execAndCaptureAqlInDir(t, validOut, "dl", pattern, validOut+string(filepath.Separator), "--flat", "--validate-symlinks", "--limit=1")
+	require.NoError(t, err)
+	require.Len(t, queries, 2)
+	assert.Contains(t, queries[0], ".limit(1)")
+	assert.NotContains(t, queries[0], includePropsAql)
+	assert.Contains(t, queries[1], symlinkPropsAql)
+	assert.Contains(t, queries[1], `"@symlink.destsha1"`)
+	validateSymLink(filepath.Join(validOut, "link"), filepath.Join(validOut, "key1.pem"), t)
+
+	// symlink.destsha1 reaches the CLI: a changed target fails the validation.
+	changedOut := createDirWithFile(t, "limit-changed", "key1.pem", "changed")
+	_, err = execAndCaptureAqlInDir(t, changedOut, "dl", pattern, changedOut+string(filepath.Separator), "--flat", "--validate-symlinks", "--limit=1")
+	assert.Error(t, err)
+}
+
 // Creates tests.Out/<dir> with one file and returns the directory's absolute path.
 func createDirWithFile(t *testing.T, dir, fileName, content string) string {
 	absDir, err := filepath.Abs(filepath.Join(tests.Out, dir))
@@ -161,10 +188,13 @@ func TestDownloadByBuildKeepsPropertiesInMainAql(t *testing.T) {
 	pattern := tests.RtRepo1 + "/" + symlinkTreePath + "/"
 	build := "--build=" + tests.RtBuildName1 + "/" + buildNumber
 
-	// Build search: not changed by RTECO-1596, the symlinks are still restored.
+	// Build search: not changed by RTECO-1596. Its query keeps the item properties, no symlink query is sent, and the
+	// symlinks are still restored.
 	buildOut := filepath.Join(tests.Out, "build") + string(filepath.Separator)
-	_, err := execAndCaptureAql("dl", pattern, buildOut, "--flat", build)
+	buildQueries, err := execAndCaptureAql("dl", pattern, buildOut, "--flat", build)
 	require.NoError(t, err)
+	assert.True(t, containsQuery(buildQueries, includePropsAql), "expected a query that includes the item properties: %v", buildQueries)
+	assert.False(t, containsQuery(buildQueries, symlinkPropsAql), "expected no symlink properties query: %v", buildQueries)
 	assertFlatSymlinkTreeDownloaded(t, buildOut)
 
 	// A pattern with a build and a props filter is searched by pattern and then filtered by build. The build filter
@@ -234,14 +264,15 @@ func TestDownloadSpecWithSymlink(t *testing.T) {
 	assertFlatSymlinkTreeDownloaded(t, out)
 }
 
-func TestDownloadNoMatchesWithSeparatePropsQuery(t *testing.T) {
+// When the main query finds nothing, the symlink properties query is skipped.
+func TestDownloadNoMatchesSendsOnlyMainQuery(t *testing.T) {
 	initArtifactoryTest(t, "")
 	defer cleanArtifactoryTest()
 
 	outDir := filepath.Join(tests.Out, "none")
 	queries, err := execAndCaptureAql("dl", tests.RtRepo1+"/does/not/exist/", outDir+string(filepath.Separator), "--flat")
 	require.NoError(t, err)
-	require.NotEmpty(t, queries)
+	require.Len(t, queries, 1, "expected only the main query: %v", queries)
 	assert.NotContains(t, queries[0], includePropsAql)
 	assert.NoDirExists(t, outDir)
 }
