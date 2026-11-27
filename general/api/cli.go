@@ -42,7 +42,9 @@ func Command(c *cli.Context) error {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	serverDetails, err := cliutils.CreateServerDetailsWithConfigOffer(c, true, commonCliUtils.Platform)
+	// Keep the refreshable access token that other commands use for a username/password server,
+	// rather than falling back to basic auth: some platform services accept only bearer tokens.
+	serverDetails, err := cliutils.CreateServerDetailsWithConfigOffer(c, false, commonCliUtils.Platform)
 	if err != nil {
 		return err
 	}
@@ -106,6 +108,10 @@ func buildRequestDetails(serverDetails *coreconfig.ServerDetails, c commandConte
 		return nil, err
 	}
 	httpDetails := authDetails.CreateHttpClientDetails()
+	// The request goes through a plain HTTP client, so run the token refresh interceptors here.
+	if err = authDetails.RunPreRequestFunctions(&httpDetails); err != nil {
+		return nil, err
+	}
 	details := &httpDetails
 	if err = applyUserHeaders(c, details); err != nil {
 		return nil, err
