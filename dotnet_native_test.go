@@ -682,6 +682,24 @@ func TestDotnetFlexPackRestoreBuildInfoCore(t *testing.T) {
 	}
 }
 
+// TestDotnetFlexPackModuleIdUsesAssemblyName checks that FlexPack's "<PackageID>:<Version>" module
+// ID uses the project's AssemblyName (JohnsonControls.jftest), not its file name (jftest).
+func TestDotnetFlexPackModuleIdUsesAssemblyName(t *testing.T) {
+	initNugetTest(t)
+	defer cleanTestsHomeEnv()
+	_, cleanup := enterDotnetProject(t, "assemblyname")
+	defer cleanup()
+
+	buildNumber := "2331"
+	require.NoError(t, restoreDotnetFlexPack(t, tests.NugetRemoteRepo, "jftest.csproj",
+		"--build-name="+tests.DotnetBuildName, "--build-number="+buildNumber))
+	defer deleteDotnetBuild()
+
+	published := publishAndGetDotnetBuildInfo(t, buildNumber)
+	require.Len(t, published.BuildInfo.Modules, 1)
+	assert.Regexp(t, `^JohnsonControls\.jftest:\d+\.\d+\.\d+`, published.BuildInfo.Modules[0].Id)
+}
+
 func TestDotnetFlexPackDependencyMetadata(t *testing.T) {
 	// Scenarios #62, #63, #65, #77 - every dependency row carries a type, a scope, and a checksum.
 	// A bug-hunt report found scope and type missing on the legacy path; pin all three here.
