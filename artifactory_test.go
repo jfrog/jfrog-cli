@@ -1186,31 +1186,32 @@ func listRepoFiles(t *testing.T, repo string) []string {
 
 // TestArtifactoryExclusionInSubFolderNonRecursive verifies that a file excluded by --exclusions is never copied,
 // moved or deleted, when the search is non-recursive and the file is inside a sub folder of the matched folder.
+// The other files of that sub folder must still be handled.
 func TestArtifactoryExclusionInSubFolderNonRecursive(t *testing.T) {
 	initArtifactoryTest(t, "")
 	defer cleanArtifactoryTest()
 	pattern := tests.RtRepo1 + "/nr/*"
-	excludedInSource := tests.RtRepo1 + "/" + nonRecursiveExcludedFile
-	excludedInTarget := tests.RtRepo2 + "/" + nonRecursiveExcludedFile
+	oneInSource, keepInSource, twoInSource := tests.RtRepo1+"/nr/one.txt", tests.RtRepo1+"/"+nonRecursiveExcludedFile, tests.RtRepo1+"/nr/sub/two.txt"
+	oneInTarget, twoInTarget := tests.RtRepo2+"/nr/one.txt", tests.RtRepo2+"/nr/sub/two.txt"
 
 	t.Run("copy", func(t *testing.T) {
 		uploadNonRecursiveExclusionFiles(t, tests.RtRepo1)
-		runRt(t, "copy", pattern, tests.RtRepo2+"/nr/", "--recursive=false", nonRecursiveExclusion)
-		assert.Contains(t, listRepoFiles(t, tests.RtRepo1), excludedInSource)
-		assert.NotContains(t, listRepoFiles(t, tests.RtRepo2), excludedInTarget)
+		runRt(t, "copy", pattern, tests.RtRepo2+"/", "--recursive=false", nonRecursiveExclusion)
+		assert.ElementsMatch(t, []string{oneInSource, keepInSource, twoInSource}, listRepoFiles(t, tests.RtRepo1))
+		assert.ElementsMatch(t, []string{oneInTarget, twoInTarget}, listRepoFiles(t, tests.RtRepo2))
 		cleanArtifactory()
 	})
 	t.Run("move", func(t *testing.T) {
 		uploadNonRecursiveExclusionFiles(t, tests.RtRepo1)
-		runRt(t, "move", pattern, tests.RtRepo2+"/nr/", "--recursive=false", nonRecursiveExclusion)
-		assert.Contains(t, listRepoFiles(t, tests.RtRepo1), excludedInSource)
-		assert.NotContains(t, listRepoFiles(t, tests.RtRepo2), excludedInTarget)
+		runRt(t, "move", pattern, tests.RtRepo2+"/", "--recursive=false", nonRecursiveExclusion)
+		assert.ElementsMatch(t, []string{keepInSource}, listRepoFiles(t, tests.RtRepo1))
+		assert.ElementsMatch(t, []string{oneInTarget, twoInTarget}, listRepoFiles(t, tests.RtRepo2))
 		cleanArtifactory()
 	})
 	t.Run("delete", func(t *testing.T) {
 		uploadNonRecursiveExclusionFiles(t, tests.RtRepo1)
 		runRt(t, "delete", pattern, "--recursive=false", nonRecursiveExclusion)
-		assert.Contains(t, listRepoFiles(t, tests.RtRepo1), excludedInSource)
+		assert.ElementsMatch(t, []string{keepInSource}, listRepoFiles(t, tests.RtRepo1))
 		cleanArtifactory()
 	})
 }
