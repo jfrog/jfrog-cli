@@ -16,6 +16,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
+	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli"
@@ -340,10 +341,10 @@ func TestPrintTransferFilesResponse_Table(t *testing.T) {
 
 func TestPrintTransferFilesResponse_Table_FailureStatus(t *testing.T) {
 	result := transferfilescore.TransferFilesResult{
-		TotalRepositories:    2,
-		TotalFiles:           100,
-		TransferredFiles:     50,
-		TransferFailures:     50,
+		TotalRepositories: 2,
+		TotalFiles:        100,
+		TransferredFiles:  50,
+		TransferFailures:  50,
 	}
 	var buf bytes.Buffer
 	originalErr := assert.AnError
@@ -717,23 +718,27 @@ func TestUsersCreate_InvalidFormat_ReturnsError(t *testing.T) {
 func TestNewUserDetailsAdminFlag(t *testing.T) {
 	tests := []struct {
 		name     string
-		adminArg string // empty means the flag is not passed
+		adminArg []string // empty means the flag is not passed
 		expected *bool
 	}{
-		{"flag not set keeps server default", "", nil},
-		{"--admin makes an administrator", "true", boolPtr(true)},
-		{"--admin=false is sent explicitly", "false", boolPtr(false)},
+		{"flag not set keeps server default", nil, nil},
+		{"--admin makes an administrator", []string{"--" + cliutils.Admin}, boolPtr(true)},
+		{"--admin=true makes an administrator", []string{"--" + cliutils.Admin + "=true"}, boolPtr(true)},
+		{"--admin=false is sent explicitly", []string{"--" + cliutils.Admin + "=false"}, boolPtr(false)},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			set := flag.NewFlagSet("user-create", flag.ContinueOnError)
-			set.Bool(cliutils.Admin, false, "")
-			args := []string{"user1", "Passw0rd!", "user1@example.com"}
-			if test.adminArg != "" {
-				args = append([]string{"--" + cliutils.Admin + "=" + test.adminArg}, args...)
+			var user services.User
+			// The app uses the real flag definition of 'jf rt user-create', so a change to it is caught here.
+			app := cli.NewApp()
+			app.Flags = cliutils.GetCommandFlags(cliutils.UserCreate)
+			app.Action = func(c *cli.Context) error {
+				user = newUserDetails(c)
+				return nil
 			}
-			require.NoError(t, set.Parse(args))
-			user := newUserDetails(cli.NewContext(cli.NewApp(), set, nil))
+			args := append([]string{"app"}, test.adminArg...)
+			args = append(args, "user1", "Passw0rd!", "user1@example.com")
+			require.NoError(t, app.Run(args))
 			assert.Equal(t, "user1", user.Name)
 			assert.Equal(t, "Passw0rd!", user.Password)
 			assert.Equal(t, "user1@example.com", user.Email)
