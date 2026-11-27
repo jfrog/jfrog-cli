@@ -1151,6 +1151,71 @@ func TestArtifactoryUploadAndExplode(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+const (
+	nonRecursiveExcludedFile = "nr/sub/keep.txt"
+	nonRecursiveExclusion    = "--exclusions=*/nr/sub/keep.txt"
+)
+
+// uploadNonRecursiveExclusionFiles uploads nr/one.txt, nr/sub/keep.txt and nr/sub/two.txt to the repository.
+// The folder nr/sub is a direct child of nr/, so a non-recursive search on nr/* returns it as one item.
+func uploadNonRecursiveExclusionFiles(t *testing.T, repo string) {
+	localDir := t.TempDir()
+	for _, file := range []string{"nr/one.txt", "nr/sub/keep.txt", "nr/sub/two.txt"} {
+		filePath := filepath.Join(localDir, filepath.FromSlash(file))
+		assert.NoError(t, os.MkdirAll(filepath.Dir(filePath), 0o755))
+		assert.NoError(t, os.WriteFile(filePath, []byte(file), 0o600))
+	}
+	runRt(t, "upload", filepath.Join(localDir, "nr", "(*)"), repo+"/nr/{1}", "--flat=false", "--recursive=true", "--regexp=false")
+}
+
+// listRepoFiles returns the paths of all the files in the repository, relative to it.
+func listRepoFiles(t *testing.T, repo string) []string {
+	searchCmd := generic.NewSearchCommand()
+	searchSpec := spec.NewBuilder().Pattern(repo + "/*").Recursive(true).BuildSpec()
+	searchCmd.SetServerDetails(serverDetails).SetSpec(searchSpec)
+	reader, err := searchCmd.Search()
+	assert.NoError(t, err)
+	var files []string
+	for item := new(utils.SearchResult); reader.NextRecord(item) == nil; item = new(utils.SearchResult) {
+		files = append(files, item.Path)
+	}
+	readerGetErrorAndAssert(t, reader)
+	readerCloseAndAssert(t, reader)
+	return files
+}
+
+// TestArtifactoryExclusionInSubFolderNonRecursive verifies that a file excluded by --exclusions is never copied,
+// moved or deleted, when the search is non-recursive and the file is inside a sub folder of the matched folder.
+// The other files of that sub folder must still be handled.
+func TestArtifactoryExclusionInSubFolderNonRecursive(t *testing.T) {
+	initArtifactoryTest(t, "")
+	defer cleanArtifactoryTest()
+	pattern := tests.RtRepo1 + "/nr/*"
+	oneInSource, keepInSource, twoInSource := tests.RtRepo1+"/nr/one.txt", tests.RtRepo1+"/"+nonRecursiveExcludedFile, tests.RtRepo1+"/nr/sub/two.txt"
+	oneInTarget, twoInTarget := tests.RtRepo2+"/nr/one.txt", tests.RtRepo2+"/nr/sub/two.txt"
+
+	t.Run("copy", func(t *testing.T) {
+		uploadNonRecursiveExclusionFiles(t, tests.RtRepo1)
+		runRt(t, "copy", pattern, tests.RtRepo2+"/", "--recursive=false", nonRecursiveExclusion)
+		assert.ElementsMatch(t, []string{oneInSource, keepInSource, twoInSource}, listRepoFiles(t, tests.RtRepo1))
+		assert.ElementsMatch(t, []string{oneInTarget, twoInTarget}, listRepoFiles(t, tests.RtRepo2))
+		cleanArtifactory()
+	})
+	t.Run("move", func(t *testing.T) {
+		uploadNonRecursiveExclusionFiles(t, tests.RtRepo1)
+		runRt(t, "move", pattern, tests.RtRepo2+"/", "--recursive=false", nonRecursiveExclusion)
+		assert.ElementsMatch(t, []string{keepInSource}, listRepoFiles(t, tests.RtRepo1))
+		assert.ElementsMatch(t, []string{oneInTarget, twoInTarget}, listRepoFiles(t, tests.RtRepo2))
+		cleanArtifactory()
+	})
+	t.Run("delete", func(t *testing.T) {
+		uploadNonRecursiveExclusionFiles(t, tests.RtRepo1)
+		runRt(t, "delete", pattern, "--recursive=false", nonRecursiveExclusion)
+		assert.ElementsMatch(t, []string{keepInSource}, listRepoFiles(t, tests.RtRepo1))
+		cleanArtifactory()
+	})
+}
+
 func TestUploadAndSyncDeleteCaseSensitivity(t *testing.T) {
 	initArtifactoryTest(t, "")
 	runRt(t, "upload", "--sync-deletes", tests.RtRepo1+"/", path.Join("testdata", "syncdeletes", "*"), tests.RtRepo1+"/")
