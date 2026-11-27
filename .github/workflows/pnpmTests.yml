@@ -15,7 +15,7 @@ jobs:
           - name: windows
             version: 2022
           - name: macos
-            version: 14
+            version: latest
         pnpm-version: [10, 11, 12]
     runs-on: ${{ matrix.os.name }}-${{ matrix.os.version }}
     steps:

@@ -13,7 +13,7 @@ jobs:
           - name: ubuntu
             version: 24.04
           - name: macos
-            version: 14
+            version: latest
     runs-on: ${{ matrix.os.name }}-${{ matrix.os.version }}
     steps:
       - name: Skip macOS - JGC-413

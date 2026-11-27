@@ -1,6 +1,6 @@
 ARG repo_name_21
 # Remove ${repo_name_21} to pull from Docker Hub.
-FROM ${repo_name_21}/jfrog-docker/golang:1.26.10-alpine as builder
+FROM ${repo_name_21}/jfrog-docker/golang:1.26.11-alpine as builder
 ARG image_name=jfrog-cli
 ARG cli_executable_name
 WORKDIR /${image_name}
@@ -11,6 +11,8 @@ FROM ${repo_name_21}/jfrog-docker/alpine:3
 ARG image_name=jfrog-cli
 ARG cli_executable_name
 ENV CI true
-RUN apk add --no-cache bash tzdata ca-certificates curl jq
+# Upgrade base packages first, so fixed versions (for example zlib 1.4-r0 for CVE-2026-4738)
+# replace the versions frozen in the base image snapshot.
+RUN apk upgrade --no-cache && apk add --no-cache bash tzdata ca-certificates curl jq
 COPY --from=builder /${image_name}/${cli_executable_name} /usr/local/bin/${cli_executable_name}
 RUN chmod +x /usr/local/bin/${cli_executable_name}
