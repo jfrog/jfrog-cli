@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -1029,4 +1030,59 @@ func TestPoetryBuildPublishWithCIVcsProps(t *testing.T) {
 	}
 
 	assert.Greater(t, artifactCount, 0, "No artifacts were validated for CI VCS properties")
+}
+
+// TestPoetryAuditPep621Dependencies runs 'jf audit --poetry' on a project that declares its
+// dependencies in the PEP 621 [project] table, the default layout since Poetry 2.0, instead of
+// [tool.poetry.dependencies]. Before the fix, the audit failed with "no dependencies were found"
+// because only [tool.poetry] was read, so nothing was scanned.
+// The fixture's dependencies (django <1.11.16, urllib3 <1.24, Werkzeug <0.10) have known
+// vulnerabilities, so a successful scan must report vulnerabilities on them.
+func TestPoetryAuditPep621Dependencies(t *testing.T) {
+	if !*tests.TestPoetry {
+		t.Skip("Skipping Poetry test. To run Poetry test add the '-test.poetry=true' option.")
+	}
+	if !*tests.TestXray {
+		t.Skip("Skipping Poetry audit test, since the 'test.xray' option is missing.")
+	}
+	_, err := exec.LookPath("poetry")
+	require.NoError(t, err, "Poetry must be installed to run this test")
+
+	oldHomeDir, newHomeDir := prepareHomeDir(t)
+	defer func() {
+		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
+		clientTestUtils.RemoveAllAndAssert(t, newHomeDir)
+	}()
+
+	// Copy the fixture as-is: its poetry.lock matches pyproject.toml, and 'jf audit' runs
+	// 'poetry install' on a temporary copy of the project.
+	projectSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "poetry", "pep621project")
+	tmpDir, cleanupTmpDir := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer cleanupTmpDir()
+	projectPath := filepath.Join(tmpDir, "pep621project")
+	require.NoError(t, biutils.CopyDir(projectSrc, projectPath, true, nil))
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	output, err := jfrogCli.RunCliCmdWithOutputs(t, "audit", "--poetry", "--format=simple-json")
+	require.NoError(t, err, "'jf audit --poetry' should build the dependency tree from the [project] table")
+
+	var results struct {
+		Vulnerabilities []struct {
+			ImpactedPackageName string `json:"impactedPackageName"`
+		} `json:"vulnerabilities"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(output), &results), "unexpected audit output: %s", output)
+	require.NotEmpty(t, results.Vulnerabilities, "expected vulnerabilities for the fixture's dependencies; an empty result means nothing was scanned")
+
+	impacted := map[string]bool{}
+	for _, vulnerability := range results.Vulnerabilities {
+		impacted[strings.ToLower(vulnerability.ImpactedPackageName)] = true
+	}
+	assert.True(t, impacted["django"], "expected vulnerabilities on django, impacted packages: %v", impacted)
+	assert.True(t, impacted["urllib3"], "expected vulnerabilities on urllib3, impacted packages: %v", impacted)
 }
