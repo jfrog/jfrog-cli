@@ -98,7 +98,24 @@ jobs:
               "jfrog/jfrog-client-go":       "jfrog-client-go",
               "jfrog/build-info-go":         "build-info-go",
               "jfrog/gofrog":                "gofrog",
+              "jfrog/build-info":            "build-info (extractors)",
           }
+
+          # The Maven/Gradle extractors are Java artifacts built in jfrog/build-info.
+          # They are not Go modules, so go.mod never shows them: build-info-go pins
+          # their versions in build/*.go and the CLI downloads them at runtime.
+          # Fixes made in jfrog/build-info (e.g. Maven 3.10 support) reach the CLI only
+          # through a "Bump Maven extractor to x.y.z" PR in build-info-go, which is
+          # usually labelled "ignore for release". We therefore read the pinned
+          # versions on both tags and pull the extractor release notes in between.
+          BUILD_INFO_GO_MODULE = "github.com/jfrog/build-info-go"
+          EXTRACTOR_REPO       = "jfrog/build-info"
+          # label, file in build-info-go, version constant, release tag prefix in jfrog/build-info
+          # (tag prefix None = version shown in the table, but no release notes to fetch)
+          EXTRACTORS = [
+              ("Maven extractor",   "build/maven.go",  "MavenExtractorDependencyVersion",  "build-info-extractor-"),
+              ("Gradle4 extractor", "build/gradle.go", "gradleExtractor4DependencyVersion", None),
+          ]
 
           CATEGORIES = {
               "breaking": ("⚠️  Breaking Changes", 0),
@@ -193,6 +210,69 @@ jobs:
                   return t["object"]["sha"]
               return sha
 
+          # ── Extractor (jfrog/build-info) helpers ─────────────────────────────
+          def fetch_text(repo, path, ref):
+              data = api(f"/repos/{repo}/contents/{path}?ref={ref}")
+              if not data or "content" not in data:
+                  return ""
+              return base64.b64decode(data["content"]).decode()
+
+          def pinned_version(text, const):
+              m = re.search(rf'\b{const}\s*=\s*"([^"]+)"', text)
+              return m.group(1) if m else None
+
+          def vtuple(v):
+              try:
+                  return tuple(int(x) for x in v.split("."))
+              except ValueError:
+                  return None
+
+          def extractor_changes(old_ref, new_ref):
+              """{label: (old_ver, new_ver, tag_prefix)} for extractors whose pinned version changed."""
+              out = {}
+              for label, path, const, prefix in EXTRACTORS:
+                  ov = pinned_version(fetch_text("jfrog/build-info-go", path, old_ref), const)
+                  nv = pinned_version(fetch_text("jfrog/build-info-go", path, new_ref), const)
+                  if ov and nv and ov != nv:
+                      out[label] = (ov, nv, prefix)
+                      print(f"  ✅  {label}: {ov} -> {nv}", flush=True)
+              return out
+
+          PR_LINE_RE = re.compile(
+              r"^\*\s+(.+?)\s+by\s+@(\S+)\s+in\s+(https://github\.com/" + EXTRACTOR_REPO + r"/pull/(\d+))\s*$")
+
+          def extractor_prs(label, old_ver, new_ver, prefix):
+              """Merged PRs from the jfrog/build-info releases in (old_ver, new_ver]."""
+              lo, hi = vtuple(old_ver), vtuple(new_ver)
+              if not prefix or not lo or not hi or hi <= lo:
+                  return []
+              releases = api_paged(f"/repos/{EXTRACTOR_REPO}/releases?per_page=100") or []
+              picked = []
+              for rel in releases:
+                  tag = rel.get("tag_name", "")
+                  if rel.get("draft") or not tag.startswith(prefix): continue
+                  v = vtuple(tag[len(prefix):])
+                  if v and lo < v <= hi:
+                      picked.append((v, tag, rel.get("body") or ""))
+              results, seen = [], set()
+              for v, tag, body in sorted(picked):
+                  ver = tag[len(prefix):]
+                  print(f"  {EXTRACTOR_REPO}: {tag}", flush=True)
+                  for line in body.splitlines():
+                      m = PR_LINE_RE.match(line.strip())
+                      if not m or m.group(4) in seen: continue
+                      seen.add(m.group(4))
+                      results.append({
+                          "number": int(m.group(4)),
+                          "title":  f"{m.group(1)} ({label} {ver})",
+                          "url":    m.group(3),
+                          "author": m.group(2),
+                          "labels": [],
+                          "repo":   EXTRACTOR_REPO,
+                          "sha":    "",
+                      })
+              return results
+
           # ── PR collection ────────────────────────────────────────────────────
           def prs_between(repo, old_ref, new_ref, old_type, new_type):
               old_sha = resolve_sha(repo, old_ref, old_type)
@@ -284,11 +364,12 @@ jobs:
               return "other"
 
           # ── Render ───────────────────────────────────────────────────────────
-          def render(from_tag, to_tag, all_prs, changed, skipped):
+          def render(from_tag, to_tag, all_prs, changed, skipped, ext_changed):
+              n_repos = len(changed) + 1 + (1 if any(p["repo"] == EXTRACTOR_REPO for p in all_prs) else 0)
               lines = [
                   f"## What changed in {to_tag}",
                   f"",
-                  f"> Auto-generated from {len(changed)+1} repositories · {datetime.utcnow().strftime('%Y-%m-%d')}  ",
+                  f"> Auto-generated from {n_repos} repositories · {datetime.utcnow().strftime('%Y-%m-%d')}  ",
                   f"> Comparing `{from_tag}` → `{to_tag}`",
                   f"",
               ]
@@ -325,6 +406,8 @@ jobs:
                   repo = MODULES.get(mod, mod)
                   nm   = DISPLAY.get(repo, repo)
                   lines.append(f"| [{nm}](https://github.com/{repo}) | `{ov}` | `{nv}` |")
+              for label, (ov, nv, _) in sorted(ext_changed.items()):
+                  lines.append(f"| {label} (pinned in build-info-go) | `{ov}` | `{nv}` |")
               lines.append("")
               return "\n".join(lines)
 
@@ -356,6 +439,7 @@ jobs:
           new_sha = resolve_sha(REPO, TO,   "tag")
           all_prs.extend(prs_between(REPO, old_sha, new_sha, "sha", "sha"))
 
+          ext_changed = {}
           for mod, (ov, nv) in changed.items():
               repo = MODULES.get(mod)
               if not repo: continue
@@ -363,10 +447,16 @@ jobs:
               nh, nt = extract_hash(nv)
               if oh and nh:
                   all_prs.extend(prs_between(repo, oh, nh, ot, nt))
+                  if mod == BUILD_INFO_GO_MODULE:
+                      # build-info-go moved: check whether the pinned extractor versions moved too
+                      ext_changed = extractor_changes(oh, nh)
               else:
                   print(f"  ⚠  Skipping {repo} — could not extract hash from {ov}", flush=True)
 
-          md = render(FROM, TO, all_prs, changed, skipped)
+          for label, (ov, nv, prefix) in ext_changed.items():
+              all_prs.extend(extractor_prs(label, ov, nv, prefix))
+
+          md = render(FROM, TO, all_prs, changed, skipped, ext_changed)
           with open("/tmp/RELEASE_NOTES.md", "w") as f:
               f.write(md)
 

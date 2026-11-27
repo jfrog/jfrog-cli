@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The project file name (jftest) intentionally differs from AssemblyName, which is the NuGet
+       PackageId 'dotnet pack' embeds in the produced .nupkg. Build-info must use AssemblyName. -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>JohnsonControls.jftest</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+  </ItemGroup>
+</Project>
