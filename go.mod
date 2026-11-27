@@ -27,7 +27,7 @@ require (
 	github.com/jfrog/jfrog-cli-evidence v0.11.1-0.20261102090321-5b0bce39abfe
 	github.com/jfrog/jfrog-cli-platform-services v1.10.1-0.20261123085525-855e89d2464b
 	github.com/jfrog/jfrog-cli-security v1.41.4
-	github.com/jfrog/jfrog-client-go v1.55.1-0.20261102081622-45c51cfca4f7
+	github.com/jfrog/jfrog-client-go v1.55.1-0.20261126114537-5513299a88b5
 	github.com/jszwec/csvutil v1.10.0
 	github.com/moby/moby/api v1.55.0
 	github.com/spf13/viper v1.21.0
