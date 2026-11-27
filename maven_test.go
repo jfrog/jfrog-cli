@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jfrog/gofrog/version"
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	outputFormat "github.com/jfrog/jfrog-cli-core/v2/common/format"
 	"github.com/jfrog/jfrog-cli-core/v2/common/project"
@@ -1380,4 +1381,112 @@ func TestMavenBuildPublishWithLocalGitVcsProps(t *testing.T) {
 	assert.Greater(t, count, 0)
 
 	cleanMavenTest(t)
+}
+
+const (
+	mavenExtractorArtifact  = "build-info-extractor-maven3"
+	gradleExtractorArtifact = "build-info-extractor-gradle"
+)
+
+// isolateExtractorDownloads keeps the jars of the extractor, and the saved list of its versions, in a temporary folder.
+// It clears the variables that choose the version of the extractor, and the repository that the jars come from,
+// so the result does not depend on the shell or on the CI environment.
+func isolateExtractorDownloads(t *testing.T) (dependenciesDir string) {
+	dependenciesDir = t.TempDir()
+	t.Setenv(coreutils.DependenciesDir, dependenciesDir)
+	for _, env := range []string{coreutils.MavenExtractorVersionEnv, coreutils.GradleExtractorVersionEnv, coreutils.ExtractorAutoVersionEnv,
+		coreutils.ReleasesRemoteEnv, coreutils.DeprecatedExtractorsRemoteEnv} {
+		t.Setenv(env, "")
+	}
+	return dependenciesDir
+}
+
+// extractorVersionsOnDisk returns the versions of an extractor whose jar was downloaded.
+func extractorVersionsOnDisk(t *testing.T, dependenciesDir, tool, artifact string) (versions []string) {
+	entries, err := os.ReadDir(filepath.Join(dependenciesDir, tool))
+	if os.IsNotExist(err) {
+		return nil
+	}
+	require.NoError(t, err)
+	for _, entry := range entries {
+		jar := filepath.Join(dependenciesDir, tool, entry.Name(), fmt.Sprintf("%s-%s-uber.jar", artifact, entry.Name()))
+		if _, statErr := os.Stat(jar); statErr == nil {
+			versions = append(versions, entry.Name())
+		}
+	}
+	return versions
+}
+
+// savedExtractorVersionsFile is the list of the versions that the CLI saves between commands. It exists only if the CLI looked the versions up.
+func savedExtractorVersionsFile(dependenciesDir, artifact string) string {
+	return filepath.Join(dependenciesDir, "extractor-versions", artifact+".json")
+}
+
+func runMavenValidate(t *testing.T) error {
+	return runMaven(t, createSimpleMavenProject, tests.MavenConfig, "validate")
+}
+
+// Without a variable, the CLI looks up the versions and uses a version that is not older than the one bundled with it.
+func TestMavenExtractorVersionNewest(t *testing.T) {
+	initMavenTest(t, false)
+	defer cleanMavenTest(t)
+	dependenciesDir := isolateExtractorDownloads(t)
+
+	require.NoError(t, runMavenValidate(t))
+	versions := extractorVersionsOnDisk(t, dependenciesDir, "maven", mavenExtractorArtifact)
+	require.Len(t, versions, 1)
+	assert.True(t, version.NewVersion(versions[0]).AtLeast(build.MavenExtractorDependencyVersion),
+		"version %s is older than the bundled version %s", versions[0], build.MavenExtractorDependencyVersion)
+	assert.FileExists(t, savedExtractorVersionsFile(dependenciesDir, mavenExtractorArtifact))
+}
+
+// A pinned version is used as is, and the versions are not looked up.
+func TestMavenExtractorVersionPinned(t *testing.T) {
+	initMavenTest(t, false)
+	defer cleanMavenTest(t)
+	dependenciesDir := isolateExtractorDownloads(t)
+	const pinned = "2.43.9"
+	t.Setenv(coreutils.MavenExtractorVersionEnv, pinned)
+
+	require.NoError(t, runMavenValidate(t))
+	assert.Equal(t, []string{pinned}, extractorVersionsOnDisk(t, dependenciesDir, "maven", mavenExtractorArtifact))
+	assert.NoFileExists(t, savedExtractorVersionsFile(dependenciesDir, mavenExtractorArtifact))
+}
+
+// A value that is not a version fails the command and names the variable. Nothing is downloaded.
+func TestMavenExtractorVersionInvalidPin(t *testing.T) {
+	initMavenTest(t, false)
+	defer cleanMavenTest(t)
+	dependenciesDir := isolateExtractorDownloads(t)
+	t.Setenv(coreutils.MavenExtractorVersionEnv, "latest")
+
+	err := runMavenValidate(t)
+	require.Error(t, err)
+	assert.ErrorContains(t, err, coreutils.MavenExtractorVersionEnv)
+	assert.Empty(t, extractorVersionsOnDisk(t, dependenciesDir, "maven", mavenExtractorArtifact))
+}
+
+// With the switch off, the CLI uses the bundled version and does not look up the versions.
+func TestMavenExtractorAutoVersionOff(t *testing.T) {
+	initMavenTest(t, false)
+	defer cleanMavenTest(t)
+	dependenciesDir := isolateExtractorDownloads(t)
+	t.Setenv(coreutils.ExtractorAutoVersionEnv, "false")
+
+	require.NoError(t, runMavenValidate(t))
+	assert.Equal(t, []string{build.MavenExtractorDependencyVersion}, extractorVersionsOnDisk(t, dependenciesDir, "maven", mavenExtractorArtifact))
+	assert.NoFileExists(t, savedExtractorVersionsFile(dependenciesDir, mavenExtractorArtifact))
+}
+
+// A value of the switch that is not true or false fails the command: a user who tried to turn it off must not get the lookup.
+func TestMavenExtractorAutoVersionInvalid(t *testing.T) {
+	initMavenTest(t, false)
+	defer cleanMavenTest(t)
+	dependenciesDir := isolateExtractorDownloads(t)
+	t.Setenv(coreutils.ExtractorAutoVersionEnv, "no")
+
+	err := runMavenValidate(t)
+	require.Error(t, err)
+	assert.ErrorContains(t, err, coreutils.ExtractorAutoVersionEnv)
+	assert.Empty(t, extractorVersionsOnDisk(t, dependenciesDir, "maven", mavenExtractorArtifact))
 }
